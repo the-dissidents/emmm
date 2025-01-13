@@ -1,0 +1,95 @@
+; SCANNER
+
+bool is_eof()
+; true if at eof
+
+bool peek(string)
+; true if the given string appears at current position
+
+string accept_char()
+; accepts any character
+
+string? accept_if(string)
+string? accept_if_whitespace()
+; returns null when unable to match
+
+string accept_until(string)
+; inclusive of string, throws if reached eof
+
+
+; TREE GENERATION
+
+emit <node>
+emit:attribute <name> <value>
+emit:start_node <name> ; also records start position
+emit:end_node <name>   ; also records end position
+emit:marker <name>     ; a node without content
+emit:string <string>
+
+
+;; SYNTAX OF PSEUDOCODE
+
+; if-then-else
+<expression> -> <true_statement>
+<expression> -> <true_statement> else <false_statement>
+
+; for loop
+for <variable> in <list> <body>
+
+; while loop
+while <condition> <body>
+
+; switch
+switch <expression> {
+	<value> -> <statement>
+	; ...
+}
+
+
+;; PARSER
+
+DOCUMENT:
+    while not is_eof() {
+        emit call PARAGRAPH_LIKE
+    }
+
+PARAGRAPH_LIKE:
+    peek('[.') -> return call PARA_CMD
+    for prefix in PARA_ABBRS {
+        if_accept(prefix) -> return call PARA_ABBR(prefix)
+    }
+    ; no commands or macros
+    return call MAYBE_GROUPED_PARAGRAPH
+    
+MAYBE_GROUPED_PARAGRAPH:
+	id = accept_if_begins_bracket(':--', '--:') -> {
+		; maybe also a 'grouped' node?
+        while not accept_if_ends_bracket(id) {
+            emit call PARAGRAPH_LIKE 
+        }
+    } else {
+	    emit call PARAGRAPH
+    }
+
+PARAGRAPH:
+    while accept_if_whitespace() or accept_if('\n') {}
+    emit:start_node 'p'
+    while not eof() {
+        accept_if('\n') -> {
+            while accept_if_whitespace() {}
+            peek('[.') or accept_if('\n') -> 
+	            break ; went out of paragraph
+            emit:string '\n'
+        }
+        emit call INLINE_ENTITY
+    }
+    emit:end_node 'p'
+    
+INLINE_ENTITY:
+    ; todo: support arguments in inlinecmd
+    peek('[\') -> return call INLINE_CMD
+    for prefix in INLINE_ABBRS {
+        if_accept(prefix) -> return call INLINE_ABBR(prefix)
+    }
+    if_accept('\\') -> return call ESCAPE_CHAR(accept_char())
+    emit:string accept_char()
