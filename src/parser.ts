@@ -1,31 +1,42 @@
-import { EmitEnvironment, FixSuggestion, Message, MessageSeverity, Scanner } from "./interface";
-import { ExpectedMessage, RemoveThingMessage, UnknownModifierMessage } from "./messages";
-import { assert } from "./util";
+import { BlockModifier, Configuration, EmitEnvironment, FixSuggestion, Message, MessageSeverity, ModifierFlags, Scanner } from "./interface";
+import { ExpectedMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
+import { assert, has } from "./util";
+
+const GROUP_BEGIN = ':--';
+const GROUP_END = '--:';
 
 const MODIFIER_BLOCK_OPEN = '[.';
 const MODIFIER_BLOCK_CLOSE = ']';
+
 const MODIFIER_INLINE_OPEN = '[/';
 const MODIFIER_INLINE_CLOSE = ']';
-const MODIFIER_INLINE_POP = '[/]';
-const GROUP_BEGIN = ':--';
-const GROUP_END = '--:';
+const MODIFIER_INLINE_END_SIGN = ';';
+const MODIFIER_INLINE_END_TAG = '[;]';
 
 export class Parser {
     private emit: EmitEnvironment;
     private groupDepth = 0;
+    private blockTags: [string, BlockModifier][] = [];
+    private inlineTags: [string, BlockModifier][] = [];
 
-    constructor(private scanner: Scanner) {
+    constructor(private scanner: Scanner, private config: Configuration) {
         this.emit = new EmitEnvironment(scanner);
+        this.blockTags = [...config.blockModifiers.entries()]
+            .sort(([x, _], [y, __]) => y.length - x.length);
+        this.inlineTags = [...config.inlineModifiers.entries()]
+            .sort(([x, _], [y, __]) => y.length - x.length);
     }
 
     parse() {
+        const start = performance.now();
         this.DOCUMENT();
+        console.info('parse time:', performance.now() - start);
         return this.emit.tree;
     }
 
     private WHITESPACES_OR_NEWLINES() {
         while (this.scanner.acceptWhitespaceChar() !== null
-            || this.scanner.accept('\n')) {};
+            || this.scanner.accept('\n')) {}
     }
 
     private WARN_IF_MORE_NEWLINES() {
@@ -39,10 +50,8 @@ export class Parser {
             if (this.scanner.acceptWhitespaceChar() == null) break;
         }
         const end = this.scanner.position();
-        if (warn) this.emit.message(new RemoveThingMessage(
-            MessageSeverity.Warning, start, end - start, 
-            'more than one newlines have the same effect as one', 
-            'remove the redundant newlines'));
+        if (warn) this.emit.message(
+            new UnnecessaryNewlineMessage(start, end - start));
     }
 
     private DOCUMENT() {
@@ -52,61 +61,52 @@ export class Parser {
         }
     }
 
-    // private called = 0;
-
     private BLOCK() {
         assert(!this.scanner.isEOF());
-        // this.called += 1;
-        // if (this.called > 100) {
-        //     console.log(this.emit.tree.debugDump());
-        //     throw new Error();
-        // }
-        // block tag
         this.WHITESPACES_OR_NEWLINES();
         if (this.scanner.peek(MODIFIER_BLOCK_OPEN)) {
             this.MODIFIER_BLOCK();
             return;
         }
-        // simple paragraph
+        // simple paragraph(s)
         this.MAYBE_GROUPED_PARAGRAPH();
     }
 
     private MODIFIER_BLOCK() {
-        const a = this.scanner.accept(MODIFIER_BLOCK_OPEN);
-        assert(a);
-
-        if (this.scanner.accept('eq')) {
+        assert(this.scanner.accept(MODIFIER_BLOCK_OPEN));
+        const result = this.blockTags.find(([name, _]) => this.scanner.accept(name));
+        if (result !== undefined) {
+            // accepted name
+            const mod = result[1];
             if (!this.scanner.accept(MODIFIER_BLOCK_CLOSE))
                 this.emit.message(new ExpectedMessage(
                     this.scanner.position(), MODIFIER_BLOCK_CLOSE));
-            this.WHITESPACES_OR_NEWLINES();
-            this.emit.startNode('eq');
-            this.PRE_PARAGRAPH();
-            this.emit.endNode('eq');
-            return;
-        }
-        if (this.scanner.accept('quote')) {
-            if (!this.scanner.accept(MODIFIER_BLOCK_CLOSE))
+            if (has(mod.flags, ModifierFlags.Marker)) {
+                let node = this.emit.newNode('block');
+                node.attributes.set('type', mod.name);
+            } else {
+                this.WHITESPACES_OR_NEWLINES();
+                let node = this.emit.startNode('block');
+                node.attributes.set('type', mod.name);
+                if (has(mod.flags, ModifierFlags.Preformatted))
+                    this.PRE_PARAGRAPH();
+                else
+                    this.BLOCK();
+                this.emit.endNode('block');
+            }
+        } else {
+            // unknown modifier
+            const startPos = this.scanner.position();
+            const args = this.scanner.acceptUntil(MODIFIER_BLOCK_CLOSE);
+            if (args === null) {
                 this.emit.message(new ExpectedMessage(
                     this.scanner.position(), MODIFIER_BLOCK_CLOSE));
-            this.WHITESPACES_OR_NEWLINES();
-            this.emit.startNode('quote');
-            this.BLOCK();
-            this.emit.endNode('quote');
-            return;
+            }
+            this.emit.message(
+                new UnknownModifierMessage(startPos, this.scanner.position()));
+            // fall back
+            this.PARAGRAPH();
         }
-
-        // unknown modifier
-        const startPos = this.scanner.position();
-        const args = this.scanner.acceptUntil(MODIFIER_BLOCK_CLOSE);
-        if (args === null) {
-            this.emit.message(new ExpectedMessage(
-                this.scanner.position(), MODIFIER_BLOCK_CLOSE));
-        }
-        this.emit.message(
-            new UnknownModifierMessage(startPos, this.scanner.position()));
-        // fall back
-        this.PARAGRAPH();
     }
 
     // also handles "grouped" (delimited) pre-paragraphs
@@ -161,44 +161,101 @@ export class Parser {
 
     private PARAGRAPH() {
         assert(!this.scanner.isEOF());
-        // this.WHITESPACES_OR_NEWLINES();
         this.emit.startNode('paragraph');
-        while (!this.scanner.isEOF()) {
-            if (this.scanner.accept('\n')) {
-                while (this.scanner.acceptWhitespaceChar() !== null) {}
-                if  (this.scanner.peek(MODIFIER_BLOCK_OPEN)
-                 || (this.scanner.peek(GROUP_END) && this.groupDepth > 0)
-                 ||  this.scanner.isEOF()) break;
-
-                if (this.scanner.accept('\n')) {
-                    this.WARN_IF_MORE_NEWLINES();
-                    break;
-                }
-                this.emit.addString('\n');
-            } else {
-                this.INLINE_ENTITY();
-            }
-        }
+        while (!this.scanner.isEOF() && this.INLINE_ENTITY()) {}
         this.emit.endNode('paragraph');
     }
 
-    private INLINE_ENTITY() {
-        // if (this.scanner.peek(MODIFIER_INLINE_OPEN)) {
-        //     // inline tag
-        //     throw new Error('not implemented');
-        // }
+    private INLINE_ENTITY(): boolean {
+        assert(!this.scanner.isEOF());
+        if (this.scanner.peek(MODIFIER_INLINE_OPEN)) {
+            // inline tag
+            return this.MODIFIER_INLINE();
+        }
         // TODO: don't know if this is enough
         if (this.scanner.accept('\\')) {
             if (this.scanner.isEOF()) {
                 this.emit.addString('\\');
-                return;
+                return true;
             }
             let node = this.emit.newNode('escaped');
             node.content = [this.scanner.acceptChar()];
             node.end = node.start + 1;
-            return;
+            return true;
+        }
+        return this.PREFORMATTED_INLINE_ENTITY();
+    }
+
+    private PREFORMATTED_INLINE_ENTITY(): boolean {
+        assert(!this.scanner.isEOF());
+        if (this.scanner.accept('\n')) {
+            // these whitespaces in a blank line have no effect
+            while (this.scanner.acceptWhitespaceChar() !== null) {}
+            if  (this.scanner.peek(MODIFIER_BLOCK_OPEN)
+             || (this.scanner.peek(GROUP_END) && this.groupDepth > 0)
+             ||  this.scanner.isEOF()) return false;
+
+            if (this.scanner.accept('\n')) {
+                this.WARN_IF_MORE_NEWLINES();
+                return false;
+            }
+            this.emit.addString('\n');
+            return true;
         }
         // simple character
         this.emit.addString(this.scanner.acceptChar());
+        return true;
+    }
+
+    private MODIFIER_INLINE(): boolean {
+        assert(this.scanner.accept(MODIFIER_INLINE_OPEN));
+        const result = this.inlineTags.find(([name, _]) => this.scanner.accept(name));
+        if (result !== undefined) {
+            // accepted tag
+            const mod = result[1];
+            if (has(mod.flags, ModifierFlags.Marker)) {
+                if (!this.scanner.accept(MODIFIER_INLINE_END_SIGN))
+                    this.emit.message(new ExpectedMessage(
+                        this.scanner.position(), MODIFIER_INLINE_END_SIGN));
+            }
+            if (!this.scanner.accept(MODIFIER_INLINE_CLOSE))
+                this.emit.message(new ExpectedMessage(
+                    this.scanner.position(), MODIFIER_INLINE_CLOSE));
+            
+            if (has(mod.flags, ModifierFlags.Marker)) {
+                const node = this.emit.newNode('inline');
+                node.attributes.set('type', mod.name);
+                return true;
+            } else {
+                const node = this.emit.startNode('block');
+                node.attributes.set('type', mod.name);
+                const entity = has(mod.flags, ModifierFlags.Preformatted)
+                    ? this.PREFORMATTED_INLINE_ENTITY.bind(this)
+                    : this.INLINE_ENTITY.bind(this);
+                let ok = true;
+                while (true) {
+                    if (this.scanner.accept(MODIFIER_INLINE_END_TAG)) break;
+                    if (this.scanner.isEOF() || !(ok = entity())) {
+                        this.emit.message(new ExpectedMessage(
+                            this.scanner.position(), MODIFIER_INLINE_END_TAG));
+                        break;
+                    }
+                }
+                this.emit.endNode('block');
+                return ok;
+            }
+        } else {
+            // unknown tag
+            const startPos = this.scanner.position();
+            const args = this.scanner.acceptUntil(MODIFIER_INLINE_CLOSE);
+            if (args === null) {
+                this.emit.message(new ExpectedMessage(
+                    this.scanner.position(), MODIFIER_INLINE_CLOSE));
+            }
+            this.emit.message(
+                new UnknownModifierMessage(startPos, this.scanner.position()));
+            // fall back
+            return this.INLINE_ENTITY();
+        }
     }
 }

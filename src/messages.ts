@@ -1,15 +1,29 @@
 import { Message, MessageSeverity, FixSuggestion } from "./interface";
 
+export class ExpectedMessage implements Message {
+    constructor(
+        public readonly position: number,
+        private what: string) {}
+    readonly code = 0;
+    readonly severity = MessageSeverity.Error;
+    get length(): number { return this.what.length; }
+    get info(): string { return `expected '${this.what}'` }
+    get fixes(): readonly FixSuggestion[] {
+        return [];
+    }
+}
+
 export class UnknownModifierMessage implements Message {
-    constructor(private pos: number, private len: number) {}
-    severity() { return MessageSeverity.Error; }
-    position() { return this.pos; }
-    length() { return this.len; }
-    info() { return `unknown modifier; did you forget to escape it?` }
-    fixes(): readonly FixSuggestion[] {
-        let [pos, len] = [this.pos, this.len];
+    constructor(
+        public readonly position: number, 
+        public readonly length: number) {}
+    readonly code = 0;
+    readonly severity =  MessageSeverity.Error;
+    readonly info = `unknown modifier; did you forget to escape it?`;
+    get fixes(): readonly FixSuggestion[] {
+        let [pos, len] = [this.position, this.length];
         return [{
-            info() { return 'this is not a modifier -- escape it'; },
+            get info() { return 'this is not a modifier -- escape it'; },
             apply(src: string, cursor: number) {
                 let newCursor = (cursor < pos) 
                     ? cursor 
@@ -20,17 +34,17 @@ export class UnknownModifierMessage implements Message {
     }
 }
 
-export class RemoveThingMessage implements Message {
-    constructor(private level: MessageSeverity, private pos: number, private len: number, 
-        private infostr: string, private fixstr: string) {}
-    severity(): MessageSeverity { return this.level; }
-    position(): number { return this.pos; }
-    length() { return this.len; }
-    info(): string { return this.infostr; }
-    fixes(): readonly FixSuggestion[] {
-        let [pos, len, fixstr] = [this.pos, this.len, this.fixstr];
+class RemoveThingMessage implements Message {
+    constructor(
+        public readonly code: number,
+        public readonly severity: MessageSeverity, 
+        public readonly position: number, 
+        public readonly length: number,
+        public readonly info: string, private fixstr: string){}
+    get fixes(): readonly FixSuggestion[] {
+        let [pos, len, fixstr] = [this.position, this.length, this.fixstr];
         return [{
-            info() { return fixstr; },
+            get info() { return fixstr; },
             apply(src: string, cursor: number) {
                 let newCursor = (cursor < pos + len && cursor >= pos) 
                     ? pos 
@@ -41,13 +55,10 @@ export class RemoveThingMessage implements Message {
     }
 }
 
-export class ExpectedMessage implements Message {
-    constructor(private pos: number, private what: string) {}
-    severity(): MessageSeverity { return MessageSeverity.Error; }
-    position(): number { return this.pos; }
-    length() { return 0; }
-    info(): string { return `expected '${this.what}'` }
-    fixes(): readonly FixSuggestion[] {
-        return [];
+export class UnnecessaryNewlineMessage extends RemoveThingMessage {
+    constructor(pos: number, len: number) {
+        super(0, MessageSeverity.Warning, pos, len, 
+            'more than one newlines have the same effect as one', 
+            'remove the redundant newlines');
     }
 }

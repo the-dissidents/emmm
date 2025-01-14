@@ -28,17 +28,18 @@ export enum MessageSeverity {
 }
 
 // Fixes are optional language-server features
-export interface FixSuggestion {
-    info(): string,
+export type FixSuggestion = {
+    info: string,
     apply(src: string, cursor: number): [out_src: string, new_cursor: number]
 }
 
-export interface Message {
-    severity(): MessageSeverity,
-    position(): number,
-    length(): number,
-    info(): string,
-    fixes(): readonly FixSuggestion[]
+export type Message = {
+    readonly severity: MessageSeverity,
+    readonly position: number,
+    readonly length: number,
+    readonly info: string,
+    readonly code: number,
+    readonly fixes: readonly FixSuggestion[]
 }
 
 export class Node {
@@ -49,33 +50,9 @@ export class Node {
 }
 
 export class Document {
-    constructor(public root: Node, public messages: Message[]) {};
-
-    debugDump(): string {
-        function dumpNode(node: Node, prefix = '') {
-            let attrs = [...node.attributes.entries()].map(([a, b]) => `${a}: ${b}`).join(', ');
-            if (attrs.length > 0) attrs = ' ' + attrs;
-            let result = `<${node.name}@${node.start}${attrs}`;
-            if (node.content.length > 0) {
-                result += '>'
-                for (const x of node.content) {
-                    if (typeof x == 'string') {
-                        result += `\n${prefix}  ${x}`;
-                    } else {
-                        result += `\n${prefix}  ${dumpNode(x, prefix + '  ')}`;
-                    }
-                }
-                result += `\n${prefix}</${node.name}@${node.end}>`;
-            } else {
-                result += '/>';
-            }
-            return result;
-        }
-        let root = dumpNode(this.root);
-        let msgs = this.messages.map((x) => 
-            `at ${x.position()}: ${MessageSeverity[x.severity()]}: ${x.info()}`).join('\n');
-        return `${msgs}\n${root}`;
-    }
+    constructor(
+        public root: Node, 
+        public messages: Message[]) {};
 }
 
 export class EmitEnvironment {
@@ -127,7 +104,60 @@ export class EmitEnvironment {
     }
 }
 
-export class Configuration {
-    // TODO
-    // Rules for actual modifiers and shorthand notations go here and are passed to Parser
+export enum ModifierFlags {
+    Normal = 0,
+    /** Content is preformatted: no escaping, no inner tags */
+    Preformatted = 1,
+    /** No content slot */
+    Marker = 2
+}
+
+export class BlockModifier {
+    constructor(
+        public readonly name: string, 
+        public readonly flags: ModifierFlags = ModifierFlags.Normal) {}
+}
+
+export class InlineModifier {
+    constructor(
+        public readonly name: string, 
+        public readonly flags: ModifierFlags = ModifierFlags.Normal) {}
+}
+
+export interface Configuration {
+    blockModifiers: Readonly<Map<string, BlockModifier>>,
+    inlineModifiers: Readonly<Map<string, InlineModifier>>
+
+    // TODO: shorthands
+}
+
+export class CustomConfiguration {
+    private blocks = new Map<string, BlockModifier>;
+    private inlines = new Map<string, InlineModifier>;
+    
+    constructor() {}
+
+    get blockModifiers(): Readonly<Map<string, BlockModifier>> {
+        return this.blocks;
+    }
+
+    get inlineModifiers(): Readonly<Map<string, InlineModifier>> {
+        return this.inlines;
+    }
+
+    addBlock(...xs: BlockModifier[]) {
+        for (const x of xs) {
+            if (this.blocks.has(x.name))
+                throw Error(`block modifier already exists: ${x.name}`);
+            this.blocks.set(x.name, x);
+        }
+    }
+
+    addInline(...xs: InlineModifier[]) {
+        for (const x of xs) {
+            if (this.inlines.has(x.name))
+                throw Error(`block modifier already exists: ${x.name}`);
+            this.inlines.set(x.name, x);
+        }
+    }
 }
