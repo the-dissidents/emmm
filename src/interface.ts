@@ -5,6 +5,7 @@ export interface Scanner {
     isEOF(): boolean,
 
     // return true if sees str immediately
+    // TODO: change the interface to use a prefix tree
     peek(str: string): boolean,
 
     // if sees str immediately, consumes it and returns true
@@ -16,7 +17,6 @@ export interface Scanner {
     // newlines are NOT whitespaces
     acceptWhitespaceChar(): string | null,
 
-    // also accepts str itself, but the return value does not contain it
     // returns null if encountered EOF before str
     acceptUntil(str: string): string | null
 }

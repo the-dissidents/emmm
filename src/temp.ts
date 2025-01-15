@@ -43,36 +43,9 @@ function debugDump(doc: Document, source: string): string {
     return `${msgs}\n${root}`;
 }
 
-let text = String.raw`
-罗素理论中的假命题：
+let text2 = `[.quote]
 
-[.eq] \exists x(Kx \& \forall y(Ky \rightarrow y=x) \& Bx)
-\tag{4.5}
-
-不存在一个秃头的当今的法国国王。
-
-[.quote] 一段引文
-[.quote] 分开的一段引文
-
-[.quote]
-:--
-在一起的
-
-两段引文
-
-[.quote] 外加镶嵌的一段
-[.quote] :--
-还有继续镶嵌的
-
-最后两段。
---:
---:
-`
-
-let text2 = String.raw`
-[.quote]
-This is a styled block, and [/emphasis]this is some [/underline]styled[;] text[;] with nesting. This is an inline equation: [/eq](\geq) \cdot <\Phi(\alpha), V_{min}^C>[;] with normal text after it. Escaped: \[/eq].
-`;
+aaa`;
 
 let doc = new Parser(new SimpleScanner(text2), DefaultConfiguration).parse();
 console.log(debugDump(doc, text2))

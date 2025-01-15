@@ -44,7 +44,6 @@ export class SimpleScanner implements Scanner {
         while (!this.isEOF()) {
             if (this.peek(str)) {
                 let result = this.src.slice(start, this.pos);
-                this.pos += str.length;
                 return result;
             }
             this.pos++;
