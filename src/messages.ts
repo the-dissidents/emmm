@@ -101,7 +101,15 @@ export class UnnecessaryNewlineMessage extends RemoveThingMessage {
 export class NewBlockShouldBeOnNewlineMessage extends AddThingMessage {
     constructor(pos: number) {
         super(2, MessageSeverity.Warning, pos, 0, 
-            'A new block should begin in a new line to avoid confusion', 
+            'a new block should begin in a new line to avoid confusion', 
+            'add a line break', '\n');
+    }
+}
+
+export class ContentShouldBeOnNewlineMessage extends AddThingMessage {
+    constructor(pos: number) {
+        super(3, MessageSeverity.Warning, pos, 0, 
+            'the content should begin in a new line to avoid confusion', 
             'add a line break', '\n');
     }
 }

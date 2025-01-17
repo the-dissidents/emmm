@@ -1,5 +1,5 @@
 import { BlockModifier, Configuration, EmitEnvironment, FixSuggestion, InlineModifier, Message, MessageSeverity, ModifierFlags, Scanner } from "./interface";
-import { ExpectedMessage, NewBlockShouldBeOnNewlineMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
+import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
 import { assert, has } from "./util";
 
 const GROUP_BEGIN = ':--';
@@ -7,10 +7,10 @@ const GROUP_END = '--:';
 
 const MODIFIER_BLOCK_OPEN = '[.';
 const MODIFIER_BLOCK_CLOSE = ']';
+const MODIFIER_END_SIGN = ';';
 
 const MODIFIER_INLINE_OPEN = '[/';
 const MODIFIER_INLINE_CLOSE = ']';
-const MODIFIER_INLINE_END_SIGN = ';';
 const MODIFIER_INLINE_END_TAG = '[;]';
 
 const UnknownBlock = new BlockModifier('UNKNOWN', ModifierFlags.Normal);
@@ -31,9 +31,7 @@ export class Parser {
     }
 
     parse() {
-        const start = performance.now();
         this.DOCUMENT();
-        // console.info('parse time:', performance.now() - start);
         return this.emit.tree;
     }
 
@@ -42,11 +40,13 @@ export class Parser {
             || this.scanner.accept('\n')) {}
     }
 
-    private PERHAPS_ONE_NEWLINE(): boolean {
-        while (this.scanner.acceptWhitespaceChar() !== null) {}
-        return this.scanner.accept('\n');
+    private SHOULD_BE_A_NEWLINE() {
+        while (this.scanner.acceptWhitespaceChar() !== null) { }
+        if (!this.scanner.accept('\n')) this.emit.message(
+            new ContentShouldBeOnNewlineMessage(this.scanner.position()));
     }
 
+    // TODO: this is awkward and doesn't emit messages in the most appropriate way
     private WARN_IF_MORE_NEWLINES_THAN(n: number) {
         let nlines = 0;
         const start = this.scanner.position();
@@ -96,22 +96,29 @@ export class Parser {
                 new UnknownModifierMessage(startPos, this.scanner.position()));
         } else mod = result[1];
 
-        // accepted name
         // TODO: arguments
+        const endsign = this.scanner.accept(MODIFIER_END_SIGN);
+        const flagMarker = has(mod.flags, ModifierFlags.Marker);
+        if (flagMarker && !endsign) this.emit.message(
+            new ExpectedMessage(this.scanner.position(), MODIFIER_END_SIGN));
+        const isMarker = flagMarker || endsign;
+        
         if (!this.scanner.accept(MODIFIER_BLOCK_CLOSE))
             this.emit.message(new ExpectedMessage(
                 this.scanner.position(), MODIFIER_BLOCK_CLOSE));
-        if (has(mod.flags, ModifierFlags.Marker)) {
+        if (isMarker) {
             let node = this.emit.newNode('block');
             node.attributes.set('type', mod.name);
         } else {
             this.WARN_IF_MORE_NEWLINES_THAN(1);
             let node = this.emit.startNode('block');
             node.attributes.set('type', mod.name);
-            if (has(mod.flags, ModifierFlags.Preformatted))
-                this.PRE_PARAGRAPH();
-            else
-                this.BLOCK();
+            if (!this.scanner.isEOF()) {
+                if (has(mod.flags, ModifierFlags.Preformatted))
+                    this.PRE_PARAGRAPH();
+                else
+                    this.BLOCK();
+            }
             this.emit.endNode('block');
         }
     }
@@ -120,7 +127,9 @@ export class Parser {
     private PRE_PARAGRAPH() {
         assert(!this.scanner.isEOF());
         const grouped = this.scanner.accept(GROUP_BEGIN);
-        if (grouped) this.PERHAPS_ONE_NEWLINE();
+        if (grouped) {
+            this.SHOULD_BE_A_NEWLINE();
+        }
 
         this.emit.startNode('pre');
         while (!this.scanner.isEOF()) {
@@ -150,7 +159,8 @@ export class Parser {
         assert(!this.scanner.isEOF());
         if (this.scanner.accept(GROUP_BEGIN)) {
             this.groupDepth++;
-            this.WARN_IF_MORE_NEWLINES_THAN(2);
+            this.SHOULD_BE_A_NEWLINE();
+            this.WARN_IF_MORE_NEWLINES_THAN(1);
             while (!this.scanner.isEOF()) {
                 if (this.scanner.accept(GROUP_END)) {
                     this.groupDepth--;
@@ -174,6 +184,7 @@ export class Parser {
         this.emit.endNode('paragraph');
     }
 
+    // returns false if breaking out of paragraph
     private INLINE_ENTITY(): boolean {
         assert(!this.scanner.isEOF());
         if (this.scanner.peek(MODIFIER_BLOCK_OPEN)) {
@@ -200,6 +211,7 @@ export class Parser {
         return this.PREFORMATTED_INLINE_ENTITY();
     }
 
+    // returns false if breaking out of paragraph
     private PREFORMATTED_INLINE_ENTITY(): boolean {
         assert(!this.scanner.isEOF());
         if (this.scanner.accept('\n')) {
@@ -221,6 +233,7 @@ export class Parser {
         return true;
     }
 
+    // returns false if breaking out of paragraph
     private MODIFIER_INLINE(): boolean {
         assert(this.scanner.accept(MODIFIER_INLINE_OPEN));
         const result = this.inlineTags.find(([name, _]) => this.scanner.accept(name));
@@ -236,17 +249,17 @@ export class Parser {
                     break;
                 }
                 if (this.scanner.peek(MODIFIER_INLINE_CLOSE)
-                 || this.scanner.peek(MODIFIER_INLINE_END_SIGN)) break;
+                 || this.scanner.peek(MODIFIER_END_SIGN)) break;
                 this.scanner.acceptChar();
             }
             this.emit.message(
                 new UnknownModifierMessage(startPos, this.scanner.position()));
         } else mod = result[1];
 
-        const endsign = this.scanner.accept(MODIFIER_INLINE_END_SIGN);
+        const endsign = this.scanner.accept(MODIFIER_END_SIGN);
         const flagMarker = has(mod.flags, ModifierFlags.Marker);
         if (flagMarker && !endsign) this.emit.message(
-            new ExpectedMessage(this.scanner.position(), MODIFIER_INLINE_END_SIGN));
+            new ExpectedMessage(this.scanner.position(), MODIFIER_END_SIGN));
             const isMarker = flagMarker || endsign;
         
         if (!this.scanner.accept(MODIFIER_INLINE_CLOSE))

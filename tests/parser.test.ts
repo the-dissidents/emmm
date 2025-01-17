@@ -6,7 +6,8 @@ import { MessageSeverity, CustomConfiguration, BlockModifier, InlineModifier, Mo
 const TestConfig = new CustomConfiguration();
 TestConfig.addBlock(
     new BlockModifier('normal', ModifierFlags.Normal),
-    new BlockModifier('pre', ModifierFlags.Preformatted)
+    new BlockModifier('pre', ModifierFlags.Preformatted),
+    new BlockModifier('marker', ModifierFlags.Marker)
 );
 TestConfig.addInline(
     new InlineModifier('normal', ModifierFlags.Normal),
@@ -19,7 +20,7 @@ function parse(src: string) {
     return p.parse();
 }
 
-describe('parser', () => {
+describe('basic syntax', () => {
     test('empty source', () => {
         const doc = parse(``);
         expect.soft(doc.messages).toHaveLength(0);
@@ -126,33 +127,60 @@ describe('parser', () => {
     test('preformatted groups', () => {
         let doc = parse(`[.pre]:--\n\n\n--:`);
         expect.soft(doc.messages).toHaveLength(0);
-        expect.soft(doc.root.content).toMatchObject([
-            {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'pre']]),
-                content: [
-                    { name: 'pre', content: ['\n'] }
-                ]
-            }
-        ]);
+        expect.soft(doc.root.content).toMatchObject([ {
+            name: 'block',
+            attributes: new Map<string, string>([['type', 'pre']]),
+            content: [{ name: 'pre', content: ['\n'] }]
+        } ]);
         doc = parse(`[.pre]:--\nabc\n\ndef\n--:`);
         expect.soft(doc.messages).toHaveLength(0);
-        expect.soft(doc.root.content).toMatchObject([
-            {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'pre']]),
-                content: [
-                    { name: 'pre', content: ['abc\n\ndef'] }
-                ]
-            }
-        ]);
+        expect.soft(doc.root.content).toMatchObject([ {
+            name: 'block',
+            attributes: new Map<string, string>([['type', 'pre']]),
+            content: [{ name: 'pre', content: ['abc\n\ndef'] }]
+        } ]);
         doc = parse(`   [.pre]   \n   :--\n   abc\n--:`);
+        expect.soft(doc.messages).toHaveLength(0);
+        expect.soft(doc.root.content).toMatchObject([ {
+            name: 'block',
+            attributes: new Map<string, string>([['type', 'pre']]),
+            content: [{ name: 'pre', content: ['   abc'] }]
+        } ]);
+    });
+    test('empty block modifier', () => {
+        let doc = parse(`[.normal;]abc`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
                 name: 'block',
-                attributes: new Map<string, string>([['type', 'pre']]),
-                content: [{ name: 'pre', content: ['   abc'] }]
+                attributes: new Map<string, string>([['type', 'normal']]),
+                content: []
+            },
+            { name: 'paragraph', content: ['abc'] }
+        ]);
+        doc = parse(`[.marker]abc`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Error, code: 1 }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([
+            {
+                name: 'block',
+                attributes: new Map<string, string>([['type', 'marker']]),
+                content: []
+            },
+            { name: 'paragraph', content: ['abc'] }
+        ]);
+        doc = parse(`[.normal][.pre]`);
+        expect.soft(doc.messages).toHaveLength(0);
+        expect.soft(doc.root.content).toMatchObject([
+            {
+                name: 'block',
+                attributes: new Map<string, string>([['type', 'normal']]),
+                content: [ {
+                    name: 'block',
+                    attributes: new Map<string, string>([['type', 'pre']]),
+                    content: []
+                } ]
             }
         ]);
     });
@@ -299,7 +327,32 @@ describe('parser', () => {
             } ]
         } ]);
     });
-    test('extra newlines', () => {
+    test('unknown modifiers', () => {
+        let doc = parse(`[.invalid]aaa[/invalid]bbb[;]ccc`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Error, code: 2 },
+            { severity: MessageSeverity.Error, code: 2 }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([
+            {
+                name: 'block',
+                attributes: new Map<string, string>([['type', 'UNKNOWN']]),
+                content: [ { 
+                    name: 'paragraph', 
+                    content: [
+                        'aaa',
+                        {
+                            name: 'inline',
+                            attributes: new Map<string, string>([['type', 'UNKNOWN']]),
+                            content: ['bbb']
+                        },
+                        'ccc'
+                    ]
+                } ]
+            }
+        ]);
+    });
+    test('warnings - extra newlines', () => {
         let doc = parse(`aaa\nbbb\n\n\nccc\n\nddd`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 1 }
@@ -332,28 +385,39 @@ describe('parser', () => {
             }
         ]);
     });
-    test('unknown modifiers', () => {
-        let doc = parse(`[.invalid]aaa[/invalid]bbb[;]ccc`);
+    test('warnings - should be newlines', () => {
+        let doc = parse(`:--abc\n--:`);
         expect.soft(doc.messages).toMatchObject([
-            { severity: MessageSeverity.Error, code: 2 },
-            { severity: MessageSeverity.Error, code: 2 }
+            { severity: MessageSeverity.Warning, code: 3 }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([
+            { name: 'paragraph', content: ['abc'] },
+        ]);
+        doc = parse(`[.pre]:--abc\n--:`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Warning, code: 3 }
         ]);
         expect.soft(doc.root.content).toMatchObject([
             {
                 name: 'block',
-                attributes: new Map<string, string>([['type', 'UNKNOWN']]),
-                content: [ { 
-                    name: 'paragraph', 
-                    content: [
-                        'aaa',
-                        {
-                            name: 'inline',
-                            attributes: new Map<string, string>([['type', 'UNKNOWN']]),
-                            content: ['bbb']
-                        },
-                        'ccc'
-                    ]
-                } ]
+                attributes: new Map<string, string>([['type', 'pre']]),
+                content: [{ name: 'pre', content: ['abc'] }]
+            },
+        ]);
+        doc = parse(`[.normal]abc[.normal]def`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Warning, code: 2 }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([
+            {
+                name: 'block',
+                attributes: new Map<string, string>([['type', 'normal']]),
+                content: [{ name: 'paragraph', content: ['abc'] }]
+            },
+            {
+                name: 'block',
+                attributes: new Map<string, string>([['type', 'normal']]),
+                content: [{ name: 'paragraph', content: ['def'] }]
             }
         ]);
     });
