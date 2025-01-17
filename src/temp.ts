@@ -19,21 +19,23 @@ function debugDump(doc: Document, source: string): string {
     }
 
     function dumpNode(node: Node, prefix = '') {
-        let attrs = [...node.attributes.entries()].map(([a, b]) => `${a}=${b}`).join(', ');
-        if (attrs.length > 0) attrs = ' ' + attrs;
-        let result = `<${node.name}@${pos2lc(node.start)}${attrs}`;
-        if (node.content.length > 0) {
-            result += '>'
-            for (const x of node.content) {
-                if (typeof x == 'string') {
-                    result += `\n${prefix}  ${x}`;
-                } else {
-                    result += `\n${prefix}  ${dumpNode(x, prefix + '  ')}`;
-                }
-            }
-            result += `\n${prefix}</${node.name}@${pos2lc(node.end)}>`;
-        } else {
-            result += '/>';
+        let result = `<${node.type}@${node.start}`;
+        switch (node.type) {
+        case "root":
+        case "paragraph":
+            result += '>' + node.content.map((x) => `\n${prefix}  ` + dumpNode(x, prefix + '  ')).join('') + `\n${prefix}</${node.type}@${node.end}>`;
+            break;
+        case "escaped":
+        case "pre":
+            result += `>\n${prefix}  ${node.content}\n${prefix}</${node.type}@${node.end}>`;
+            break;
+        case "inline":
+        case "block":
+            // TODO: args
+            result += ` id=${node.id}>` + node.content.map((x) => `\n${prefix}  ` + dumpNode(x, prefix + '  ')).join('') + `\n${prefix}</${node.type}@${node.end}>`;
+            break;
+        case "text":
+            return node.content;
         }
         return result;
     }
@@ -44,8 +46,9 @@ function debugDump(doc: Document, source: string): string {
 }
 
 let text2 = `[.quote]
-
 aaa`;
 
+let t0 = performance.now()
 let doc = new Parser(new SimpleScanner(text2), DefaultConfiguration).parse();
+console.log(performance.now() - t0);
 console.log(debugDump(doc, text2))

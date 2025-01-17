@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { SimpleScanner } from "../src/front";
 import { Parser } from "../src/parser";
-import { MessageSeverity, CustomConfiguration, BlockModifier, InlineModifier, ModifierFlags } from "../src/interface";
+import { MessageSeverity, CustomConfiguration, BlockModifier, InlineModifier, ModifierFlags, BlockEntity } from "../src/interface";
 
 const TestConfig = new CustomConfiguration();
 TestConfig.addBlock(
@@ -30,9 +30,9 @@ describe('basic syntax', () => {
         const doc = parse(`aaa\nbbb\n\nccc\n\nddd`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
-            { name: 'paragraph', content: ['aaa\nbbb'] },
-            { name: 'paragraph', content: ['ccc'] },
-            { name: 'paragraph', content: ['ddd'] }
+            { type: 'paragraph', content: [{ type: 'text', content: 'aaa\nbbb' }] },
+            { type: 'paragraph', content: [{ type: 'text', content: 'ccc' }] },
+            { type: 'paragraph', content: [{ type: 'text', content: 'ddd' }] }
         ]);
     });
     test('normal block modifier', () => {
@@ -40,58 +40,53 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'normal']]),
-                content: [{ name: 'paragraph', content: ['abc'] }]
+                type: 'block', id: 'normal',
+                content: [{ type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }]
             }
         ]);
         doc = parse(`   [.normal]   \n   abc\n   def`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'normal']]),
-                content: [{ name: 'paragraph', content: ['abc\ndef'] }]
+                type: 'block', id: 'normal',
+                content: [{ type: 'paragraph', content: [{ type: 'text', content: 'abc\ndef' }] }]
             }
         ]);
         doc = parse(`[.normal]\nabc\n\ndef`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'normal']]),
-                content: [{ name: 'paragraph', content: ['abc'] }]
+                type: 'block', id: 'normal',
+                content: [{ type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }]
             },
-            { name: 'paragraph', content: ['def'] }
+            { type: 'paragraph', content: [{ type: 'text', content: 'def' }] }
         ]);
     });
     test('normal groups', () => {
         let doc = parse(`:--\nabc\n\ndef\n--:`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
-            { name: 'paragraph', content: ['abc'] },
-            { name: 'paragraph', content: ['def'] }
+            { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] },
+            { type: 'paragraph', content: [{ type: 'text', content: 'def' }] }
         ]);
         doc = parse(`[.normal]:--\nabc\n\ndef\n--:`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'normal']]),
+                type: 'block', id: 'normal',
                 content: [
-                    { name: 'paragraph', content: ['abc'] },
-                    { name: 'paragraph', content: ['def'] }
+                    { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] },
+                    { type: 'paragraph', content: [{ type: 'text', content: 'def' }] }
                 ]
-            }
+            },
         ]);
         doc = parse(`   [.normal]   \n   :--\nabc\n--:`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'normal']]),
-                content: [{ name: 'paragraph', content: ['abc'] }]
-            }
+                type: 'block', id: 'normal',
+                content: [{ type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }]
+            },
         ]);
     });
     test('preformatted block modifier', () => {
@@ -99,64 +94,63 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'pre']]),
-                content: [{ name: 'pre', content: ['abc'] }]
-            }
+                type: 'block', id: 'pre',
+                content: [{ type: 'pre', content: {text: 'abc'} }]
+            },
         ]);
         doc = parse(`   [.pre]   \n   abc\n   def`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'pre']]),
-                content: [{ name: 'pre', content: ['abc\n   def'] }]
-            }
+                type: 'block', id: 'pre',
+                content: [{ type: 'pre', content: {text: 'abc\n   def'} }]
+            },
         ]);
         doc = parse(`[.pre]\nabc\n\ndef`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'pre']]),
-                content: [{ name: 'pre', content: ['abc'] }]
+                type: 'block', id: 'pre',
+                content: [{ type: 'pre', content: {text: 'abc'} }]
             },
-            { name: 'paragraph', content: ['def'] }
+            { type: 'paragraph', content: [{ type: 'text', content: 'def' }] }
         ]);
     });
     test('preformatted groups', () => {
         let doc = parse(`[.pre]:--\n\n\n--:`);
         expect.soft(doc.messages).toHaveLength(0);
-        expect.soft(doc.root.content).toMatchObject([ {
-            name: 'block',
-            attributes: new Map<string, string>([['type', 'pre']]),
-            content: [{ name: 'pre', content: ['\n'] }]
-        } ]);
+        expect.soft(doc.root.content).toMatchObject([ 
+            {
+                type: 'block', id: 'pre',
+                content: [{ type: 'pre', content: {text: '\n'} }]
+            }
+        ]);
         doc = parse(`[.pre]:--\nabc\n\ndef\n--:`);
         expect.soft(doc.messages).toHaveLength(0);
-        expect.soft(doc.root.content).toMatchObject([ {
-            name: 'block',
-            attributes: new Map<string, string>([['type', 'pre']]),
-            content: [{ name: 'pre', content: ['abc\n\ndef'] }]
-        } ]);
+        expect.soft(doc.root.content).toMatchObject([ 
+            {
+                type: 'block', id: 'pre',
+                content: [{ type: 'pre', content: {text: 'abc\n\ndef'} }]
+            }
+        ]);
         doc = parse(`   [.pre]   \n   :--\n   abc\n--:`);
         expect.soft(doc.messages).toHaveLength(0);
-        expect.soft(doc.root.content).toMatchObject([ {
-            name: 'block',
-            attributes: new Map<string, string>([['type', 'pre']]),
-            content: [{ name: 'pre', content: ['   abc'] }]
-        } ]);
+        expect.soft(doc.root.content).toMatchObject([ 
+            {
+                type: 'block', id: 'pre',
+                content: [{ type: 'pre', content: {text: '   abc'} }]
+            }
+        ]);
     });
     test('empty block modifier', () => {
         let doc = parse(`[.normal;]abc`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'normal']]),
+                type: 'block', id: 'normal',
                 content: []
             },
-            { name: 'paragraph', content: ['abc'] }
+            { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] },
         ]);
         doc = parse(`[.marker]abc`);
         expect.soft(doc.messages).toMatchObject([
@@ -164,21 +158,18 @@ describe('basic syntax', () => {
         ]);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'marker']]),
+                type: 'block', id: 'marker',
                 content: []
             },
-            { name: 'paragraph', content: ['abc'] }
+            { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] },
         ]);
         doc = parse(`[.normal][.pre]`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'normal']]),
+                type: 'block', id: 'normal',
                 content: [ {
-                    name: 'block',
-                    attributes: new Map<string, string>([['type', 'pre']]),
+                    type: 'block', id: 'pre',
                     content: []
                 } ]
             }
@@ -188,33 +179,29 @@ describe('basic syntax', () => {
         let doc = parse(`[.normal][.normal][.pre]abc`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ {
-            name: 'block',
-            attributes: new Map<string, string>([['type', 'normal']]),
+            type: 'block', id: 'normal',
             content: [ {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'normal']]),
+                type: 'block', id: 'normal',
                 content: [ {
-                    name: 'block',
-                    attributes: new Map<string, string>([['type', 'pre']]),
-                    content: [{ name: 'pre', content: ['abc'] }]
+                    type: 'block', id: 'pre',
+                    content: [{ type: 'pre', content: {text: 'abc'} }]
                 } ]
             } ]
         } ]);
         doc = parse(`[.normal][.normal]abc\n[.pre]def`);
         const obj1 = [
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'normal']]),
+                type: 'block', id: 'normal',
                 content: [ {
-                    name: 'block',
-                    attributes: new Map<string, string>([['type', 'normal']]),
-                    content: [ { name: 'paragraph', content: ['abc'] } ]
+                    type: 'block', id: 'normal',
+                    content: [
+                        { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }
+                    ]
                 } ]
             },
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'pre']]),
-                content: [ { name: 'pre', content: ['def'] } ]
+                type: 'block', id: 'pre',
+                content: [{ type: 'pre', content: {text: 'def'} }]
             }
         ];
         expect.soft(doc.messages).toHaveLength(0);
@@ -229,26 +216,23 @@ describe('basic syntax', () => {
         let doc = parse(`[/normal] abc [;]`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ {
-            name: 'paragraph',
+            type: 'paragraph',
             content: [ {
-                name: 'inline',
-                attributes: new Map<string, string>([['type', 'normal']]),
-                content: [' abc ']
+                type: 'inline', id: 'normal',
+                content: [{type: 'text', content: ' abc '}]
             } ]
         } ]);
         doc = parse(`[/normal]abc[/normal]def[;][;]`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ {
-            name: 'paragraph',
+            type: 'paragraph',
             content: [ {
-                name: 'inline',
-                attributes: new Map<string, string>([['type', 'normal']]),
+                type: 'inline', id: 'normal',
                 content: [
-                    'abc',
+                    {type: 'text', content: 'abc'},
                     {
-                        name: 'inline',
-                        attributes: new Map<string, string>([['type', 'normal']]),
-                        content: ['def']
+                        type: 'inline', id: 'normal',
+                        content: [{type: 'text', content: 'def'}]
                     }
                 ]
             } ]
@@ -258,36 +242,32 @@ describe('basic syntax', () => {
         let doc = parse(`[/pre] abc [;]`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ {
-            name: 'paragraph',
+            type: 'paragraph',
             content: [ {
-                name: 'inline',
-                attributes: new Map<string, string>([['type', 'pre']]),
-                content: [' abc ']
+                type: 'inline', id: 'pre',
+                content: [{type: 'text', content: ' abc '}]
             } ]
         } ]);
         doc = parse(`[/pre][/normal;]ha[;]`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ {
-            name: 'paragraph',
+            type: 'paragraph',
             content: [ {
-                name: 'inline',
-                attributes: new Map<string, string>([['type', 'pre']]),
-                content: ['[/normal;]ha']
+                type: 'inline', id: 'pre',
+                content: [{type: 'text', content: '[/normal;]ha'}]
             } ]
         } ]);
         doc = parse(`[/normal]abc[/pre][/normal;]ha[;][;]`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ {
-            name: 'paragraph',
+            type: 'paragraph',
             content: [ {
-                name: 'inline',
-                attributes: new Map<string, string>([['type', 'normal']]),
+                type: 'inline', id: 'normal',
                 content: [
-                    'abc',
+                    {type: 'text', content: 'abc'},
                     {
-                        name: 'inline',
-                        attributes: new Map<string, string>([['type', 'pre']]),
-                        content: ['[/normal;]ha']
+                        type: 'inline', id: 'pre',
+                        content: [{type: 'text', content: '[/normal;]ha'}]
                     }
                 ]
             } ]
@@ -297,19 +277,16 @@ describe('basic syntax', () => {
         let doc = parse(`[/normal;][/pre;][/marker;]`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ {
-            name: 'paragraph',
+            type: 'paragraph',
             content: [ 
                 {
-                    name: 'inline',
-                    attributes: new Map<string, string>([['type', 'normal']]),
+                    type: 'inline', id: 'normal',
                     content: []
                 },{
-                    name: 'inline',
-                    attributes: new Map<string, string>([['type', 'pre']]),
+                    type: 'inline', id: 'pre',
                     content: []
                 },{
-                    name: 'inline',
-                    attributes: new Map<string, string>([['type', 'marker']]),
+                    type: 'inline', id: 'marker',
                     content: []
                 }
             ]
@@ -319,10 +296,9 @@ describe('basic syntax', () => {
             { severity: MessageSeverity.Error, code: 1 }
         ]);
         expect.soft(doc.root.content).toMatchObject([ {
-            name: 'paragraph',
+            type: 'paragraph',
             content: [ {
-                name: 'inline',
-                attributes: new Map<string, string>([['type', 'marker']]),
+                type: 'inline', id: 'marker',
                 content: []
             } ]
         } ]);
@@ -335,18 +311,16 @@ describe('basic syntax', () => {
         ]);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'UNKNOWN']]),
+                type: 'block', id: 'UNKNOWN',
                 content: [ { 
-                    name: 'paragraph', 
+                    type: 'paragraph', 
                     content: [
-                        'aaa',
+                        {type: 'text', content: 'aaa'},
                         {
-                            name: 'inline',
-                            attributes: new Map<string, string>([['type', 'UNKNOWN']]),
-                            content: ['bbb']
+                            type: 'inline', id: 'UNKNOWN',
+                            content: [{type: 'text', content: 'bbb'}]
                         },
-                        'ccc'
+                        {type: 'text', content: 'ccc'},
                     ]
                 } ]
             }
@@ -358,9 +332,9 @@ describe('basic syntax', () => {
             { severity: MessageSeverity.Warning, code: 1 }
         ]);
         expect.soft(doc.root.content).toMatchObject([
-            { name: 'paragraph', content: ['aaa\nbbb'] },
-            { name: 'paragraph', content: ['ccc'] },
-            { name: 'paragraph', content: ['ddd'] }
+            { type: 'paragraph', content: [{ type: 'text', content: 'aaa\nbbb' }] },
+            { type: 'paragraph', content: [{ type: 'text', content: 'ccc' }] },
+            { type: 'paragraph', content: [{ type: 'text', content: 'ddd' }] }
         ]);
         doc = parse(`[.normal]\n\nabc`);
         expect.soft(doc.messages).toMatchObject([
@@ -368,9 +342,8 @@ describe('basic syntax', () => {
         ]);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'normal']]),
-                content: [{ name: 'paragraph', content: ['abc'] }]
+                type: 'block', id: 'normal',
+                content: [{ type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }]
             }
         ]);
         doc = parse(`[.pre]\n\nabc`);
@@ -379,9 +352,8 @@ describe('basic syntax', () => {
         ]);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'pre']]),
-                content: [{ name: 'pre', content: ['abc'] }]
+                type: 'block', id: 'pre',
+                content: [{ type: 'pre', content: {text: 'abc'} }]
             }
         ]);
     });
@@ -391,7 +363,7 @@ describe('basic syntax', () => {
             { severity: MessageSeverity.Warning, code: 3 }
         ]);
         expect.soft(doc.root.content).toMatchObject([
-            { name: 'paragraph', content: ['abc'] },
+            { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }
         ]);
         doc = parse(`[.pre]:--abc\n--:`);
         expect.soft(doc.messages).toMatchObject([
@@ -399,9 +371,8 @@ describe('basic syntax', () => {
         ]);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'pre']]),
-                content: [{ name: 'pre', content: ['abc'] }]
+                type: 'block', id: 'pre',
+                content: [{ type: 'pre', content: {text: 'abc'} }]
             },
         ]);
         doc = parse(`[.normal]abc[.normal]def`);
@@ -410,14 +381,12 @@ describe('basic syntax', () => {
         ]);
         expect.soft(doc.root.content).toMatchObject([
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'normal']]),
-                content: [{ name: 'paragraph', content: ['abc'] }]
+                type: 'block', id: 'normal',
+                content: [{ type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }]
             },
             {
-                name: 'block',
-                attributes: new Map<string, string>([['type', 'normal']]),
-                content: [{ name: 'paragraph', content: ['def'] }]
+                type: 'block', id: 'normal',
+                content: [{ type: 'paragraph', content: [{ type: 'text', content: 'def' }] }]
             }
         ]);
     });

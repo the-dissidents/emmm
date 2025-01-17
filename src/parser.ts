@@ -1,4 +1,4 @@
-import { BlockModifier, Configuration, EmitEnvironment, FixSuggestion, InlineModifier, Message, MessageSeverity, ModifierFlags, Scanner } from "./interface";
+import { BlockModifier, BlockModifierNode, Configuration, EmitEnvironment, EscapedNode, FixSuggestion, InlineModifier, InlineModifierNode, Message, MessageSeverity, ModifierFlags, ParagraphNode, PreNode, Scanner } from "./interface";
 import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
 import { assert, has } from "./util";
 
@@ -81,8 +81,10 @@ export class Parser {
     }
 
     private MODIFIER_BLOCK() {
+        const posStart = this.scanner.position();
         assert(this.scanner.accept(MODIFIER_BLOCK_OPEN));
-        let result = this.blockTags.find(([name, _]) => this.scanner.accept(name));
+
+        const result = this.blockTags.find(([name, _]) => this.scanner.accept(name));
         let mod: BlockModifier;
         if (result === undefined) {
             mod = UnknownBlock;
@@ -96,6 +98,7 @@ export class Parser {
                 new UnknownModifierMessage(startPos, this.scanner.position()));
         } else mod = result[1];
 
+
         // TODO: arguments
         const endsign = this.scanner.accept(MODIFIER_END_SIGN);
         const flagMarker = has(mod.flags, ModifierFlags.Marker);
@@ -106,32 +109,39 @@ export class Parser {
         if (!this.scanner.accept(MODIFIER_BLOCK_CLOSE))
             this.emit.message(new ExpectedMessage(
                 this.scanner.position(), MODIFIER_BLOCK_CLOSE));
-        if (isMarker) {
-            let node = this.emit.newNode('block');
-            node.attributes.set('type', mod.name);
-        } else {
+
+        const node: BlockModifierNode = {
+            type: 'block',
+            id: mod.name,
+            head: {start: posStart, end: this.scanner.position()},
+            arguments: [],
+            start: posStart,
+            end: -1,
+            content: []
+        }
+        this.emit.startBlock(node);
+        if (!isMarker) {
             this.WARN_IF_MORE_NEWLINES_THAN(1);
-            let node = this.emit.startNode('block');
-            node.attributes.set('type', mod.name);
             if (!this.scanner.isEOF()) {
                 if (has(mod.flags, ModifierFlags.Preformatted))
                     this.PRE_PARAGRAPH();
                 else
                     this.BLOCK();
             }
-            this.emit.endNode('block');
         }
+        this.emit.endBlock();
     }
 
     // also handles "grouped" (delimited) pre-paragraphs
     private PRE_PARAGRAPH() {
         assert(!this.scanner.isEOF());
+        const posStart = this.scanner.position();
         const grouped = this.scanner.accept(GROUP_BEGIN);
-        if (grouped) {
-            this.SHOULD_BE_A_NEWLINE();
-        }
+        if (grouped) this.SHOULD_BE_A_NEWLINE();
+        const posContentStart = this.scanner.position();
+        let posContentEnd = this.scanner.position();
 
-        this.emit.startNode('pre');
+        let string = '';
         while (!this.scanner.isEOF()) {
             if (this.scanner.accept('\n')) {
                 let white = "\n";
@@ -147,12 +157,23 @@ export class Parser {
                         this.scanner.position(), GROUP_END));
                     break;
                 }
-                this.emit.addString(white);
+                string += white;
             } else {
-                this.emit.addString(this.scanner.acceptChar());
+                string += this.scanner.acceptChar();
             }
+            posContentEnd = this.scanner.position();
         }
-        this.emit.endNode('pre');
+        const node: PreNode = {
+            type: 'pre', 
+            start: posStart,
+            end: this.scanner.position(),
+            content: {
+                start: posContentStart,
+                end: posContentEnd,
+                text: string
+            }
+        };
+        this.emit.addBlockNode(node);
     }
 
     private MAYBE_GROUPED_PARAGRAPH() {
@@ -179,9 +200,15 @@ export class Parser {
 
     private PARAGRAPH() {
         assert(!this.scanner.isEOF());
-        this.emit.startNode('paragraph');
+        const node: ParagraphNode = {
+            type: 'paragraph',
+            start: this.scanner.position(),
+            end: -1,
+            content: []
+        };
+        this.emit.startInline(node);
         while (!this.scanner.isEOF() && this.INLINE_ENTITY()) {}
-        this.emit.endNode('paragraph');
+        this.emit.endInline();
     }
 
     // returns false if breaking out of paragraph
@@ -198,14 +225,19 @@ export class Parser {
             return this.MODIFIER_INLINE();
         }
         // TODO: don't know if this is enough
+
         if (this.scanner.accept('\\')) {
             if (this.scanner.isEOF()) {
                 this.emit.addString('\\');
                 return true;
             }
-            let node = this.emit.newNode('escaped');
-            node.content = [this.scanner.acceptChar()];
-            node.end = node.start + 1;
+            const node: EscapedNode = {
+                type: 'escaped',
+                start: this.scanner.position() - 1,
+                content: this.scanner.acceptChar(),
+                end: this.scanner.position()
+            };
+            this.emit.addInlineNode(node);
             return true;
         }
         return this.PREFORMATTED_INLINE_ENTITY();
@@ -235,7 +267,9 @@ export class Parser {
 
     // returns false if breaking out of paragraph
     private MODIFIER_INLINE(): boolean {
+        const posStart = this.scanner.position();
         assert(this.scanner.accept(MODIFIER_INLINE_OPEN));
+
         const result = this.inlineTags.find(([name, _]) => this.scanner.accept(name));
         let mod: InlineModifier;
         if (result === undefined) {
@@ -266,26 +300,31 @@ export class Parser {
             this.emit.message(new ExpectedMessage(
                 this.scanner.position(), MODIFIER_INLINE_CLOSE));
 
-        if (isMarker) {
-            const node = this.emit.newNode('inline');
-            node.attributes.set('type', mod.name);
-            return true;
+        const node: InlineModifierNode = {
+            type: 'inline',
+            id: mod.name,
+            head: {start: posStart, end: this.scanner.position()},
+            arguments: [],
+            start: posStart,
+            end: -1,
+            content: []
         }
-        const node = this.emit.startNode('inline');
-        node.attributes.set('type', mod.name);
-        const entity = has(mod.flags, ModifierFlags.Preformatted)
-            ? this.PREFORMATTED_INLINE_ENTITY.bind(this)
-            : this.INLINE_ENTITY.bind(this);
+        this.emit.startInline(node);
         let ok = true;
-        while (true) {
-            if (this.scanner.accept(MODIFIER_INLINE_END_TAG)) break;
-            if (this.scanner.isEOF() || !(ok = entity())) {
-                this.emit.message(new UnclosedInlineModifierMessage(
-                    this.scanner.position(), mod.name));
-                break;
+        if (!isMarker) {
+            const entity = has(mod.flags, ModifierFlags.Preformatted)
+                ? this.PREFORMATTED_INLINE_ENTITY.bind(this)
+                : this.INLINE_ENTITY.bind(this);
+            while (true) {
+                if (this.scanner.accept(MODIFIER_INLINE_END_TAG)) break;
+                if (this.scanner.isEOF() || !(ok = entity())) {
+                    this.emit.message(new UnclosedInlineModifierMessage(
+                        this.scanner.position(), mod.name));
+                    break;
+                }
             }
         }
-        this.emit.endNode('inline');
+        this.emit.endInline();
         return ok;
     }
 }

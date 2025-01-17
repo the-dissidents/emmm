@@ -1,4 +1,7 @@
 // The scanner of any implementation should be capable of handling UTF-8 
+
+import { assert } from "./util"
+
 // strings at least as well as Typescript.
 export interface Scanner {
     position(): number,
@@ -42,23 +45,75 @@ export type Message = {
     readonly fixes: readonly FixSuggestion[]
 }
 
-export class Node {
-    public attributes = new Map<string, string>();
-    public content: (Node | string)[] = [];
-    public end: number = -1;
-    constructor(public name: string, public start: number) {}
+export type NodeBase = {
+    start: number,
+    end: number
+};
+
+export type ParagraphNode = NodeBase & {
+    type: 'paragraph',
+    content: InlineEntity[]
+};
+
+export type PreNode = NodeBase & {
+    type: 'pre',
+    content: NodeBase & {text: string}
+};
+
+export type ModifierArgument = NodeBase & {
+    name: string | undefined,
+    content: string // TODO: arg nodes
 }
+
+export type BlockModifierNode = NodeBase & {
+    type: 'block',
+    id: string,
+    head: NodeBase,
+    arguments: ModifierArgument[],
+    content: BlockEntity[]
+};
+
+export type TextNode = NodeBase & {
+    type: 'text',
+    content: string
+};
+
+export type EscapedNode = NodeBase & {
+    type: 'escaped',
+    content: string
+}
+
+export type InlineModifierNode = NodeBase & {
+    type: 'inline',
+    id: string,
+    head: NodeBase,
+    arguments: ModifierArgument[],
+    content: InlineEntity[]
+};
+
+export type RootNode = NodeBase & {
+    type: 'root'
+    content: BlockEntity[]
+}
+
+export type BlockEntity = ParagraphNode | PreNode | BlockModifierNode;
+export type InlineEntity = TextNode | EscapedNode | InlineModifierNode;
+export type Node = BlockEntity | InlineEntity | RootNode;
 
 export class Document {
     constructor(
-        public root: Node, 
+        public root: RootNode, 
         public messages: Message[]) {};
 }
 
+type NodeWithBlockContent = RootNode | BlockModifierNode;
+type NodeWithInlineContent = InlineModifierNode | ParagraphNode;
+
 export class EmitEnvironment {
-    private document = new Node('document', 0);
+    private document: RootNode = {type: 'root', start: 0, end: -1, content: []};
     private messages: Message[] = [];
-    private stack: Node[] = [this.document];
+    private blockStack: NodeWithBlockContent[] = [this.document];
+    private inlineStack: NodeWithInlineContent[] = [];
     constructor(private scanner: Scanner) {}
 
     get tree(): Document {
@@ -69,38 +124,54 @@ export class EmitEnvironment {
         this.messages.push(m);
     }
 
-    addNode(n: Node): Node {
-        this.stack.at(-1)!.content.push(n);
+    addBlockNode(n: BlockEntity) {
+        assert(this.blockStack.length > 0);
+        this.blockStack.at(-1)!.content.push(n);
+        return n;
+    }
+
+    addInlineNode(n: InlineEntity) {
+        assert(this.inlineStack.length > 0);
+        this.inlineStack.at(-1)!.content.push(n);
         return n;
     }
 
     addString(str: string) {
-        let content = this.stack.at(-1)!.content;
-        if (typeof(content.at(-1)) == 'string') {
-            content[content.length-1] += str;
-        } else {
-            content.push(str);
-        }
+        assert(this.inlineStack.length > 0);
+        const content = this.inlineStack.at(-1)!.content;
+        const last = content.at(-1);
+        if (last?.type == 'text') {
+            last.content += str;
+            last.end = this.scanner.position();
+        } else content.push({
+            type: 'text',
+            start: this.scanner.position() - str.length,
+            end: this.scanner.position(),
+            content: str
+        });
     }
 
-    newNode(name: string): Node {
-        let node = new Node(name, this.scanner.position());
-        this.addNode(node);
-        return node;
+    startBlock(block: BlockModifierNode) {
+        this.addBlockNode(block);
+        this.blockStack.push(block);
     }
 
-    startNode(name: string): Node {
-        let node = this.newNode(name);
-        this.stack.push(node);
-        return node;
-    }
-
-    endNode(name: string): Node {
-        let node = this.stack.at(-1)!;
-        if (node.name != name)
-            throw new Error(`name mismatch: got ${name}, expecting ${node.name}`);
+    endBlock() {
+        assert(this.blockStack.length >= 2);
+        const node = this.blockStack.pop()!;
         node.end = this.scanner.position();
-        return this.stack.pop()!;
+    }
+
+    startInline(n: InlineModifierNode | ParagraphNode) {
+        if (n.type == 'paragraph') this.addBlockNode(n);
+        else this.addInlineNode(n);
+        this.inlineStack.push(n);
+    }
+
+    endInline() {
+        assert(this.inlineStack.length > 0);
+        const node = this.inlineStack.pop()!;
+        node.end = this.scanner.position();
     }
 }
 
