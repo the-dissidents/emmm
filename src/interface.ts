@@ -100,81 +100,6 @@ export type BlockEntity = ParagraphNode | PreNode | BlockModifierNode;
 export type InlineEntity = TextNode | EscapedNode | InlineModifierNode;
 export type Node = BlockEntity | InlineEntity | RootNode;
 
-export class Document {
-    constructor(
-        public root: RootNode, 
-        public messages: Message[]) {};
-}
-
-type NodeWithBlockContent = RootNode | BlockModifierNode;
-type NodeWithInlineContent = InlineModifierNode | ParagraphNode;
-
-export class EmitEnvironment {
-    private document: RootNode = {type: 'root', start: 0, end: -1, content: []};
-    private messages: Message[] = [];
-    private blockStack: NodeWithBlockContent[] = [this.document];
-    private inlineStack: NodeWithInlineContent[] = [];
-    constructor(private scanner: Scanner) {}
-
-    get tree(): Document {
-        return new Document(this.document, this.messages);
-    }
-
-    message(m: Message) {
-        this.messages.push(m);
-    }
-
-    addBlockNode(n: BlockEntity) {
-        assert(this.blockStack.length > 0);
-        this.blockStack.at(-1)!.content.push(n);
-        return n;
-    }
-
-    addInlineNode(n: InlineEntity) {
-        assert(this.inlineStack.length > 0);
-        this.inlineStack.at(-1)!.content.push(n);
-        return n;
-    }
-
-    addString(str: string) {
-        assert(this.inlineStack.length > 0);
-        const content = this.inlineStack.at(-1)!.content;
-        const last = content.at(-1);
-        if (last?.type == 'text') {
-            last.content += str;
-            last.end = this.scanner.position();
-        } else content.push({
-            type: 'text',
-            start: this.scanner.position() - str.length,
-            end: this.scanner.position(),
-            content: str
-        });
-    }
-
-    startBlock(block: BlockModifierNode) {
-        this.addBlockNode(block);
-        this.blockStack.push(block);
-    }
-
-    endBlock() {
-        assert(this.blockStack.length >= 2);
-        const node = this.blockStack.pop()!;
-        node.end = this.scanner.position();
-    }
-
-    startInline(n: InlineModifierNode | ParagraphNode) {
-        if (n.type == 'paragraph') this.addBlockNode(n);
-        else this.addInlineNode(n);
-        this.inlineStack.push(n);
-    }
-
-    endInline() {
-        assert(this.inlineStack.length > 0);
-        const node = this.inlineStack.pop()!;
-        node.end = this.scanner.position();
-    }
-}
-
 export enum ModifierFlags {
     Normal = 0,
     /** Content is preformatted: no escaping, no inner tags */
@@ -183,40 +108,75 @@ export enum ModifierFlags {
     Marker = 2
 }
 
-export class BlockModifier {
+export class BlockModifierDefinition {
     constructor(
         public readonly name: string, 
-        public readonly flags: ModifierFlags = ModifierFlags.Normal) {}
+        public readonly flags: ModifierFlags = ModifierFlags.Normal,
+        args?: Partial<BlockModifierDefinition>) 
+    {
+        if (args) Object.assign(this, args);
+    }
+    
+    public parse?: (node: BlockModifierNode, cxt: ParseContext) => Message[];
+    public expand?: (node: BlockModifierNode, cxt: ParseContext) => BlockEntity[];
 }
 
-export class InlineModifier {
+export class InlineModifierDefinition {
     constructor(
         public readonly name: string, 
-        public readonly flags: ModifierFlags = ModifierFlags.Normal) {}
+        public readonly flags: ModifierFlags = ModifierFlags.Normal,
+        args?: Partial<InlineModifierDefinition>) 
+    {
+        if (args) Object.assign(this, args);
+    }
+    
+    public parse?: (node: InlineModifierNode, cxt: ParseContext) => Message[];
+    public expand?: (node: InlineModifierNode, cxt: ParseContext) => InlineEntity[];
+}
+
+export class ParseContext {
+    constructor(
+        public config: Configuration, 
+        public variables = new Map<string, string>) {}
+
+    public onConfigChange: () => void = () => {};
+    // TODO: handle slots
+}
+
+export class Document {
+    constructor(
+        public root: RootNode,
+        public context: ParseContext,
+        public messages: Message[]) {};
 }
 
 export interface Configuration {
-    blockModifiers: Readonly<Map<string, BlockModifier>>,
-    inlineModifiers: Readonly<Map<string, InlineModifier>>
+    blockModifiers: Map<string, BlockModifierDefinition>,
+    inlineModifiers: Map<string, InlineModifierDefinition>
 
-    // TODO: shorthands
+    // TODO: shorthands, strings
 }
 
-export class CustomConfiguration {
-    private blocks = new Map<string, BlockModifier>;
-    private inlines = new Map<string, InlineModifier>;
+export class CustomConfiguration implements Configuration {
+    private blocks = new Map<string, BlockModifierDefinition>;
+    private inlines = new Map<string, InlineModifierDefinition>;
     
-    constructor() {}
+    constructor(from?: Configuration) {
+        if (from) {
+            this.blocks = new Map(from.blockModifiers);
+            this.inlines = new Map(from.inlineModifiers);
+        }
+    }
 
-    get blockModifiers(): Readonly<Map<string, BlockModifier>> {
+    get blockModifiers(): Map<string, BlockModifierDefinition> {
         return this.blocks;
     }
 
-    get inlineModifiers(): Readonly<Map<string, InlineModifier>> {
+    get inlineModifiers(): Map<string, InlineModifierDefinition> {
         return this.inlines;
     }
 
-    addBlock(...xs: BlockModifier[]) {
+    addBlock(...xs: BlockModifierDefinition[]) {
         for (const x of xs) {
             if (this.blocks.has(x.name))
                 throw Error(`block modifier already exists: ${x.name}`);
@@ -224,7 +184,7 @@ export class CustomConfiguration {
         }
     }
 
-    addInline(...xs: InlineModifier[]) {
+    addInline(...xs: InlineModifierDefinition[]) {
         for (const x of xs) {
             if (this.inlines.has(x.name))
                 throw Error(`block modifier already exists: ${x.name}`);

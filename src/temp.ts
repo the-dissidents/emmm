@@ -31,8 +31,8 @@ function debugDump(doc: Document, source: string): string {
             break;
         case "inline":
         case "block":
-            // TODO: args
-            result += ` id=${node.id}>` + node.content.map((x) => `\n${prefix}  ` + dumpNode(x, prefix + '  ')).join('') + `\n${prefix}</${node.type}@${node.end}>`;
+            const args = node.arguments.map((x, i) => `\n${prefix}    (${i})@${x.start}-${x.end}=${x.content}`).join('')
+            result += ` id=${node.id}${args}>` + node.content.map((x) => `\n${prefix}  ` + dumpNode(x, prefix + '  ')).join('') + `\n${prefix}</${node.type}@${node.end}>`;
             break;
         case "text":
             return node.content;
@@ -45,8 +45,11 @@ function debugDump(doc: Document, source: string): string {
     return `${msgs}\n${root}`;
 }
 
-let text2 = `[.quote]
-aaa`;
+let text2 = String.raw`
+[.var name:foobar]
+[.var version:0.1.0]
+
+Version [/$version], created by [/$name]`;
 
 let t0 = performance.now()
 let doc = new Parser(new SimpleScanner(text2), DefaultConfiguration).parse();

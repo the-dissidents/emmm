@@ -1,18 +1,18 @@
 import { describe, expect, test } from 'vitest'
 import { SimpleScanner } from "../src/front";
 import { Parser } from "../src/parser";
-import { MessageSeverity, CustomConfiguration, BlockModifier, InlineModifier, ModifierFlags, BlockEntity } from "../src/interface";
+import { MessageSeverity, CustomConfiguration, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags, BlockEntity } from "../src/interface";
 
 const TestConfig = new CustomConfiguration();
 TestConfig.addBlock(
-    new BlockModifier('normal', ModifierFlags.Normal),
-    new BlockModifier('pre', ModifierFlags.Preformatted),
-    new BlockModifier('marker', ModifierFlags.Marker)
+    new BlockModifierDefinition('normal', ModifierFlags.Normal),
+    new BlockModifierDefinition('pre', ModifierFlags.Preformatted),
+    new BlockModifierDefinition('marker', ModifierFlags.Marker)
 );
 TestConfig.addInline(
-    new InlineModifier('normal', ModifierFlags.Normal),
-    new InlineModifier('pre', ModifierFlags.Preformatted),
-    new InlineModifier('marker', ModifierFlags.Marker)
+    new InlineModifierDefinition('normal', ModifierFlags.Normal),
+    new InlineModifierDefinition('pre', ModifierFlags.Preformatted),
+    new InlineModifierDefinition('marker', ModifierFlags.Marker)
 );
 
 function parse(src: string) {

@@ -1,4 +1,4 @@
-import { BlockModifier, BlockModifierNode, Configuration, EmitEnvironment, EscapedNode, FixSuggestion, InlineModifier, InlineModifierNode, Message, MessageSeverity, ModifierFlags, ParagraphNode, PreNode, Scanner } from "./interface";
+import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, FixSuggestion, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, MessageSeverity, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PreNode, RootNode, Scanner } from "./interface";
 import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
 import { assert, has } from "./util";
 
@@ -6,33 +6,104 @@ const GROUP_BEGIN = ':--';
 const GROUP_END = '--:';
 
 const MODIFIER_BLOCK_OPEN = '[.';
-const MODIFIER_BLOCK_CLOSE = ']';
+const MODIFIER_CLOSE_SIGN = ']';
 const MODIFIER_END_SIGN = ';';
 
 const MODIFIER_INLINE_OPEN = '[/';
-const MODIFIER_INLINE_CLOSE = ']';
 const MODIFIER_INLINE_END_TAG = '[;]';
 
-const UnknownBlock = new BlockModifier('UNKNOWN', ModifierFlags.Normal);
-const UnknownInline = new InlineModifier('UNKNOWN', ModifierFlags.Normal);
+const UnknownBlock = new BlockModifierDefinition('UNKNOWN', ModifierFlags.Normal);
+const UnknownInline = new InlineModifierDefinition('UNKNOWN', ModifierFlags.Normal);
+
+type NodeWithBlockContent = RootNode | BlockModifierNode;
+type NodeWithInlineContent = InlineModifierNode | ParagraphNode;
+
+class EmitEnvironment {
+    public root: RootNode = {type: 'root', start: 0, end: -1, content: []};
+    public messages: Message[] = [];
+    private blockStack: NodeWithBlockContent[] = [this.root];
+    private inlineStack: NodeWithInlineContent[] = [];
+    constructor(private scanner: Scanner) {}
+
+    message(...m: Message[]) {
+        this.messages.push(...m);
+    }
+
+    addBlockNode(n: BlockEntity) {
+        assert(this.blockStack.length > 0);
+        this.blockStack.at(-1)!.content.push(n);
+        return n;
+    }
+
+    addInlineNode(n: InlineEntity) {
+        assert(this.inlineStack.length > 0);
+        this.inlineStack.at(-1)!.content.push(n);
+        return n;
+    }
+
+    addString(str: string) {
+        assert(this.inlineStack.length > 0);
+        const content = this.inlineStack.at(-1)!.content;
+        const last = content.at(-1);
+        if (last?.type == 'text') {
+            last.content += str;
+            last.end = this.scanner.position();
+        } else content.push({
+            type: 'text',
+            start: this.scanner.position() - str.length,
+            end: this.scanner.position(),
+            content: str
+        });
+    }
+
+    startBlock(block: BlockModifierNode) {
+        this.addBlockNode(block);
+        this.blockStack.push(block);
+    }
+
+    endBlock() {
+        assert(this.blockStack.length >= 2);
+        const node = this.blockStack.pop()!;
+        node.end = this.scanner.position();
+    }
+
+    startInline(n: InlineModifierNode | ParagraphNode) {
+        if (n.type == 'paragraph') this.addBlockNode(n);
+        else this.addInlineNode(n);
+        this.inlineStack.push(n);
+    }
+
+    endInline() {
+        assert(this.inlineStack.length > 0);
+        const node = this.inlineStack.pop()!;
+        node.end = this.scanner.position();
+    }
+}
 
 export class Parser {
     private emit: EmitEnvironment;
+    private cxt: ParseContext;
     private groupDepth = 0;
-    private blockTags: [string, BlockModifier][] = [];
-    private inlineTags: [string, InlineModifier][] = [];
+    private blockTags: [string, BlockModifierDefinition][] = [];
+    private inlineTags: [string, InlineModifierDefinition][] = [];
 
-    constructor(private scanner: Scanner, private config: Configuration) {
+    constructor(private scanner: Scanner, config: Configuration) {
         this.emit = new EmitEnvironment(scanner);
-        this.blockTags = [...config.blockModifiers.entries()]
+        this.cxt = new ParseContext(config);
+        this.cxt.onConfigChange = () => this.#sortModifiers();
+        this.#sortModifiers();
+    }
+
+    #sortModifiers() {
+        this.blockTags = [...this.cxt.config.blockModifiers.entries()]
             .sort(([x, _], [y, __]) => y.length - x.length);
-        this.inlineTags = [...config.inlineModifiers.entries()]
+        this.inlineTags = [...this.cxt.config.inlineModifiers.entries()]
             .sort(([x, _], [y, __]) => y.length - x.length);
     }
 
     parse() {
         this.DOCUMENT();
-        return this.emit.tree;
+        return new Document(this.emit.root, this.cxt, this.emit.messages);
     }
 
     private WHITESPACES_OR_NEWLINES() {
@@ -85,36 +156,35 @@ export class Parser {
         assert(this.scanner.accept(MODIFIER_BLOCK_OPEN));
 
         const result = this.blockTags.find(([name, _]) => this.scanner.accept(name));
-        let mod: BlockModifier;
+        let mod: BlockModifierDefinition;
         if (result === undefined) {
             mod = UnknownBlock;
             const startPos = this.scanner.position();
-            const args = this.scanner.acceptUntil(MODIFIER_BLOCK_CLOSE);
+            const args = this.scanner.acceptUntil(MODIFIER_CLOSE_SIGN);
             if (args === null) {
                 this.emit.message(new ExpectedMessage(
-                    this.scanner.position(), MODIFIER_BLOCK_CLOSE));
+                    this.scanner.position(), MODIFIER_CLOSE_SIGN));
             }
             this.emit.message(
                 new UnknownModifierMessage(startPos, this.scanner.position()));
         } else mod = result[1];
+        const args = this.ARGUMENTS();
 
-
-        // TODO: arguments
         const endsign = this.scanner.accept(MODIFIER_END_SIGN);
         const flagMarker = has(mod.flags, ModifierFlags.Marker);
-        if (flagMarker && !endsign) this.emit.message(
-            new ExpectedMessage(this.scanner.position(), MODIFIER_END_SIGN));
+        // if (flagMarker && !endsign) this.emit.message(
+        //     new ExpectedMessage(this.scanner.position(), MODIFIER_END_SIGN));
         const isMarker = flagMarker || endsign;
         
-        if (!this.scanner.accept(MODIFIER_BLOCK_CLOSE))
+        if (!this.scanner.accept(MODIFIER_CLOSE_SIGN))
             this.emit.message(new ExpectedMessage(
-                this.scanner.position(), MODIFIER_BLOCK_CLOSE));
+                this.scanner.position(), MODIFIER_CLOSE_SIGN));
 
         const node: BlockModifierNode = {
             type: 'block',
             id: mod.name,
             head: {start: posStart, end: this.scanner.position()},
-            arguments: [],
+            arguments: args,
             start: posStart,
             end: -1,
             content: []
@@ -130,6 +200,8 @@ export class Parser {
             }
         }
         this.emit.endBlock();
+        if (mod.parse)
+            this.emit.message(...mod.parse(node, this.cxt));
     }
 
     // also handles "grouped" (delimited) pre-paragraphs
@@ -224,8 +296,8 @@ export class Parser {
             // inline tag
             return this.MODIFIER_INLINE();
         }
-        // TODO: don't know if this is enough
 
+        // TODO: don't know if this is enough
         if (this.scanner.accept('\\')) {
             if (this.scanner.isEOF()) {
                 this.emit.addString('\\');
@@ -271,40 +343,41 @@ export class Parser {
         assert(this.scanner.accept(MODIFIER_INLINE_OPEN));
 
         const result = this.inlineTags.find(([name, _]) => this.scanner.accept(name));
-        let mod: InlineModifier;
+        let mod: InlineModifierDefinition;
         if (result === undefined) {
             mod = UnknownInline;
             const startPos = this.scanner.position();
-            // eat name and args
+            // TODO: properly eat name and args
             while (true) {
                 if (this.scanner.isEOF()) {
                     this.emit.message(new ExpectedMessage(
-                        this.scanner.position(), MODIFIER_INLINE_CLOSE));
+                        this.scanner.position(), MODIFIER_CLOSE_SIGN));
                     break;
                 }
-                if (this.scanner.peek(MODIFIER_INLINE_CLOSE)
+                if (this.scanner.peek(MODIFIER_CLOSE_SIGN)
                  || this.scanner.peek(MODIFIER_END_SIGN)) break;
                 this.scanner.acceptChar();
             }
             this.emit.message(
                 new UnknownModifierMessage(startPos, this.scanner.position()));
         } else mod = result[1];
+        const args = this.ARGUMENTS();
 
         const endsign = this.scanner.accept(MODIFIER_END_SIGN);
         const flagMarker = has(mod.flags, ModifierFlags.Marker);
-        if (flagMarker && !endsign) this.emit.message(
-            new ExpectedMessage(this.scanner.position(), MODIFIER_END_SIGN));
-            const isMarker = flagMarker || endsign;
+        // if (flagMarker && !endsign) this.emit.message(
+        //     new ExpectedMessage(this.scanner.position(), MODIFIER_END_SIGN));
+        const isMarker = flagMarker || endsign;
         
-        if (!this.scanner.accept(MODIFIER_INLINE_CLOSE))
+        if (!this.scanner.accept(MODIFIER_CLOSE_SIGN))
             this.emit.message(new ExpectedMessage(
-                this.scanner.position(), MODIFIER_INLINE_CLOSE));
+                this.scanner.position(), MODIFIER_CLOSE_SIGN));
 
         const node: InlineModifierNode = {
             type: 'inline',
             id: mod.name,
             head: {start: posStart, end: this.scanner.position()},
-            arguments: [],
+            arguments: args,
             start: posStart,
             end: -1,
             content: []
@@ -325,6 +398,54 @@ export class Parser {
             }
         }
         this.emit.endInline();
+        if (mod.parse)
+            this.emit.message(...mod.parse(node, this.cxt));
         return ok;
+    }
+
+    private ARGUMENTS(): ModifierArgument[] {
+        // optionally accept semicolon before first argument
+        const firstSemicolon = this.scanner.accept(':');
+        // don't eat whites if there is a first semicolon
+        if (!firstSemicolon) this.WHITESPACES_OR_NEWLINES();
+
+        const list: ModifierArgument[] = [];
+        let end = false;
+        while (!end) {
+            const posStart = this.scanner.position();
+            let posEnd = posStart;
+            let content = '';
+            while (true) {
+                // end of argument
+                if (this.scanner.accept(':')) break;
+                // end of argument list
+                if (this.scanner.peek(MODIFIER_END_SIGN)
+                 || this.scanner.peek(MODIFIER_CLOSE_SIGN)
+                 || this.scanner.isEOF())
+                {
+                    // if we haven't parsed anything so far: if there is no first semicolon, there's no arguments; otherwise, there is a single empty argument
+                    if (list.length == 0 && content == '' && !firstSemicolon) return [];
+                    end = true;
+                    break;
+                }
+                // handle escaping
+                if (this.scanner.accept('\\') && this.scanner.isEOF()) {
+                    content += '\\';
+                    posEnd = this.scanner.position();
+                    end = true;
+                    break;
+                }
+                // TODO: bracket matching
+                content += this.scanner.acceptChar();
+                posEnd = this.scanner.position();
+            }
+            list.push({
+                name: undefined,
+                content: content,
+                start: posStart,
+                end: posEnd
+            });
+        }
+        return list;
     }
 }
