@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { SimpleScanner } from "../src/front";
-import { Parser } from "../src/parser";
+import * as Parser from "../src/parser";
 import { MessageSeverity, CustomConfiguration, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags, BlockEntity } from "../src/interface";
 
 const TestConfig = new CustomConfiguration();
@@ -16,8 +16,7 @@ TestConfig.addInline(
 );
 
 function parse(src: string) {
-    let p = new Parser(new SimpleScanner(src), TestConfig);
-    return p.parse();
+    return Parser.parse(new SimpleScanner(src), TestConfig);
 }
 
 describe('basic syntax', () => {
@@ -40,7 +39,7 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'normal',
+                type: 'block', mod: {name: 'normal'},
                 content: [{ type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }]
             }
         ]);
@@ -48,7 +47,7 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'normal',
+                type: 'block', mod: {name: 'normal'},
                 content: [{ type: 'paragraph', content: [{ type: 'text', content: 'abc\ndef' }] }]
             }
         ]);
@@ -56,7 +55,7 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'normal',
+                type: 'block', mod: {name: 'normal'},
                 content: [{ type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }]
             },
             { type: 'paragraph', content: [{ type: 'text', content: 'def' }] }
@@ -73,7 +72,7 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'normal',
+                type: 'block', mod: {name: 'normal'},
                 content: [
                     { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] },
                     { type: 'paragraph', content: [{ type: 'text', content: 'def' }] }
@@ -84,7 +83,7 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'normal',
+                type: 'block', mod: {name: 'normal'},
                 content: [{ type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }]
             },
         ]);
@@ -94,7 +93,7 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'pre',
+                type: 'block', mod: {name: 'pre'},
                 content: [{ type: 'pre', content: {text: 'abc'} }]
             },
         ]);
@@ -102,7 +101,7 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'pre',
+                type: 'block', mod: {name: 'pre'},
                 content: [{ type: 'pre', content: {text: 'abc\n   def'} }]
             },
         ]);
@@ -110,7 +109,7 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'pre',
+                type: 'block', mod: {name: 'pre'},
                 content: [{ type: 'pre', content: {text: 'abc'} }]
             },
             { type: 'paragraph', content: [{ type: 'text', content: 'def' }] }
@@ -121,7 +120,7 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ 
             {
-                type: 'block', id: 'pre',
+                type: 'block', mod: {name: 'pre'},
                 content: [{ type: 'pre', content: {text: '\n'} }]
             }
         ]);
@@ -129,7 +128,7 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ 
             {
-                type: 'block', id: 'pre',
+                type: 'block', mod: {name: 'pre'},
                 content: [{ type: 'pre', content: {text: 'abc\n\ndef'} }]
             }
         ]);
@@ -137,7 +136,7 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ 
             {
-                type: 'block', id: 'pre',
+                type: 'block', mod: {name: 'pre'},
                 content: [{ type: 'pre', content: {text: '   abc'} }]
             }
         ]);
@@ -147,18 +146,16 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'normal',
+                type: 'block', mod: {name: 'normal'},
                 content: []
             },
             { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] },
         ]);
         doc = parse(`[.marker]abc`);
-        expect.soft(doc.messages).toMatchObject([
-            { severity: MessageSeverity.Error, code: 1 }
-        ]);
+        expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'marker',
+                type: 'block', mod: {name: 'marker'},
                 content: []
             },
             { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] },
@@ -167,9 +164,9 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'normal',
+                type: 'block', mod: {name: 'normal'},
                 content: [ {
-                    type: 'block', id: 'pre',
+                    type: 'block', mod: {name: 'pre'},
                     content: []
                 } ]
             }
@@ -179,11 +176,11 @@ describe('basic syntax', () => {
         let doc = parse(`[.normal][.normal][.pre]abc`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ {
-            type: 'block', id: 'normal',
+            type: 'block', mod: {name: 'normal'},
             content: [ {
-                type: 'block', id: 'normal',
+                type: 'block', mod: {name: 'normal'},
                 content: [ {
-                    type: 'block', id: 'pre',
+                    type: 'block', mod: {name: 'pre'},
                     content: [{ type: 'pre', content: {text: 'abc'} }]
                 } ]
             } ]
@@ -191,16 +188,16 @@ describe('basic syntax', () => {
         doc = parse(`[.normal][.normal]abc\n[.pre]def`);
         const obj1 = [
             {
-                type: 'block', id: 'normal',
+                type: 'block', mod: {name: 'normal'},
                 content: [ {
-                    type: 'block', id: 'normal',
+                    type: 'block', mod: {name: 'normal'},
                     content: [
                         { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }
                     ]
                 } ]
             },
             {
-                type: 'block', id: 'pre',
+                type: 'block', mod: {name: 'pre'},
                 content: [{ type: 'pre', content: {text: 'def'} }]
             }
         ];
@@ -218,7 +215,7 @@ describe('basic syntax', () => {
         expect.soft(doc.root.content).toMatchObject([ {
             type: 'paragraph',
             content: [ {
-                type: 'inline', id: 'normal',
+                type: 'inline', mod: {name: 'normal'},
                 content: [{type: 'text', content: ' abc '}]
             } ]
         } ]);
@@ -227,11 +224,11 @@ describe('basic syntax', () => {
         expect.soft(doc.root.content).toMatchObject([ {
             type: 'paragraph',
             content: [ {
-                type: 'inline', id: 'normal',
+                type: 'inline', mod: {name: 'normal'},
                 content: [
                     {type: 'text', content: 'abc'},
                     {
-                        type: 'inline', id: 'normal',
+                        type: 'inline', mod: {name: 'normal'},
                         content: [{type: 'text', content: 'def'}]
                     }
                 ]
@@ -244,7 +241,7 @@ describe('basic syntax', () => {
         expect.soft(doc.root.content).toMatchObject([ {
             type: 'paragraph',
             content: [ {
-                type: 'inline', id: 'pre',
+                type: 'inline', mod: {name: 'pre'},
                 content: [{type: 'text', content: ' abc '}]
             } ]
         } ]);
@@ -253,7 +250,7 @@ describe('basic syntax', () => {
         expect.soft(doc.root.content).toMatchObject([ {
             type: 'paragraph',
             content: [ {
-                type: 'inline', id: 'pre',
+                type: 'inline', mod: {name: 'pre'},
                 content: [{type: 'text', content: '[/normal;]ha'}]
             } ]
         } ]);
@@ -262,11 +259,11 @@ describe('basic syntax', () => {
         expect.soft(doc.root.content).toMatchObject([ {
             type: 'paragraph',
             content: [ {
-                type: 'inline', id: 'normal',
+                type: 'inline', mod: {name: 'normal'},
                 content: [
                     {type: 'text', content: 'abc'},
                     {
-                        type: 'inline', id: 'pre',
+                        type: 'inline', mod: {name: 'pre'},
                         content: [{type: 'text', content: '[/normal;]ha'}]
                     }
                 ]
@@ -280,25 +277,23 @@ describe('basic syntax', () => {
             type: 'paragraph',
             content: [ 
                 {
-                    type: 'inline', id: 'normal',
+                    type: 'inline', mod: {name: 'normal'},
                     content: []
                 },{
-                    type: 'inline', id: 'pre',
+                    type: 'inline', mod: {name: 'pre'},
                     content: []
                 },{
-                    type: 'inline', id: 'marker',
+                    type: 'inline', mod: {name: 'marker'},
                     content: []
                 }
             ]
         } ]);
         doc = parse(`[/marker]`);
-        expect.soft(doc.messages).toMatchObject([
-            { severity: MessageSeverity.Error, code: 1 }
-        ]);
+        expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ {
             type: 'paragraph',
             content: [ {
-                type: 'inline', id: 'marker',
+                type: 'inline', mod: {name: 'marker'},
                 content: []
             } ]
         } ]);
@@ -311,13 +306,13 @@ describe('basic syntax', () => {
         ]);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'UNKNOWN',
+                type: 'block', mod: {name: 'UNKNOWN'},
                 content: [ { 
                     type: 'paragraph', 
                     content: [
                         {type: 'text', content: 'aaa'},
                         {
-                            type: 'inline', id: 'UNKNOWN',
+                            type: 'inline', mod: {name: 'UNKNOWN'},
                             content: [{type: 'text', content: 'bbb'}]
                         },
                         {type: 'text', content: 'ccc'},
@@ -342,7 +337,7 @@ describe('basic syntax', () => {
         ]);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'normal',
+                type: 'block', mod: {name: 'normal'},
                 content: [{ type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }]
             }
         ]);
@@ -352,7 +347,7 @@ describe('basic syntax', () => {
         ]);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'pre',
+                type: 'block', mod: {name: 'pre'},
                 content: [{ type: 'pre', content: {text: 'abc'} }]
             }
         ]);
@@ -371,7 +366,7 @@ describe('basic syntax', () => {
         ]);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'pre',
+                type: 'block', mod: {name: 'pre'},
                 content: [{ type: 'pre', content: {text: 'abc'} }]
             },
         ]);
@@ -381,11 +376,11 @@ describe('basic syntax', () => {
         ]);
         expect.soft(doc.root.content).toMatchObject([
             {
-                type: 'block', id: 'normal',
+                type: 'block', mod: {name: 'normal'},
                 content: [{ type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }]
             },
             {
-                type: 'block', id: 'normal',
+                type: 'block', mod: {name: 'normal'},
                 content: [{ type: 'paragraph', content: [{ type: 'text', content: 'def' }] }]
             }
         ]);

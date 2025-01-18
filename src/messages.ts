@@ -1,5 +1,15 @@
 import { Message, MessageSeverity, FixSuggestion } from "./interface";
 
+export class ReferredMessage implements Message {
+    constructor(
+        public readonly original: Message,
+        public readonly position: number, 
+        public readonly length: number) {}
+    get severity() { return this.original.severity; }
+    get info() { return this.original.info; }
+    get code() { return this.original.code; }
+    readonly fixes: readonly FixSuggestion[] = [];
+}
 
 class AddThingMessage implements Message {
     constructor(
@@ -112,11 +122,12 @@ export class ArgumentsTooManyMessage extends RemoveThingMessage {
 export class InvalidArgumentMessage implements Message {
     constructor(
         public readonly position: number,
-        public readonly length: number) {}
+        public readonly length: number,
+        private what?: string) {}
     readonly code = 6;
     readonly severity = MessageSeverity.Error;
     readonly fixes: readonly FixSuggestion[] = []
-    get info(): string { return `invalid argument` }
+    get info(): string { return `invalid argument` + (this.what === undefined ? '' : `: ${this.what}`) }
 }
 
 export class InlineDefinitonMustContainOneParaMessage implements Message {
@@ -129,6 +140,29 @@ export class InlineDefinitonMustContainOneParaMessage implements Message {
     get info(): string { return `inline modifier definition must contain exactly one paragraph` }
 }
 
+export class ReachedRecursionLimitMessage implements Message {
+    constructor(
+        public readonly position: number,
+        public readonly length: number,
+        private limit: number,
+        private what: string) {}
+    readonly code = 8;
+    readonly severity = MessageSeverity.Error;
+    readonly fixes: readonly FixSuggestion[] = []
+    get info(): string { 
+        return `Reached recursion limit ${this.limit} when expanding ${this.what}`
+    };
+}
+
+export class SlotUsedOutsideDefinitionMessage implements Message {
+    constructor(
+        public readonly position: number,
+        public readonly length: number) {}
+    readonly code = 9;
+    readonly severity = MessageSeverity.Error;
+    readonly fixes: readonly FixSuggestion[] = []
+    get info(): string { return `[.slot] used outside a block definition` }
+}
 
 // warnings
 

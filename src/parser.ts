@@ -1,5 +1,5 @@
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, FixSuggestion, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, MessageSeverity, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PreNode, RootNode, Scanner } from "./interface";
-import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
+import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, Node, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner } from "./interface";
+import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, ReachedRecursionLimitMessage as ReachedReparseLimitMessage, ReferredMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
 import { assert, has } from "./util";
 
 const GROUP_BEGIN = ':--';
@@ -15,18 +15,34 @@ const MODIFIER_INLINE_END_TAG = '[;]';
 const UnknownBlock = new BlockModifierDefinition('UNKNOWN', ModifierFlags.Normal);
 const UnknownInline = new InlineModifierDefinition('UNKNOWN', ModifierFlags.Normal);
 
-type NodeWithBlockContent = RootNode | BlockModifierNode;
-type NodeWithInlineContent = InlineModifierNode | ParagraphNode;
+type NodeWithBlockContent = RootNode | BlockModifierNode<unknown>;
+type NodeWithInlineContent = InlineModifierNode<unknown> | ParagraphNode;
 
 class EmitEnvironment {
     public root: RootNode = {type: 'root', start: 0, end: -1, content: []};
     public messages: Message[] = [];
     private blockStack: NodeWithBlockContent[] = [this.root];
     private inlineStack: NodeWithInlineContent[] = [];
+    private referringStack: PositionRange[] = [];
+
     constructor(private scanner: Scanner) {}
 
     message(...m: Message[]) {
-        this.messages.push(...m);
+        const referringReverse = [...this.referringStack].reverse();
+        for (let msg of m) {
+            for (const range of referringReverse)
+                msg = new ReferredMessage(msg, range.start, range.end - range.start);
+            this.messages.push(msg);
+        }
+    }
+
+    pushReferring(start: number, end: number) {
+        this.referringStack.push({start, end});
+    }
+
+    popReferring() {
+        assert(this.referringStack.length > 0);
+        this.referringStack.pop();
     }
 
     addBlockNode(n: BlockEntity) {
@@ -56,7 +72,7 @@ class EmitEnvironment {
         });
     }
 
-    startBlock(block: BlockModifierNode) {
+    startBlock(block: BlockModifierNode<unknown>) {
         this.addBlockNode(block);
         this.blockStack.push(block);
     }
@@ -67,7 +83,7 @@ class EmitEnvironment {
         node.end = this.scanner.position();
     }
 
-    startInline(n: InlineModifierNode | ParagraphNode) {
+    startInline(n: InlineModifierNode<unknown> | ParagraphNode) {
         if (n.type == 'paragraph') this.addBlockNode(n);
         else this.addInlineNode(n);
         this.inlineStack.push(n);
@@ -80,12 +96,13 @@ class EmitEnvironment {
     }
 }
 
-export class Parser {
+class Parser {
     private emit: EmitEnvironment;
     private cxt: ParseContext;
     private groupDepth = 0;
-    private blockTags: [string, BlockModifierDefinition][] = [];
-    private inlineTags: [string, InlineModifierDefinition][] = [];
+    private blockTags: [string, BlockModifierDefinition<any>][] = [];
+    private inlineTags: [string, InlineModifierDefinition<any>][] = [];
+    private doneParsing = new Set<Node>;
 
     constructor(private scanner: Scanner, config: Configuration) {
         this.emit = new EmitEnvironment(scanner);
@@ -99,6 +116,61 @@ export class Parser {
             .sort(([x, _], [y, __]) => y.length - x.length);
         this.inlineTags = [...this.cxt.config.inlineModifiers.entries()]
             .sort(([x, _], [y, __]) => y.length - x.length);
+    }
+
+    #reparse(nodes: (BlockEntity | InlineEntity)[], depth: number): boolean {
+        if (depth > this.cxt.config.reparseDepthLimit) return false;
+        let ok = true;
+        for (const node of nodes) {
+            switch (node.type) {
+                case "pre":
+                case "text":
+                case "escaped":
+                    continue;
+                case "paragraph":
+                    ok = this.#reparse(node.content, depth + 1) && ok;
+                    break;
+                case "block":
+                case "inline":
+                    if (this.doneParsing.has(node)) {
+                        console.log('skipping', node);
+                        continue;
+                    }
+                    this.doneParsing.add(node);
+                    assert(node.expansion === undefined);
+                    if (node.mod.beforeParse)
+                        this.emit.message(...node.mod.beforeParse(node as any, this.cxt));
+
+                    this.emit.pushReferring(node.start, node.end);
+                    ok &&= this.#reparse(node.content, depth + 1);
+                    this.emit.popReferring();
+                    
+                    if (node.mod.parse)
+                        this.emit.message(...node.mod.parse(node as any, this.cxt));
+                    node.expansion = node.mod.expand
+                        ? node.mod.expand(node as any, this.cxt) : [];
+                    
+                    this.emit.pushReferring(node.start, node.end);
+                    ok = this.#reparse(node.expansion, depth + 1) && ok;
+                    this.emit.popReferring();
+                    break;
+            }
+        }
+        return ok;
+    }
+
+    #expand(node: BlockModifierNode<any> | InlineModifierNode<any>) {
+        this.doneParsing.add(node);
+        node.expansion = node.mod.expand
+            ? node.mod.expand(node as any, this.cxt) : [];
+        this.emit.pushReferring(node.start, node.end);
+        const ok = this.#reparse(node.expansion, 0);
+        this.emit.popReferring();
+        if (!ok) {
+            const limit = this.cxt.config.reparseDepthLimit;
+            this.emit.message(new ReachedReparseLimitMessage(
+                node.start, node.end - node.start, limit, node.mod.name));
+        }
     }
 
     parse() {
@@ -156,7 +228,7 @@ export class Parser {
         assert(this.scanner.accept(MODIFIER_BLOCK_OPEN));
 
         const result = this.blockTags.find(([name, _]) => this.scanner.accept(name));
-        let mod: BlockModifierDefinition;
+        let mod: BlockModifierDefinition<unknown>;
         if (result === undefined) {
             mod = UnknownBlock;
             const startPos = this.scanner.position();
@@ -166,7 +238,7 @@ export class Parser {
                     this.scanner.position(), MODIFIER_CLOSE_SIGN));
             }
             this.emit.message(
-                new UnknownModifierMessage(startPos, this.scanner.position()));
+                new UnknownModifierMessage(posStart, this.scanner.position() - posStart));
         } else mod = result[1];
         const args = this.ARGUMENTS();
 
@@ -180,15 +252,19 @@ export class Parser {
             this.emit.message(new ExpectedMessage(
                 this.scanner.position(), MODIFIER_CLOSE_SIGN));
 
-        const node: BlockModifierNode = {
-            type: 'block',
-            id: mod.name,
+        const node: BlockModifierNode<unknown> = {
+            type: 'block', mod,
             head: {start: posStart, end: this.scanner.position()},
             arguments: args,
             start: posStart,
             end: -1,
             content: []
         }
+
+        const isInDefiniton = this.cxt.blockSlotInDefinition.length > 0 
+                           || this.cxt.inlineSlotInDefinition.length > 0;
+        if (mod.beforeParse && !isInDefiniton)
+            this.emit.message(...mod.beforeParse(node, this.cxt));
         this.emit.startBlock(node);
         if (!isMarker) {
             this.WARN_IF_MORE_NEWLINES_THAN(1);
@@ -200,8 +276,11 @@ export class Parser {
             }
         }
         this.emit.endBlock();
-        if (mod.parse)
-            this.emit.message(...mod.parse(node, this.cxt));
+        if (!isInDefiniton) {
+            if (mod.parse)
+                this.emit.message(...mod.parse(node, this.cxt));
+            this.#expand(node);
+        }
     }
 
     // also handles "grouped" (delimited) pre-paragraphs
@@ -343,7 +422,7 @@ export class Parser {
         assert(this.scanner.accept(MODIFIER_INLINE_OPEN));
 
         const result = this.inlineTags.find(([name, _]) => this.scanner.accept(name));
-        let mod: InlineModifierDefinition;
+        let mod: InlineModifierDefinition<unknown>;
         if (result === undefined) {
             mod = UnknownInline;
             const startPos = this.scanner.position();
@@ -359,7 +438,7 @@ export class Parser {
                 this.scanner.acceptChar();
             }
             this.emit.message(
-                new UnknownModifierMessage(startPos, this.scanner.position()));
+                new UnknownModifierMessage(posStart, this.scanner.position() - posStart));
         } else mod = result[1];
         const args = this.ARGUMENTS();
 
@@ -373,15 +452,19 @@ export class Parser {
             this.emit.message(new ExpectedMessage(
                 this.scanner.position(), MODIFIER_CLOSE_SIGN));
 
-        const node: InlineModifierNode = {
-            type: 'inline',
-            id: mod.name,
+        const node: InlineModifierNode<unknown> = {
+            type: 'inline', mod,
             head: {start: posStart, end: this.scanner.position()},
             arguments: args,
             start: posStart,
             end: -1,
             content: []
         }
+
+        const isInDefiniton = this.cxt.blockSlotInDefinition.length > 0 
+                           || this.cxt.inlineSlotInDefinition.length > 0;
+        if (mod.beforeParse && !isInDefiniton)
+            this.emit.message(...mod.beforeParse(node, this.cxt));
         this.emit.startInline(node);
         let ok = true;
         if (!isMarker) {
@@ -398,8 +481,12 @@ export class Parser {
             }
         }
         this.emit.endInline();
-        if (mod.parse)
-            this.emit.message(...mod.parse(node, this.cxt));
+        // don't expand when inside definition
+        if (!isInDefiniton) {
+            if (mod.parse)
+                this.emit.message(...mod.parse(node, this.cxt));
+            this.#expand(node);
+        }
         return ok;
     }
 
@@ -448,4 +535,8 @@ export class Parser {
         }
         return list;
     }
+}
+
+export function parse(scanner: Scanner, config: Configuration) {
+    return new Parser(scanner, config).parse();
 }

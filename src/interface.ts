@@ -45,59 +45,63 @@ export type Message = {
     readonly fixes: readonly FixSuggestion[]
 }
 
-export type NodeBase = {
+export type PositionRange = {
     start: number,
     end: number
 };
 
-export type ParagraphNode = NodeBase & {
+export type ParagraphNode = PositionRange & {
     type: 'paragraph',
     content: InlineEntity[]
 };
 
-export type PreNode = NodeBase & {
+export type PreNode = PositionRange & {
     type: 'pre',
-    content: NodeBase & {text: string}
+    content: PositionRange & {text: string}
 };
 
-export type ModifierArgument = NodeBase & {
+export type ModifierArgument = PositionRange & {
     name: string | undefined,
     content: string // TODO: arg nodes
 }
 
-export type BlockModifierNode = NodeBase & {
-    type: 'block',
-    id: string,
-    head: NodeBase,
-    arguments: ModifierArgument[],
-    content: BlockEntity[]
-};
-
-export type TextNode = NodeBase & {
+export type TextNode = PositionRange & {
     type: 'text',
     content: string
 };
 
-export type EscapedNode = NodeBase & {
+export type EscapedNode = PositionRange & {
     type: 'escaped',
     content: string
 }
 
-export type InlineModifierNode = NodeBase & {
-    type: 'inline',
-    id: string,
-    head: NodeBase,
+export type BlockModifierNode<TState> = PositionRange & {
+    type: 'block',
+    mod: BlockModifierDefinition<TState>,
+    state?: TState,
+    head: PositionRange,
     arguments: ModifierArgument[],
-    content: InlineEntity[]
+    content: BlockEntity[],
+    expansion?: BlockEntity[]
 };
 
-export type RootNode = NodeBase & {
+export type InlineModifierNode<TState> = PositionRange & {
+    type: 'inline',
+    mod: InlineModifierDefinition<TState>,
+    state?: TState,
+    head: PositionRange,
+    arguments: ModifierArgument[],
+    content: InlineEntity[],
+    expansion?: InlineEntity[]
+};
+
+export type RootNode = PositionRange & {
     type: 'root'
     content: BlockEntity[]
 }
 
-export type BlockEntity = ParagraphNode | PreNode | BlockModifierNode;
-export type InlineEntity = TextNode | EscapedNode | InlineModifierNode;
+export type BlockEntity = ParagraphNode | PreNode | BlockModifierNode<any>;
+export type InlineEntity = TextNode | EscapedNode | InlineModifierNode<any>;
 export type Node = BlockEntity | InlineEntity | RootNode;
 
 export enum ModifierFlags {
@@ -108,30 +112,39 @@ export enum ModifierFlags {
     Marker = 2
 }
 
-export class BlockModifierDefinition {
+export class BlockModifierDefinition<TState> {
     constructor(
         public readonly name: string, 
         public readonly flags: ModifierFlags = ModifierFlags.Normal,
-        args?: Partial<BlockModifierDefinition>) 
+        args?: Partial<BlockModifierDefinition<TState>>) 
     {
         if (args) Object.assign(this, args);
     }
     
-    public parse?: (node: BlockModifierNode, cxt: ParseContext) => Message[];
-    public expand?: (node: BlockModifierNode, cxt: ParseContext) => BlockEntity[];
+    public beforeParse?: 
+        (node: BlockModifierNode<TState>, cxt: ParseContext) => Message[];
+    public parse?: 
+        (node: BlockModifierNode<TState>, cxt: ParseContext) => Message[];
+    public expand?: 
+        (node: BlockModifierNode<TState>, cxt: ParseContext) => BlockEntity[];
 }
 
-export class InlineModifierDefinition {
+export class InlineModifierDefinition<TState>  {
     constructor(
         public readonly name: string, 
         public readonly flags: ModifierFlags = ModifierFlags.Normal,
-        args?: Partial<InlineModifierDefinition>) 
+        args?: Partial<InlineModifierDefinition<TState>>) 
     {
         if (args) Object.assign(this, args);
     }
     
-    public parse?: (node: InlineModifierNode, cxt: ParseContext) => Message[];
-    public expand?: (node: InlineModifierNode, cxt: ParseContext) => InlineEntity[];
+    public readonly emptyState?: () => TState;
+    public beforeParse?: 
+        (node: InlineModifierNode<TState>, cxt: ParseContext) => Message[];
+    public parse?: 
+        (node: InlineModifierNode<TState>, cxt: ParseContext) => Message[];
+    public expand?: 
+        (node: InlineModifierNode<TState>, cxt: ParseContext) => InlineEntity[];
 }
 
 export class ParseContext {
@@ -140,7 +153,11 @@ export class ParseContext {
         public variables = new Map<string, string>) {}
 
     public onConfigChange: () => void = () => {};
-    // TODO: handle slots
+
+    public blockSlotInDefinition: string[] = [];
+    public inlineSlotInDefinition: string[] = [];
+    public blockSlotData: [string, BlockEntity[]][] = [];
+    public inlineSlotData: [string, InlineEntity[]][] = [];
 }
 
 export class Document {
@@ -151,15 +168,16 @@ export class Document {
 }
 
 export interface Configuration {
-    blockModifiers: Map<string, BlockModifierDefinition>,
-    inlineModifiers: Map<string, InlineModifierDefinition>
-
+    blockModifiers: Map<string, BlockModifierDefinition<any>>,
+    inlineModifiers: Map<string, InlineModifierDefinition<any>>
+    reparseDepthLimit: number
     // TODO: shorthands, strings
 }
 
 export class CustomConfiguration implements Configuration {
-    private blocks = new Map<string, BlockModifierDefinition>;
-    private inlines = new Map<string, InlineModifierDefinition>;
+    private blocks = new Map<string, BlockModifierDefinition<any>>;
+    private inlines = new Map<string, InlineModifierDefinition<any>>;
+    public reparseDepthLimit = 50;
     
     constructor(from?: Configuration) {
         if (from) {
@@ -168,15 +186,15 @@ export class CustomConfiguration implements Configuration {
         }
     }
 
-    get blockModifiers(): Map<string, BlockModifierDefinition> {
+    get blockModifiers(): Map<string, BlockModifierDefinition<any>> {
         return this.blocks;
     }
 
-    get inlineModifiers(): Map<string, InlineModifierDefinition> {
+    get inlineModifiers(): Map<string, InlineModifierDefinition<any>> {
         return this.inlines;
     }
 
-    addBlock(...xs: BlockModifierDefinition[]) {
+    addBlock(...xs: BlockModifierDefinition<any>[]) {
         for (const x of xs) {
             if (this.blocks.has(x.name))
                 throw Error(`block modifier already exists: ${x.name}`);
@@ -184,7 +202,7 @@ export class CustomConfiguration implements Configuration {
         }
     }
 
-    addInline(...xs: InlineModifierDefinition[]) {
+    addInline(...xs: InlineModifierDefinition<any>[]) {
         for (const x of xs) {
             if (this.inlines.has(x.name))
                 throw Error(`block modifier already exists: ${x.name}`);
