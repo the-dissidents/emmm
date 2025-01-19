@@ -1,4 +1,5 @@
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, CustomConfiguration, InlineModifierDefinition, InlineModifierNode, Message, ModifierFlags, ParseContext } from "./interface";
+import { debug } from "./debug";
+import { BlockEntity, BlockInstantiationData, BlockModifierDefinition, BlockModifierNode, Configuration, CustomConfiguration, InlineModifierDefinition, InlineModifierNode, Message, ModifierFlags, ParseContext } from "./interface";
 import { ArgumentsTooFewMessage, ArgumentsTooManyMessage, InlineDefinitonMustContainOneParaMessage, InvalidArgumentMessage, NameAlreadyDefinedMessage, SlotUsedOutsideDefinitionMessage, UndefinedVariableMessage } from "./messages";
 import { assert, cloneNodes } from "./util";
 
@@ -12,21 +13,50 @@ function checkArgumentLength<T>(node: BlockModifierNode<T> | InlineModifierNode<
     return null;
 }
 
+function replaceSlotBlock(slotName: string, 
+    from: BlockEntity[], slotContent: BlockEntity[]): BlockEntity[] 
+{
+    function process(node: BlockEntity): BlockEntity[] {
+        switch (node.type) {
+            case "paragraph":
+            case "pre":
+                return [node];
+            case "block":
+                if (node.mod == blockSlot 
+                    && (node.arguments.length == 0 || node.arguments[0].content == slotName)) 
+                {
+                    debug.trace('replaced slot:', slotName);
+                    return cloneNodes(slotContent) as BlockEntity[];
+                }
+                node.content = node.content.flatMap((x) => process(x));
+                return [node];
+            default:
+                assert(false);
+        }
+    }
+    return from.flatMap((x) => process(x));
+}
+
 function customBlockModifier(
     name: string, argNames: string[], slotName: string, content: BlockEntity[]) 
 {
-    console.log('registered custom block modifier:', name);
-    return new BlockModifierDefinition<{
+    debug.trace('registered custom block modifier:', name);
+    const mod = new BlockModifierDefinition<{
         ok: boolean
+        // TODO: args
     }>(name, ModifierFlags.Normal, {
         beforeParse(node, cxt) {
             const check = checkArgumentLength(node, argNames.length);
             if (check) return [check];
             node.state = {ok: true};
-            cxt.blockSlotData.push([slotName, content]);
             return [];
         },
-        parse(node, cxt) {
+        beforeReparse(node, cxt) {
+            if (node.state?.ok)
+                cxt.blockSlotData.push([slotName, { mod, args: [] }]);
+            return [];
+        },
+        afterReparse(node, cxt) {
             if (node.state?.ok) {
                 const pop = cxt.blockSlotData.pop();
                 assert(pop !== undefined && pop[0] == slotName);
@@ -35,20 +65,22 @@ function customBlockModifier(
         },
         expand(node, cxt) {
             if (node.state?.ok) {
-                return cloneNodes(content) as BlockEntity[];
+                const contentClone = cloneNodes(content) as BlockEntity[];
+                return replaceSlotBlock(slotName, contentClone, node.content);
             }
             return [];
         },
     });
+    return mod;
 }
 
 function customInlineModifier(
     name: string, argNames: string[], slotName: string, content: BlockEntity) 
 {
-    console.log('registered custom inline modifier:', name);
+    debug.trace('registered custom inline modifier:', name);
     return new InlineModifierDefinition(name, ModifierFlags.Normal, {
-        parse(node, config) {
-            console.log('parsing custom inline modifier:', name);
+        afterParse(node, config) {
+            debug.trace('parsing custom inline modifier:', name);
             const check = checkArgumentLength(node, argNames.length);
             if (check) return [check];
             // TODO
@@ -56,6 +88,24 @@ function customInlineModifier(
         }
     });
 }
+
+const blockSlot = new BlockModifierDefinition<BlockInstantiationData>(
+    'slot', ModifierFlags.Marker, {
+    // .slot [id]
+    // Normally it is never really parsed, only replaced at custom modifier instantiations
+    afterParse(node, cxt) {
+        if (node.arguments.length > 1) {
+            const start = node.arguments[1].start - 1;
+            return [new ArgumentsTooManyMessage(start, node.head.end - start)];
+        }
+        if (cxt.blockSlotData.length > 0) {
+            assert(node.arguments.length == 1);
+            const arg = node.arguments[0];
+            return [new InvalidArgumentMessage(arg.start, arg.end - arg.start, arg.content)];
+        }
+        return [new SlotUsedOutsideDefinitionMessage(node.start, node.end - node.start)];
+    }
+});
 
 let basic = new CustomConfiguration();
 basic.addBlock(
@@ -80,11 +130,13 @@ basic.addBlock(
             const args = node.arguments.slice(1, (slotName !== '') ? node.arguments.length - 1 : undefined).map((x) => x.content);
             node.state = {name: name.content, slotName, args};
             cxt.blockSlotInDefinition.push(slotName);
+            debug.trace('entering block definition');
             return msgs;
         },
-        parse(node, cxt) {
+        afterParse(node, cxt) {
             if (!node.state) return [];
             assert(cxt.blockSlotInDefinition.pop() == node.state.slotName);
+            debug.trace('leaving block definition');
             return [];
         },
         expand(node, cxt) {
@@ -125,7 +177,7 @@ basic.addBlock(
             }
             return msgs;
         },
-        parse(node, cxt) {
+        afterParse(node, cxt) {
             if (!node.state) return [];
             assert(cxt.inlineSlotInDefinition.pop() == node.state.slotName);
             cxt.config.inlineModifiers.set(node.state.name, 
@@ -137,7 +189,7 @@ basic.addBlock(
     }),
     new BlockModifierDefinition<{id: string, value: string}>('var', ModifierFlags.Marker, {
         // .var id:value
-        parse(node, cxt) {
+        afterParse(node, cxt) {
             const check = checkArgumentLength(node, 2);
             if (check) return [check];
             const arg = node.arguments[0];
@@ -152,44 +204,12 @@ basic.addBlock(
             return [];
         },
     }),
-    new BlockModifierDefinition<{
-        data: BlockEntity[]
-    }>('slot', ModifierFlags.Marker, {
-        // .slot [id]
-        parse(node, cxt) {
-            if (node.arguments.length > 1) {
-                const start = node.arguments[1].start - 1;
-                return [new ArgumentsTooManyMessage(start, node.head.end - start)];
-            }
-            if (cxt.blockSlotInDefinition.length > 0) {
-                if (node.arguments.length == 1) {
-                    const arg = node.arguments[0];
-                    if (cxt.blockSlotInDefinition.indexOf(arg.content) == -1)
-                        return [new InvalidArgumentMessage(
-                            arg.start, arg.end - arg.start, 'slot id')];
-                }
-                node.state = undefined; 
-                return [];
-            } else if (cxt.blockSlotData.length > 0) {
-                const arg = node.arguments.length == 1 ? node.arguments[0].content : '';
-                for (let i = cxt.blockSlotData.length - 1; i >= 0; i--) {
-                    let [id, data] = cxt.blockSlotData[i];
-                    if (id == arg)
-                        node.state = {data: cloneNodes(data) as BlockEntity[]};
-                }
-                return [];
-            } else return [new SlotUsedOutsideDefinitionMessage(node.start, node.end - node.start)];
-        },
-        expand(node, cxt) {
-            if (!node.state) return [];
-            return node.state.data;
-        }
-    }),
+    blockSlot
 );
 basic.addInline(
     new InlineModifierDefinition<{id: string}>('$', ModifierFlags.Marker, {
         // .$:id
-        parse(node, cxt) {
+        afterParse(node, cxt) {
             const check = checkArgumentLength(node, 1);
             if (check) return [check];
             const arg = node.arguments[0];

@@ -385,4 +385,5 @@ describe('basic syntax', () => {
             }
         ]);
     });
+    // TODO: arguments
 });

@@ -123,10 +123,14 @@ export class BlockModifierDefinition<TState> {
     
     public beforeParse?: 
         (node: BlockModifierNode<TState>, cxt: ParseContext) => Message[];
-    public parse?: 
+    public afterParse?: 
         (node: BlockModifierNode<TState>, cxt: ParseContext) => Message[];
     public expand?: 
         (node: BlockModifierNode<TState>, cxt: ParseContext) => BlockEntity[];
+    public beforeReparse?: 
+        (node: BlockModifierNode<TState>, cxt: ParseContext) => Message[];
+    public afterReparse?: 
+        (node: BlockModifierNode<TState>, cxt: ParseContext) => Message[];
 }
 
 export class InlineModifierDefinition<TState>  {
@@ -141,10 +145,24 @@ export class InlineModifierDefinition<TState>  {
     public readonly emptyState?: () => TState;
     public beforeParse?: 
         (node: InlineModifierNode<TState>, cxt: ParseContext) => Message[];
-    public parse?: 
+    public afterParse?: 
         (node: InlineModifierNode<TState>, cxt: ParseContext) => Message[];
     public expand?: 
         (node: InlineModifierNode<TState>, cxt: ParseContext) => InlineEntity[];
+    public beforeReparse?: 
+        (node: InlineModifierNode<TState>, cxt: ParseContext) => Message[];
+    public afterReparse?: 
+        (node: InlineModifierNode<TState>, cxt: ParseContext) => Message[];
+}
+
+export type BlockInstantiationData = {
+    mod: BlockModifierDefinition<any>,
+    args: string[]
+}
+
+export type InlineInstantiationData = {
+    mod: BlockModifierDefinition<any>,
+    args: string[]
 }
 
 export class ParseContext {
@@ -156,8 +174,9 @@ export class ParseContext {
 
     public blockSlotInDefinition: string[] = [];
     public inlineSlotInDefinition: string[] = [];
-    public blockSlotData: [string, BlockEntity[]][] = [];
-    public inlineSlotData: [string, InlineEntity[]][] = [];
+    public blockSlotData: [string, BlockInstantiationData][] = [];
+    public inlineSlotData: [string, InlineInstantiationData][] = [];
+    public expandableDepth = 0;
 }
 
 export class Document {
@@ -177,7 +196,7 @@ export interface Configuration {
 export class CustomConfiguration implements Configuration {
     private blocks = new Map<string, BlockModifierDefinition<any>>;
     private inlines = new Map<string, InlineModifierDefinition<any>>;
-    public reparseDepthLimit = 50;
+    public reparseDepthLimit = 10;
     
     constructor(from?: Configuration) {
         if (from) {

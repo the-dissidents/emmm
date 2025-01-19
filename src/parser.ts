@@ -1,3 +1,4 @@
+import { debug } from "./debug";
 import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, Node, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner } from "./interface";
 import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, ReachedRecursionLimitMessage as ReachedReparseLimitMessage, ReferredMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
 import { assert, has } from "./util";
@@ -33,6 +34,7 @@ class EmitEnvironment {
             for (const range of referringReverse)
                 msg = new ReferredMessage(msg, range.start, range.end - range.start);
             this.messages.push(msg);
+            debug.trace('issued msg', msg.code, msg.info);
         }
     }
 
@@ -133,44 +135,57 @@ class Parser {
                 case "block":
                 case "inline":
                     if (this.doneParsing.has(node)) {
-                        console.log('skipping', node);
+                        debug.trace('reparse: skipping', node.mod.name);
                         continue;
                     }
                     this.doneParsing.add(node);
                     assert(node.expansion === undefined);
-                    if (node.mod.beforeParse)
-                        this.emit.message(...node.mod.beforeParse(node as any, this.cxt));
 
-                    this.emit.pushReferring(node.start, node.end);
-                    ok &&= this.#reparse(node.content, depth + 1);
-                    this.emit.popReferring();
-                    
-                    if (node.mod.parse)
-                        this.emit.message(...node.mod.parse(node as any, this.cxt));
-                    node.expansion = node.mod.expand
-                        ? node.mod.expand(node as any, this.cxt) : [];
-                    
-                    this.emit.pushReferring(node.start, node.end);
-                    ok = this.#reparse(node.expansion, depth + 1) && ok;
-                    this.emit.popReferring();
+                    if (this.cxt.expandableDepth == 0) {
+                        if (node.mod.beforeParse)
+                            this.emit.message(...node.mod.beforeParse(node as any, this.cxt));
+                        if (node.mod.expand)
+                            this.cxt.expandableDepth++;
+                        debug.trace('reparse: beforeParse', node.mod.name);
+                        ok = this.#reparse(node.content, depth + 1) && ok;
+                        debug.trace('reparse: afterParse', node.mod.name);
+                        if (node.mod.expand)
+                            this.cxt.expandableDepth--;
+                        if (node.mod.afterParse)
+                            this.emit.message(...node.mod.afterParse(node as any, this.cxt));
+
+                        ok = this.#expand(node, depth + 1) && ok;
+                    } else debug.trace('reparse: not really parsing:', node.mod.name);
                     break;
             }
         }
         return ok;
     }
 
-    #expand(node: BlockModifierNode<any> | InlineModifierNode<any>) {
-        this.doneParsing.add(node);
-        node.expansion = node.mod.expand
-            ? node.mod.expand(node as any, this.cxt) : [];
+    #expand(node: BlockModifierNode<any> | InlineModifierNode<any>, depth = 0) {
+        if (node.mod.expand === undefined) return true;
+        node.expansion = node.mod.expand(node as any, this.cxt);
+        if (node.expansion.length == 0) return true;
+
+        debug.trace('expanded', node.mod.name);
+        debug.trace('beforeReparse expansion of', node.mod.name);
+        if (node.mod.beforeReparse)
+            this.emit.message(...node.mod.beforeReparse(node as any, this.cxt));
+
         this.emit.pushReferring(node.start, node.end);
-        const ok = this.#reparse(node.expansion, 0);
+        const ok = this.#reparse(node.expansion, depth);
         this.emit.popReferring();
-        if (!ok) {
+
+        debug.trace('afterReparse expansion of', node.mod.name);
+        if (node.mod.afterReparse)
+            this.emit.message(...node.mod.afterReparse(node as any, this.cxt));
+
+        if (!ok && depth == 0) {
             const limit = this.cxt.config.reparseDepthLimit;
             this.emit.message(new ReachedReparseLimitMessage(
                 node.start, node.end - node.start, limit, node.mod.name));
         }
+        return ok;
     }
 
     parse() {
@@ -261,10 +276,16 @@ class Parser {
             content: []
         }
 
-        const isInDefiniton = this.cxt.blockSlotInDefinition.length > 0 
-                           || this.cxt.inlineSlotInDefinition.length > 0;
-        if (mod.beforeParse && !isInDefiniton)
+        const doParse = this.cxt.expandableDepth == 0;
+        if (doParse) this.doneParsing.add(node);
+        else debug.trace('not really parsing:', node.mod.name);
+        if (mod.beforeParse && doParse) {
+            debug.trace('beforeParse', node.mod.name);
             this.emit.message(...mod.beforeParse(node, this.cxt));
+        }
+
+        if (mod.expand !== undefined)
+            this.cxt.expandableDepth++;
         this.emit.startBlock(node);
         if (!isMarker) {
             this.WARN_IF_MORE_NEWLINES_THAN(1);
@@ -276,9 +297,14 @@ class Parser {
             }
         }
         this.emit.endBlock();
-        if (!isInDefiniton) {
-            if (mod.parse)
-                this.emit.message(...mod.parse(node, this.cxt));
+        if (mod.expand !== undefined)
+            this.cxt.expandableDepth--;
+
+        if (doParse) {
+            if (mod.afterParse) {
+                debug.trace('afterParse', node.mod.name);
+                this.emit.message(...mod.afterParse(node, this.cxt));
+            }
             this.#expand(node);
         }
     }
@@ -461,10 +487,11 @@ class Parser {
             content: []
         }
 
-        const isInDefiniton = this.cxt.blockSlotInDefinition.length > 0 
-                           || this.cxt.inlineSlotInDefinition.length > 0;
-        if (mod.beforeParse && !isInDefiniton)
+        const doParse = this.cxt.expandableDepth == 0;
+        if (doParse) this.doneParsing.add(node);
+        if (mod.beforeParse && doParse)
             this.emit.message(...mod.beforeParse(node, this.cxt));
+
         this.emit.startInline(node);
         let ok = true;
         if (!isMarker) {
@@ -481,10 +508,12 @@ class Parser {
             }
         }
         this.emit.endInline();
-        // don't expand when inside definition
-        if (!isInDefiniton) {
-            if (mod.parse)
-                this.emit.message(...mod.parse(node, this.cxt));
+
+        if (doParse) {
+            if (mod.afterParse) {
+                debug.trace('afterParse', node.mod.name);
+                this.emit.message(...mod.afterParse(node, this.cxt));
+            }
             this.#expand(node);
         }
         return ok;
