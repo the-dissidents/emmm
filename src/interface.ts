@@ -124,8 +124,8 @@ class ModifierBase<TNode, TEntity> {
     public delayContentExpansion = false;
     public alwaysTryExpand = false;
 
-    public beforeInitialParseContent?: (node: TNode, cxt: ParseContext) => Message[];
-    public afterInitialParseContent?: (node: TNode, cxt: ParseContext) => Message[];
+    public beforeParseContent?: (node: TNode, cxt: ParseContext) => Message[];
+    public afterParseContent?: (node: TNode, cxt: ParseContext) => Message[];
 
     public beforeProcessExpansion?: (node: TNode, cxt: ParseContext) => Message[];
     public afterProcessExpansion?: (node: TNode, cxt: ParseContext) => Message[];

@@ -8,16 +8,20 @@ export enum DebugLevel {
 
 export const debug = {
     level: DebugLevel.Info,
-    trace(...args: any) {
-        if (this.level <= DebugLevel.Trace) console.info('TRACE', ...args);
+    trace(arg0: any, ...args: any) {
+        if (typeof arg0 == 'function') arg0 = arg0();
+        if (this.level <= DebugLevel.Trace) console.info('TRACE', arg0, ...args);
     },
-    info(...args: any) {
-        if (this.level <= DebugLevel.Info) console.info('INFO', ...args);
+    info(arg0: any, ...args: any) {
+        if (typeof arg0 == 'function') arg0 = arg0();
+        if (this.level <= DebugLevel.Info) console.info('INFO ', arg0, ...args);
     },
-    warning(...args: any) {
-        if (this.level <= DebugLevel.Warning) console.warn('WARNING', ...args);
+    warning(arg0: any, ...args: any) {
+        if (typeof arg0 == 'function') arg0 = arg0();
+        if (this.level <= DebugLevel.Warning) console.warn('WARN ', arg0, ...args);
     },
-    error(...args: any) {
-        if (this.level <= DebugLevel.Error) console.error('ERROR', ...args);
+    error(arg0: any, ...args: any) {
+        if (typeof arg0 == 'function') arg0 = arg0();
+        if (this.level <= DebugLevel.Error) console.error('ERROR', arg0, ...args);
     }
 }

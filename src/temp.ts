@@ -75,7 +75,7 @@ text2 = `
 // [.q] def
 // `
 
-debug.level = DebugLevel.Trace;
+debug.level = DebugLevel.Warning;
 let t0 = performance.now()
 let doc = Parser.parse(new SimpleScanner(text2), DefaultConfiguration);
 console.log(performance.now() - t0);

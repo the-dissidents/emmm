@@ -18,7 +18,7 @@ function customBlockModifier(
 {
     debug.info('registered custom block modifier:', name);
     debug.info('args:', argNames, `with ${slotName == '' ? 'no slot name' : 'slot name: '+slotName}`)
-    debug.trace('content is\n' + debugPrintNodes(content));
+    debug.trace(() => 'content is\n' + debugPrintNodes(content));
     const mod = new BlockModifierDefinition<{
         ok: boolean
         // TODO: args
@@ -185,13 +185,13 @@ basic.addBlock(
             }
             return []
         },
-        beforeInitialParseContent(node, cxt) {
+        beforeParseContent(node, cxt) {
             if (!node.state) return [];
             cxt.blockSlotDelayedStack.push(node.state.slotName);
             debug.trace('entering block definition:', node.state.name);
             return [];
         },
-        afterInitialParseContent(node, cxt) {
+        afterParseContent(node, cxt) {
             if (!node.state) return [];
             assert(cxt.blockSlotDelayedStack.pop() == node.state.slotName);
             debug.trace('leaving block definition', node.state.name);

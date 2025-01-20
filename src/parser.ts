@@ -156,13 +156,13 @@ class Parser {
 
         if (node.content.length > 0 && depth > 0) {
             // simulate initial parse for generated content
-            if (node.mod.beforeInitialParseContent)
-                this.emit.message(...node.mod.beforeInitialParseContent(node as any, this.cxt));
+            if (node.mod.beforeParseContent)
+                this.emit.message(...node.mod.beforeParseContent(node as any, this.cxt));
             if (node.mod.delayContentExpansion) this.cxt.delayDepth++;
             this.#reparse(node.content, depth);
             if (node.mod.delayContentExpansion) this.cxt.delayDepth--;
-            if (node.mod.afterInitialParseContent)
-                this.emit.message(...node.mod.afterInitialParseContent(node as any, this.cxt));
+            if (node.mod.afterParseContent)
+                this.emit.message(...node.mod.afterParseContent(node as any, this.cxt));
         }
         if (node.mod.expand) {
             node.expansion = node.mod.expand(node as any, this.cxt);
@@ -170,7 +170,7 @@ class Parser {
                 return true;
             } else if (node.expansion.length > 0) {
                 debug.trace(`${this.cxt.delayDepth > 0 ? 'early ' : ''}expanding:`, node.mod.name);
-                debug.trace('-->\n' + debugPrintNodes(node.expansion, '  '));
+                debug.trace(() => '-->\n' + debugPrintNodes(node.expansion!, '  '));
             }
         }
         const expansion = node.expansion ?? node.content;
@@ -284,8 +284,8 @@ class Parser {
         if (node.mod.prepare)
             this.emit.message(...node.mod.prepare(node as any, this.cxt));
 
-        if (node.mod.beforeInitialParseContent)
-            this.emit.message(...node.mod.beforeInitialParseContent(node, this.cxt));
+        if (node.mod.beforeParseContent)
+            this.emit.message(...node.mod.beforeParseContent(node, this.cxt));
         if (node.mod.delayContentExpansion) this.cxt.delayDepth++;
         this.emit.startBlock(node);
         if (!isMarker) {
@@ -299,8 +299,8 @@ class Parser {
         }
         this.emit.endBlock();
         if (node.mod.delayContentExpansion) this.cxt.delayDepth--;
-        if (node.mod.afterInitialParseContent)
-            this.emit.message(...node.mod.afterInitialParseContent(node, this.cxt));
+        if (node.mod.afterParseContent)
+            this.emit.message(...node.mod.afterParseContent(node, this.cxt));
 
         this.#expand(node);
     }
