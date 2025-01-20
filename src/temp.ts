@@ -1,7 +1,8 @@
 import { SimpleScanner } from "./front";
 import * as Parser from "./parser";
-import { DefaultConfiguration } from "./default";
+import { BasicConfiguration, DefaultConfiguration } from "./default";
 import { debugDumpDocument, stripDocument } from "./util";
+import { debug, DebugLevel } from "./debug";
 
 
 let text2 = String.raw`
@@ -10,33 +11,35 @@ let text2 = String.raw`
 
 Version [/$version], created by [/$name]`;
 
-text2 = `
-[.define-block bad]
-[/$xyz]
+text2 = `[.quote][.slot]`
 
-[.define-block bad2]
-[.bad;]
+// text2 = `
+// [.define-block bad]
+// [/$xyz]
 
-[.bad2;]
-[.var xyz:1]
-[.bad2;]`
+// [.define-block bad2]
+// [.bad;]
 
-text2 = `
-[.define-block q1:(A)]
-:--
-xyz
-[.slot A]
---:
+// [.bad2;]
+// [.var xyz:1]
+// [.bad2;]`
 
-[.define-block q2:(B)]
-[.q1]
-:--
-hhh
-[.slot B]
---:
+// text2 = `
+// [.define-block q1:(A)]
+// :--
+// xyz
+// [.slot A]
+// --:
 
-[.q2] abc[/$bad]
-`
+// [.define-block q2:(B)]
+// [.q1]
+// :--
+// hhh
+// [.slot B]
+// --:
+
+// [.q2] abc[/$bad]
+// `
 
 text2 = `
 [.define-block q:(A)]
@@ -50,16 +53,15 @@ text2 = `
 [.q] [/$x]
 `
 
-text2 = `
-[.define-block p]
-:--
-[.slot]
-[.define-block q][.slot]
---:
-
-[.p] abc
-[.q] def
-`
+// text2 = `
+// [.define-block p]
+// :--
+// [.slot]
+// [.define-block q][.slot]
+// --:
+// [.p] abc
+// [.q] def
+// `
 
 // text2 = `
 // [.define-block p:(A)]
@@ -70,10 +72,10 @@ text2 = `
 // --:
 
 // [.p] abc
-
 // [.q] def
 // `
 
+debug.level = DebugLevel.Trace;
 let t0 = performance.now()
 let doc = Parser.parse(new SimpleScanner(text2), DefaultConfiguration);
 console.log(performance.now() - t0);

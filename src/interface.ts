@@ -112,56 +112,43 @@ export enum ModifierFlags {
     Marker = 2
 }
 
-export class BlockModifierDefinition<TState> {
+class ModifierBase<TNode, TEntity> {
     constructor(
         public readonly name: string, 
         public readonly flags: ModifierFlags = ModifierFlags.Normal,
-        args?: Partial<BlockModifierDefinition<TState>>) 
+        args?: Partial<ModifierBase<TNode, TEntity>>) 
     {
         if (args) Object.assign(this, args);
     }
-    
-    public beforeParse?: 
-        (node: BlockModifierNode<TState>, cxt: ParseContext) => Message[];
-    public afterParse?: 
-        (node: BlockModifierNode<TState>, cxt: ParseContext) => Message[];
-    public expand?: 
-        (node: BlockModifierNode<TState>, cxt: ParseContext) => BlockEntity[];
-    public beforeReparse?: 
-        (node: BlockModifierNode<TState>, cxt: ParseContext) => Message[];
-    public afterReparse?: 
-        (node: BlockModifierNode<TState>, cxt: ParseContext) => Message[];
+
+    public delayContentExpansion = false;
+    public alwaysTryExpand = false;
+
+    public beforeInitialParseContent?: (node: TNode, cxt: ParseContext) => Message[];
+    public afterInitialParseContent?: (node: TNode, cxt: ParseContext) => Message[];
+
+    public beforeProcessExpansion?: (node: TNode, cxt: ParseContext) => Message[];
+    public afterProcessExpansion?: (node: TNode, cxt: ParseContext) => Message[];
+
+    public prepare?: (node: TNode, cxt: ParseContext) => Message[];
+    public expand?: (node: TNode, cxt: ParseContext) => TEntity[] | undefined;
 }
 
-export class InlineModifierDefinition<TState>  {
-    constructor(
-        public readonly name: string, 
-        public readonly flags: ModifierFlags = ModifierFlags.Normal,
-        args?: Partial<InlineModifierDefinition<TState>>) 
-    {
-        if (args) Object.assign(this, args);
-    }
-    
-    public readonly emptyState?: () => TState;
-    public beforeParse?: 
-        (node: InlineModifierNode<TState>, cxt: ParseContext) => Message[];
-    public afterParse?: 
-        (node: InlineModifierNode<TState>, cxt: ParseContext) => Message[];
-    public expand?: 
-        (node: InlineModifierNode<TState>, cxt: ParseContext) => InlineEntity[];
-    public beforeReparse?: 
-        (node: InlineModifierNode<TState>, cxt: ParseContext) => Message[];
-    public afterReparse?: 
-        (node: InlineModifierNode<TState>, cxt: ParseContext) => Message[];
-}
+export class BlockModifierDefinition<TState> 
+    extends ModifierBase<BlockModifierNode<TState>, BlockEntity> {}
+
+export class InlineModifierDefinition<TState> 
+    extends ModifierBase<InlineModifierNode<TState>, InlineEntity> {}
 
 export type BlockInstantiationData = {
     mod: BlockModifierDefinition<any>,
+    slotContent: BlockEntity[],
     args: string[]
 }
 
 export type InlineInstantiationData = {
     mod: BlockModifierDefinition<any>,
+    slotContent: InlineEntity[],
     args: string[]
 }
 
@@ -172,11 +159,11 @@ export class ParseContext {
 
     public onConfigChange: () => void = () => {};
 
-    public blockSlotInDefinition: string[] = [];
-    public inlineSlotInDefinition: string[] = [];
+    public blockSlotDelayedStack: string[] = [];
+    public inlineSlotDelayedStack: string[] = [];
     public blockSlotData: [string, BlockInstantiationData][] = [];
     public inlineSlotData: [string, InlineInstantiationData][] = [];
-    public expandableDepth = 0;
+    public delayDepth = 0;
 }
 
 export class Document {

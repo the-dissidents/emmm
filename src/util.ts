@@ -27,15 +27,15 @@ export function cloneNode(node: Node, referring?: PositionRange): Node {
         case "block":
         case "inline":
             return {
-                type: node.type as any,
                 start: node.start,
                 end: node.end,
+                type: node.type as any,
                 mod: node.mod,
+                state: undefined,
                 head: structuredClone(node.head),
                 arguments: structuredClone(node.arguments),
                 content: node.content.map((x) => cloneNode(x, referring) as any),
-                state: undefined,
-                expansion: undefined
+                expansion: node.expansion ? cloneNodes(node.expansion) as any : undefined
             };
         case "root":
         case "paragraph":
@@ -57,7 +57,6 @@ export function cloneNode(node: Node, referring?: PositionRange): Node {
 export function cloneNodes(nodes: Node[]): Node[] {
     return nodes.map((x) => cloneNode(x));
 }
-
 
 export function stripDocument(doc: Document) {
     function stripNode(node: Node): Node[] {
@@ -81,8 +80,49 @@ export function stripDocument(doc: Document) {
     doc.root = stripNode(doc.root)[0] as any;
 }
 
+export function debugPrintNode(node: Node, prefix = '') {
+    let result = `<${node.type}@${node.start}`;
+    switch (node.type) {
+        case "root":
+        case "paragraph":
+            const content = debugPrintNodes(node.content, prefix);
+            if (content.length > 0)
+                result += `>\n${content}\n${prefix}</${node.type}@${node.end}>`;
+            else result += `-${node.end} />`;
+            break;
+        case "escaped":
+        case "pre":
+            result += `>\n${prefix}  ${node.content}\n${prefix}</${node.type}@${node.end}>`;
+            break;
+        case "inline":
+        case "block":
+            const args = node.arguments.map((x, i) => `\n${prefix}    (${i})@${x.start}-${x.end}=${x.content}`).join('')
+            if (node.content.length > 0) {
+                result += ` id=${node.mod.name}${args}>\n` + debugPrintNodes(node.content, prefix) + `\n${prefix}</${node.type}@${node.end}>`;
+            } else result += `-${node.end} id=${node.mod.name}${args} />`;
+            if (node.expansion) {
+                const content = debugPrintNodes(node.expansion, prefix);
+                if (content.length > 0)
+                    result += `\n${prefix}<expansion>\n${content}\n${prefix}</expansion>`;
+                else
+                    result += `\n${prefix}<expansion />`;
+            }
+            break;
+        case "text":
+            return node.content;
+    }
+    return result;
+}
+
+export function debugPrintNodes(content: Node[], prefix: string = '') {
+    let dumps = content.map((x) => debugPrintNode(x, prefix + '  ')).filter((x) => x.length > 0);
+    if (dumps.length == 0) return '';
+    return dumps.map((x) => `${prefix}  ${x}`).join('\n');
+}
+
 export function debugDumpDocument(doc: Document, source: string): string {
     const lines = linePositions(source);
+
     function pos2lc(pos: number) {
         let line = -1, linepos = 0;
         for (let i = 1; i < lines.length; i++) {
@@ -95,46 +135,6 @@ export function debugDumpDocument(doc: Document, source: string): string {
         return `l${line}c${pos - linepos + 1}`;
     }
 
-    function dumpContent(content: Node[], prefix: string) {
-        let dumps = content.map((x) => dumpNode(x, prefix + '  ')).filter((x) => x.length > 0);
-        if (dumps.length == 0) return '';
-        return dumps.map((x) => `\n${prefix}  ${x}`).join('');
-    }
-
-    function dumpNode(node: Node, prefix = '') {
-        let result = `<${node.type}@${node.start}`;
-        switch (node.type) {
-        case "root":
-        case "paragraph":
-            const content = dumpContent(node.content, prefix);
-            if (content.length > 0)
-                result += `>${content}\n${prefix}</${node.type}@${node.end}>`;
-            else result += `-${node.end} />`;
-            break;
-        case "escaped":
-        case "pre":
-            result += `>\n${prefix}  ${node.content}\n${prefix}</${node.type}@${node.end}>`;
-            break;
-        case "inline":
-        case "block":
-            const args = node.arguments.map((x, i) => `\n${prefix}    (${i})@${x.start}-${x.end}=${x.content}`).join('')
-            if (node.content.length > 0) {
-                result += ` id=${node.mod.name}${args}>` + dumpContent(node.content, prefix) + `\n${prefix}</${node.type}@${node.end}>`;
-            } else result += `-${node.end} id=${node.mod.name}${args} />`;
-            if (node.expansion) {
-                const content = dumpContent(node.expansion, prefix);
-                if (content.length > 0)
-                    result += `\n${prefix}<expansion>${content}\n${prefix}</expansion>`;
-                else
-                    result += `\n${prefix}<expansion />`;
-            }
-            break;
-        case "text":
-            return node.content;
-        }
-        return result;
-    }
-
     function dumpMsg(m: Message) {
         let result = `at ${pos2lc(m.position)}, len ${m.length}: ${MessageSeverity[m.severity]}[${m.code}]: ${m.info}`;
         while (m instanceof ReferredMessage) {
@@ -144,7 +144,7 @@ export function debugDumpDocument(doc: Document, source: string): string {
         return result;
     }
 
-    let root = dumpNode(doc.root);
+    let root = debugPrintNode(doc.root);
     let msgs = doc.messages.map(dumpMsg).join('\n');
     return `${msgs}\n${root}`;
 }

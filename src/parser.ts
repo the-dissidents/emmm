@@ -1,7 +1,7 @@
 import { debug } from "./debug";
 import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, Node, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner } from "./interface";
 import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, ReachedRecursionLimitMessage as ReachedReparseLimitMessage, ReferredMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
-import { assert, has } from "./util";
+import { assert, debugPrintNodes, has } from "./util";
 
 const GROUP_BEGIN = ':--';
 const GROUP_END = '--:';
@@ -134,28 +134,7 @@ class Parser {
                     break;
                 case "block":
                 case "inline":
-                    if (this.doneParsing.has(node)) {
-                        debug.trace('reparse: skipping', node.mod.name);
-                        continue;
-                    }
-                    this.doneParsing.add(node);
-                    assert(node.expansion === undefined);
-
-                    if (this.cxt.expandableDepth == 0) {
-                        if (node.mod.beforeParse)
-                            this.emit.message(...node.mod.beforeParse(node as any, this.cxt));
-                        if (node.mod.expand)
-                            this.cxt.expandableDepth++;
-                        debug.trace('reparse: beforeParse', node.mod.name);
-                        ok = this.#reparse(node.content, depth + 1) && ok;
-                        debug.trace('reparse: afterParse', node.mod.name);
-                        if (node.mod.expand)
-                            this.cxt.expandableDepth--;
-                        if (node.mod.afterParse)
-                            this.emit.message(...node.mod.afterParse(node as any, this.cxt));
-
-                        ok = this.#expand(node, depth + 1) && ok;
-                    } else debug.trace('reparse: not really parsing:', node.mod.name);
+                    ok = this.#expand(node, depth + 1) && ok;
                     break;
             }
         }
@@ -163,23 +142,48 @@ class Parser {
     }
 
     #expand(node: BlockModifierNode<any> | InlineModifierNode<any>, depth = 0) {
-        if (node.mod.expand === undefined) return true;
-        node.expansion = node.mod.expand(node as any, this.cxt);
-        if (node.expansion.length == 0) return true;
+        if (node.expansion !== undefined) {
+            debug.trace('already expanded, skipping:', node.mod.name);
+            return true;
+        }
+        if (this.cxt.delayDepth > 0 && !node.mod.alwaysTryExpand) {
+            debug.trace('delaying expansion of', node.mod.name);
+            return true;
+        }
 
-        debug.trace('expanded', node.mod.name);
-        debug.trace('beforeReparse expansion of', node.mod.name);
-        if (node.mod.beforeReparse)
-            this.emit.message(...node.mod.beforeReparse(node as any, this.cxt));
+        if (node.mod.prepare && depth > 0)
+            this.emit.message(...node.mod.prepare(node as any, this.cxt));
+
+        if (node.content.length > 0 && depth > 0) {
+            // simulate initial parse for generated content
+            if (node.mod.beforeInitialParseContent)
+                this.emit.message(...node.mod.beforeInitialParseContent(node as any, this.cxt));
+            if (node.mod.delayContentExpansion) this.cxt.delayDepth++;
+            this.#reparse(node.content, depth);
+            if (node.mod.delayContentExpansion) this.cxt.delayDepth--;
+            if (node.mod.afterInitialParseContent)
+                this.emit.message(...node.mod.afterInitialParseContent(node as any, this.cxt));
+        }
+        if (node.mod.expand) {
+            node.expansion = node.mod.expand(node as any, this.cxt);
+            if (!node.expansion) {
+                return true;
+            } else if (node.expansion.length > 0) {
+                debug.trace(`${this.cxt.delayDepth > 0 ? 'early ' : ''}expanding:`, node.mod.name);
+                debug.trace('-->\n' + debugPrintNodes(node.expansion, '  '));
+            }
+        }
+        const expansion = node.expansion ?? node.content;
+        if (expansion.length == 0) return true;
+        if (node.mod.beforeProcessExpansion)
+            this.emit.message(...node.mod.beforeProcessExpansion(node as any, this.cxt));
 
         this.emit.pushReferring(node.start, node.end);
-        const ok = this.#reparse(node.expansion, depth);
+        let ok = this.#reparse(expansion, depth);
         this.emit.popReferring();
 
-        debug.trace('afterReparse expansion of', node.mod.name);
-        if (node.mod.afterReparse)
-            this.emit.message(...node.mod.afterReparse(node as any, this.cxt));
-
+        if (node.mod.afterProcessExpansion)
+            this.emit.message(...node.mod.afterProcessExpansion(node as any, this.cxt));
         if (!ok && depth == 0) {
             const limit = this.cxt.config.reparseDepthLimit;
             this.emit.message(new ReachedReparseLimitMessage(
@@ -276,16 +280,13 @@ class Parser {
             content: []
         }
 
-        const doParse = this.cxt.expandableDepth == 0;
-        if (doParse) this.doneParsing.add(node);
-        else debug.trace('not really parsing:', node.mod.name);
-        if (mod.beforeParse && doParse) {
-            debug.trace('beforeParse', node.mod.name);
-            this.emit.message(...mod.beforeParse(node, this.cxt));
-        }
 
-        if (mod.expand !== undefined)
-            this.cxt.expandableDepth++;
+        if (node.mod.prepare)
+            this.emit.message(...node.mod.prepare(node as any, this.cxt));
+
+        if (node.mod.beforeInitialParseContent)
+            this.emit.message(...node.mod.beforeInitialParseContent(node, this.cxt));
+        if (node.mod.delayContentExpansion) this.cxt.delayDepth++;
         this.emit.startBlock(node);
         if (!isMarker) {
             this.WARN_IF_MORE_NEWLINES_THAN(1);
@@ -297,16 +298,11 @@ class Parser {
             }
         }
         this.emit.endBlock();
-        if (mod.expand !== undefined)
-            this.cxt.expandableDepth--;
+        if (node.mod.delayContentExpansion) this.cxt.delayDepth--;
+        if (node.mod.afterInitialParseContent)
+            this.emit.message(...node.mod.afterInitialParseContent(node, this.cxt));
 
-        if (doParse) {
-            if (mod.afterParse) {
-                debug.trace('afterParse', node.mod.name);
-                this.emit.message(...mod.afterParse(node, this.cxt));
-            }
-            this.#expand(node);
-        }
+        this.#expand(node);
     }
 
     // also handles "grouped" (delimited) pre-paragraphs
@@ -487,10 +483,10 @@ class Parser {
             content: []
         }
 
-        const doParse = this.cxt.expandableDepth == 0;
+        const doParse = this.cxt.delayDepth == 0;
         if (doParse) this.doneParsing.add(node);
-        if (mod.beforeParse && doParse)
-            this.emit.message(...mod.beforeParse(node, this.cxt));
+        if (mod.beforeProcessExpansion && doParse)
+            this.emit.message(...mod.beforeProcessExpansion(node, this.cxt));
 
         this.emit.startInline(node);
         let ok = true;
@@ -510,9 +506,9 @@ class Parser {
         this.emit.endInline();
 
         if (doParse) {
-            if (mod.afterParse) {
-                debug.trace('afterParse', node.mod.name);
-                this.emit.message(...mod.afterParse(node, this.cxt));
+            if (mod.afterProcessExpansion) {
+                debug.trace('afterProcess', node.mod.name);
+                this.emit.message(...mod.afterProcessExpansion(node, this.cxt));
             }
             this.#expand(node);
         }
