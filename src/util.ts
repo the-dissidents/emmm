@@ -1,4 +1,4 @@
-import { Document, Message, MessageSeverity, Node, PositionRange } from "./interface";
+import { Document, Message, MessageSeverity, DocumentNode, PositionRange, ArgumentEntity, ModifierArgument } from "./interface";
 import { ReferredMessage } from "./messages";
 
 export function assert(x: boolean): asserts x {
@@ -22,7 +22,7 @@ export function linePositions(src: string): number[] {
     return result;
 }
 
-export function cloneNode(node: Node, referring?: PositionRange): Node {
+export function cloneNode(node: DocumentNode, referring?: PositionRange): DocumentNode {
     switch (node.type) {
         case "block":
         case "inline":
@@ -54,12 +54,12 @@ export function cloneNode(node: Node, referring?: PositionRange): Node {
     }
 }
 
-export function cloneNodes(nodes: Node[]): Node[] {
+export function cloneNodes(nodes: DocumentNode[]): DocumentNode[] {
     return nodes.map((x) => cloneNode(x));
 }
 
 export function stripDocument(doc: Document) {
-    function stripNode(node: Node): Node[] {
+    function stripNode(node: DocumentNode): DocumentNode[] {
         switch (node.type) {
             case "pre":
             case "text":
@@ -80,7 +80,22 @@ export function stripDocument(doc: Document) {
     doc.root = stripNode(doc.root)[0] as any;
 }
 
-export function debugPrintNode(node: Node, prefix = '') {
+function debugPrintArgEntity(node: ArgumentEntity): string {
+    switch (node.type) {
+        case "text":
+            return node.content;
+        case "escaped":
+            return `<Escaped:${node.content}>`;
+        case "interp":
+            return `<Interp:${node.definition.prefix}-${node.definition.postfix}:${debugPrintArgument(node.arg)}>`;
+    }
+}
+
+export function debugPrintArgument(arg: ModifierArgument): string {
+    return arg.content.map(debugPrintArgEntity).join('');
+}
+
+export function debugPrintNode(node: DocumentNode, prefix = '') {
     let result = `<${node.type}@${node.start}`;
     switch (node.type) {
         case "root":
@@ -96,7 +111,7 @@ export function debugPrintNode(node: Node, prefix = '') {
             break;
         case "inline":
         case "block":
-            const args = node.arguments.map((x, i) => `\n${prefix}    (${i})@${x.start}-${x.end}=${x.content}`).join('')
+            const args = node.arguments.map((x, i) => `\n${prefix}    (${i})@${x.start}-${x.end}=${debugPrintArgument(x)}`).join('')
             if (node.content.length > 0) {
                 result += ` id=${node.mod.name}${args}>\n` + debugPrintNodes(node.content, prefix) + `\n${prefix}</${node.type}@${node.end}>`;
             } else result += `-${node.end} id=${node.mod.name}${args} />`;
@@ -114,7 +129,7 @@ export function debugPrintNode(node: Node, prefix = '') {
     return result;
 }
 
-export function debugPrintNodes(content: Node[], prefix: string = '') {
+export function debugPrintNodes(content: DocumentNode[], prefix: string = '') {
     let dumps = content.map((x) => debugPrintNode(x, prefix + '  ')).filter((x) => x.length > 0);
     if (dumps.length == 0) return '';
     return dumps.map((x) => `${prefix}  ${x}`).join('\n');

@@ -1,5 +1,5 @@
 import { debug } from "./debug";
-import { BlockEntity, BlockInstantiationData, BlockModifierDefinition, BlockModifierNode, Configuration, CustomConfiguration, InlineModifierDefinition, InlineModifierNode, Message, ModifierFlags, ParseContext } from "./interface";
+import { ArgumentInterpolatorDefinition, BlockEntity, BlockInstantiationData, BlockModifierDefinition, BlockModifierNode, Configuration, CustomConfiguration, InlineModifierDefinition, InlineModifierNode, Message, ModifierFlags, ParseContext } from "./interface";
 import { ArgumentsTooFewMessage, ArgumentsTooManyMessage, InlineDefinitonMustContainOneParaMessage, InvalidArgumentMessage, NameAlreadyDefinedMessage, SlotUsedOutsideDefinitionMessage, UndefinedVariableMessage } from "./messages";
 import { assert, cloneNodes, debugPrintNodes } from "./util";
 
@@ -79,6 +79,8 @@ const blockSlot = new BlockModifierDefinition<{
     // .slot [id]
     alwaysTryExpand: true,
     prepare(node, cxt) {
+        const id = node.arguments.length == 1 ? cxt.evaluateArgument(node.arguments[0]) : '';
+
         if (cxt.blockSlotData.length == 0) {
             if (cxt.delayDepth == 0) {
                 node.state = { ok: false };
@@ -86,7 +88,6 @@ const blockSlot = new BlockModifierDefinition<{
             }
             return [];
         }
-
         if (node.arguments.length > 1) {
             if (cxt.delayDepth == 0) {
                 node.state = { ok: false };
@@ -95,18 +96,14 @@ const blockSlot = new BlockModifierDefinition<{
             }
             return [];
         }
-        if (cxt.blockSlotDelayedStack.length > 0) {
-            const search = node.arguments.at(0)?.content ?? '';
-            if (cxt.blockSlotDelayedStack.includes(search)) {
-                debug.trace('delaying', search == '' ? 'unnamed slot' : 'slot: ' + search);
-                return [];
-            }
+        if (cxt.blockSlotDelayedStack.includes(id)) {
+            debug.trace('delaying', id == '' ? 'unnamed slot' : 'slot: ' + id);
+            return [];
         }
         if (node.arguments.length == 1) {
-            const arg = node.arguments[0];
             const data = cxt.blockSlotData;
             for (let i = data.length - 1; i >= 0; i--)
-                if (data[i][0] == arg.content) {
+                if (data[i][0] == id) {
                     node.state = {
                         ok: true,
                         data: data[i],
@@ -116,7 +113,8 @@ const blockSlot = new BlockModifierDefinition<{
                 }
             if (cxt.delayDepth == 0) {
                 node.state = { ok: false };
-                return [new InvalidArgumentMessage(arg.start, arg.end - arg.start, arg.content)];
+                const arg = node.arguments[0];
+                return [new InvalidArgumentMessage(arg.start, arg.end - arg.start, id)];
             }
             return [];
         } else {
@@ -164,15 +162,17 @@ basic.addBlock(
                 return [new ArgumentsTooFewMessage(node.head.end - 1, 0)];
             const msgs: Message[] = [];
             const name = node.arguments[0];
-            if (cxt.config.blockModifiers.has(name.content))
+            const nameValue = cxt.evaluateArgument(name);
+            if (cxt.config.blockModifiers.has(nameValue))
                 msgs.push(new NameAlreadyDefinedMessage(
-                    node.start, name.end - name.start, name.content));
-            const last = node.arguments.at(-1)!.content;
+                    node.start, name.end - name.start, nameValue));
+
+            const last = cxt.evaluateArgument(node.arguments.at(-1)!);
             const slotName = (node.arguments.length > 1 && /^\(.+\)$/.test(last)) 
-                ? last.substring(1, last.length - 1)
-                : '';
-            const args = node.arguments.slice(1, (slotName !== '') ? node.arguments.length - 1 : undefined).map((x) => x.content);
-            node.state = {name: name.content, slotName, args};
+                ? last.substring(1, last.length - 1) : '';
+            const args = node.arguments.slice(1, (slotName !== '') 
+                ? node.arguments.length - 1 : undefined).map((x) => cxt.evaluateArgument(x));
+            node.state = {name: nameValue, slotName, args};
             return msgs;
         },
         expand(node, cxt) {
@@ -198,54 +198,58 @@ basic.addBlock(
             return [];
         },
     }),
-    new BlockModifierDefinition<{
-        name: string,
-        slotName: string,
-        args: string[]
-    }>('define-inline', ModifierFlags.Normal, {
-        // .define-inline name:args...[:(slot-id)]
-        delayContentExpansion: true,
-        beforeProcessExpansion(node, cxt) {
-            if (node.arguments.length == 0)
-                return [new ArgumentsTooFewMessage(node.head.end - 1, 0)];
-            const msgs: Message[] = [];
-            const name = node.arguments[0];
-            if (cxt.config.inlineModifiers.has(name.content))
-                msgs.push(new NameAlreadyDefinedMessage(
-                    node.start, name.end - name.start, name.content));
-            if (node.content.length != 1)
-                msgs.push(new InlineDefinitonMustContainOneParaMessage(
-                    node.head.end, node.end - node.head.end));
-            if (node.content.length > 0) {
-                const last = node.arguments.at(-1)!.content;
-                const slotName = (node.arguments.length > 1 && /^\(.+\)$/.test(last)) 
-                    ? last.substring(1, last.length - 1)
-                    : '';
-                const args = node.arguments.slice(1, (slotName !== '') ? node.arguments.length - 1 : undefined).map((x) => x.content);
-                node.state = {name: name.content, slotName, args};
-                // cxt.inlineSlotInDefinition.push(slotName);
-            }
-            return msgs;
-        },
-        afterProcessExpansion(node, cxt) {
-            if (!node.state) return [];
-            // assert(cxt.inlineSlotInDefinition.pop() == node.state.slotName);
-            cxt.config.inlineModifiers.set(node.state.name, 
-                customInlineModifier(node.state.name, node.state.args, 
-                    node.state.slotName, node.content[0]));
-            cxt.onConfigChange();
-            return [];
-        },
-    }),
+    // new BlockModifierDefinition<{
+    //     name: string,
+    //     slotName: string,
+    //     args: string[]
+    // }>('define-inline', ModifierFlags.Normal, {
+    //     // .define-inline name:args...[:(slot-id)]
+    //     delayContentExpansion: true,
+    //     beforeProcessExpansion(node, cxt) {
+    //         if (node.arguments.length == 0)
+    //             return [new ArgumentsTooFewMessage(node.head.end - 1, 0)];
+    //         const msgs: Message[] = [];
+    //         const name = node.arguments[0];
+    //         if (cxt.config.inlineModifiers.has(name.content))
+    //             msgs.push(new NameAlreadyDefinedMessage(
+    //                 node.start, name.end - name.start, name.content));
+    //         if (node.content.length != 1)
+    //             msgs.push(new InlineDefinitonMustContainOneParaMessage(
+    //                 node.head.end, node.end - node.head.end));
+    //         if (node.content.length > 0) {
+    //             const last = node.arguments.at(-1)!.content;
+    //             const slotName = (node.arguments.length > 1 && /^\(.+\)$/.test(last)) 
+    //                 ? last.substring(1, last.length - 1)
+    //                 : '';
+    //             const args = node.arguments.slice(1, (slotName !== '') ? node.arguments.length - 1 : undefined).map((x) => x.content);
+    //             node.state = {name: name.content, slotName, args};
+    //             // cxt.inlineSlotInDefinition.push(slotName);
+    //         }
+    //         return msgs;
+    //     },
+    //     afterProcessExpansion(node, cxt) {
+    //         if (!node.state) return [];
+    //         // assert(cxt.inlineSlotInDefinition.pop() == node.state.slotName);
+    //         cxt.config.inlineModifiers.set(node.state.name, 
+    //             customInlineModifier(node.state.name, node.state.args, 
+    //                 node.state.slotName, node.content[0]));
+    //         cxt.onConfigChange();
+    //         return [];
+    //     },
+    // }),
     new BlockModifierDefinition<{id: string, value: string}>('var', ModifierFlags.Marker, {
         // .var id:value
         prepare(node, cxt) {
             const check = checkArgumentLength(node, 2);
             if (check) return [check];
             const arg = node.arguments[0];
-            if (arg.content == '')
+            const argValue = cxt.evaluateArgument(arg);
+            if (argValue == '')
                 return [new InvalidArgumentMessage(arg.start, arg.end - arg.start)];
-            node.state = {id: arg.content, value: node.arguments[1].content};
+            node.state = {
+                id: argValue, 
+                value: cxt.evaluateArgument(node.arguments[1])
+            };
             return [];
         },
         expand(node, cxt) {
@@ -263,11 +267,12 @@ basic.addInline(
             const check = checkArgumentLength(node, 1);
             if (check) return [check];
             const arg = node.arguments[0];
-            if (arg.content == '')
+            const argValue = cxt.evaluateArgument(arg);
+            if (argValue == '')
                 return [new InvalidArgumentMessage(arg.start, arg.end - arg.start)];
-            if (!cxt.variables.has(arg.content))
-                return [new UndefinedVariableMessage(arg.start, arg.end - arg.start, arg.content)];
-            node.state = {id: arg.content};
+            if (!cxt.variables.has(argValue))
+                return [new UndefinedVariableMessage(arg.start, arg.end - arg.start, argValue)];
+            node.state = {id: argValue};
             return [];
         },
         expand(node, cxt) {
@@ -278,6 +283,11 @@ basic.addInline(
         },
     }),
 );
+basic.addInterpolator(
+    new ArgumentInterpolatorDefinition('$(', ')', 
+        (content, cxt) => cxt.variables.get(content) ?? ''
+    )
+)
 
 let config = new CustomConfiguration(basic);
 

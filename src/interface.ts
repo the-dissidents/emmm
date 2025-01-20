@@ -60,11 +60,6 @@ export type PreNode = PositionRange & {
     content: PositionRange & {text: string}
 };
 
-export type ModifierArgument = PositionRange & {
-    name: string | undefined,
-    content: string // TODO: arg nodes
-}
-
 export type TextNode = PositionRange & {
     type: 'text',
     content: string
@@ -102,7 +97,20 @@ export type RootNode = PositionRange & {
 
 export type BlockEntity = ParagraphNode | PreNode | BlockModifierNode<any>;
 export type InlineEntity = TextNode | EscapedNode | InlineModifierNode<any>;
-export type Node = BlockEntity | InlineEntity | RootNode;
+export type DocumentNode = BlockEntity | InlineEntity | RootNode;
+
+// used in arguments only
+export type InterpolationNode = PositionRange & {
+    type: 'interp',
+    definition: ArgumentInterpolatorDefinition,
+    arg: ModifierArgument
+}
+
+export type ModifierArgument = PositionRange & {
+    content: ArgumentEntity[]
+}
+
+export type ArgumentEntity = TextNode | EscapedNode | InterpolationNode;
 
 export enum ModifierFlags {
     Normal = 0,
@@ -140,6 +148,14 @@ export class BlockModifierDefinition<TState>
 export class InlineModifierDefinition<TState> 
     extends ModifierBase<InlineModifierNode<TState>, InlineEntity> {}
 
+export class ArgumentInterpolatorDefinition {
+    constructor(
+        public readonly prefix: string,
+        public readonly postfix: string,
+        public expand: (content: string, cxt: ParseContext) => string) 
+    {}
+}
+
 export type BlockInstantiationData = {
     mod: BlockModifierDefinition<any>,
     slotContent: BlockEntity[],
@@ -159,6 +175,24 @@ export class ParseContext {
 
     public onConfigChange: () => void = () => {};
 
+    #evalEntity(e: ArgumentEntity): string {
+        switch (e.type) {
+            case "text":
+            case "escaped":
+                return e.content;
+            case "interp":
+                const inner = this.evaluateArgument(e.arg);
+                return e.definition.expand(inner, this);
+            default:
+                assert(false);
+        }
+    }
+
+    evaluateArgument(arg: ModifierArgument): string {
+        return arg.content.map((x) => this.#evalEntity(x)).join('');
+    }
+
+    // TODO: make a proper store
     public blockSlotDelayedStack: string[] = [];
     public inlineSlotDelayedStack: string[] = [];
     public blockSlotData: [string, BlockInstantiationData][] = [];
@@ -175,44 +209,48 @@ export class Document {
 
 export interface Configuration {
     blockModifiers: Map<string, BlockModifierDefinition<any>>,
-    inlineModifiers: Map<string, InlineModifierDefinition<any>>
+    inlineModifiers: Map<string, InlineModifierDefinition<any>>,
+    argumentInterpolators: Map<string, ArgumentInterpolatorDefinition>,
     reparseDepthLimit: number
     // TODO: shorthands, strings
 }
 
 export class CustomConfiguration implements Configuration {
-    private blocks = new Map<string, BlockModifierDefinition<any>>;
-    private inlines = new Map<string, InlineModifierDefinition<any>>;
-    public reparseDepthLimit = 10;
+    blockModifiers = new Map<string, BlockModifierDefinition<any>>;
+    inlineModifiers = new Map<string, InlineModifierDefinition<any>>;
+    argumentInterpolators = new Map<string, ArgumentInterpolatorDefinition>;
+    reparseDepthLimit = 10;
     
     constructor(from?: Configuration) {
         if (from) {
-            this.blocks = new Map(from.blockModifiers);
-            this.inlines = new Map(from.inlineModifiers);
+            this.blockModifiers = new Map(from.blockModifiers);
+            this.inlineModifiers = new Map(from.inlineModifiers);
+            this.argumentInterpolators = new Map(from.argumentInterpolators);
+            this.reparseDepthLimit = from.reparseDepthLimit;
         }
-    }
-
-    get blockModifiers(): Map<string, BlockModifierDefinition<any>> {
-        return this.blocks;
-    }
-
-    get inlineModifiers(): Map<string, InlineModifierDefinition<any>> {
-        return this.inlines;
     }
 
     addBlock(...xs: BlockModifierDefinition<any>[]) {
         for (const x of xs) {
-            if (this.blocks.has(x.name))
+            if (this.blockModifiers.has(x.name))
                 throw Error(`block modifier already exists: ${x.name}`);
-            this.blocks.set(x.name, x);
+            this.blockModifiers.set(x.name, x);
         }
     }
 
     addInline(...xs: InlineModifierDefinition<any>[]) {
         for (const x of xs) {
-            if (this.inlines.has(x.name))
-                throw Error(`block modifier already exists: ${x.name}`);
-            this.inlines.set(x.name, x);
+            if (this.inlineModifiers.has(x.name))
+                throw Error(`inline modifier already exists: ${x.name}`);
+            this.inlineModifiers.set(x.name, x);
+        }
+    }
+
+    addInterpolator(...xs: ArgumentInterpolatorDefinition[]) {
+        for (const x of xs) {
+            if (this.argumentInterpolators.has(x.prefix))
+                throw Error(`interpolator already exists: ${x.prefix}`);
+            this.argumentInterpolators.set(x.prefix, x);
         }
     }
 }

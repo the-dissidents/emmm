@@ -15,7 +15,19 @@ TestConfig.addBlock(
 TestConfig.addInline(
     new InlineModifierDefinition('normal', ModifierFlags.Normal),
     new InlineModifierDefinition('pre', ModifierFlags.Preformatted),
-    new InlineModifierDefinition('marker', ModifierFlags.Marker)
+    new InlineModifierDefinition('marker', ModifierFlags.Marker, {
+        expand(node, cxt) {
+            if (node.arguments.length == 1) {
+                return [{
+                    type: 'text',
+                    start: node.start,
+                    end: node.end,
+                    content: cxt.evaluateArgument(node.arguments[0])
+                }];
+            }
+            return [];
+        },
+    })
 );
 
 function parse(src: string) {
@@ -25,7 +37,60 @@ function parse(src: string) {
     return doc;
 }
 
+function parseWithoutStrip(src: string) {
+    const config = new CustomConfiguration(TestConfig);
+    let doc = Parser.parse(new SimpleScanner(src), config);
+    return doc;
+}
+
 debug.level = DebugLevel.Warning;
+
+describe('arguments', () => {
+    test('simple', () => {
+        let doc = parseWithoutStrip(`[.normal 123:456]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([ {
+            type: 'block', mod: {name: 'normal'},
+            arguments: [
+                { content: [{content: "123"}] },
+                { content: [{content: "456"}] }
+            ]
+        } ]);
+    });
+    test('escaped', () => {
+        let doc = parseWithoutStrip(String.raw`[/marker \]]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([ {
+            type: 'paragraph',
+            content: [{
+                type: 'inline', mod: {name: 'marker'},
+                arguments: [{ content: [{ type: 'escaped', content: "]" }] }],
+                expansion: [{ type: 'text', content: ']' }]
+            }]
+        } ]);
+    });
+    test('variable interpolation - AST', () => {
+        let doc = parse(`[.normal $(x)]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([ {
+            type: 'block', mod: {name: 'normal'},
+            arguments: [
+                { content: [{
+                    type: 'interp', 
+                    arg: {content: [{content: 'x'}]}
+                }] }
+            ],
+            content: []
+        } ]);
+    });
+    test('variable interpolation - expansion', () => {
+        let doc = parse(`[.var x:123][/marker $(x)]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: 'paragraph', content: [{ type: 'text', content: '123' }] }
+        ]);
+    });
+});
 
 describe('block macros', () => {
     test('literal and empty', () => {

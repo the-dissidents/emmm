@@ -41,17 +41,17 @@ text2 = `[.quote][.slot]`
 // [.q2] abc[/$bad]
 // `
 
-text2 = `
-[.define-block q:(A)]
-:--
-[.var x:0]
-[.slot A]
-[.var x:1]
-[.slot A]
---:
+// text2 = `
+// [.define-block q:(A)]
+// :--
+// [.var x:0]
+// [.slot A]
+// [.var x:1]
+// [.slot A]
+// --:
 
-[.q] [/$x]
-`
+// [.q] [/$x]
+// `
 
 // text2 = `
 // [.define-block p]
@@ -75,7 +75,7 @@ text2 = `
 // [.q] def
 // `
 
-debug.level = DebugLevel.Warning;
+debug.level = DebugLevel.Trace;
 let t0 = performance.now()
 let doc = Parser.parse(new SimpleScanner(text2), DefaultConfiguration);
 console.log(performance.now() - t0);

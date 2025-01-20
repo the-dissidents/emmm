@@ -1,5 +1,5 @@
 import { debug } from "./debug";
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, Node, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner } from "./interface";
+import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, DocumentNode, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner, ArgumentEntity, ArgumentInterpolatorDefinition } from "./interface";
 import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, ReachedRecursionLimitMessage as ReachedReparseLimitMessage, ReferredMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
 import { assert, debugPrintNodes, has } from "./util";
 
@@ -104,7 +104,8 @@ class Parser {
     private groupDepth = 0;
     private blockTags: [string, BlockModifierDefinition<any>][] = [];
     private inlineTags: [string, InlineModifierDefinition<any>][] = [];
-    private doneParsing = new Set<Node>;
+    private interpolators: [string, ArgumentInterpolatorDefinition][] = [];
+    private doneParsing = new Set<DocumentNode>;
 
     constructor(private scanner: Scanner, config: Configuration) {
         this.emit = new EmitEnvironment(scanner);
@@ -118,6 +119,9 @@ class Parser {
             .sort(([x, _], [y, __]) => y.length - x.length);
         this.inlineTags = [...this.cxt.config.inlineModifiers.entries()]
             .sort(([x, _], [y, __]) => y.length - x.length);
+        this.interpolators = [...this.cxt.config.argumentInterpolators.entries()]
+            .sort(([x, _], [y, __]) => y.length - x.length);
+        debug.trace(this.cxt.config.argumentInterpolators);
     }
 
     #reparse(nodes: (BlockEntity | InlineEntity)[], depth: number): boolean {
@@ -263,10 +267,7 @@ class Parser {
 
         const endsign = this.scanner.accept(MODIFIER_END_SIGN);
         const flagMarker = has(mod.flags, ModifierFlags.Marker);
-        // if (flagMarker && !endsign) this.emit.message(
-        //     new ExpectedMessage(this.scanner.position(), MODIFIER_END_SIGN));
         const isMarker = flagMarker || endsign;
-        
         if (!this.scanner.accept(MODIFIER_CLOSE_SIGN))
             this.emit.message(new ExpectedMessage(
                 this.scanner.position(), MODIFIER_CLOSE_SIGN));
@@ -279,7 +280,6 @@ class Parser {
             end: -1,
             content: []
         }
-
 
         if (node.mod.prepare)
             this.emit.message(...node.mod.prepare(node as any, this.cxt));
@@ -515,6 +515,88 @@ class Parser {
         return ok;
     }
 
+    private ARGUMENT_CONTENT(end?: string): [ModifierArgument, boolean] {
+        let ok = true;
+        const content: ArgumentEntity[] = [];
+        const posStart = this.scanner.position();
+        let posEnd = this.scanner.position();
+
+        const emitString = (s: string) => {
+            const last = content.at(-1);
+            if (last?.type == 'text') {
+                last.content += s;
+                last.end += s.length;
+            } else {
+                const end = this.scanner.position();
+                content.push({
+                    type: 'text', 
+                    end, start: end - s.length,
+                    content: s
+                });
+            }
+        };
+
+        while (true) {
+            if (end !== undefined && this.scanner.accept(end)) {
+                debug.trace('found end', end);
+                break;
+            }
+            if (this.scanner.accept(':')) {
+                ok = (end === undefined);
+                break;
+            }
+            if (this.scanner.peek(MODIFIER_END_SIGN)
+             || this.scanner.peek(MODIFIER_CLOSE_SIGN)
+             || this.scanner.isEOF())
+            {
+                ok = false;
+                break;
+            }
+
+            if (this.scanner.accept('\\')) {
+                // handle escaping
+                posEnd = this.scanner.position();
+                if (this.scanner.isEOF()) {
+                    emitString('\\');
+                    ok = false;
+                    break;
+                }
+                content.push({
+                    type: 'escaped',
+                    content: this.scanner.acceptChar(),
+                    start: posEnd - 2,
+                    end: posEnd
+                });
+                continue;
+            }
+            const result = this.interpolators.find(([x, _]) => this.scanner.accept(x));
+            if (result !== undefined) {
+                const [inner, ok2] = this.ARGUMENT_CONTENT(result[1].postfix);
+                posEnd = this.scanner.position();
+                content.push({
+                    type: 'interp',
+                    definition: result[1],
+                    arg: inner,
+                    start: posEnd - 2,
+                    end: posEnd
+                });
+                if (!ok2) {
+                    this.emit.message(
+                        new ExpectedMessage(posEnd, result[1].postfix));
+                    ok = false;
+                    break;
+                }
+            } else {
+                emitString(this.scanner.acceptChar());
+                posEnd = this.scanner.position();
+            }
+        }
+        return [{
+            start: posStart, end: posEnd,
+            content
+        }, ok];
+    }
+
     private ARGUMENTS(): ModifierArgument[] {
         // optionally accept semicolon before first argument
         const firstSemicolon = this.scanner.accept(':');
@@ -524,39 +606,14 @@ class Parser {
         const list: ModifierArgument[] = [];
         let end = false;
         while (!end) {
-            const posStart = this.scanner.position();
-            let posEnd = posStart;
-            let content = '';
-            while (true) {
-                // end of argument
-                if (this.scanner.accept(':')) break;
-                // end of argument list
-                if (this.scanner.peek(MODIFIER_END_SIGN)
-                 || this.scanner.peek(MODIFIER_CLOSE_SIGN)
-                 || this.scanner.isEOF())
-                {
-                    // if we haven't parsed anything so far: if there is no first semicolon, there's no arguments; otherwise, there is a single empty argument
-                    if (list.length == 0 && content == '' && !firstSemicolon) return [];
-                    end = true;
+            const [arg, ok] = this.ARGUMENT_CONTENT();
+            if (!ok) {
+                end = true;
+                // if we haven't parsed anything so far: if there is no first semicolon, there's no arguments; otherwise, there is a single empty argument
+                if (list.length == 0 && arg.content.length == 0 && !firstSemicolon)
                     break;
-                }
-                // handle escaping
-                if (this.scanner.accept('\\') && this.scanner.isEOF()) {
-                    content += '\\';
-                    posEnd = this.scanner.position();
-                    end = true;
-                    break;
-                }
-                // TODO: bracket matching
-                content += this.scanner.acceptChar();
-                posEnd = this.scanner.position();
             }
-            list.push({
-                name: undefined,
-                content: content,
-                start: posStart,
-                end: posEnd
-            });
+            list.push(arg);
         }
         return list;
     }
