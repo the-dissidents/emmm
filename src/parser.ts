@@ -155,9 +155,6 @@ class Parser {
             return true;
         }
 
-        if (node.mod.prepare && depth > 0)
-            this.emit.message(...node.mod.prepare(node as any, this.cxt));
-
         if (node.content.length > 0 && depth > 0) {
             // simulate initial parse for generated content
             if (node.mod.beforeParseContent)
@@ -168,6 +165,9 @@ class Parser {
             if (node.mod.afterParseContent)
                 this.emit.message(...node.mod.afterParseContent(node as any, this.cxt));
         }
+
+        if (node.mod.prepareExpand)
+            this.emit.message(...node.mod.prepareExpand(node as any, this.cxt));
         if (node.mod.expand) {
             node.expansion = node.mod.expand(node as any, this.cxt);
             if (!node.expansion) {
@@ -281,9 +281,6 @@ class Parser {
             content: []
         }
 
-        if (node.mod.prepare)
-            this.emit.message(...node.mod.prepare(node as any, this.cxt));
-
         if (node.mod.beforeParseContent)
             this.emit.message(...node.mod.beforeParseContent(node, this.cxt));
         if (node.mod.delayContentExpansion) this.cxt.delayDepth++;
@@ -301,7 +298,6 @@ class Parser {
         if (node.mod.delayContentExpansion) this.cxt.delayDepth--;
         if (node.mod.afterParseContent)
             this.emit.message(...node.mod.afterParseContent(node, this.cxt));
-
         this.#expand(node);
     }
 
@@ -448,16 +444,10 @@ class Parser {
         if (result === undefined) {
             mod = UnknownInline;
             const startPos = this.scanner.position();
-            // TODO: properly eat name and args
-            while (true) {
-                if (this.scanner.isEOF()) {
-                    this.emit.message(new ExpectedMessage(
-                        this.scanner.position(), MODIFIER_CLOSE_SIGN));
-                    break;
-                }
-                if (this.scanner.peek(MODIFIER_CLOSE_SIGN)
-                 || this.scanner.peek(MODIFIER_END_SIGN)) break;
-                this.scanner.acceptChar();
+            const args = this.scanner.acceptUntil(MODIFIER_CLOSE_SIGN);
+            if (args === null) {
+                this.emit.message(new ExpectedMessage(
+                    this.scanner.position(), MODIFIER_CLOSE_SIGN));
             }
             this.emit.message(
                 new UnknownModifierMessage(posStart, this.scanner.position() - posStart));
@@ -466,10 +456,7 @@ class Parser {
 
         const endsign = this.scanner.accept(MODIFIER_END_SIGN);
         const flagMarker = has(mod.flags, ModifierFlags.Marker);
-        // if (flagMarker && !endsign) this.emit.message(
-        //     new ExpectedMessage(this.scanner.position(), MODIFIER_END_SIGN));
         const isMarker = flagMarker || endsign;
-        
         if (!this.scanner.accept(MODIFIER_CLOSE_SIGN))
             this.emit.message(new ExpectedMessage(
                 this.scanner.position(), MODIFIER_CLOSE_SIGN));
@@ -483,11 +470,11 @@ class Parser {
             content: []
         }
 
-        const doParse = this.cxt.delayDepth == 0;
-        if (doParse) this.doneParsing.add(node);
-        if (mod.beforeProcessExpansion && doParse)
-            this.emit.message(...mod.beforeProcessExpansion(node, this.cxt));
-
+        // if (node.mod.prepare)
+        //     this.emit.message(...node.mod.prepare(node as any, this.cxt));
+        if (node.mod.beforeParseContent)
+            this.emit.message(...node.mod.beforeParseContent(node, this.cxt));
+        if (node.mod.delayContentExpansion) this.cxt.delayDepth++;
         this.emit.startInline(node);
         let ok = true;
         if (!isMarker) {
@@ -504,14 +491,10 @@ class Parser {
             }
         }
         this.emit.endInline();
-
-        if (doParse) {
-            if (mod.afterProcessExpansion) {
-                debug.trace('afterProcess', node.mod.name);
-                this.emit.message(...mod.afterProcessExpansion(node, this.cxt));
-            }
-            this.#expand(node);
-        }
+        if (node.mod.delayContentExpansion) this.cxt.delayDepth--;
+        if (node.mod.afterParseContent)
+            this.emit.message(...node.mod.afterParseContent(node, this.cxt));
+        this.#expand(node);
         return ok;
     }
 

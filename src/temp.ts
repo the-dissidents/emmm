@@ -24,22 +24,11 @@ text2 = `[.quote][.slot]`
 // [.var xyz:1]
 // [.bad2;]`
 
-// text2 = `
-// [.define-block q1:(A)]
-// :--
-// xyz
-// [.slot A]
-// --:
+text2 = `
+[.var x:123]
 
-// [.define-block q2:(B)]
-// [.q1]
-// :--
-// hhh
-// [.slot B]
-// --:
-
-// [.q2] abc[/$bad]
-// `
+[/$x]
+`
 
 // text2 = `
 // [.define-block q:(A)]
@@ -79,5 +68,5 @@ debug.level = DebugLevel.Trace;
 let t0 = performance.now()
 let doc = Parser.parse(new SimpleScanner(text2), DefaultConfiguration);
 console.log(performance.now() - t0);
-stripDocument(doc);
+// stripDocument(doc);
 console.log(debugDumpDocument(doc, text2))

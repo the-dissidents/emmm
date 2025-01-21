@@ -1,14 +1,13 @@
-// The scanner of any implementation should be capable of handling UTF-8 
 
 import { assert } from "./util"
 
+// The scanner of any implementation should be capable of handling UTF-8 
 // strings at least as well as Typescript.
 export interface Scanner {
     position(): number,
     isEOF(): boolean,
 
     // return true if sees str immediately
-    // TODO: change the interface to use a prefix tree
     peek(str: string): boolean,
 
     // if sees str immediately, consumes it and returns true
@@ -138,7 +137,7 @@ class ModifierBase<TNode, TEntity> {
     public beforeProcessExpansion?: (node: TNode, cxt: ParseContext) => Message[];
     public afterProcessExpansion?: (node: TNode, cxt: ParseContext) => Message[];
 
-    public prepare?: (node: TNode, cxt: ParseContext) => Message[];
+    public prepareExpand?: (node: TNode, cxt: ParseContext) => Message[];
     public expand?: (node: TNode, cxt: ParseContext) => TEntity[] | undefined;
 }
 
@@ -159,13 +158,13 @@ export class ArgumentInterpolatorDefinition {
 export type BlockInstantiationData = {
     mod: BlockModifierDefinition<any>,
     slotContent: BlockEntity[],
-    args: string[]
+    args: Map<string, string>
 }
 
 export type InlineInstantiationData = {
     mod: BlockModifierDefinition<any>,
     slotContent: InlineEntity[],
-    args: string[]
+    args: Map<string, string>
 }
 
 export class ParseContext {
