@@ -1,3 +1,5 @@
+import { assert } from "./util";
+
 export enum DebugLevel {
     Trace,
     Info,
@@ -23,5 +25,8 @@ export const debug = {
     error(arg0: any, ...args: any) {
         if (typeof arg0 == 'function') arg0 = arg0();
         if (this.level <= DebugLevel.Error) console.error('ERROR', arg0, ...args);
+    },
+    never(_: never) {
+        assert(false);
     }
 }

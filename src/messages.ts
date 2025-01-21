@@ -130,14 +130,14 @@ export class InvalidArgumentMessage implements Message {
     get info(): string { return `invalid argument` + (this.what === undefined ? '' : `: ${this.what}`) }
 }
 
-export class InlineDefinitonMustContainOneParaMessage implements Message {
+export class InlineDefinitonInvalidEntityMessage implements Message {
     constructor(
         public readonly position: number,
         public readonly length: number) {}
     readonly code = 7;
     readonly severity = MessageSeverity.Error;
     readonly fixes: readonly FixSuggestion[] = []
-    get info(): string { return `inline modifier definition must contain exactly one paragraph` }
+    get info(): string { return `Invalid entity in inline modifier definition` }
 }
 
 export class ReachedRecursionLimitMessage implements Message {

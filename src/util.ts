@@ -1,3 +1,4 @@
+import { debug } from "./debug";
 import { Document, Message, MessageSeverity, DocumentNode, PositionRange, ArgumentEntity, ModifierArgument } from "./interface";
 import { ReferredMessage } from "./messages";
 
@@ -26,6 +27,7 @@ export function cloneNode(node: DocumentNode, referring?: PositionRange): Docume
     switch (node.type) {
         case "block":
         case "inline":
+        case "system":
             return {
                 start: node.start,
                 end: node.end,
@@ -50,7 +52,7 @@ export function cloneNode(node: DocumentNode, referring?: PositionRange): Docume
         case "escaped":
             return structuredClone(node);
         default:
-            assert(false);
+            return debug.never(node);
     }
 }
 
@@ -73,8 +75,10 @@ export function stripDocument(doc: Document) {
             case "root":
                 node.content = node.content.flatMap((x) => stripNode(x)) as any;
                 return [node];
+            case "system":
+                return [];
             default:
-                assert(false);
+                return debug.never(node);
         }
     }
     doc.root = stripNode(doc.root)[0] as any;
@@ -88,6 +92,8 @@ function debugPrintArgEntity(node: ArgumentEntity): string {
             return `<Escaped:${node.content}>`;
         case "interp":
             return `<Interp:${node.definition.prefix}-${node.definition.postfix}:${debugPrintArgument(node.arg)}>`;
+        default:
+            return debug.never(node);
     }
 }
 
@@ -111,6 +117,7 @@ export function debugPrintNode(node: DocumentNode, prefix = '') {
             break;
         case "inline":
         case "block":
+        case "system":
             const args = node.arguments.map((x, i) => `\n${prefix}    (${i})@${x.start}-${x.end}=${debugPrintArgument(x)}`).join('')
             if (node.content.length > 0) {
                 result += ` id=${node.mod.name}${args}>\n` + debugPrintNodes(node.content, prefix) + `\n${prefix}</${node.type}@${node.end}>`;
@@ -125,6 +132,8 @@ export function debugPrintNode(node: DocumentNode, prefix = '') {
             break;
         case "text":
             return node.content;
+        default:
+            return debug.never(node);
     }
     return result;
 }

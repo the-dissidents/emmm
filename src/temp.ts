@@ -6,36 +6,37 @@ import { debug, DebugLevel } from "./debug";
 
 
 let text2 = String.raw`
-[.var name:foobar]
-[.var version:0.1.0]
+[-var name:foobar]
+[-var version:0.1.0]
 
 Version [/$version], created by [/$name]`;
 
 text2 = `[.quote][.slot]`
 
 // text2 = `
-// [.define-block bad]
+// [-define-block bad]
 // [/$xyz]
 
-// [.define-block bad2]
+// [-define-block bad2]
 // [.bad;]
 
 // [.bad2;]
-// [.var xyz:1]
+// [-var xyz:1]
 // [.bad2;]`
 
 text2 = `
-[.var x:123]
+[-define-inline p]
+![/slot]!
 
-[/$x]
+[/p]123[;]
 `
 
 // text2 = `
-// [.define-block q:(A)]
+// [-define-block q:(A)]
 // :--
-// [.var x:0]
+// [-var x:0]
 // [.slot A]
-// [.var x:1]
+// [-var x:1]
 // [.slot A]
 // --:
 
@@ -43,18 +44,18 @@ text2 = `
 // `
 
 // text2 = `
-// [.define-block p]
+// [-define-block p]
 // :--
 // [.slot]
-// [.define-block q][.slot]
+// [-define-block q][.slot]
 // --:
 // [.p] abc
 // [.q] def
 // `
 
 // text2 = `
-// [.define-block p:(A)]
-// [.define-block q:(B)]
+// [-define-block p:(A)]
+// [-define-block q:(B)]
 // :--
 // [.slot A]
 // [.slot B]

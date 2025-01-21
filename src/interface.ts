@@ -69,6 +69,16 @@ export type EscapedNode = PositionRange & {
     content: string
 }
 
+export type SystemModifierNode<TState> = PositionRange & {
+    type: 'system',
+    mod: SystemModifierDefinition<TState>,
+    state?: TState,
+    head: PositionRange,
+    arguments: ModifierArgument[],
+    content: BlockEntity[],
+    expansion: undefined
+};
+
 export type BlockModifierNode<TState> = PositionRange & {
     type: 'block',
     mod: BlockModifierDefinition<TState>,
@@ -94,9 +104,14 @@ export type RootNode = PositionRange & {
     content: BlockEntity[]
 }
 
-export type BlockEntity = ParagraphNode | PreNode | BlockModifierNode<any>;
-export type InlineEntity = TextNode | EscapedNode | InlineModifierNode<any>;
-export type DocumentNode = BlockEntity | InlineEntity | RootNode;
+export type ModifierNode = 
+    BlockModifierNode<any> | InlineModifierNode<any> | SystemModifierNode<any>;
+export type BlockEntity = 
+    ParagraphNode | PreNode | BlockModifierNode<any> | SystemModifierNode<any>;
+export type InlineEntity = 
+    TextNode | EscapedNode | InlineModifierNode<any> | SystemModifierNode<any>;
+export type DocumentNode = 
+    BlockEntity | InlineEntity | RootNode;
 
 // used in arguments only
 export type InterpolationNode = PositionRange & {
@@ -128,17 +143,17 @@ class ModifierBase<TNode, TEntity> {
         if (args) Object.assign(this, args);
     }
 
-    public delayContentExpansion = false;
-    public alwaysTryExpand = false;
+    delayContentExpansion = false;
+    alwaysTryExpand = false;
 
-    public beforeParseContent?: (node: TNode, cxt: ParseContext) => Message[];
-    public afterParseContent?: (node: TNode, cxt: ParseContext) => Message[];
+    beforeParseContent?: (node: TNode, cxt: ParseContext) => Message[];
+    afterParseContent?: (node: TNode, cxt: ParseContext) => Message[];
 
-    public beforeProcessExpansion?: (node: TNode, cxt: ParseContext) => Message[];
-    public afterProcessExpansion?: (node: TNode, cxt: ParseContext) => Message[];
+    beforeProcessExpansion?: (node: TNode, cxt: ParseContext) => Message[];
+    afterProcessExpansion?: (node: TNode, cxt: ParseContext) => Message[];
 
-    public prepareExpand?: (node: TNode, cxt: ParseContext) => Message[];
-    public expand?: (node: TNode, cxt: ParseContext) => TEntity[] | undefined;
+    prepareExpand?: (node: TNode, cxt: ParseContext) => Message[];
+    expand?: (node: TNode, cxt: ParseContext) => TEntity[] | undefined;
 }
 
 export class BlockModifierDefinition<TState> 
@@ -146,6 +161,9 @@ export class BlockModifierDefinition<TState>
 
 export class InlineModifierDefinition<TState> 
     extends ModifierBase<InlineModifierNode<TState>, InlineEntity> {}
+
+export class SystemModifierDefinition<TState> 
+    extends ModifierBase<SystemModifierNode<TState>, never> {}
 
 export class ArgumentInterpolatorDefinition {
     constructor(
@@ -162,7 +180,7 @@ export type BlockInstantiationData = {
 }
 
 export type InlineInstantiationData = {
-    mod: BlockModifierDefinition<any>,
+    mod: InlineModifierDefinition<any>,
     slotContent: InlineEntity[],
     args: Map<string, string>
 }
@@ -209,6 +227,7 @@ export class Document {
 export interface Configuration {
     blockModifiers: Map<string, BlockModifierDefinition<any>>,
     inlineModifiers: Map<string, InlineModifierDefinition<any>>,
+    systemModifiers: Map<string, SystemModifierDefinition<any>>,
     argumentInterpolators: Map<string, ArgumentInterpolatorDefinition>,
     reparseDepthLimit: number
     // TODO: shorthands, strings
@@ -217,6 +236,7 @@ export interface Configuration {
 export class CustomConfiguration implements Configuration {
     blockModifiers = new Map<string, BlockModifierDefinition<any>>;
     inlineModifiers = new Map<string, InlineModifierDefinition<any>>;
+    systemModifiers = new Map<string, SystemModifierDefinition<any>>;
     argumentInterpolators = new Map<string, ArgumentInterpolatorDefinition>;
     reparseDepthLimit = 10;
     
@@ -224,6 +244,7 @@ export class CustomConfiguration implements Configuration {
         if (from) {
             this.blockModifiers = new Map(from.blockModifiers);
             this.inlineModifiers = new Map(from.inlineModifiers);
+            this.systemModifiers = new Map(from.systemModifiers);
             this.argumentInterpolators = new Map(from.argumentInterpolators);
             this.reparseDepthLimit = from.reparseDepthLimit;
         }
@@ -234,6 +255,14 @@ export class CustomConfiguration implements Configuration {
             if (this.blockModifiers.has(x.name))
                 throw Error(`block modifier already exists: ${x.name}`);
             this.blockModifiers.set(x.name, x);
+        }
+    }
+
+    addSystem(...xs: SystemModifierDefinition<any>[]) {
+        for (const x of xs) {
+            if (this.systemModifiers.has(x.name))
+                throw Error(`inline modifier already exists: ${x.name}`);
+            this.systemModifiers.set(x.name, x);
         }
     }
 
