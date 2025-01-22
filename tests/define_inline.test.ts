@@ -1,12 +1,12 @@
 import { describe, expect, test } from "vitest";
-import { BasicConfiguration } from "../src/default";
+import { BuiltinConfiguration } from "../src/builtin/builtin";
 import { SimpleScanner } from "../src/front";
 import * as Parser from "../src/parser";
 import { stripDocument } from "../src/util";
 import { BlockModifierDefinition, CustomConfiguration, MessageSeverity, ModifierFlags } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
 
-const TestConfig = new CustomConfiguration(BasicConfiguration);
+const TestConfig = new CustomConfiguration(BuiltinConfiguration);
 TestConfig.addBlock(
     new BlockModifierDefinition('normal', ModifierFlags.Normal)
 );

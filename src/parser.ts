@@ -269,7 +269,7 @@ class Parser {
         this.MAYBE_GROUPED_PARAGRAPH();
     }
 
-    private MODIFIER(type: 'block' | 'system' | 'inline') {
+    private MODIFIER<Type extends 'block' | 'system' | 'inline'>(type: Type) {
         const posStart = this.scanner.position();
         assert(this.scanner.accept({
             block: MODIFIER_BLOCK_OPEN,
@@ -314,8 +314,8 @@ class Parser {
 
         let ok = true;
         if (isMarker) {
-            if (type == 'inline') this.emit.addInlineNode(node as any);
-            else this.emit.addBlockNode(node as any);
+            if (type === 'inline') this.emit.addInlineNode(node as InlineEntity);
+            else this.emit.addBlockNode(node as BlockEntity);
         } else if (type == 'inline') {
             this.emit.startInline(node as any);
             const entity = has(mod.flags, ModifierFlags.Preformatted)

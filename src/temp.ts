@@ -1,6 +1,6 @@
 import { SimpleScanner } from "./front";
 import * as Parser from "./parser";
-import { BasicConfiguration, DefaultConfiguration } from "./default";
+import { BuiltinConfiguration } from "./builtin/builtin";
 import { debugDumpDocument, stripDocument } from "./util";
 import { debug, DebugLevel } from "./debug";
 
@@ -10,8 +10,6 @@ let text2 = String.raw`
 [-var version:0.1.0]
 
 Version [/$version], created by [/$name]`;
-
-text2 = `[.quote][.slot]`
 
 // text2 = `
 // [-define-block bad]
@@ -80,7 +78,7 @@ text2 = `
 
 debug.level = DebugLevel.Trace;
 let t0 = performance.now();
-let doc = Parser.parse(new SimpleScanner(text2), DefaultConfiguration);
+let doc = Parser.parse(new SimpleScanner(text2), BuiltinConfiguration);
 console.log(performance.now() - t0);
 // stripDocument(doc);
 console.log(debugDumpDocument(doc, text2))
