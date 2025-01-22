@@ -108,6 +108,7 @@ class EmitEnvironment {
 class Parser {
     private emit: EmitEnvironment;
     private cxt: ParseContext;
+    private delayDepth = 0;
     private groupDepth = 0;
     private prefixes = {
         block: [] as [string, BlockModifierDefinition<any>][],
@@ -115,7 +116,6 @@ class Parser {
         system: [] as  [string, SystemModifierDefinition<any>][],
         interpolator: [] as  [string, ArgumentInterpolatorDefinition][]
     }
-    
 
     constructor(private scanner: Scanner, config: Configuration) {
         this.emit = new EmitEnvironment(scanner);
@@ -165,47 +165,48 @@ class Parser {
             debug.trace('already expanded, skipping:', node.mod.name);
             return true;
         }
-        if (this.cxt.delayDepth > 0 && !node.mod.alwaysTryExpand) {
+        if (this.delayDepth > 0 && !node.mod.alwaysTryExpand) {
             debug.trace('delaying expansion of', node.mod.name);
             return true;
         }
 
+        const immediate = this.delayDepth == 0;
         if (node.content.length > 0 && depth > 0) {
             // simulate initial parse for generated content
             if (node.mod.beforeParseContent)
-                this.emit.message(...node.mod.beforeParseContent(node as any, this.cxt));
-            if (node.mod.delayContentExpansion) this.cxt.delayDepth++;
+                this.emit.message(...node.mod.beforeParseContent(node as any, this.cxt, immediate));
+            if (node.mod.delayContentExpansion) this.delayDepth++;
             this.#reparse(node.content, depth);
-            if (node.mod.delayContentExpansion) this.cxt.delayDepth--;
+            if (node.mod.delayContentExpansion) this.delayDepth--;
             if (node.mod.afterParseContent)
-                this.emit.message(...node.mod.afterParseContent(node as any, this.cxt));
+                this.emit.message(...node.mod.afterParseContent(node as any, this.cxt, immediate));
         }
 
         if (node.mod.prepareExpand)
-            this.emit.message(...node.mod.prepareExpand(node as any, this.cxt));
+            this.emit.message(...node.mod.prepareExpand(node as any, this.cxt, immediate));
         if (node.mod.expand) {
-            node.expansion = node.mod.expand(node as any, this.cxt);
+            node.expansion = node.mod.expand(node as any, this.cxt, immediate);
             if (!node.expansion) {
                 return true;
             } else if (node.expansion.length > 0) {
-                debug.trace(`${this.cxt.delayDepth > 0 ? 'early ' : ''}expanding:`, node.mod.name);
+                debug.trace(`${this.delayDepth > 0 ? 'early ' : ''}expanding:`, node.mod.name);
                 debug.trace(() => '-->\n' + debugPrintNodes(node.expansion!, '  '));
             } else {
-                debug.trace(`${this.cxt.delayDepth > 0 ? 'early ' : ''}expanding:`, node.mod.name);
+                debug.trace(`${this.delayDepth > 0 ? 'early ' : ''}expanding:`, node.mod.name);
             }
         }
 
         const expansion = node.expansion ?? node.content;
         if (expansion.length == 0) return true;
         if (node.mod.beforeProcessExpansion)
-            this.emit.message(...node.mod.beforeProcessExpansion(node as any, this.cxt));
+            this.emit.message(...node.mod.beforeProcessExpansion(node as any, this.cxt, immediate));
 
         this.emit.pushReferring(node.start, node.end);
         let ok = this.#reparse(expansion, depth);
         this.emit.popReferring();
 
         if (node.mod.afterProcessExpansion)
-            this.emit.message(...node.mod.afterProcessExpansion(node as any, this.cxt));
+            this.emit.message(...node.mod.afterProcessExpansion(node as any, this.cxt, immediate));
         if (!ok && depth == 0) {
             const limit = this.cxt.config.reparseDepthLimit;
             this.emit.message(new ReachedReparseLimitMessage(
@@ -306,9 +307,10 @@ class Parser {
             expansion: undefined
         };
 
+        const immediate = this.delayDepth == 0;
         if (node.mod.beforeParseContent)
-            this.emit.message(...node.mod.beforeParseContent(node as any, this.cxt));
-        if (node.mod.delayContentExpansion) this.cxt.delayDepth++;
+            this.emit.message(...node.mod.beforeParseContent(node as any, this.cxt, immediate));
+        if (node.mod.delayContentExpansion) this.delayDepth++;
 
         let ok = true;
         if (isMarker) {
@@ -339,9 +341,9 @@ class Parser {
             }
             this.emit.endBlock();
         }
-        if (node.mod.delayContentExpansion) this.cxt.delayDepth--;
+        if (node.mod.delayContentExpansion) this.delayDepth--;
         if (node.mod.afterParseContent)
-            this.emit.message(...node.mod.afterParseContent(node as any, this.cxt));
+            this.emit.message(...node.mod.afterParseContent(node as any, this.cxt, immediate));
         this.#expand(node);
         return ok;
     }

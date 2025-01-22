@@ -146,14 +146,14 @@ class ModifierBase<TNode, TEntity> {
     delayContentExpansion = false;
     alwaysTryExpand = false;
 
-    beforeParseContent?: (node: TNode, cxt: ParseContext) => Message[];
-    afterParseContent?: (node: TNode, cxt: ParseContext) => Message[];
+    beforeParseContent?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
+    afterParseContent?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
 
-    beforeProcessExpansion?: (node: TNode, cxt: ParseContext) => Message[];
-    afterProcessExpansion?: (node: TNode, cxt: ParseContext) => Message[];
+    beforeProcessExpansion?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
+    afterProcessExpansion?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
 
-    prepareExpand?: (node: TNode, cxt: ParseContext) => Message[];
-    expand?: (node: TNode, cxt: ParseContext) => TEntity[] | undefined;
+    prepareExpand?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
+    expand?: (node: TNode, cxt: ParseContext, immediate: boolean) => TEntity[] | undefined;
 }
 
 export class BlockModifierDefinition<TState> 
@@ -185,12 +185,36 @@ export type InlineInstantiationData = {
     args: Map<string, string>
 }
 
+export interface ParseContextStoreDefinitions {} 
+export type ParseContextStoreKey = keyof ParseContextStoreDefinitions;
+type ParseContextStoreEntry<S extends ParseContextStoreKey> = ParseContextStoreDefinitions[S];
+
 export class ParseContext {
+    private data: ParseContextStoreDefinitions = {};
+
     constructor(
         public config: Configuration, 
-        public variables = new Map<string, string>) {}
+        public variables = new Map<string, string>)
+    {
+        config.initializers.forEach((x) => x(this));
+    }
+    
+    init<S extends ParseContextStoreKey>(key: S, obj: ParseContextStoreEntry<S>) {
+        assert(!(key in this.data));
+        this.data[key] = obj;
+    }
 
-    public onConfigChange: () => void = () => {};
+    set<S extends ParseContextStoreKey>(key: S, obj: ParseContextStoreEntry<S>) {
+        assert(key in this.data);
+        this.data[key] = obj;
+    }
+
+    get<S extends ParseContextStoreKey>(key: S): ParseContextStoreEntry<S> {
+        assert(key in this.data);
+        return this.data[key];
+    }
+    
+    onConfigChange: () => void = () => {};
 
     #evalEntity(e: ArgumentEntity): string {
         switch (e.type) {
@@ -208,13 +232,6 @@ export class ParseContext {
     evaluateArgument(arg: ModifierArgument): string {
         return arg.content.map((x) => this.#evalEntity(x)).join('');
     }
-
-    // TODO: make a proper store
-    public blockSlotDelayedStack: string[] = [];
-    public inlineSlotDelayedStack: string[] = [];
-    public blockSlotData: [string, BlockInstantiationData][] = [];
-    public inlineSlotData: [string, InlineInstantiationData][] = [];
-    public delayDepth = 0;
 }
 
 export class Document {
@@ -225,6 +242,7 @@ export class Document {
 }
 
 export interface Configuration {
+    initializers: ((cxt: ParseContext) => void)[],
     blockModifiers: Map<string, BlockModifierDefinition<any>>,
     inlineModifiers: Map<string, InlineModifierDefinition<any>>,
     systemModifiers: Map<string, SystemModifierDefinition<any>>,
@@ -234,6 +252,7 @@ export interface Configuration {
 }
 
 export class CustomConfiguration implements Configuration {
+    initializers: ((cxt: ParseContext) => void)[] = [];
     blockModifiers = new Map<string, BlockModifierDefinition<any>>;
     inlineModifiers = new Map<string, InlineModifierDefinition<any>>;
     systemModifiers = new Map<string, SystemModifierDefinition<any>>;
@@ -242,6 +261,7 @@ export class CustomConfiguration implements Configuration {
     
     constructor(from?: Configuration) {
         if (from) {
+            this.initializers = [...from.initializers];
             this.blockModifiers = new Map(from.blockModifiers);
             this.inlineModifiers = new Map(from.inlineModifiers);
             this.systemModifiers = new Map(from.systemModifiers);
