@@ -1,5 +1,5 @@
 
-import { assert } from "./util"
+import { assert, NameManager } from "./util"
 
 // The scanner of any implementation should be capable of handling UTF-8 
 // strings at least as well as Typescript.
@@ -179,7 +179,7 @@ export class SystemModifierDefinition<TState>
 
 export class ArgumentInterpolatorDefinition {
     constructor(
-        public readonly prefix: string,
+        public readonly name: string,
         public readonly postfix: string,
         public expand: (content: string, cxt: ParseContext) => string) 
     {}
@@ -225,8 +225,6 @@ export class ParseContext {
         assert(key in this.data);
         return this.data[key];
     }
-    
-    onConfigChange: () => void = () => {};
 
     #evalEntity(e: ArgumentEntity): string {
         switch (e.type) {
@@ -252,65 +250,22 @@ export class Document {
         public context: ParseContext,
         public messages: Message[]) {};
 }
-
-export interface Configuration {
-    initializers: ((cxt: ParseContext) => void)[],
-    blockModifiers: Map<string, BlockModifierDefinition<any>>,
-    inlineModifiers: Map<string, InlineModifierDefinition<any>>,
-    systemModifiers: Map<string, SystemModifierDefinition<any>>,
-    argumentInterpolators: Map<string, ArgumentInterpolatorDefinition>,
-    reparseDepthLimit: number
-    // TODO: shorthands, strings
-}
-
-export class CustomConfiguration implements Configuration {
+export class Configuration {
     initializers: ((cxt: ParseContext) => void)[] = [];
-    blockModifiers = new Map<string, BlockModifierDefinition<any>>;
-    inlineModifiers = new Map<string, InlineModifierDefinition<any>>;
-    systemModifiers = new Map<string, SystemModifierDefinition<any>>;
-    argumentInterpolators = new Map<string, ArgumentInterpolatorDefinition>;
+    blockModifiers: NameManager<BlockModifierDefinition<any>>;
+    inlineModifiers: NameManager<InlineModifierDefinition<any>>;
+    systemModifiers: NameManager<SystemModifierDefinition<any>>;
+    argumentInterpolators: NameManager<ArgumentInterpolatorDefinition>;
     reparseDepthLimit = 10;
     
     constructor(from?: Configuration) {
+        this.blockModifiers = new NameManager(from?.blockModifiers);
+        this.inlineModifiers = new NameManager(from?.inlineModifiers);
+        this.systemModifiers = new NameManager(from?.systemModifiers);
+        this.argumentInterpolators = new NameManager(from?.argumentInterpolators);
         if (from) {
             this.initializers = [...from.initializers];
-            this.blockModifiers = new Map(from.blockModifiers);
-            this.inlineModifiers = new Map(from.inlineModifiers);
-            this.systemModifiers = new Map(from.systemModifiers);
-            this.argumentInterpolators = new Map(from.argumentInterpolators);
             this.reparseDepthLimit = from.reparseDepthLimit;
-        }
-    }
-
-    addBlock(...xs: BlockModifierDefinition<any>[]) {
-        for (const x of xs) {
-            if (this.blockModifiers.has(x.name))
-                throw Error(`block modifier already exists: ${x.name}`);
-            this.blockModifiers.set(x.name, x);
-        }
-    }
-
-    addSystem(...xs: SystemModifierDefinition<any>[]) {
-        for (const x of xs) {
-            if (this.systemModifiers.has(x.name))
-                throw Error(`inline modifier already exists: ${x.name}`);
-            this.systemModifiers.set(x.name, x);
-        }
-    }
-
-    addInline(...xs: InlineModifierDefinition<any>[]) {
-        for (const x of xs) {
-            if (this.inlineModifiers.has(x.name))
-                throw Error(`inline modifier already exists: ${x.name}`);
-            this.inlineModifiers.set(x.name, x);
-        }
-    }
-
-    addInterpolator(...xs: ArgumentInterpolatorDefinition[]) {
-        for (const x of xs) {
-            if (this.argumentInterpolators.has(x.prefix))
-                throw Error(`interpolator already exists: ${x.prefix}`);
-            this.argumentInterpolators.set(x.prefix, x);
         }
     }
 }

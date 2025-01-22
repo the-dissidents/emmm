@@ -1,6 +1,5 @@
 import { InlineModifierNode, BlockModifierNode, InlineModifierDefinition, BlockModifierDefinition, InlineInstantiationData, BlockInstantiationData, InlineEntity, BlockEntity, SystemModifierNode, SystemModifierDefinition, NodeType } from "./interface";
 
-
 export type _Node<T extends NodeType.InlineModifier | NodeType.BlockModifier | NodeType.SystemModifier, TState = unknown> = 
     T extends NodeType.InlineModifier ? InlineModifierNode<TState> : 
     T extends NodeType.BlockModifier ? BlockModifierNode<TState> : 

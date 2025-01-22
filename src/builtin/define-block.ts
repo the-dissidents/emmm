@@ -47,10 +47,11 @@ export const DefineBlockMod = new SystemModifierDefinition<{
     expand(node, cxt, immediate) {
         if (!immediate) return undefined;
         if (node.state) {
-            cxt.config.blockModifiers.set(node.state.name,
+            if (cxt.config.blockModifiers.has(node.state.name))
+                cxt.config.blockModifiers.remove(node.state.name);
+            cxt.config.blockModifiers.add(
                 customModifier(NodeType.BlockModifier, node.state.name, node.state.args,
                     node.state.slotName, node.content));
-            cxt.onConfigChange();
         }
         return [];
     }

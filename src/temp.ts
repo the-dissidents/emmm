@@ -1,8 +1,8 @@
 import { SimpleScanner } from "./front";
 import * as Parser from "./parser";
 import { BuiltinConfiguration } from "./builtin/builtin";
-import { debugDumpDocument, stripDocument } from "./util";
 import { debug, DebugLevel } from "./debug";
+import { Configuration } from "./interface";
 
 
 let text2 = String.raw`
@@ -12,7 +12,7 @@ let text2 = String.raw`
 Version [/$version], created by [/$name]
 `;
 
-for (let i = 0; i < 2000; i++)
+for (let i = 0; i < 5000; i++)
     text2 += `
 [-define-block p${i}]
 :--
@@ -32,11 +32,10 @@ for (let i = 0; i < 2000; i++)
 `
 
 debug.level = DebugLevel.Warning;
-// console.profile();
-// let t0 = performance.now();
-let doc = Parser.parse(new SimpleScanner(text2), BuiltinConfiguration);
-// console.log(performance.now() - t0);
+let scanner = new SimpleScanner(text2);
+let t0 = performance.now();
+let doc = Parser.parse(scanner, new Configuration(BuiltinConfiguration));
 // stripDocument(doc);
 // console.log(debugDumpDocument(doc, text2))
-// console.profileEnd();
+console.log(performance.now() - t0);
 console.log('ok');

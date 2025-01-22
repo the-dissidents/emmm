@@ -75,10 +75,11 @@ export const DefineInlineMod = new SystemModifierDefinition<{
     expand(node, cxt, immediate) {
         if (!immediate) return undefined;
         if (node.state) {
-            cxt.config.inlineModifiers.set(node.state.name,
+            if (cxt.config.inlineModifiers.has(node.state.name))
+                cxt.config.inlineModifiers.remove(node.state.name);
+            cxt.config.inlineModifiers.add(
                 customModifier(NodeType.InlineModifier, node.state.name, node.state.args,
                     node.state.slotName, node.state.definition!));
-            cxt.onConfigChange();
         }
         return [];
     },

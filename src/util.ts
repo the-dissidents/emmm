@@ -2,6 +2,48 @@ import { debug } from "./debug";
 import { Document, Message, MessageSeverity, DocumentNode, PositionRange, ArgumentEntity, ModifierArgument, NodeType } from "./interface";
 import { ReferredMessage } from "./messages";
 
+// TODO: use a prefix tree to find names
+export class NameManager<T extends {name: string}> {
+    private array: {k: string, v: T}[] = [];
+    private data: Map<string, T>;
+    
+    constructor(from: NameManager<T> | undefined) {
+        this.array = [...from?.array ?? []];
+        this.data = new Map(from?.data);
+    }
+
+    get(name: string) {
+        return this.data.get(name);
+    }
+
+    has(name: string) {
+        return this.data.has(name);
+    }
+
+    remove(name: string) {
+        let i = this.data.get(name);
+        assert(i !== undefined);
+        this.data.delete(name);
+        this.array.splice(this.array.findIndex((x) => x.k == name), 1);
+    }
+
+    add(...elems: T[]) {
+        for (const elem of elems) {
+            assert(!this.has(elem.name));
+            this.data.set(elem.name, elem);
+            const len = elem.name.length;
+            let i = 0;
+            while (i < this.array.length && this.array[i].k.length > len) i++;
+            this.array.splice(i, 0, {k: elem.name, v: elem});
+        }
+    }
+
+    find(predicate: (x: T) => boolean): T | undefined {
+        const result = this.array.find((x) => predicate(x.v));
+        return result ? result.v : undefined;
+    }
+}
+
 export function assert(x: boolean): asserts x {
     if (!!!x) {
         let error = new Error('assertion failed');
@@ -91,7 +133,7 @@ function debugPrintArgEntity(node: ArgumentEntity): string {
         case NodeType.Escaped:
             return `<Escaped:${node.content}>`;
         case NodeType.Interpolation:
-            return `<Interp:${node.definition.prefix}-${node.definition.postfix}:${debugPrintArgument(node.arg)}>`;
+            return `<Interp:${node.definition.name}-${node.definition.postfix}:${debugPrintArgument(node.arg)}>`;
         default:
             return debug.never(node);
     }

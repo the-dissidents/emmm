@@ -1,15 +1,15 @@
 import { describe, expect, test } from 'vitest'
 import { SimpleScanner } from "../src/front";
 import * as Parser from "../src/parser";
-import { MessageSeverity, CustomConfiguration, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags, BlockEntity, NodeType } from "../src/interface";
+import { MessageSeverity, Configuration, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags, BlockEntity, NodeType } from "../src/interface";
 
-const TestConfig = new CustomConfiguration();
-TestConfig.addBlock(
+const TestConfig = new Configuration();
+TestConfig.blockModifiers.add(
     new BlockModifierDefinition('normal', ModifierFlags.Normal),
     new BlockModifierDefinition('pre', ModifierFlags.Preformatted),
     new BlockModifierDefinition('marker', ModifierFlags.Marker)
 );
-TestConfig.addInline(
+TestConfig.inlineModifiers.add(
     new InlineModifierDefinition('normal', ModifierFlags.Normal),
     new InlineModifierDefinition('pre', ModifierFlags.Preformatted),
     new InlineModifierDefinition('marker', ModifierFlags.Marker)

@@ -1,7 +1,8 @@
 import { debug } from "./debug";
 import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner, ArgumentEntity, ArgumentInterpolatorDefinition, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
 import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, ReachedRecursionLimitMessage as ReachedReparseLimitMessage, ReferredMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
-import { assert, debugPrintNodes, has } from "./util";
+import { _Def } from "./typing-helper";
+import { assert, debugPrintNodes, has, NameManager } from "./util";
 
 const GROUP_BEGIN = ':--';
 const GROUP_END = '--:';
@@ -110,30 +111,19 @@ class Parser {
     private cxt: ParseContext;
     private delayDepth = 0;
     private groupDepth = 0;
-    private prefixes = {
-        [NodeType.BlockModifier]: [] as [string, BlockModifierDefinition<any>][],
-        [NodeType.InlineModifier]: [] as  [string, InlineModifierDefinition<any>][],
-        [NodeType.SystemModifier]: [] as  [string, SystemModifierDefinition<any>][],
-        [NodeType.Interpolation]: [] as  [string, ArgumentInterpolatorDefinition][]
-    }
 
     constructor(private scanner: Scanner, config: Configuration) {
         this.emit = new EmitEnvironment(scanner);
         this.cxt = new ParseContext(config);
-        this.cxt.onConfigChange = () => this.#sortModifiers();
-        this.#sortModifiers();
     }
 
-    #sortModifiers() {
-        this.prefixes[NodeType.BlockModifier] = [...this.cxt.config.blockModifiers.entries()]
-            .sort(([x, _], [y, __]) => y.length - x.length);
-        this.prefixes[NodeType.InlineModifier] = [...this.cxt.config.inlineModifiers.entries()]
-            .sort(([x, _], [y, __]) => y.length - x.length);
-        this.prefixes[NodeType.SystemModifier] = [...this.cxt.config.systemModifiers.entries()]
-            .sort(([x, _], [y, __]) => y.length - x.length);
-        this.prefixes[NodeType.Interpolation] = [...this.cxt.config.argumentInterpolators.entries()]
-            .sort(([x, _], [y, __]) => y.length - x.length);
-        debug.trace(this.cxt.config.argumentInterpolators);
+    #defs<Type extends NodeType.BlockModifier | NodeType.SystemModifier | NodeType.InlineModifier>(type: Type): NameManager<_Def<Type, any>> {
+        switch (type) {
+            case NodeType.SystemModifier: return this.cxt.config.systemModifiers as any;
+            case NodeType.InlineModifier: return this.cxt.config.inlineModifiers as any;
+            case NodeType.BlockModifier: return this.cxt.config.blockModifiers as any;
+            default: return debug.never(type);
+        }
     }
 
     #reparse(nodes: (BlockEntity | InlineEntity)[], depth: number): boolean {
@@ -277,8 +267,8 @@ class Parser {
             [NodeType.InlineModifier]: MODIFIER_INLINE_OPEN
         }[type]));
 
-        const result = this.prefixes[type].find(([name, _]) => this.scanner.accept(name));
-        const mod = result ? result[1] : UnknownModifier[type];
+        const result = this.#defs(type).find((x) => this.scanner.accept(x.name));
+        const mod = result ?? UnknownModifier[type];
         if (result === undefined) {
             const args = this.scanner.acceptUntil(MODIFIER_CLOSE_SIGN);
             if (args === null) this.emit.message(
@@ -538,18 +528,18 @@ class Parser {
                 });
                 continue;
             }
-            const result = this.prefixes[NodeType.Interpolation].find(
-                ([x, _]) => this.scanner.accept(x));
+            const result = this.cxt.config.argumentInterpolators.find(
+                (x) => this.scanner.accept(x.name));
             if (result !== undefined) {
-                const [inner, ok2] = this.ARGUMENT_CONTENT(result[1].postfix);
+                const [inner, ok2] = this.ARGUMENT_CONTENT(result.postfix);
                 posEnd = this.scanner.position();
                 content.push({
                     type: NodeType.Interpolation,
-                    definition: result[1], arg: inner,
+                    definition: result, arg: inner,
                     start: posEnd - 2, end: posEnd
                 });
                 if (!ok2) {
-                    this.emit.message(new ExpectedMessage(posEnd, result[1].postfix));
+                    this.emit.message(new ExpectedMessage(posEnd, result.postfix));
                     ok = false;
                     break;
                 }

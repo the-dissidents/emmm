@@ -3,14 +3,14 @@ import { BuiltinConfiguration } from "../src/builtin/builtin";
 import { SimpleScanner } from "../src/front";
 import * as Parser from "../src/parser";
 import { stripDocument } from "../src/util";
-import { BlockModifierDefinition, CustomConfiguration, InlineModifierDefinition, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
+import { BlockModifierDefinition, Configuration, InlineModifierDefinition, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
 
-const TestConfig = new CustomConfiguration(BuiltinConfiguration);
-TestConfig.addBlock(
+const TestConfig = new Configuration(BuiltinConfiguration);
+TestConfig.blockModifiers.add(
     new BlockModifierDefinition('normal', ModifierFlags.Normal)
 );
-TestConfig.addInline(
+TestConfig.inlineModifiers.add(
     new InlineModifierDefinition('marker', ModifierFlags.Marker, {
         expand(node, cxt) {
             if (node.arguments.length == 1) {
@@ -27,14 +27,14 @@ TestConfig.addInline(
 );
 
 function parse(src: string) {
-    const config = new CustomConfiguration(TestConfig);
+    const config = new Configuration(TestConfig);
     let doc = Parser.parse(new SimpleScanner(src), config);
     stripDocument(doc);
     return doc;
 }
 
 function parseWithoutStrip(src: string) {
-    const config = new CustomConfiguration(TestConfig);
+    const config = new Configuration(TestConfig);
     let doc = Parser.parse(new SimpleScanner(src), config);
     return doc;
 }

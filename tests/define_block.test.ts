@@ -3,16 +3,16 @@ import { BuiltinConfiguration } from "../src/builtin/builtin";
 import { SimpleScanner } from "../src/front";
 import * as Parser from "../src/parser";
 import { stripDocument } from "../src/util";
-import { BlockModifierDefinition, CustomConfiguration, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
+import { BlockModifierDefinition, Configuration, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
 
-const TestConfig = new CustomConfiguration(BuiltinConfiguration);
-TestConfig.addBlock(
+const TestConfig = new Configuration(BuiltinConfiguration);
+TestConfig.blockModifiers.add(
     new BlockModifierDefinition('normal', ModifierFlags.Normal)
 );
 
 function parse(src: string) {
-    const config = new CustomConfiguration(TestConfig);
+    const config = new Configuration(TestConfig);
     let doc = Parser.parse(new SimpleScanner(src), config);
     stripDocument(doc);
     return doc;

@@ -1,15 +1,15 @@
-import { CustomConfiguration, Configuration } from "../interface";
+import { Configuration } from "../interface";
 import { DefineBlockMod } from "./define-block";
 import { DefineInlineMod } from "./define-inline";
 import { initParseContext } from "./internal";
 import { SlotBlockMod, SlotInlineMod } from "./slot";
 import { VarMod, GetVarInlineMod, GetVarInterpolator } from "./var";
 
-let basic = new CustomConfiguration();
+let basic = new Configuration();
 basic.initializers = [initParseContext];
-basic.addSystem(DefineBlockMod, DefineInlineMod, VarMod);
-basic.addBlock(SlotBlockMod);
-basic.addInline(SlotInlineMod, GetVarInlineMod);
-basic.addInterpolator(GetVarInterpolator);
+basic.systemModifiers.add(DefineBlockMod, DefineInlineMod, VarMod);
+basic.blockModifiers.add(SlotBlockMod);
+basic.inlineModifiers.add(SlotInlineMod, GetVarInlineMod);
+basic.argumentInterpolators.add(GetVarInterpolator);
 
 export const BuiltinConfiguration: Configuration = Object.freeze(basic);
