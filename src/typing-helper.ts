@@ -1,23 +1,23 @@
-import { InlineModifierNode, BlockModifierNode, InlineModifierDefinition, BlockModifierDefinition, InlineInstantiationData, BlockInstantiationData, InlineEntity, BlockEntity, SystemModifierNode, SystemModifierDefinition } from "./interface";
+import { InlineModifierNode, BlockModifierNode, InlineModifierDefinition, BlockModifierDefinition, InlineInstantiationData, BlockInstantiationData, InlineEntity, BlockEntity, SystemModifierNode, SystemModifierDefinition, NodeType } from "./interface";
 
 
-export type _Node<T extends 'inline' | 'block' | 'system', TState = unknown> = 
-    T extends 'inline' ? InlineModifierNode<TState> : 
-    T extends 'block' ? BlockModifierNode<TState> : 
-    T extends 'system' ? SystemModifierNode<TState> : 
+export type _Node<T extends NodeType.InlineModifier | NodeType.BlockModifier | NodeType.SystemModifier, TState = unknown> = 
+    T extends NodeType.InlineModifier ? InlineModifierNode<TState> : 
+    T extends NodeType.BlockModifier ? BlockModifierNode<TState> : 
+    T extends NodeType.SystemModifier ? SystemModifierNode<TState> : 
     never;
 
-export type _Def<T extends 'inline' | 'block' | 'system', TState = unknown> = 
-    T extends 'inline' ? InlineModifierDefinition<TState> : 
-    T extends 'block' ? BlockModifierDefinition<TState> : 
-    T extends 'system' ? SystemModifierDefinition<TState> : 
+export type _Def<T extends NodeType.InlineModifier | NodeType.BlockModifier | NodeType.SystemModifier, TState = unknown> = 
+    T extends NodeType.InlineModifier ? InlineModifierDefinition<TState> : 
+    T extends NodeType.BlockModifier ? BlockModifierDefinition<TState> : 
+    T extends NodeType.SystemModifier ? SystemModifierDefinition<TState> : 
     never;
     
-export type _Ent<T extends 'inline' | 'block' | 'system'> = 
-    T extends 'inline' ? InlineEntity : 
-    T extends 'block' ? BlockEntity : 
-    T extends 'system' ? BlockEntity : 
+export type _Ent<T extends NodeType.InlineModifier | NodeType.BlockModifier | NodeType.SystemModifier> = 
+    T extends NodeType.InlineModifier ? InlineEntity : 
+    T extends NodeType.BlockModifier ? BlockEntity : 
+    T extends NodeType.SystemModifier ? BlockEntity : 
     never;
 
-export type _InstData<T extends 'inline' | 'block'> = 
-    T extends 'inline' ? InlineInstantiationData : BlockInstantiationData;
+export type _InstData<T extends NodeType.InlineModifier | NodeType.BlockModifier> = 
+    T extends NodeType.InlineModifier ? InlineInstantiationData : BlockInstantiationData;

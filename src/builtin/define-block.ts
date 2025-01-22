@@ -1,5 +1,5 @@
 import { debug } from "../debug";
-import { SystemModifierDefinition, ModifierFlags, Message } from "../interface";
+import { SystemModifierDefinition, ModifierFlags, Message, NodeType } from "../interface";
 import { ArgumentsTooFewMessage, NameAlreadyDefinedMessage } from "../messages";
 import { assert } from "../util";
 import { builtins, customModifier } from "./internal";
@@ -48,7 +48,7 @@ export const DefineBlockMod = new SystemModifierDefinition<{
         if (!immediate) return undefined;
         if (node.state) {
             cxt.config.blockModifiers.set(node.state.name,
-                customModifier('block', node.state.name, node.state.args,
+                customModifier(NodeType.BlockModifier, node.state.name, node.state.args,
                     node.state.slotName, node.content));
             cxt.onConfigChange();
         }

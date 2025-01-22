@@ -1,5 +1,5 @@
 import { debug } from "../debug";
-import { SystemModifierDefinition, InlineEntity, ModifierFlags, Message } from "../interface";
+import { SystemModifierDefinition, InlineEntity, ModifierFlags, Message, NodeType } from "../interface";
 import { ArgumentsTooFewMessage, NameAlreadyDefinedMessage, InlineDefinitonInvalidEntityMessage } from "../messages";
 import { assert } from "../util";
 import { builtins, customModifier } from "./internal";
@@ -51,17 +51,17 @@ export const DefineInlineMod = new SystemModifierDefinition<{
         let concat: InlineEntity[] = [];
         for (const n of node.content) {
             switch (n.type) {
-                case "paragraph":
+                case NodeType.Paragraph:
                     if (!lastIsParagraph) {
                         lastIsParagraph = true;
                         concat.push(...n.content);
                         continue;
                     }
-                case "pre":
-                case "block":
+                case NodeType.Preformatted:
+                case NodeType.BlockModifier:
                     msgs.push(new InlineDefinitonInvalidEntityMessage(n.start, n.end - n.start));
                     break;
-                case "system":
+                case NodeType.SystemModifier:
                     lastIsParagraph = false;
                     concat.push(n);
                     break;
@@ -76,7 +76,7 @@ export const DefineInlineMod = new SystemModifierDefinition<{
         if (!immediate) return undefined;
         if (node.state) {
             cxt.config.inlineModifiers.set(node.state.name,
-                customModifier('inline', node.state.name, node.state.args,
+                customModifier(NodeType.InlineModifier, node.state.name, node.state.args,
                     node.state.slotName, node.state.definition!));
             cxt.onConfigChange();
         }

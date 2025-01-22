@@ -1,5 +1,5 @@
 import { debug } from "../debug";
-import { ParseContext, InlineModifierDefinition, ModifierFlags, ArgumentInterpolatorDefinition, SystemModifierDefinition } from "../interface";
+import { ParseContext, InlineModifierDefinition, ModifierFlags, ArgumentInterpolatorDefinition, SystemModifierDefinition, NodeType } from "../interface";
 import { InvalidArgumentMessage, UndefinedVariableMessage } from "../messages";
 import { builtins, checkArgumentLength } from "./internal";
 
@@ -39,7 +39,7 @@ export const GetVarInlineMod = new InlineModifierDefinition<{ value: string; }>(
     },
     expand(node, cxt) {
         if (!node.state) return [];
-        return [{ type: 'text', content: node.state.value, start: -1, end: -1 }];
+        return [{ type: NodeType.Text, content: node.state.value, start: -1, end: -1 }];
     },
 });
 

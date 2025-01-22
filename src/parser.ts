@@ -1,5 +1,5 @@
 import { debug } from "./debug";
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner, ArgumentEntity, ArgumentInterpolatorDefinition, ModifierNode, SystemModifierDefinition, SystemModifierNode } from "./interface";
+import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner, ArgumentEntity, ArgumentInterpolatorDefinition, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
 import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, ReachedRecursionLimitMessage as ReachedReparseLimitMessage, ReferredMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
 import { assert, debugPrintNodes, has } from "./util";
 
@@ -16,9 +16,9 @@ const MODIFIER_INLINE_END_TAG = '[;]';
 const MODIFIER_SYSTEM_OPEN = '[-';
 
 const UnknownModifier = {
-    block: new BlockModifierDefinition('UNKNOWN', ModifierFlags.Normal),
-    inline: new InlineModifierDefinition('UNKNOWN', ModifierFlags.Normal),
-    system: new SystemModifierDefinition('UNKNOWN', ModifierFlags.Normal)
+    [NodeType.BlockModifier]: new BlockModifierDefinition('UNKNOWN', ModifierFlags.Normal),
+    [NodeType.InlineModifier]: new InlineModifierDefinition('UNKNOWN', ModifierFlags.Normal),
+    [NodeType.SystemModifier]: new SystemModifierDefinition('UNKNOWN', ModifierFlags.Normal)
 };
 
 type NodeWithBlockContent = 
@@ -27,7 +27,7 @@ type NodeWithInlineContent =
     InlineModifierNode<unknown> | ParagraphNode;
 
 class EmitEnvironment {
-    public root: RootNode = {type: 'root', start: 0, end: -1, content: []};
+    public root: RootNode = {type: NodeType.Root, start: 0, end: -1, content: []};
     public messages: Message[] = [];
     private blockStack: NodeWithBlockContent[] = [this.root];
     private inlineStack: NodeWithInlineContent[] = [];
@@ -70,11 +70,11 @@ class EmitEnvironment {
         assert(this.inlineStack.length > 0);
         const content = this.inlineStack.at(-1)!.content;
         const last = content.at(-1);
-        if (last?.type == 'text') {
+        if (last?.type == NodeType.Text) {
             last.content += str;
             last.end = this.scanner.position();
         } else content.push({
-            type: 'text',
+            type: NodeType.Text,
             start: this.scanner.position() - str.length,
             end: this.scanner.position(),
             content: str
@@ -93,7 +93,7 @@ class EmitEnvironment {
     }
 
     startInline(n: InlineModifierNode<unknown> | ParagraphNode) {
-        if (n.type == 'paragraph') this.addBlockNode(n);
+        if (n.type == NodeType.Paragraph) this.addBlockNode(n);
         else this.addInlineNode(n);
         this.inlineStack.push(n);
     }
@@ -111,10 +111,10 @@ class Parser {
     private delayDepth = 0;
     private groupDepth = 0;
     private prefixes = {
-        block: [] as [string, BlockModifierDefinition<any>][],
-        inline: [] as  [string, InlineModifierDefinition<any>][],
-        system: [] as  [string, SystemModifierDefinition<any>][],
-        interpolator: [] as  [string, ArgumentInterpolatorDefinition][]
+        [NodeType.BlockModifier]: [] as [string, BlockModifierDefinition<any>][],
+        [NodeType.InlineModifier]: [] as  [string, InlineModifierDefinition<any>][],
+        [NodeType.SystemModifier]: [] as  [string, SystemModifierDefinition<any>][],
+        [NodeType.Interpolation]: [] as  [string, ArgumentInterpolatorDefinition][]
     }
 
     constructor(private scanner: Scanner, config: Configuration) {
@@ -125,13 +125,13 @@ class Parser {
     }
 
     #sortModifiers() {
-        this.prefixes.block = [...this.cxt.config.blockModifiers.entries()]
+        this.prefixes[NodeType.BlockModifier] = [...this.cxt.config.blockModifiers.entries()]
             .sort(([x, _], [y, __]) => y.length - x.length);
-        this.prefixes.inline = [...this.cxt.config.inlineModifiers.entries()]
+        this.prefixes[NodeType.InlineModifier] = [...this.cxt.config.inlineModifiers.entries()]
             .sort(([x, _], [y, __]) => y.length - x.length);
-        this.prefixes.system = [...this.cxt.config.systemModifiers.entries()]
+        this.prefixes[NodeType.SystemModifier] = [...this.cxt.config.systemModifiers.entries()]
             .sort(([x, _], [y, __]) => y.length - x.length);
-        this.prefixes.interpolator = [...this.cxt.config.argumentInterpolators.entries()]
+        this.prefixes[NodeType.Interpolation] = [...this.cxt.config.argumentInterpolators.entries()]
             .sort(([x, _], [y, __]) => y.length - x.length);
         debug.trace(this.cxt.config.argumentInterpolators);
     }
@@ -141,16 +141,16 @@ class Parser {
         let ok = true;
         for (const node of nodes) {
             switch (node.type) {
-                case "pre":
-                case "text":
-                case "escaped":
+                case NodeType.Preformatted:
+                case NodeType.Text:
+                case NodeType.Escaped:
                     continue;
-                case "paragraph":
+                case NodeType.Paragraph:
                     ok = this.#reparse(node.content, depth + 1) && ok;
                     continue;
-                case "block":
-                case "inline":
-                case "system":
+                case NodeType.BlockModifier:
+                case NodeType.InlineModifier:
+                case NodeType.SystemModifier:
                     ok = this.#expand(node, depth + 1) && ok;
                     continue;
                 default:
@@ -258,23 +258,23 @@ class Parser {
     private BLOCK_ENTITY() {
         assert(!this.scanner.isEOF());
         if (this.scanner.peek(MODIFIER_BLOCK_OPEN)) {
-            this.MODIFIER('block');
+            this.MODIFIER(NodeType.BlockModifier);
             return;
         }
         if (this.scanner.peek(MODIFIER_SYSTEM_OPEN)) {
-            this.MODIFIER('system');
+            this.MODIFIER(NodeType.SystemModifier);
             return;
         }
         // simple paragraph(s)
         this.MAYBE_GROUPED_PARAGRAPH();
     }
 
-    private MODIFIER<Type extends 'block' | 'system' | 'inline'>(type: Type) {
+    private MODIFIER<Type extends NodeType.BlockModifier | NodeType.SystemModifier | NodeType.InlineModifier>(type: Type) {
         const posStart = this.scanner.position();
         assert(this.scanner.accept({
-            block: MODIFIER_BLOCK_OPEN,
-            system: MODIFIER_SYSTEM_OPEN,
-            inline: MODIFIER_INLINE_OPEN
+            [NodeType.BlockModifier]: MODIFIER_BLOCK_OPEN,
+            [NodeType.SystemModifier]: MODIFIER_SYSTEM_OPEN,
+            [NodeType.InlineModifier]: MODIFIER_INLINE_OPEN
         }[type]));
 
         const result = this.prefixes[type].find(([name, _]) => this.scanner.accept(name));
@@ -314,9 +314,9 @@ class Parser {
 
         let ok = true;
         if (isMarker) {
-            if (type === 'inline') this.emit.addInlineNode(node as InlineEntity);
+            if (type === NodeType.InlineModifier) this.emit.addInlineNode(node as InlineEntity);
             else this.emit.addBlockNode(node as BlockEntity);
-        } else if (type == 'inline') {
+        } else if (type == NodeType.InlineModifier) {
             this.emit.startInline(node as any);
             const entity = has(mod.flags, ModifierFlags.Preformatted)
                 ? this.PREFORMATTED_INLINE_ENTITY.bind(this)
@@ -380,7 +380,7 @@ class Parser {
             posContentEnd = this.scanner.position();
         }
         const node: PreNode = {
-            type: 'pre', 
+            type: NodeType.Preformatted, 
             start: posStart,
             end: this.scanner.position(),
             content: {
@@ -417,7 +417,7 @@ class Parser {
     private PARAGRAPH() {
         assert(!this.scanner.isEOF());
         const node: ParagraphNode = {
-            type: 'paragraph',
+            type: NodeType.Paragraph,
             start: this.scanner.position(),
             end: -1,
             content: []
@@ -438,7 +438,7 @@ class Parser {
             return false;
         }
         if (this.scanner.peek(MODIFIER_INLINE_OPEN)) {
-            return this.MODIFIER('inline');
+            return this.MODIFIER(NodeType.InlineModifier);
         }
         if (this.scanner.peek(MODIFIER_SYSTEM_OPEN)) {
             return false;
@@ -451,7 +451,7 @@ class Parser {
                 return true;
             }
             const node: EscapedNode = {
-                type: 'escaped',
+                type: NodeType.Escaped,
                 start: this.scanner.position() - 1,
                 content: this.scanner.acceptChar(),
                 end: this.scanner.position()
@@ -493,13 +493,13 @@ class Parser {
 
         const emitString = (s: string) => {
             const last = content.at(-1);
-            if (last?.type == 'text') {
+            if (last?.type == NodeType.Text) {
                 last.content += s;
                 last.end += s.length;
             } else {
                 const end = this.scanner.position();
                 content.push({
-                    type: 'text', 
+                    type: NodeType.Text, 
                     end, start: end - s.length,
                     content: s
                 });
@@ -532,18 +532,19 @@ class Parser {
                     break;
                 }
                 content.push({
-                    type: 'escaped',
+                    type: NodeType.Escaped,
                     content: this.scanner.acceptChar(),
                     start: posEnd - 2, end: posEnd
                 });
                 continue;
             }
-            const result = this.prefixes.interpolator.find(([x, _]) => this.scanner.accept(x));
+            const result = this.prefixes[NodeType.Interpolation].find(
+                ([x, _]) => this.scanner.accept(x));
             if (result !== undefined) {
                 const [inner, ok2] = this.ARGUMENT_CONTENT(result[1].postfix);
                 posEnd = this.scanner.position();
                 content.push({
-                    type: 'interp',
+                    type: NodeType.Interpolation,
                     definition: result[1], arg: inner,
                     start: posEnd - 2, end: posEnd
                 });

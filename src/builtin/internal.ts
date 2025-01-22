@@ -1,5 +1,5 @@
 import { debug } from "../debug";
-import { ParseContext, ModifierNode, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags } from "../interface";
+import { ParseContext, ModifierNode, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags, NodeType } from "../interface";
 import { ArgumentsTooFewMessage, ArgumentsTooManyMessage } from "../messages";
 import { _Ent, _Def } from "../typing-helper";
 import { debugPrintNodes, cloneNodes, assert } from "../util";
@@ -35,17 +35,18 @@ export function checkArgumentLength(node: ModifierNode, n: number) {
     return null;
 }
 
-export function customModifier<T extends 'inline' | 'block'>(type: T,
-    name: string, argNames: string[], slotName: string, content: _Ent<T>[])
+export function customModifier<T extends NodeType.InlineModifier | NodeType.BlockModifier>(
+    type: T, name: string, argNames: string[], slotName: string, content: _Ent<T>[])
 {
     debug.info(`registered custom ${type} modifier:`, name);
     debug.info('args:', argNames, `with ${slotName == '' ? 'no slot name' : 'slot name: ' + slotName}`);
     debug.trace(() => 'content is\n' + debugPrintNodes(content));
 
-    const mod = (type == 'block'
+    const mod = (type == NodeType.BlockModifier
         ? new BlockModifierDefinition<{ ok: boolean; }>(name, ModifierFlags.Normal)
         : new InlineModifierDefinition<{ ok: boolean; }>(name, ModifierFlags.Normal)
     ) as _Def<T, { ok: boolean; }>;
+    const isInline = type == NodeType.InlineModifier;
 
     mod.delayContentExpansion = true;
     mod.prepareExpand = (node: ModifierNode, cxt: ParseContext) => {
@@ -62,9 +63,9 @@ export function customModifier<T extends 'inline' | 'block'>(type: T,
     mod.beforeProcessExpansion = (node: ModifierNode, cxt: ParseContext) => {
         if (!node.state?.ok) return [];
         const store = cxt.get(builtins)!;
-        const data = ({ inline: store.inlineSlotData, block: store.blockSlotData })[type];
         const args = new Map(
             node.arguments.map((x, i) => [argNames[i], cxt.evaluateArgument(x)]));
+        const data = isInline ? store.inlineSlotData : store.blockSlotData;
         data.push([slotName, { mod: mod as any, args, slotContent: node.content as any }]);
         debug.trace(`pushed ${type} slot data for`, name,
             slotName == '' ? '(unnamed)' : `= ${slotName}`);
@@ -73,7 +74,7 @@ export function customModifier<T extends 'inline' | 'block'>(type: T,
     mod.afterProcessExpansion = (node: ModifierNode, cxt: ParseContext) => {
         if (!node.state?.ok) return [];
         const store = cxt.get(builtins)!;
-        const data = ({ inline: store.inlineSlotData, block: store.blockSlotData })[type];
+        const data = isInline ? store.inlineSlotData : store.blockSlotData;
         const pop = data.pop();
         assert(pop !== undefined && pop[0] == slotName);
         debug.trace(`popped ${type} slot data for`, name,

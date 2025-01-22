@@ -1,5 +1,5 @@
 import { debug } from "./debug";
-import { Document, Message, MessageSeverity, DocumentNode, PositionRange, ArgumentEntity, ModifierArgument } from "./interface";
+import { Document, Message, MessageSeverity, DocumentNode, PositionRange, ArgumentEntity, ModifierArgument, NodeType } from "./interface";
 import { ReferredMessage } from "./messages";
 
 export function assert(x: boolean): asserts x {
@@ -25,9 +25,9 @@ export function linePositions(src: string): number[] {
 
 export function cloneNode(node: DocumentNode, referring?: PositionRange): DocumentNode {
     switch (node.type) {
-        case "block":
-        case "inline":
-        case "system":
+        case NodeType.BlockModifier:
+        case NodeType.InlineModifier:
+        case NodeType.SystemModifier:
             return {
                 start: node.start,
                 end: node.end,
@@ -39,17 +39,17 @@ export function cloneNode(node: DocumentNode, referring?: PositionRange): Docume
                 content: node.content.map((x) => cloneNode(x, referring) as any),
                 expansion: node.expansion ? cloneNodes(node.expansion) as any : undefined
             };
-        case "root":
-        case "paragraph":
+        case NodeType.Root:
+        case NodeType.Paragraph:
             return {
                 type: node.type as any,
                 start: node.start,
                 end: node.end,
                 content: node.content.map((x) => cloneNode(x) as any)
             }
-        case "pre":
-        case "text":
-        case "escaped":
+        case NodeType.Preformatted:
+        case NodeType.Text:
+        case NodeType.Escaped:
             return structuredClone(node);
         default:
             return debug.never(node);
@@ -63,19 +63,19 @@ export function cloneNodes(nodes: DocumentNode[]): DocumentNode[] {
 export function stripDocument(doc: Document) {
     function stripNode(node: DocumentNode): DocumentNode[] {
         switch (node.type) {
-            case "pre":
-            case "text":
-            case "escaped":
+            case NodeType.Preformatted:
+            case NodeType.Text:
+            case NodeType.Escaped:
                 return [node];
-            case "block":
-            case "inline":
+            case NodeType.BlockModifier:
+            case NodeType.InlineModifier:
                 if (node.expansion !== undefined)
                     return node.expansion.flatMap((x) => stripNode(x));
-            case "paragraph":
-            case "root":
+            case NodeType.Paragraph:
+            case NodeType.Root:
                 node.content = node.content.flatMap((x) => stripNode(x)) as any;
                 return [node];
-            case "system":
+            case NodeType.SystemModifier:
                 return [];
             default:
                 return debug.never(node);
@@ -86,11 +86,11 @@ export function stripDocument(doc: Document) {
 
 function debugPrintArgEntity(node: ArgumentEntity): string {
     switch (node.type) {
-        case "text":
+        case NodeType.Text:
             return node.content;
-        case "escaped":
+        case NodeType.Escaped:
             return `<Escaped:${node.content}>`;
-        case "interp":
+        case NodeType.Interpolation:
             return `<Interp:${node.definition.prefix}-${node.definition.postfix}:${debugPrintArgument(node.arg)}>`;
         default:
             return debug.never(node);
@@ -104,20 +104,20 @@ export function debugPrintArgument(arg: ModifierArgument): string {
 export function debugPrintNode(node: DocumentNode, prefix = '') {
     let result = `<${node.type}@${node.start}`;
     switch (node.type) {
-        case "root":
-        case "paragraph":
+        case NodeType.Root:
+        case NodeType.Paragraph:
             const content = debugPrintNodes(node.content, prefix);
             if (content.length > 0)
                 result += `>\n${content}\n${prefix}</${node.type}@${node.end}>`;
             else result += `-${node.end} />`;
             break;
-        case "escaped":
-        case "pre":
+        case NodeType.Escaped:
+        case NodeType.Preformatted:
             result += `>\n${prefix}  ${node.content}\n${prefix}</${node.type}@${node.end}>`;
             break;
-        case "inline":
-        case "block":
-        case "system":
+        case NodeType.InlineModifier:
+        case NodeType.BlockModifier:
+        case NodeType.SystemModifier:
             const args = node.arguments.map((x, i) => `\n${prefix}    (${i})@${x.start}-${x.end}=${debugPrintArgument(x)}`).join('')
             if (node.content.length > 0) {
                 result += ` id=${node.mod.name}${args}>\n` + debugPrintNodes(node.content, prefix) + `\n${prefix}</${node.type}@${node.end}>`;
@@ -126,11 +126,11 @@ export function debugPrintNode(node: DocumentNode, prefix = '') {
                 const content = debugPrintNodes(node.expansion, prefix);
                 if (content.length > 0)
                     result += `\n${prefix}<expansion>\n${content}\n${prefix}</expansion>`;
-                else if (node.type != 'system')
+                else if (node.type != NodeType.SystemModifier)
                     result += `\n${prefix}<expansion />`;
             }
             break;
-        case "text":
+        case NodeType.Text:
             return node.content;
         default:
             return debug.never(node);

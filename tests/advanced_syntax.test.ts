@@ -3,7 +3,7 @@ import { BuiltinConfiguration } from "../src/builtin/builtin";
 import { SimpleScanner } from "../src/front";
 import * as Parser from "../src/parser";
 import { stripDocument } from "../src/util";
-import { BlockModifierDefinition, CustomConfiguration, InlineModifierDefinition, MessageSeverity, ModifierFlags } from "../src/interface";
+import { BlockModifierDefinition, CustomConfiguration, InlineModifierDefinition, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
 
 const TestConfig = new CustomConfiguration(BuiltinConfiguration);
@@ -15,7 +15,7 @@ TestConfig.addInline(
         expand(node, cxt) {
             if (node.arguments.length == 1) {
                 return [{
-                    type: 'text',
+                    type: NodeType.Text,
                     start: node.start,
                     end: node.end,
                     content: cxt.evaluateArgument(node.arguments[0])
@@ -46,7 +46,7 @@ describe('argument parsing', () => {
         let doc = parseWithoutStrip(`[.normal 123:456]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
-            type: 'block', mod: {name: 'normal'},
+            type: NodeType.BlockModifier, mod: {name: 'normal'},
             arguments: [
                 { content: [{content: "123"}] },
                 { content: [{content: "456"}] }
@@ -57,11 +57,11 @@ describe('argument parsing', () => {
         let doc = parseWithoutStrip(String.raw`[/marker \]]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
-            type: 'paragraph',
+            type: NodeType.Paragraph,
             content: [{
-                type: 'inline', mod: {name: 'marker'},
-                arguments: [{ content: [{ type: 'escaped', content: "]" }] }],
-                expansion: [{ type: 'text', content: ']' }]
+                type: NodeType.InlineModifier, mod: {name: 'marker'},
+                arguments: [{ content: [{ type: NodeType.Escaped, content: "]" }] }],
+                expansion: [{ type: NodeType.Text, content: ']' }]
             }]
         } ]);
     });
@@ -69,11 +69,11 @@ describe('argument parsing', () => {
         let doc = parse(`[.normal $(x)]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
-            type: 'block', mod: {name: 'normal'},
+            type: NodeType.BlockModifier, mod: {name: 'normal'},
             arguments: [
                 { content: [{
-                    type: 'interp', 
-                    arg: { content: [{ type: 'text', content: 'x' }] }
+                    type: NodeType.Interpolation, 
+                    arg: { content: [{ type: NodeType.Text, content: 'x' }] }
                 }] }
             ],
             content: []
@@ -81,11 +81,11 @@ describe('argument parsing', () => {
         doc = parse(String.raw`[.normal $(\))]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
-            type: 'block', mod: {name: 'normal'},
+            type: NodeType.BlockModifier, mod: {name: 'normal'},
             arguments: [
                 { content: [{
-                    type: 'interp', 
-                    arg: { content: [{ type: 'escaped', content: ")" }] }
+                    type: NodeType.Interpolation, 
+                    arg: { content: [{ type: NodeType.Escaped, content: ")" }] }
                 }] }
             ],
             content: []
@@ -95,14 +95,14 @@ describe('argument parsing', () => {
         let doc = parse(`[-var x:123][/marker $(x)]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: '123' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
     });
     test('variable interpolation: nested', () => {
         let doc = parse(`[-var x:y][-var xy:123][/marker $(x$(x))]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: '123' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
     });
 });
@@ -112,7 +112,7 @@ describe('[-var] and [/$]', () => {
         let doc = parse(`[-var x:123][/$x]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: '123' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
     });
     test('warning - undefined reference', () => {
@@ -121,7 +121,7 @@ describe('[-var] and [/$]', () => {
             { code: 5, severity: MessageSeverity.Warning }
         ]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [] }
+            { type: NodeType.Paragraph, content: [] }
         ]);
     });
 });

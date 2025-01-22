@@ -3,7 +3,7 @@ import { BuiltinConfiguration } from "../src/builtin/builtin";
 import { SimpleScanner } from "../src/front";
 import * as Parser from "../src/parser";
 import { stripDocument } from "../src/util";
-import { BlockModifierDefinition, CustomConfiguration, MessageSeverity, ModifierFlags } from "../src/interface";
+import { BlockModifierDefinition, CustomConfiguration, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
 
 const TestConfig = new CustomConfiguration(BuiltinConfiguration);
@@ -24,7 +24,7 @@ describe('[-define-block]', () => {
         let doc = parse(`[-define-block p]abc\n[.p]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] }
         ]);
         doc = parse(`[-define-block p;]\n[.p]`);
         expect.soft(doc.messages).toMatchObject([]);
@@ -34,50 +34,50 @@ describe('[-define-block]', () => {
         let doc = parse(`[-define-block p][.slot]\n[.p]abc\n[.p]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] },
-            { type: 'paragraph', content: [{ type: 'text', content: 'def' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
         ]);
     });
     test('slots: multiple instantiations', () => {
         let doc = parse(`[-define-block p]\n:--\n[-var x:0][.slot][-var x:1][.slot]\n--:\n[.p][/$x]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: '0' }] },
-            { type: 'paragraph', content: [{ type: 'text', content: '1' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
         ]);
     });
     test('slots: reference in separate scopes', () => {
         let doc = parse(`[-define-block p]\n:--\na\n[.slot]\n--:\n[-define-block q][.p]\n:--\nb\n[.slot]\n--:\n[.q]c`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: 'a' }] },
-            { type: 'paragraph', content: [{ type: 'text', content: 'b' }] },
-            { type: 'paragraph', content: [{ type: 'text', content: 'c' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'a' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'b' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'c' }] }
         ]);
     });
     test('slots: unnamed reference in nested scopes', () => {
         let doc = parse(`[-define-block p]\n:--\n[.slot][-define-block q][.slot]\n--:\n[.p]abc\n[.q]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] },
-            { type: 'paragraph', content: [{ type: 'text', content: 'def' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
         ]);
     });
     test('slots: named reference in nested scopes', () => {
         let doc = parse(`[-define-block p:(0)]\n[-define-block q:(1)]\n:--\n[.slot 0][.slot 1]\n--:\n[.p]abc\n[.q]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] },
-            { type: 'paragraph', content: [{ type: 'text', content: 'def' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
         ]);
     });
     test('arguments: simple', () => {
         let doc = parse(`[-define-block p:arg1:arg2][/$arg1][/$arg2]\n\n[.p:abc:def;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [
-                { type: 'text', content: 'abc' },
-                { type: 'text', content: 'def' }
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: 'abc' },
+                { type: NodeType.Text, content: 'def' }
             ] }
         ]);
     });
@@ -85,15 +85,15 @@ describe('[-define-block]', () => {
         let doc = parse(`[-define-block p:x][/$x]\n\n[-var x:0][.p:1]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [
-                { type: 'text', content: '1' }
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '1' }
             ] }
         ]);
         doc = parse(`[-define-block p:x]\n:--\n[.slot][/$x]\n--:\n[-var x:0][.p:1][/$x]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: '0' }] },
-            { type: 'paragraph', content: [{ type: 'text', content: '1' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
         ]);
     });
     test('arguments: no reference in user scope', () => {
@@ -102,23 +102,23 @@ describe('[-define-block]', () => {
             { code: 5, severity: MessageSeverity.Warning }
         ]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [] },
-            { type: 'paragraph', content: [{ type: 'text', content: '1' }] }
+            { type: NodeType.Paragraph, content: [] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
         ]);
     });
     test('arguments: reference in separate scopes', () => {
         let doc = parse(`[-define-block p:x][/$x]\n\n[-define-block q:x]\n:--\n[.p 0;][/$x]\n--:\n[.q:1]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: '0' }] },
-            { type: 'paragraph', content: [{ type: 'text', content: '1' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
         ]);
     });
     test('arguments: reference in nested scopes', () => {
         let doc = parse(`[-define-block p:x][-define-block q:x][/$x]\n\n[.p:0;][.q:1]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: '1' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
         ]);
     });
     test('error - invalid slot names', () => {
@@ -139,7 +139,7 @@ describe('[-define-block]', () => {
             {severity: MessageSeverity.Error, code: 9}
         ]);
         expect.soft(doc.root.content).toMatchObject([ {
-            type: 'block', mod: {name: 'normal'},
+            type: NodeType.BlockModifier, mod: {name: 'normal'},
             content: []
         } ]);
         doc = parse(`[-define-block p]\n[.slot]\n[.p][.slot]`);
@@ -154,7 +154,7 @@ describe('[-define-block]', () => {
             {severity: MessageSeverity.Warning, code: 4}
         ]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: 'def' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
         ]);
     });
 });

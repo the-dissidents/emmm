@@ -1,26 +1,27 @@
 import { debug } from "../debug";
-import { BlockModifierDefinition, ModifierFlags, InlineModifierDefinition, ModifierNode, ParseContext } from "../interface";
+import { BlockModifierDefinition, ModifierFlags, InlineModifierDefinition, ModifierNode, ParseContext, NodeType } from "../interface";
 import { SlotUsedOutsideDefinitionMessage, ArgumentsTooManyMessage, InvalidArgumentMessage } from "../messages";
 import { _Def, _InstData } from "../typing-helper";
 import { cloneNodes } from "../util";
 import { builtins } from "./internal";
 
-function slotModifier<T extends 'inline' | 'block'>(type: T): _Def<T, any> {
+function slotModifier<T extends NodeType.InlineModifier | NodeType.BlockModifier>(type: T): _Def<T, any> {
     type TState = {
         ok: true;
         data: [string, _InstData<T>];
         index: number;
     } | { ok: false; };
 
-    let mod = (type == 'block'
+    const mod = (type == NodeType.BlockModifier
         ? new BlockModifierDefinition<TState>('slot', ModifierFlags.Marker)
         : new InlineModifierDefinition<TState>('slot', ModifierFlags.Marker)
     ) as _Def<T, TState>;
+    const isInline = type == NodeType.InlineModifier;
 
     mod.alwaysTryExpand = true;
     mod.prepareExpand = (node: ModifierNode, cxt: ParseContext, immediate: boolean) => {
         const store = cxt.get(builtins)!;
-        const data = ({ inline: store.inlineSlotData, block: store.blockSlotData })[type];
+        const data = isInline ? store.inlineSlotData : store.blockSlotData;
         const id = node.arguments.length == 1 ? cxt.evaluateArgument(node.arguments[0]) : '';
         if (data.length == 0) {
             if (immediate) {
@@ -37,7 +38,7 @@ function slotModifier<T extends 'inline' | 'block'>(type: T): _Def<T, any> {
             }
             return [];
         }
-        const stack = ({ inline: store.inlineSlotDelayedStack, block: store.blockSlotDelayedStack })[type];
+        const stack = isInline ? store.inlineSlotDelayedStack : store.blockSlotDelayedStack;
         if (stack.includes(id)) {
             debug.trace('delaying', id == '' ? 'unnamed slot' : 'slot: ' + id);
             return [];
@@ -67,7 +68,7 @@ function slotModifier<T extends 'inline' | 'block'>(type: T): _Def<T, any> {
         if (!node.state?.ok) return [];
         const store = cxt.get(builtins)!;
         debug.trace('temporarily removed slot data for', node.state.data[1].mod.name);
-        const data = ({ inline: store.inlineSlotData, block: store.blockSlotData })[type];
+        const data = isInline ? store.inlineSlotData : store.blockSlotData;
         data.splice(node.state.index, 1);
         return [];
     };
@@ -76,12 +77,12 @@ function slotModifier<T extends 'inline' | 'block'>(type: T): _Def<T, any> {
         if (!node.state?.ok) return [];
         const store = cxt.get(builtins)!;
         debug.trace('reinstated slot data for', node.state.data[1].mod.name);
-        const data = ({ inline: store.inlineSlotData, block: store.blockSlotData })[type];
+        const data = isInline ? store.inlineSlotData : store.blockSlotData;
         data.splice(node.state.index, 0, node.state.data);
         return [];
     };
     return mod;
 }
 
-export const SlotBlockMod = slotModifier('block');
-export const SlotInlineMod = slotModifier('inline');
+export const SlotBlockMod = slotModifier(NodeType.BlockModifier);
+export const SlotInlineMod = slotModifier(NodeType.InlineModifier);

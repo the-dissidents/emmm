@@ -49,28 +49,40 @@ export type PositionRange = {
     end: number
 };
 
+export enum NodeType {
+    Root,
+    Paragraph,
+    Preformatted,
+    Text,
+    Escaped,
+    SystemModifier,
+    InlineModifier,
+    BlockModifier,
+    Interpolation
+}
+
 export type ParagraphNode = PositionRange & {
-    type: 'paragraph',
+    type: NodeType.Paragraph,
     content: InlineEntity[]
 };
 
 export type PreNode = PositionRange & {
-    type: 'pre',
+    type: NodeType.Preformatted,
     content: PositionRange & {text: string}
 };
 
 export type TextNode = PositionRange & {
-    type: 'text',
+    type: NodeType.Text,
     content: string
 };
 
 export type EscapedNode = PositionRange & {
-    type: 'escaped',
+    type: NodeType.Escaped,
     content: string
 }
 
 export type SystemModifierNode<TState> = PositionRange & {
-    type: 'system',
+    type: NodeType.SystemModifier,
     mod: SystemModifierDefinition<TState>,
     state?: TState,
     head: PositionRange,
@@ -80,7 +92,7 @@ export type SystemModifierNode<TState> = PositionRange & {
 };
 
 export type BlockModifierNode<TState> = PositionRange & {
-    type: 'block',
+    type: NodeType.BlockModifier,
     mod: BlockModifierDefinition<TState>,
     state?: TState,
     head: PositionRange,
@@ -90,7 +102,7 @@ export type BlockModifierNode<TState> = PositionRange & {
 };
 
 export type InlineModifierNode<TState> = PositionRange & {
-    type: 'inline',
+    type: NodeType.InlineModifier,
     mod: InlineModifierDefinition<TState>,
     state?: TState,
     head: PositionRange,
@@ -100,7 +112,7 @@ export type InlineModifierNode<TState> = PositionRange & {
 };
 
 export type RootNode = PositionRange & {
-    type: 'root'
+    type: NodeType.Root
     content: BlockEntity[]
 }
 
@@ -115,7 +127,7 @@ export type DocumentNode =
 
 // used in arguments only
 export type InterpolationNode = PositionRange & {
-    type: 'interp',
+    type: NodeType.Interpolation,
     definition: ArgumentInterpolatorDefinition,
     arg: ModifierArgument
 }
@@ -218,10 +230,10 @@ export class ParseContext {
 
     #evalEntity(e: ArgumentEntity): string {
         switch (e.type) {
-            case "text":
-            case "escaped":
+            case NodeType.Text:
+            case NodeType.Escaped:
                 return e.content;
-            case "interp":
+            case NodeType.Interpolation:
                 const inner = this.evaluateArgument(e.arg);
                 return e.definition.expand(inner, this);
             default:

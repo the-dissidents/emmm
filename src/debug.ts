@@ -11,20 +11,24 @@ export enum DebugLevel {
 export const debug = {
     level: DebugLevel.Info,
     trace(arg0: any, ...args: any) {
+        if (this.level > DebugLevel.Trace) return;
         if (typeof arg0 == 'function') arg0 = arg0();
-        if (this.level <= DebugLevel.Trace) console.info('TRACE', arg0, ...args);
+        console.info('TRACE', arg0, ...args);
     },
     info(arg0: any, ...args: any) {
+        if (this.level > DebugLevel.Info) return;
         if (typeof arg0 == 'function') arg0 = arg0();
-        if (this.level <= DebugLevel.Info) console.info(' INFO', arg0, ...args);
+        console.info(' INFO', arg0, ...args);
     },
     warning(arg0: any, ...args: any) {
+        if (this.level > DebugLevel.Warning) return;
         if (typeof arg0 == 'function') arg0 = arg0();
-        if (this.level <= DebugLevel.Warning) console.warn(' WARN', arg0, ...args);
+        console.warn(' WARN', arg0, ...args);
     },
     error(arg0: any, ...args: any) {
+        if (this.level > DebugLevel.Error) return;
         if (typeof arg0 == 'function') arg0 = arg0();
-        if (this.level <= DebugLevel.Error) console.error('ERROR', arg0, ...args);
+        console.error('ERROR', arg0, ...args);
     },
     never(_: never) {
         assert(false);
