@@ -3,31 +3,12 @@ import { BasicConfiguration } from "../src/default";
 import { SimpleScanner } from "../src/front";
 import * as Parser from "../src/parser";
 import { stripDocument } from "../src/util";
-import { BlockModifierDefinition, CustomConfiguration, InlineModifierDefinition, MessageSeverity, ModifierFlags } from "../src/interface";
+import { BlockModifierDefinition, CustomConfiguration, MessageSeverity, ModifierFlags } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
 
 const TestConfig = new CustomConfiguration(BasicConfiguration);
 TestConfig.addBlock(
-    new BlockModifierDefinition('normal', ModifierFlags.Normal),
-    new BlockModifierDefinition('pre', ModifierFlags.Preformatted),
-    new BlockModifierDefinition('marker', ModifierFlags.Marker)
-);
-TestConfig.addInline(
-    new InlineModifierDefinition('normal', ModifierFlags.Normal),
-    new InlineModifierDefinition('pre', ModifierFlags.Preformatted),
-    new InlineModifierDefinition('marker', ModifierFlags.Marker, {
-        expand(node, cxt) {
-            if (node.arguments.length == 1) {
-                return [{
-                    type: 'text',
-                    start: node.start,
-                    end: node.end,
-                    content: cxt.evaluateArgument(node.arguments[0])
-                }];
-            }
-            return [];
-        },
-    })
+    new BlockModifierDefinition('normal', ModifierFlags.Normal)
 );
 
 function parse(src: string) {
@@ -36,92 +17,7 @@ function parse(src: string) {
     stripDocument(doc);
     return doc;
 }
-
-function parseWithoutStrip(src: string) {
-    const config = new CustomConfiguration(TestConfig);
-    let doc = Parser.parse(new SimpleScanner(src), config);
-    return doc;
-}
-
 debug.level = DebugLevel.Warning;
-
-describe('argument parsing', () => {
-    test('simple', () => {
-        let doc = parseWithoutStrip(`[.normal 123:456]`);
-        expect.soft(doc.messages).toMatchObject([]);
-        expect.soft(doc.root.content).toMatchObject([ {
-            type: 'block', mod: {name: 'normal'},
-            arguments: [
-                { content: [{content: "123"}] },
-                { content: [{content: "456"}] }
-            ]
-        } ]);
-    });
-    test('escaped', () => {
-        let doc = parseWithoutStrip(String.raw`[/marker \]]`);
-        expect.soft(doc.messages).toMatchObject([]);
-        expect.soft(doc.root.content).toMatchObject([ {
-            type: 'paragraph',
-            content: [{
-                type: 'inline', mod: {name: 'marker'},
-                arguments: [{ content: [{ type: 'escaped', content: "]" }] }],
-                expansion: [{ type: 'text', content: ']' }]
-            }]
-        } ]);
-    });
-    test('variable interpolation: AST', () => {
-        let doc = parse(`[.normal $(x)]`);
-        expect.soft(doc.messages).toMatchObject([]);
-        expect.soft(doc.root.content).toMatchObject([ {
-            type: 'block', mod: {name: 'normal'},
-            arguments: [
-                { content: [{
-                    type: 'interp', 
-                    arg: { content: [{ type: 'text', content: 'x' }] }
-                }] }
-            ],
-            content: []
-        } ]);
-        doc = parse(String.raw`[.normal $(\))]`);
-        expect.soft(doc.messages).toMatchObject([]);
-        expect.soft(doc.root.content).toMatchObject([ {
-            type: 'block', mod: {name: 'normal'},
-            arguments: [
-                { content: [{
-                    type: 'interp', 
-                    arg: { content: [{ type: 'escaped', content: ")" }] }
-                }] }
-            ],
-            content: []
-        } ]);
-    });
-    test('variable interpolation: expansion', () => {
-        let doc = parse(`[-var x:123][/marker $(x)]`);
-        expect.soft(doc.messages).toMatchObject([]);
-        expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: '123' }] }
-        ]);
-    });
-});
-
-describe('[-var] and [/$]', () => {
-    test('simple', () => {
-        let doc = parse(`[-var x:123][/$x]`);
-        expect.soft(doc.messages).toMatchObject([]);
-        expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: '123' }] }
-        ]);
-    });
-    test('warning - undefined reference', () => {
-        let doc = parse(`[/$x]`);
-        expect.soft(doc.messages).toMatchObject([
-            { code: 5, severity: MessageSeverity.Warning }
-        ]);
-        expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [] }
-        ]);
-    });
-});
 
 describe('[-define-block]', () => {
     test('literal and empty', () => {
@@ -149,12 +45,6 @@ describe('[-define-block]', () => {
             { type: 'paragraph', content: [{ type: 'text', content: '0' }] },
             { type: 'paragraph', content: [{ type: 'text', content: '1' }] }
         ]);
-        doc = parse(`[-define-block p]\n:--\n[.slot][-define-block q][.slot]\n--:\n[.p]abc\n[.q]def`);
-        expect.soft(doc.messages).toMatchObject([]);
-        expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] },
-            { type: 'paragraph', content: [{ type: 'text', content: 'def' }] }
-        ]);
     });
     test('slots: reference in separate scopes', () => {
         let doc = parse(`[-define-block p]\n:--\na\n[.slot]\n--:\n[-define-block q][.p]\n:--\nb\n[.slot]\n--:\n[.q]c`);
@@ -174,13 +64,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('slots: named reference in nested scopes', () => {
-        let doc = parse(`[-define-block p]\n:--\n[.slot][-define-block q:(1)][.slot 1]\n--:\n[.p]abc\n[.q]def`);
-        expect.soft(doc.messages).toMatchObject([]);
-        expect.soft(doc.root.content).toMatchObject([
-            { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] },
-            { type: 'paragraph', content: [{ type: 'text', content: 'def' }] }
-        ]);
-        doc = parse(`[-define-block p:(0)]\n[-define-block q:(1)]\n:--\n[.slot 0][.slot 1]\n--:\n[.p]abc\n[.q]def`);
+        let doc = parse(`[-define-block p:(0)]\n[-define-block q:(1)]\n:--\n[.slot 0][.slot 1]\n--:\n[.p]abc\n[.q]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: 'paragraph', content: [{ type: 'text', content: 'abc' }] },

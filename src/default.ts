@@ -13,103 +13,85 @@ function checkArgumentLength<T>(node: ModifierNode, n: number) {
     return null;
 }
 
-function customBlockModifier(
-    name: string, argNames: string[], slotName: string, content: BlockEntity[]) 
+type _Node<T extends 'inline' | 'block'> = T extends 'inline' 
+    ? InlineModifierNode<unknown> 
+    : BlockModifierNode<unknown>;
+
+type _Def<T extends 'inline' | 'block', TState> = T extends 'inline' 
+    ? InlineModifierDefinition<TState> 
+    : BlockModifierDefinition<TState>;
+
+type _InstData<T extends 'inline' | 'block'> = T extends 'inline' 
+    ? InlineInstantiationData
+    : BlockInstantiationData;
+
+type _Ent<T extends 'inline' | 'block'> = T extends 'inline' 
+    ? InlineEntity
+    : BlockEntity;
+
+function customModifier<T extends 'inline' | 'block'>(type: T,
+    name: string, argNames: string[], slotName: string, content: _Ent<T>[])
 {
-    debug.info('registered custom block modifier:', name);
+    debug.info(`registered custom ${type} modifier:`, name);
     debug.info('args:', argNames, `with ${slotName == '' ? 'no slot name' : 'slot name: '+slotName}`)
     debug.trace(() => 'content is\n' + debugPrintNodes(content));
-    const mod = new BlockModifierDefinition<{
-        ok: boolean
-    }>(name, ModifierFlags.Normal, {
-        delayContentExpansion: true,
-        prepareExpand(node, cxt) {
-            const check = checkArgumentLength(node, argNames.length);
-            if (check) return [check];
-            node.state = {ok: true};
-            return [];
-        },
-        expand(node, cxt) {
-            if (!node.state?.ok) return [];
-            const contentClone = cloneNodes(content) as BlockEntity[];
-            return contentClone;
-        },
-        beforeProcessExpansion(node, cxt) {
-            if (!node.state?.ok) return [];
-            const args = new Map(
-                node.arguments.map((x, i) => [argNames[i], cxt.evaluateArgument(x)]));
-            cxt.blockSlotData.push([slotName, { 
-                mod, args, slotContent: node.content }]);
-            debug.trace('pushed block slot data for', name, 
-                slotName == '' ? '(unnamed)' : `= ${slotName}`);
-            return [];
-        },
-        afterProcessExpansion(node, cxt) {
-            if (!node.state?.ok) return [];
-            const pop = cxt.blockSlotData.pop();
-            assert(pop !== undefined && pop[0] == slotName);
-            debug.trace('popped block slot data for', name,
-                slotName == '' ? '(unnamed)' : `= ${slotName}`);
-            return [];
-        },
-    });
+
+    const mod = (type == 'block' 
+        ? new BlockModifierDefinition<{ok: boolean}>(name, ModifierFlags.Normal)
+        : new InlineModifierDefinition<{ok: boolean}>(name, ModifierFlags.Normal)
+    ) as _Def<T, {ok: boolean}>;
+
+    mod.delayContentExpansion = true;
+    mod.prepareExpand = (node: ModifierNode, cxt: ParseContext) => {
+        const check = checkArgumentLength(node, argNames.length);
+        if (check) return [check];
+        node.state = {ok: true};
+        return [];
+    };
+    mod.expand = (node: ModifierNode, cxt: ParseContext) => {
+        if (!node.state?.ok) return [];
+        const contentClone = cloneNodes(content) as any[];
+        return contentClone;
+    };
+    mod.beforeProcessExpansion = (node: ModifierNode, cxt: ParseContext) => {
+        if (!node.state?.ok) return [];
+        const data = ({ inline: cxt.inlineSlotData, block: cxt.blockSlotData })[type];
+        const args = new Map(
+            node.arguments.map((x, i) => [argNames[i], cxt.evaluateArgument(x)]));
+        data.push([slotName, { mod: mod as any, args, slotContent: node.content as any }]);
+        debug.trace(`pushed ${type} slot data for`, name, 
+            slotName == '' ? '(unnamed)' : `= ${slotName}`);
+        return [];
+    };
+    mod.afterProcessExpansion = (node: ModifierNode, cxt: ParseContext) => {
+        if (!node.state?.ok) return [];
+        const data = ({ inline: cxt.inlineSlotData, block: cxt.blockSlotData })[type];
+        const pop = data.pop();
+        assert(pop !== undefined && pop[0] == slotName);
+        debug.trace(`popped ${type} slot data for`, name,
+            slotName == '' ? '(unnamed)' : `= ${slotName}`);
+        return [];
+    };
     return mod;
 }
 
-function customInlineModifier(
-    name: string, argNames: string[], slotName: string, content: InlineEntity[]) 
-{
-    debug.info('registered custom inline modifier:', name);
-    debug.info('args:', argNames, `with ${slotName == '' ? 'no slot name' : 'slot name: '+slotName}`)
-    debug.trace(() => 'content is\n' + debugPrintNodes(content));
-    const mod = new InlineModifierDefinition<{
-        ok: boolean
-    }>(name, ModifierFlags.Normal, {
-        delayContentExpansion: true,
-        prepareExpand(node, cxt) {
-            const check = checkArgumentLength(node, argNames.length);
-            if (check) return [check];
-            node.state = {ok: true};
-            return [];
-        },
-        expand(node, cxt) {
-            if (!node.state?.ok) return [];
-            const contentClone = cloneNodes(content) as InlineEntity[];
-            return contentClone;
-        },
-        beforeProcessExpansion(node, cxt) {
-            if (!node.state?.ok) return [];
-            const args = new Map(
-                node.arguments.map((x, i) => [argNames[i], cxt.evaluateArgument(x)]));
-            cxt.inlineSlotData.push([slotName, { 
-                mod, args, slotContent: node.content }]);
-            debug.trace('pushed inline slot data for', name, 
-                slotName == '' ? '(unnamed)' : `= ${slotName}`);
-            return [];
-        },
-        afterProcessExpansion(node, cxt) {
-            if (!node.state?.ok) return [];
-            const pop = cxt.inlineSlotData.pop();
-            assert(pop !== undefined && pop[0] == slotName);
-            debug.trace('popped inline slot data for', name,
-                slotName == '' ? '(unnamed)' : `= ${slotName}`);
-            return [];
-        },
-    });
-    return mod;
-}
+function slotModifier<T extends 'inline' | 'block'>(type: T): _Def<T, any> {
+    type TState = {
+        ok: true,
+        data: [string, _InstData<T>],
+        index: number
+    } | { ok: false };
 
-const SlotBlockMod = new BlockModifierDefinition<{
-    ok: true,
-    data: [string, BlockInstantiationData],
-    index: number
-} | { ok: false }>(
-    'slot', ModifierFlags.Marker, {
-    // .slot [id]
-    alwaysTryExpand: true,
-    prepareExpand(node, cxt) {
+    let mod = (type == 'block' 
+        ? new BlockModifierDefinition<TState>('slot', ModifierFlags.Marker)
+        : new InlineModifierDefinition<TState>('slot', ModifierFlags.Marker)
+    ) as _Def<T, TState>;
+
+    mod.alwaysTryExpand = true;
+    mod.prepareExpand = (node: ModifierNode, cxt: ParseContext) => {
+        const data = ({ inline: cxt.inlineSlotData, block: cxt.blockSlotData })[type];
         const id = node.arguments.length == 1 ? cxt.evaluateArgument(node.arguments[0]) : '';
-        if (cxt.blockSlotData.length == 0) {
+        if (data.length == 0) {
             if (cxt.delayDepth == 0) {
                 node.state = { ok: false };
                 return [new SlotUsedOutsideDefinitionMessage(node.start, node.head.end - node.start)];
@@ -124,11 +106,13 @@ const SlotBlockMod = new BlockModifierDefinition<{
             }
             return [];
         }
-        if (cxt.blockSlotDelayedStack.includes(id)) {
+        const stack = ({ 
+            inline: cxt.inlineSlotDelayedStack, 
+            block: cxt.blockSlotDelayedStack })[type];
+        if (stack.includes(id)) {
             debug.trace('delaying', id == '' ? 'unnamed slot' : 'slot: ' + id);
             return [];
         }
-        const data = cxt.blockSlotData;
         if (node.arguments.length == 0) {
             node.state = { ok: true, data: data.at(-1)!, index: data.length - 1 };
             return [];
@@ -143,93 +127,33 @@ const SlotBlockMod = new BlockModifierDefinition<{
             return [new InvalidArgumentMessage(arg.start, arg.end - arg.start, id)];
         }
         return [];
-    },
-    expand(node, cxt) {
+    };
+    mod.expand = (node: ModifierNode, cxt: ParseContext) => {
         if (!node.state) return undefined;
         if (!node.state.ok) return [];
-        return cloneNodes(node.state.data[1].slotContent) as BlockEntity[];
-    },
-    beforeProcessExpansion(node, cxt) {
+        return cloneNodes(node.state.data[1].slotContent) as any[];
+    };
+    mod.beforeProcessExpansion = (node: ModifierNode, cxt: ParseContext) => {
         // TODO: not sure if this works
         if (!node.state?.ok) return [];
         debug.trace('temporarily removed slot data for', node.state.data[1].mod.name);
-        cxt.blockSlotData.splice(node.state.index, 1);
+        const data = ({ inline: cxt.inlineSlotData, block: cxt.blockSlotData })[type];
+        data.splice(node.state.index, 1);
         return [];
-    },
-    afterProcessExpansion(node, cxt) {
+    };
+    mod.afterProcessExpansion = (node: ModifierNode, cxt: ParseContext) => {
         // TODO: not sure if this works
         if (!node.state?.ok) return [];
         debug.trace('reinstated slot data for', node.state.data[1].mod.name);
-        cxt.blockSlotData.splice(node.state.index, 0, node.state.data);
+        const data = ({ inline: cxt.inlineSlotData, block: cxt.blockSlotData })[type];
+        data.splice(node.state.index, 0, node.state.data);
         return [];
-    }
-});
+    };
+    return mod;
+}
 
-const SlotInlineMod = new InlineModifierDefinition<{
-    ok: true,
-    data: [string, InlineInstantiationData],
-    index: number
-} | { ok: false }>(
-    'slot', ModifierFlags.Marker, {
-    // \slot [id]
-    alwaysTryExpand: true,
-    prepareExpand(node, cxt) {
-        const id = node.arguments.length == 1 ? cxt.evaluateArgument(node.arguments[0]) : '';
-        if (cxt.inlineSlotData.length == 0) {
-            if (cxt.delayDepth == 0) {
-                node.state = { ok: false };
-                return [new SlotUsedOutsideDefinitionMessage(node.start, node.head.end - node.start)];
-            }
-            return [];
-        }
-        if (node.arguments.length > 1) {
-            if (cxt.delayDepth == 0) {
-                node.state = { ok: false };
-                const start = node.arguments[1].start - 1;
-                return [new ArgumentsTooManyMessage(start, node.head.end - start)];
-            }
-            return [];
-        }
-        if (cxt.inlineSlotDelayedStack.includes(id)) {
-            debug.trace('delaying', id == '' ? 'unnamed slot' : 'slot: ' + id);
-            return [];
-        }
-        const data = cxt.inlineSlotData;
-        if (node.arguments.length == 0) {
-            node.state = { ok: true, data: data.at(-1)!, index: data.length - 1 };
-            return [];
-        }
-        for (let i = data.length - 1; i >= 0; i--) if (data[i][0] == id) {
-            node.state = { ok: true, data: data[i], index: i };
-            return [];
-        }
-        if (cxt.delayDepth == 0) {
-            node.state = { ok: false };
-            const arg = node.arguments[0];
-            return [new InvalidArgumentMessage(arg.start, arg.end - arg.start, id)];
-        }
-        return [];
-    },
-    expand(node, cxt) {
-        if (!node.state) return undefined;
-        if (!node.state.ok) return [];
-        return cloneNodes(node.state.data[1].slotContent) as InlineEntity[];
-    },
-    beforeProcessExpansion(node, cxt) {
-        // TODO: not sure if this works
-        if (!node.state?.ok) return [];
-        debug.trace('temporarily removed slot data for', node.state.data[1].mod.name);
-        cxt.inlineSlotData.splice(node.state.index, 1);
-        return [];
-    },
-    afterProcessExpansion(node, cxt) {
-        // TODO: not sure if this works
-        if (!node.state?.ok) return [];
-        debug.trace('reinstated slot data for', node.state.data[1].mod.name);
-        cxt.inlineSlotData.splice(node.state.index, 0, node.state.data);
-        return [];
-    }
-});
+const SlotBlockMod = slotModifier('block');
+const SlotInlineMod = slotModifier('inline');
 
 const DefineBlockMod = new SystemModifierDefinition<{
     name: string,
@@ -272,12 +196,12 @@ const DefineBlockMod = new SystemModifierDefinition<{
         if (cxt.delayDepth > 0) return undefined;
         if (node.state) {
             cxt.config.blockModifiers.set(node.state.name, 
-                customBlockModifier(node.state.name, node.state.args, 
+                customModifier('block', node.state.name, node.state.args, 
                     node.state.slotName, node.content));
             cxt.onConfigChange();
         }
         return []
-    },
+    }
 });
 
 const DefineInlineMod = new SystemModifierDefinition<{
@@ -350,7 +274,7 @@ const DefineInlineMod = new SystemModifierDefinition<{
         if (cxt.delayDepth > 0) return undefined;
         if (node.state) {
             cxt.config.inlineModifiers.set(node.state.name, 
-                customInlineModifier(node.state.name, node.state.args, 
+                customModifier('inline', node.state.name, node.state.args, 
                     node.state.slotName, node.state.definition!));
             cxt.onConfigChange();
         }
@@ -387,6 +311,24 @@ const VarMod = new SystemModifierDefinition<{
 let basic = new CustomConfiguration();
 basic.addSystem(DefineBlockMod, DefineInlineMod, VarMod);
 basic.addBlock(SlotBlockMod);
+
+function resolveId(id: string, cxt: ParseContext): string | undefined {
+    let value: string | undefined = undefined;
+    for (let i = cxt.inlineSlotData.length - 1; i >= 0; i--) {
+        const [_, data] = cxt.inlineSlotData[i];
+        if ((value = data.args.get(id)) !== undefined)
+            break;
+    }
+    for (let i = cxt.blockSlotData.length - 1; i >= 0; i--) {
+        const [_, data] = cxt.blockSlotData[i];
+        if ((value = data.args.get(id)) !== undefined)
+            break;
+    }
+    if (value === undefined)
+        value = cxt.variables.get(id);
+    return value;
+}
+
 basic.addInline(SlotInlineMod,
     new InlineModifierDefinition<{value: string}>('$', ModifierFlags.Marker, {
         // .$:id
@@ -398,15 +340,7 @@ basic.addInline(SlotInlineMod,
             if (id == '')
                 return [new InvalidArgumentMessage(arg.start, arg.end - arg.start)];
 
-            let value: string | undefined = undefined;
-            for (let i = cxt.blockSlotData.length - 1; i >= 0; i--) {
-                const [_, data] = cxt.blockSlotData[i];
-                if ((value = data.args.get(id)) !== undefined)
-                    break;
-            }
-            if (value === undefined)
-                value = cxt.variables.get(id);
-            debug.trace('querying $', id, 'found', value);
+            const value = resolveId(id, cxt);
             if (value === undefined)
                 return [new UndefinedVariableMessage(arg.start, arg.end - arg.start, id)];
             node.state = {value};
@@ -420,17 +354,15 @@ basic.addInline(SlotInlineMod,
 );
 basic.addInterpolator(
     new ArgumentInterpolatorDefinition('$(', ')', 
-        (content, cxt) => cxt.variables.get(content) ?? ''
+        (content, cxt) => resolveId(content, cxt) ?? ''
     )
 )
 
 let config = new CustomConfiguration(basic);
-
 config.addBlock(
     new BlockModifierDefinition('quote', ModifierFlags.Normal), 
     new BlockModifierDefinition('eq', ModifierFlags.Preformatted)
 );
-
 config.addInline(
     new InlineModifierDefinition('eq', ModifierFlags.Preformatted),
     new InlineModifierDefinition('emphasis', ModifierFlags.Normal),

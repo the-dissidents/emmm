@@ -26,9 +26,22 @@ text2 = `[.quote][.slot]`
 
 text2 = `
 [-define-inline p]
-![/slot]!
+:--
+[-var x:0]
+[/slot]
+[-var x:1]
+[/slot]
+--:
 
-[/p]123[;]
+[/p][/$x][;]
+`
+
+text2 = `
+[-define-inline p]
+:--
+[/slot][-define-inline q:(1)][/slot 1]
+--:
+[/p]abc[;][/q]def[;]
 `
 
 // text2 = `
@@ -66,7 +79,7 @@ text2 = `
 // `
 
 debug.level = DebugLevel.Trace;
-let t0 = performance.now()
+let t0 = performance.now();
 let doc = Parser.parse(new SimpleScanner(text2), DefaultConfiguration);
 console.log(performance.now() - t0);
 // stripDocument(doc);

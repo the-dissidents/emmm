@@ -1,5 +1,5 @@
 import { debug } from "./debug";
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, DocumentNode, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner, ArgumentEntity, ArgumentInterpolatorDefinition, ModifierNode, SystemModifierDefinition, SystemModifierNode } from "./interface";
+import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner, ArgumentEntity, ArgumentInterpolatorDefinition, ModifierNode, SystemModifierDefinition, SystemModifierNode } from "./interface";
 import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, ReachedRecursionLimitMessage as ReachedReparseLimitMessage, ReferredMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
 import { assert, debugPrintNodes, has } from "./util";
 
@@ -277,7 +277,7 @@ class Parser {
         }[type]));
 
         const result = this.prefixes[type].find(([name, _]) => this.scanner.accept(name));
-        let mod = result ? result[1] : UnknownModifier[type];
+        const mod = result ? result[1] : UnknownModifier[type];
         if (result === undefined) {
             const args = this.scanner.acceptUntil(MODIFIER_CLOSE_SIGN);
             if (args === null) this.emit.message(
@@ -286,6 +286,7 @@ class Parser {
                 new UnknownModifierMessage(posStart, this.scanner.position() - posStart));
         }
         const args = this.ARGUMENTS();
+        debug.trace(`PARSE ${type} modifier:`, mod.name);
 
         const endsign = this.scanner.accept(MODIFIER_END_SIGN);
         const flagMarker = has(mod.flags, ModifierFlags.Marker);
@@ -310,32 +311,31 @@ class Parser {
         if (node.mod.delayContentExpansion) this.cxt.delayDepth++;
 
         let ok = true;
-        if (type == 'inline') {
+        if (isMarker) {
+            if (type == 'inline') this.emit.addInlineNode(node as any);
+            else this.emit.addBlockNode(node as any);
+        } else if (type == 'inline') {
             this.emit.startInline(node as any);
-            if (!isMarker) {
-                const entity = has(mod.flags, ModifierFlags.Preformatted)
-                    ? this.PREFORMATTED_INLINE_ENTITY.bind(this)
-                    : this.INLINE_ENTITY.bind(this);
-                while (true) {
-                    if (this.scanner.accept(MODIFIER_INLINE_END_TAG)) break;
-                    if (this.scanner.isEOF() || !(ok = entity())) {
-                        this.emit.message(new UnclosedInlineModifierMessage(
-                            this.scanner.position(), mod.name));
-                        break;
-                    }
+            const entity = has(mod.flags, ModifierFlags.Preformatted)
+                ? this.PREFORMATTED_INLINE_ENTITY.bind(this)
+                : this.INLINE_ENTITY.bind(this);
+            while (true) {
+                if (this.scanner.accept(MODIFIER_INLINE_END_TAG)) break;
+                if (this.scanner.isEOF() || !(ok = entity())) {
+                    this.emit.message(new UnclosedInlineModifierMessage(
+                        this.scanner.position(), mod.name));
+                    break;
                 }
             }
             this.emit.endInline();
         } else {
             this.emit.startBlock(node as any);
-            if (!isMarker) {
-                this.WARN_IF_MORE_NEWLINES_THAN(1);
-                if (!this.scanner.isEOF()) {
-                    if (has(mod.flags, ModifierFlags.Preformatted))
-                        this.PRE_PARAGRAPH();
-                    else
-                        this.BLOCK_ENTITY();
-                }
+            this.WARN_IF_MORE_NEWLINES_THAN(1);
+            if (!this.scanner.isEOF()) {
+                if (has(mod.flags, ModifierFlags.Preformatted))
+                    this.PRE_PARAGRAPH();
+                else
+                    this.BLOCK_ENTITY();
             }
             this.emit.endBlock();
         }
@@ -420,15 +420,18 @@ class Parser {
             end: -1,
             content: []
         };
+        debug.trace('PARSE para');
         this.emit.startInline(node);
         while (!this.scanner.isEOF() && this.INLINE_ENTITY()) {}
         this.emit.endInline();
+        debug.trace('PARSE para end');
     }
 
     // returns false if breaking out of paragraph
     private INLINE_ENTITY(): boolean {
         assert(!this.scanner.isEOF());
-        if (this.scanner.peek(MODIFIER_BLOCK_OPEN)) {
+        if (this.scanner.peek(MODIFIER_BLOCK_OPEN)) 
+        {
             this.emit.message(new NewBlockShouldBeOnNewlineMessage(this.scanner.position()))
             return false;
         }
@@ -436,7 +439,7 @@ class Parser {
             return this.MODIFIER('inline');
         }
         if (this.scanner.peek(MODIFIER_SYSTEM_OPEN)) {
-            return this.MODIFIER('system');
+            return false;
         }
 
         // TODO: don't know if this is enough
@@ -529,8 +532,7 @@ class Parser {
                 content.push({
                     type: 'escaped',
                     content: this.scanner.acceptChar(),
-                    start: posEnd - 2,
-                    end: posEnd
+                    start: posEnd - 2, end: posEnd
                 });
                 continue;
             }
@@ -540,14 +542,11 @@ class Parser {
                 posEnd = this.scanner.position();
                 content.push({
                     type: 'interp',
-                    definition: result[1],
-                    arg: inner,
-                    start: posEnd - 2,
-                    end: posEnd
+                    definition: result[1], arg: inner,
+                    start: posEnd - 2, end: posEnd
                 });
                 if (!ok2) {
-                    this.emit.message(
-                        new ExpectedMessage(posEnd, result[1].postfix));
+                    this.emit.message(new ExpectedMessage(posEnd, result[1].postfix));
                     ok = false;
                     break;
                 }

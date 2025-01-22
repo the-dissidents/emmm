@@ -126,7 +126,7 @@ export function debugPrintNode(node: DocumentNode, prefix = '') {
                 const content = debugPrintNodes(node.expansion, prefix);
                 if (content.length > 0)
                     result += `\n${prefix}<expansion>\n${content}\n${prefix}</expansion>`;
-                else
+                else if (node.type != 'system')
                     result += `\n${prefix}<expansion />`;
             }
             break;

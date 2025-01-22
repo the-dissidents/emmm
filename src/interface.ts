@@ -76,7 +76,7 @@ export type SystemModifierNode<TState> = PositionRange & {
     head: PositionRange,
     arguments: ModifierArgument[],
     content: BlockEntity[],
-    expansion: undefined
+    expansion?: never[]
 };
 
 export type BlockModifierNode<TState> = PositionRange & {
