@@ -2,14 +2,20 @@
   "name": "@the_dissidents/libemmm",
   "version": "0.0.0",
   "description": "parser and language server for the emmm markup language",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "build": "tsup"
   },
+  "files": [
+    "dist"
+  ],
   "author": "the_dissidents",
   "license": "ISC",
   "devDependencies": {
     "@vitest/coverage-istanbul": "^2.1.8",
+    "tsup": "^8.3.5",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8"
   }

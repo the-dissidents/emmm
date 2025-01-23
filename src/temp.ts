@@ -31,11 +31,11 @@ for (let i = 0; i < 5000; i++)
 [/p${i}]abc[;][/q${i}]def[;]
 `
 
-debug.level = DebugLevel.Warning;
-let scanner = new SimpleScanner(text2);
-let t0 = performance.now();
-let doc = Parser.parse(scanner, new Configuration(BuiltinConfiguration));
-// stripDocument(doc);
-// console.log(debugDumpDocument(doc, text2))
-console.log(performance.now() - t0);
-console.log('ok');
+// debug.level = DebugLevel.Warning;
+// let scanner = new SimpleScanner(text2);
+// let t0 = performance.now();
+// let doc = Parser.parse(scanner, new Configuration(BuiltinConfiguration));
+// // stripDocument(doc);
+// // console.log(debugDumpDocument(doc, text2))
+// console.log(performance.now() - t0);
+// console.log('ok');
