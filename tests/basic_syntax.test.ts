@@ -34,6 +34,17 @@ describe('basic syntax', () => {
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'ddd' }] }
         ]);
     });
+    test('escaping', () => {
+        let doc = parse(`a\\[.b]\\`);
+        expect.soft(doc.messages).toHaveLength(0);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: 'a' },
+                { type: NodeType.Escaped, content: '[' },
+                { type: NodeType.Text, content: '.b]\\' }
+            ] },
+        ]);
+    });
     test('normal block modifier', () => {
         let doc = parse(`[.normal]abc`);
         expect.soft(doc.messages).toHaveLength(0);
