@@ -1,5 +1,5 @@
 
-import { assert, NameManager } from "./util"
+import { assert, debugDumpDocument, NameManager } from "./util"
 
 // The scanner of any implementation should be capable of handling UTF-8 
 // strings at least as well as Typescript.
@@ -249,6 +249,10 @@ export class Document {
         public root: RootNode,
         public context: ParseContext,
         public messages: Message[]) {};
+    
+    debugPrint(source: string) {
+        return debugDumpDocument(this, source)
+    }
 }
 export class Configuration {
     initializers: ((cxt: ParseContext) => void)[] = [];

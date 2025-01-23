@@ -144,25 +144,25 @@ export function debugPrintArgument(arg: ModifierArgument): string {
 }
 
 export function debugPrintNode(node: DocumentNode, prefix = '') {
-    let result = `<${node.type}@${node.start}`;
+    let result = `<${NodeType[node.type]}@${node.start}`;
     switch (node.type) {
         case NodeType.Root:
         case NodeType.Paragraph:
             const content = debugPrintNodes(node.content, prefix);
             if (content.length > 0)
-                result += `>\n${content}\n${prefix}</${node.type}@${node.end}>`;
+                result += `>\n${content}\n${prefix}</${NodeType[node.type]}@${node.end}>`;
             else result += `-${node.end} />`;
             break;
         case NodeType.Escaped:
         case NodeType.Preformatted:
-            result += `>\n${prefix}  ${node.content}\n${prefix}</${node.type}@${node.end}>`;
+            result += `>\n${prefix}  ${node.content}\n${prefix}</${NodeType[node.type]}@${node.end}>`;
             break;
         case NodeType.InlineModifier:
         case NodeType.BlockModifier:
         case NodeType.SystemModifier:
             const args = node.arguments.map((x, i) => `\n${prefix}    (${i})@${x.start}-${x.end}=${debugPrintArgument(x)}`).join('')
             if (node.content.length > 0) {
-                result += ` id=${node.mod.name}${args}>\n` + debugPrintNodes(node.content, prefix) + `\n${prefix}</${node.type}@${node.end}>`;
+                result += ` id=${node.mod.name}${args}>\n` + debugPrintNodes(node.content, prefix) + `\n${prefix}</${NodeType[node.type]}@${node.end}>`;
             } else result += `-${node.end} id=${node.mod.name}${args} />`;
             if (node.expansion) {
                 const content = debugPrintNodes(node.expansion, prefix);
