@@ -1,7 +1,8 @@
 import { debug } from "../debug";
 import { ParseContext, InlineModifierDefinition, ModifierFlags, ArgumentInterpolatorDefinition, SystemModifierDefinition, NodeType } from "../interface";
 import { InvalidArgumentMessage, UndefinedVariableMessage } from "../messages";
-import { builtins, checkArgumentLength } from "./internal";
+import { builtins } from "./internal";
+import { checkArgumentLength, checkArguments } from "../modifier-helper";
 
 function resolveId(id: string, cxt: ParseContext): string | undefined {
     const store = cxt.get(builtins)!;
@@ -24,10 +25,11 @@ function resolveId(id: string, cxt: ParseContext): string | undefined {
 export const GetVarInlineMod = new InlineModifierDefinition<{ value: string; }>('$', ModifierFlags.Marker, {
     // .$:id
     prepareExpand(node, cxt) {
-        const check = checkArgumentLength(node, 1);
-        if (check) return [check];
+        const check = checkArguments(node, 1);
+        if (check) return check;
+
         const arg = node.arguments[0];
-        const id = cxt.evaluateArgument(arg);
+        const id = arg.expansion!;
         if (id == '')
             return [new InvalidArgumentMessage(arg.start, arg.end - arg.start)];
 
@@ -44,7 +46,15 @@ export const GetVarInlineMod = new InlineModifierDefinition<{ value: string; }>(
 });
 
 export const GetVarInterpolator = new ArgumentInterpolatorDefinition('$(', ')',
-    (content, cxt) => resolveId(content, cxt) ?? ''
+    {
+        alwaysTryExpand: true,
+        expand(content, cxt, immediate) {
+            const result = resolveId(content, cxt);
+            if (result === undefined) debug.trace('var interp failed:', content);
+            else debug.trace(`$(${content}) --> ${result}`);
+            return result;
+        },
+    }
 );
 
 export const VarMod = new SystemModifierDefinition<{
@@ -52,15 +62,16 @@ export const VarMod = new SystemModifierDefinition<{
 }>('var', ModifierFlags.Marker, {
     // .var id:value
     prepareExpand(node, cxt) {
-        const check = checkArgumentLength(node, 2);
-        if (check) return [check];
+        const check = checkArguments(node, 2);
+        if (check) return check;
+
         const arg = node.arguments[0];
-        const argValue = cxt.evaluateArgument(arg);
-        if (argValue == '')
+        const id = arg.expansion!;
+        if (id == '')
             return [new InvalidArgumentMessage(arg.start, arg.end - arg.start)];
         node.state = {
-            id: argValue,
-            value: cxt.evaluateArgument(node.arguments[1])
+            id,
+            value: node.arguments[1].expansion!
         };
         return [];
     },

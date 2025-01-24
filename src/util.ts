@@ -65,6 +65,29 @@ export function linePositions(src: string): number[] {
     return result;
 }
 
+const cloneArgument = (arg: ModifierArgument): ModifierArgument => ({
+    start: arg.start, end: arg.end,
+    content: arg.content.map((ent) => {
+        switch (ent.type) {
+            case NodeType.Text:
+            case NodeType.Escaped:
+                return structuredClone(ent);
+            case NodeType.Interpolation:
+                return {
+                    type: ent.type,
+                    start: ent.start,
+                    end: ent.end,
+                    definition: ent.definition,
+                    argument: cloneArgument(ent.argument),
+                    expansion: ent.expansion
+                };
+            default:
+                return debug.never(ent);
+        }
+    })
+});
+
+
 export function cloneNode(node: DocumentNode, referring?: PositionRange): DocumentNode {
     switch (node.type) {
         case NodeType.BlockModifier:
@@ -77,7 +100,7 @@ export function cloneNode(node: DocumentNode, referring?: PositionRange): Docume
                 mod: node.mod,
                 state: undefined,
                 head: structuredClone(node.head),
-                arguments: structuredClone(node.arguments),
+                arguments: node.arguments.map(cloneArgument),
                 content: node.content.map((x) => cloneNode(x, referring) as any),
                 expansion: node.expansion ? cloneNodes(node.expansion) as any : undefined
             };
@@ -133,7 +156,7 @@ function debugPrintArgEntity(node: ArgumentEntity): string {
         case NodeType.Escaped:
             return `<Escaped:${node.content}>`;
         case NodeType.Interpolation:
-            return `<Interp:${node.definition.name}-${node.definition.postfix}:${debugPrintArgument(node.arg)}>`;
+            return `<Interp:${node.definition.name}-${node.definition.postfix}:${debugPrintArgument(node.argument)}${node.expansion ? `=${node.expansion}` : ''}>`;
         default:
             return debug.never(node);
     }
@@ -212,5 +235,6 @@ export function debugDumpDocument(doc: Document, source: string): string {
 
     let root = debugPrintNode(doc.root);
     let msgs = doc.messages.map(dumpMsg).join('\n');
-    return `${msgs}\n${root}`;
+    if (msgs.length > 0) msgs += '\n';
+    return `${msgs}${root}`;
 }

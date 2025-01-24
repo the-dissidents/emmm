@@ -5,23 +5,28 @@ import * as Parser from "../src/parser";
 import { stripDocument } from "../src/util";
 import { BlockModifierDefinition, Configuration, InlineModifierDefinition, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
+import { checkArguments } from "../src/modifier-helper";
 
 const TestConfig = new Configuration(BuiltinConfiguration);
 TestConfig.blockModifiers.add(
     new BlockModifierDefinition('normal', ModifierFlags.Normal)
 );
 TestConfig.inlineModifiers.add(
-    new InlineModifierDefinition('marker', ModifierFlags.Marker, {
-        expand(node, cxt) {
-            if (node.arguments.length == 1) {
-                return [{
-                    type: NodeType.Text,
-                    start: node.start,
-                    end: node.end,
-                    content: cxt.evaluateArgument(node.arguments[0])
-                }];
-            }
+    new InlineModifierDefinition<string>('marker', ModifierFlags.Marker, {
+        prepareExpand(node, cxt, immediate) {
+            const msgs = checkArguments(node);
+            if (msgs) return msgs;
+            node.state = node.arguments.map((x) => x.expansion!).join(';');
             return [];
+        },
+        expand(node, cxt) {
+            if (!node.state) return [];
+            return [{
+                type: NodeType.Text,
+                start: node.start,
+                end: node.end,
+                content: node.state
+            }];
         },
     })
 );
@@ -73,7 +78,7 @@ describe('argument parsing', () => {
             arguments: [
                 { content: [{
                     type: NodeType.Interpolation, 
-                    arg: { content: [{ type: NodeType.Text, content: 'x' }] }
+                    argument: { content: [{ type: NodeType.Text, content: 'x' }] }
                 }] }
             ],
             content: []
@@ -85,7 +90,7 @@ describe('argument parsing', () => {
             arguments: [
                 { content: [{
                     type: NodeType.Interpolation, 
-                    arg: { content: [{ type: NodeType.Escaped, content: ")" }] }
+                    argument: { content: [{ type: NodeType.Escaped, content: ")" }] }
                 }] }
             ],
             content: []
@@ -103,6 +108,15 @@ describe('argument parsing', () => {
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
+        ]);
+    });
+    test('complex argument interpolation', () => {
+        let doc = parse(`[-define-block a:x:y][-define-block $(y):z][/marker $(x)$(y)$(z)]\n\n[.a b:c;]\n[.c 1;]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: 'bc1' }
+            ] }
         ]);
     });
 });

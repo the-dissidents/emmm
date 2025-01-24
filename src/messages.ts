@@ -99,24 +99,36 @@ export class UnclosedInlineModifierMessage implements Message {
     get info(): string { return `unclosed inline modifier ${this.what}'` }
 }
 
-export class ArgumentsTooFewMessage implements Message {
+export class ArgumentCountMismatchMessage implements Message {
     constructor(
         public readonly position: number,
         public readonly length: number,
-        private expected?: number) {}
+        min?: number, max?: number)
+    {
+        if (min !== undefined) {
+            if (max == min) this.msg = `: ${min} expected`;
+            else if (max !== undefined) this.msg = `: ${min} to ${max} expected`;
+            else this.msg = `: at least ${min} expected`;
+        } else {
+            if (max !== undefined) this.msg = `: at most ${max} expected`;
+        }
+    }
+    private msg = '';
     readonly code = 4;
     readonly severity = MessageSeverity.Error;
     readonly fixes: readonly FixSuggestion[] = []
-    get info(): string { return `too few argument(s)` 
-        + (this.expected === undefined ? '' : `, ${this.expected} expected`) }
+    get info(): string { return `argument count mismatch` + this.msg; }
 }
 
-export class ArgumentsTooManyMessage extends RemoveThingMessage {
-    constructor(pos: number, len: number, expected?: number) {
-        super(5, MessageSeverity.Warning, pos, len, 
-            'too many arguments' + (expected === undefined ? '' : `, ${expected} expected`), 
-            'remove them');
-    }
+export class CannotExpandArgumentMessage implements Message {
+    constructor(
+        public readonly position: number,
+        public readonly length: number,
+        private what?: string) {}
+    readonly code = 5;
+    readonly severity = MessageSeverity.Error;
+    readonly fixes: readonly FixSuggestion[] = []
+    get info(): string { return `failed to expand argument` + (this.what === undefined ? '' : `: ${this.what}`) }
 }
 
 export class InvalidArgumentMessage implements Message {

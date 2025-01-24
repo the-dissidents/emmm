@@ -150,24 +150,71 @@ class Parser {
         return ok;
     }
 
+    #expandArgument(arg: ModifierArgument) {
+        if (arg.expansion !== undefined)
+            return arg.expansion;
+        let result = '';
+        const immediate = this.delayDepth == 0;
+        for (const e of arg.content) {
+            switch (e.type) {
+                case NodeType.Text:
+                case NodeType.Escaped:
+                    result += e.content;
+                    break;
+                case NodeType.Interpolation:
+                    if (e.expansion === undefined) {
+                        const inner = this.#expandArgument(e.argument);
+                        if (inner === undefined 
+                         || e.definition.expand === undefined
+                         || (!immediate && !e.definition.alwaysTryExpand))
+                            return undefined;
+                        e.expansion = e.definition.expand(inner, this.cxt, immediate);
+                        if (e.expansion === undefined)
+                            return undefined;
+                    }
+                    result += e.expansion;
+                    break;
+                default:
+                    debug.never(e);
+            }
+        }
+        // debug.trace('expanded arg:', result);
+        arg.expansion = result;
+        return result;
+    }
+
+    #expandArguments(node: ModifierNode) {
+        for (const arg of node.arguments) {
+            this.#expandArgument(arg);
+            // if (!arg.expansion) debug.trace('expand arg failed');
+        }
+    }
+
     #expand(node: ModifierNode, depth = 0) {
         if (node.expansion !== undefined) {
             debug.trace('already expanded, skipping:', node.mod.name);
             return true;
         }
+
+        if (depth > 0) {
+            this.#expandArguments(node);
+        }
+
         if (this.delayDepth > 0 && !node.mod.alwaysTryExpand) {
             debug.trace('delaying expansion of', node.mod.name);
             return true;
         }
 
         const immediate = this.delayDepth == 0;
-        if (node.content.length > 0 && depth > 0) {
+        if (depth > 0) {
             // simulate initial parse for generated content
             if (node.mod.beforeParseContent)
                 this.emit.message(...node.mod.beforeParseContent(node as any, this.cxt, immediate));
-            if (node.mod.delayContentExpansion) this.delayDepth++;
-            this.#reparse(node.content, depth);
-            if (node.mod.delayContentExpansion) this.delayDepth--;
+            if (node.content.length > 0) {
+                if (node.mod.delayContentExpansion) this.delayDepth++;
+                this.#reparse(node.content, depth);
+                if (node.mod.delayContentExpansion) this.delayDepth--;
+            }
             if (node.mod.afterParseContent)
                 this.emit.message(...node.mod.afterParseContent(node as any, this.cxt, immediate));
         }
@@ -277,7 +324,7 @@ class Parser {
                 new UnknownModifierMessage(posStart, this.scanner.position() - posStart));
         }
         const args = this.ARGUMENTS();
-        debug.trace(`PARSE ${type} modifier:`, mod.name);
+        debug.trace(`PARSE ${NodeType[type]}:`, mod.name);
 
         const endsign = this.scanner.accept(MODIFIER_END_SIGN);
         const flagMarker = has(mod.flags, ModifierFlags.Marker);
@@ -286,16 +333,18 @@ class Parser {
             this.emit.message(new ExpectedMessage(
                 this.scanner.position(), MODIFIER_CLOSE_SIGN));
 
+        const headEnd = this.scanner.position();
         const node: ModifierNode = {
             type: type as any, 
             mod: mod as any,
-            head: {start: posStart, end: this.scanner.position()},
+            head: {start: posStart, end: headEnd},
             arguments: args,
-            start: posStart,
-            end: -1,
+            start: posStart, end: headEnd,
             content: [],
             expansion: undefined
         };
+
+        this.#expandArguments(node);
 
         const immediate = this.delayDepth == 0;
         if (node.mod.beforeParseContent)
@@ -497,10 +546,8 @@ class Parser {
         };
 
         while (true) {
-            if (end !== undefined && this.scanner.accept(end)) {
-                debug.trace('found end', end);
+            if (end !== undefined && this.scanner.accept(end))
                 break;
-            }
             if (this.scanner.accept(':')) {
                 ok = (end === undefined);
                 break;
@@ -535,7 +582,7 @@ class Parser {
                 posEnd = this.scanner.position();
                 content.push({
                     type: NodeType.Interpolation,
-                    definition: result, arg: inner,
+                    definition: result, argument: inner,
                     start: posEnd - 2, end: posEnd
                 });
                 if (!ok2) {

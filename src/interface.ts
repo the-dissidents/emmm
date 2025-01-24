@@ -116,8 +116,8 @@ export type RootNode = PositionRange & {
     content: BlockEntity[]
 }
 
-export type ModifierNode = 
-    BlockModifierNode<any> | InlineModifierNode<any> | SystemModifierNode<any>;
+export type ModifierNode<T = any> = 
+    BlockModifierNode<T> | InlineModifierNode<T> | SystemModifierNode<T>;
 export type BlockEntity = 
     ParagraphNode | PreNode | BlockModifierNode<any> | SystemModifierNode<any>;
 export type InlineEntity = 
@@ -129,11 +129,13 @@ export type DocumentNode =
 export type InterpolationNode = PositionRange & {
     type: NodeType.Interpolation,
     definition: ArgumentInterpolatorDefinition,
-    arg: ModifierArgument
+    argument: ModifierArgument,
+    expansion?: string
 }
 
 export type ModifierArgument = PositionRange & {
     content: ArgumentEntity[]
+    expansion?: string
 }
 
 export type ArgumentEntity = TextNode | EscapedNode | InterpolationNode;
@@ -181,8 +183,13 @@ export class ArgumentInterpolatorDefinition {
     constructor(
         public readonly name: string,
         public readonly postfix: string,
-        public expand: (content: string, cxt: ParseContext) => string) 
-    {}
+        args?: Partial<ArgumentInterpolatorDefinition>) 
+    {
+        if (args) Object.assign(this, args);
+    }
+
+    alwaysTryExpand = false;
+    expand?: (content: string, cxt: ParseContext, immediate: boolean) => string | undefined;
 }
 
 export type BlockInstantiationData = {
@@ -224,23 +231,6 @@ export class ParseContext {
     get<S extends ParseContextStoreKey>(key: S): ParseContextStoreEntry<S> {
         assert(key in this.data);
         return this.data[key];
-    }
-
-    #evalEntity(e: ArgumentEntity): string {
-        switch (e.type) {
-            case NodeType.Text:
-            case NodeType.Escaped:
-                return e.content;
-            case NodeType.Interpolation:
-                const inner = this.evaluateArgument(e.arg);
-                return e.definition.expand(inner, this);
-            default:
-                assert(false);
-        }
-    }
-
-    evaluateArgument(arg: ModifierArgument): string {
-        return arg.content.map((x) => this.#evalEntity(x)).join('');
     }
 }
 

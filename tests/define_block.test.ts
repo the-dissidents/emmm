@@ -106,7 +106,7 @@ describe('[-define-block]', () => {
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
         ]);
     });
-    test('arguments: reference in separate scopes', () => {
+    test('arguments: expansion in separate scopes', () => {
         let doc = parse(`[-define-block p:x][/$x]\n\n[-define-block q:x]\n:--\n[.p 0;][/$x]\n--:\n[.q:1]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
@@ -114,7 +114,7 @@ describe('[-define-block]', () => {
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
         ]);
     });
-    test('arguments: reference in nested scopes', () => {
+    test('arguments: expansion in nested scopes', () => {
         let doc = parse(`[-define-block p:x][-define-block q:x][/$x]\n\n[.p:0;][.q:1]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([

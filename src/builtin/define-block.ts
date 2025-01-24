@@ -1,41 +1,50 @@
 import { debug } from "../debug";
 import { SystemModifierDefinition, ModifierFlags, Message, NodeType } from "../interface";
-import { ArgumentsTooFewMessage, NameAlreadyDefinedMessage } from "../messages";
+import { InvalidArgumentMessage, NameAlreadyDefinedMessage } from "../messages";
+import { checkArgumentLength } from "../modifier-helper";
 import { assert } from "../util";
 import { builtins, customModifier } from "./internal";
 
 export const DefineBlockMod = new SystemModifierDefinition<{
-    name: string;
+    name?: string;
     slotName: string;
     args: string[];
+    msgs: Message[];
 }>('define-block', ModifierFlags.Normal, {
     // .define-block:name:args...[:(slot-id)]
     delayContentExpansion: true,
     alwaysTryExpand: true,
     beforeParseContent(node, cxt) {
-        if (node.arguments.length == 0)
-            return [new ArgumentsTooFewMessage(node.head.end - 1, 0)];
+        const check = checkArgumentLength(node, 1, Infinity);
+        if (check) return check;
 
         const msgs: Message[] = [];
         const name = node.arguments[0];
-        const nameValue = cxt.evaluateArgument(name);
-        if (cxt.config.blockModifiers.has(nameValue))
-            msgs.push(new NameAlreadyDefinedMessage(
-                node.start, name.end - name.start, nameValue));
+        const nameValue = name.expansion;
 
         let slotName = '';
         if (node.arguments.length > 1) {
-            const last = cxt.evaluateArgument(node.arguments.at(-1)!);
-            slotName = /^\(.+\)$/.test(last) ? last.substring(1, last.length - 1) : '';
+            const last = node.arguments.at(-1)!;
+            if (last.expansion) 
+                slotName = /^\(.+\)$/.test(last.expansion) 
+                    ? last.expansion.substring(1, last.expansion.length - 1) : '';
+            else msgs.push(
+                new InvalidArgumentMessage(last.start, last.end - last.start));
         }
+
         const args = node.arguments.slice(1, (slotName !== '')
-            ? node.arguments.length - 1 : undefined).map((x) => cxt.evaluateArgument(x));
-        node.state = { name: nameValue, slotName, args };
+            ? node.arguments.length - 1 : undefined).map((x) => 
+        {
+            if (!x.expansion) msgs.push(
+                new InvalidArgumentMessage(x.start, x.end - x.start));
+            return x.expansion ?? '';
+        });
+        node.state = { name: nameValue, slotName, args, msgs };
 
         const store = cxt.get(builtins)!;
         store.blockSlotDelayedStack.push(node.state.slotName);
         debug.trace('entering block definition:', node.state.name);
-        return msgs;
+        return [];
     },
     afterParseContent(node, cxt) {
         if (!node.state) return [];
@@ -44,9 +53,19 @@ export const DefineBlockMod = new SystemModifierDefinition<{
         debug.trace('leaving block definition', node.state.name);
         return [];
     },
+    prepareExpand(node, cxt, immediate) {
+        if (!immediate || !node.state) return [];
+        const arg = node.arguments[0];
+        if (!node.state.name) 
+            return [new InvalidArgumentMessage(arg.start, arg.end - arg.start)];
+        if (cxt.config.blockModifiers.has(node.state.name))
+            return [new NameAlreadyDefinedMessage(
+                arg.start, arg.end - arg.start, node.state.name)];
+        return [];
+    },
     expand(node, cxt, immediate) {
         if (!immediate) return undefined;
-        if (node.state) {
+        if (node.state?.name) {
             if (cxt.config.blockModifiers.has(node.state.name))
                 cxt.config.blockModifiers.remove(node.state.name);
             cxt.config.blockModifiers.add(
