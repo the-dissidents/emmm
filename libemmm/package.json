@@ -1,6 +1,6 @@
 {
   "name": "@the_dissidents/libemmm",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "parser and language server for the emmm markup language",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
