@@ -79,6 +79,12 @@ describe('basic syntax', () => {
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
         ]);
+        doc = parse(`:--\nabc\n\n:--\ndef\n--:\n--:`);
+        expect.soft(doc.messages).toHaveLength(0);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
+        ]);
         doc = parse(`[.normal]:--\nabc\n\ndef\n--:`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([

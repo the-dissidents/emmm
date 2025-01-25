@@ -45,6 +45,20 @@ export const GetVarInlineMod = new InlineModifierDefinition<{ value: string; }>(
     },
 });
 
+export const PrintInlineMod = new InlineModifierDefinition<{ value: string; }>('print', ModifierFlags.Marker, {
+    // .print:args...
+    prepareExpand(node) {
+        const check = checkArguments(node);
+        if (check) return check;
+        node.state = {value: node.arguments.map((x) => x.expansion!).join('')};
+        return [];
+    },
+    expand(node) {
+        if (!node.state) return [];
+        return [{ type: NodeType.Text, content: node.state.value, start: -1, end: -1 }];
+    },
+});
+
 export const GetVarInterpolator = new ArgumentInterpolatorDefinition('$(', ')',
     {
         alwaysTryExpand: true,

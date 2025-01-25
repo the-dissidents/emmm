@@ -1,7 +1,5 @@
-# Tauri + SvelteKit + TypeScript
+# kfgui
 
-This template should help get you started developing with Tauri, SvelteKit and TypeScript in Vite.
+(it's a working title)
 
-## Recommended IDE Setup
-
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer).
+GUI editor for typesetting articles using the `emmm` markup language, developed using tauri + Svelte. Will include publishers (e.g. to WeChat public interface, Douban, blog sites or PDF) in the future.

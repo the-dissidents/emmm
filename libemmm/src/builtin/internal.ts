@@ -1,6 +1,6 @@
 import { debug } from "../debug";
 import { ParseContext, ModifierNode, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags, NodeType } from "../interface";
-import { checkArgumentLength, checkArguments } from "../modifier-helper";
+import { checkArguments } from "../modifier-helper";
 import { _Ent, _Def } from "../typing-helper";
 import { debugPrintNodes, cloneNodes, assert } from "../util";
 
