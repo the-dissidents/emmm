@@ -2,14 +2,27 @@ import { debug } from "./debug";
 import { Document, Message, MessageSeverity, DocumentNode, PositionRange, ArgumentEntity, ModifierArgument, NodeType } from "./interface";
 import { ReferredMessage } from "./messages";
 
-// TODO: use a prefix tree to find names
+
+// TODO: use a prefix tree to find names?
 export class NameManager<T extends {name: string}> {
     private array: {k: string, v: T}[] = [];
-    private data: Map<string, T>;
+    private data = new Map<string, T>();
     
-    constructor(from: NameManager<T> | undefined) {
-        this.array = [...from?.array ?? []];
-        this.data = new Map(from?.data);
+    constructor(from?: ReadonlyNameManager<T> | readonly T[]) {
+        if (from === undefined) return;
+        if (from instanceof NameManager) {
+            this.array = [...from.array];
+            this.data = new Map(from.data);
+        } else {
+            assert(Array.isArray(from));
+            this.array = from.map((x) => ({k: x.name, v: x}));
+            this.array.sort((a, b) => b.k.length - a.k.length);
+            this.data = new Map(from.map((x) => [x.name, x]));
+        }
+    }
+
+    toArray(): readonly T[] {
+        return this.array.map(({v}) => v);
     }
 
     get(name: string) {
@@ -43,6 +56,8 @@ export class NameManager<T extends {name: string}> {
         return result ? result.v : undefined;
     }
 }
+
+export type ReadonlyNameManager<T extends {name: string}> = Omit<NameManager<T>, 'add' | 'remove'>;
 
 export function assert(x: boolean): asserts x {
     if (!!!x) {

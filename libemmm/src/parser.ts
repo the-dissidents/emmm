@@ -317,11 +317,18 @@ class Parser {
         const result = this.#defs(type).find((x) => this.scanner.accept(x.name));
         const mod = result ?? UnknownModifier[type];
         if (result === undefined) {
-            const args = this.scanner.acceptUntil(MODIFIER_CLOSE_SIGN);
-            if (args === null) this.emit.message(
-                new ExpectedMessage(this.scanner.position(), MODIFIER_CLOSE_SIGN));
+            let name = '';
+            while (!this.scanner.isEOF() 
+                && !this.scanner.acceptWhitespaceChar()
+                && !this.scanner.peek(MODIFIER_CLOSE_SIGN)
+                && !this.scanner.peek(MODIFIER_END_SIGN))
+            {
+                if (this.scanner.accept('\\'))
+                    if (this.scanner.isEOF()) break;
+                name += this.scanner.acceptChar();
+            }
             this.emit.message(
-                new UnknownModifierMessage(posStart, this.scanner.position() - posStart));
+                new UnknownModifierMessage(posStart, this.scanner.position() - posStart, name));
         }
         const args = this.ARGUMENTS();
         debug.trace(`PARSE ${NodeType[type]}:`, mod.name);

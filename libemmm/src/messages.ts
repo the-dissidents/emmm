@@ -70,10 +70,11 @@ export class ExpectedMessage implements Message {
 export class UnknownModifierMessage implements Message {
     constructor(
         public readonly position: number, 
-        public readonly length: number) {}
+        public readonly length: number,
+        private what: string) {}
     readonly code = 2;
     readonly severity =  MessageSeverity.Error;
-    readonly info = `unknown modifier; did you forget to escape it?`;
+    get info() { return `unknown modifier '${this.what}'; did you forget to escape it?`; };
     get fixes(): readonly FixSuggestion[] {
         let [pos, len] = [this.position, this.length];
         return [{
@@ -173,7 +174,17 @@ export class SlotUsedOutsideDefinitionMessage implements Message {
     readonly code = 9;
     readonly severity = MessageSeverity.Error;
     readonly fixes: readonly FixSuggestion[] = []
-    get info(): string { return `[.slot] used outside a block definition` }
+    get info(): string { return `slot used outside a definition` }
+}
+
+export class CannotPopNotationMessage implements Message {
+    constructor(
+        public readonly position: number,
+        public readonly length: number) {}
+    readonly code = 10;
+    readonly severity = MessageSeverity.Error;
+    readonly fixes: readonly FixSuggestion[] = []
+    get info(): string { return `cannot pop notation` }
 }
 
 // warnings

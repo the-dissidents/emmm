@@ -1,5 +1,5 @@
 
-import { assert, debugDumpDocument, NameManager } from "./util"
+import { assert, debugDumpDocument, NameManager, ReadonlyNameManager } from "./util"
 
 // The scanner of any implementation should be capable of handling UTF-8 
 // strings at least as well as Typescript.
@@ -244,6 +244,16 @@ export class Document {
         return debugDumpDocument(this, source)
     }
 }
+
+export interface ReadonlyConfiguration {
+    initializers: readonly ((cxt: ParseContext) => void)[];
+    blockModifiers: ReadonlyNameManager<BlockModifierDefinition<any>>;
+    inlineModifiers: ReadonlyNameManager<InlineModifierDefinition<any>>;
+    systemModifiers: ReadonlyNameManager<SystemModifierDefinition<any>>;
+    argumentInterpolators: ReadonlyNameManager<ArgumentInterpolatorDefinition>;
+    reparseDepthLimit: number;
+}
+
 export class Configuration {
     initializers: ((cxt: ParseContext) => void)[] = [];
     blockModifiers: NameManager<BlockModifierDefinition<any>>;
@@ -252,7 +262,7 @@ export class Configuration {
     argumentInterpolators: NameManager<ArgumentInterpolatorDefinition>;
     reparseDepthLimit = 10;
     
-    constructor(from?: Configuration) {
+    constructor(from?: ReadonlyConfiguration) {
         this.blockModifiers = new NameManager(from?.blockModifiers);
         this.inlineModifiers = new NameManager(from?.inlineModifiers);
         this.systemModifiers = new NameManager(from?.systemModifiers);

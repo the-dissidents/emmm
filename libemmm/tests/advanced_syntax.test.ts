@@ -11,25 +11,6 @@ const TestConfig = new Configuration(BuiltinConfiguration);
 TestConfig.blockModifiers.add(
     new BlockModifierDefinition('normal', ModifierFlags.Normal)
 );
-TestConfig.inlineModifiers.add(
-    new InlineModifierDefinition<string>('marker', ModifierFlags.Marker, {
-        prepareExpand(node, cxt, immediate) {
-            const msgs = checkArguments(node);
-            if (msgs) return msgs;
-            node.state = node.arguments.map((x) => x.expansion!).join(';');
-            return [];
-        },
-        expand(node, cxt) {
-            if (!node.state) return [];
-            return [{
-                type: NodeType.Text,
-                start: node.start,
-                end: node.end,
-                content: node.state
-            }];
-        },
-    })
-);
 
 function parse(src: string) {
     const config = new Configuration(TestConfig);
@@ -47,6 +28,15 @@ function parseWithoutStrip(src: string) {
 debug.level = DebugLevel.Warning;
 
 describe('argument parsing', () => {
+    test('[/print]', () => {
+        let doc = parse(`[/print 123:456]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '123456' }
+            ] }
+        ]);
+    });
     test('simple', () => {
         let doc = parseWithoutStrip(`[.normal 123:456]`);
         expect.soft(doc.messages).toMatchObject([]);
@@ -59,12 +49,12 @@ describe('argument parsing', () => {
         } ]);
     });
     test('escaped', () => {
-        let doc = parseWithoutStrip(String.raw`[/marker \]]`);
+        let doc = parseWithoutStrip(String.raw`[/print \]]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.Paragraph,
             content: [{
-                type: NodeType.InlineModifier, mod: {name: 'marker'},
+                type: NodeType.InlineModifier, mod: {name: 'print'},
                 arguments: [{ content: [{ type: NodeType.Escaped, content: "]" }] }],
                 expansion: [{ type: NodeType.Text, content: ']' }]
             }]
@@ -97,21 +87,21 @@ describe('argument parsing', () => {
         } ]);
     });
     test('variable interpolation: expansion', () => {
-        let doc = parse(`[-var x:123][/marker $(x)]`);
+        let doc = parse(`[-var x:123][/print $(x)]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
     });
     test('variable interpolation: nested', () => {
-        let doc = parse(`[-var x:y][-var xy:123][/marker $(x$(x))]`);
+        let doc = parse(`[-var x:y][-var xy:123][/print $(x$(x))]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
     });
     test('complex argument interpolation', () => {
-        let doc = parse(`[-define-block a:x:y][-define-block $(y):z][/marker $(x)$(y)$(z)]\n\n[.a b:c;]\n[.c 1;]`);
+        let doc = parse(`[-define-block a:x:y][-define-block $(y):z][/print $(x)$(y)$(z)]\n\n[.a b:c;]\n[.c 1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [

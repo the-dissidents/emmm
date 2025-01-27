@@ -8,7 +8,7 @@ npm install @the_dissidents/libemmm
 
 ## Usage
 
-`emmm` is highly extensible. The parser by itself only handles the most basic syntax rules; it accepts a `Configuration` object that defines most of the language features.
+`emmm` is an extensible language. The parser by itself only handles the basic syntax; it accepts a `Configuration` object that defines most of the features.
 
 ```typescript
 import * as emmm from '@the_dissidents/libemmm';
@@ -174,6 +174,24 @@ A colon before the first argument states explicitly the beginning of that argume
 > 
 > You can't reassign arguments, only variables. Since arguments always take precedence over variables, "reassigning" them has no effect inside a definition and can only confuse the rest of the code.
 
+[**-define-block-prefix** *prefix*]  
+[**-define-block-prefix** *prefix*:(*slot*)]
+
+> Not implemented yet
+
+[**-define-inline-shorthand** *opening*:*ending*:]  
+[**-define-inline-shorthand** *opening*:(*slot*):*ending*:]  
+[**-define-inline-shorthand** *opening*:(*slot1*):*mid1*:(*slot2*):*mid2*:(*slot3*)...:*ending*:]
+
+> Not implemented yet
+
+[**-push-notation**]  
+[**-pop-notation**]
+
+> Pushes the current notation data (modifiers and shorthands) onto a stack, or pop the stack to revert to the situation before pushing.
+>
+> This is useful, for example, when you implement a `[.table]` modifier and want to have a lot of shorthands for table rows and cells etc. that only function inside this modifier. In this case, functioning everywhere just doesn't make sense and pollutes the syntax.
+
 ### Block modifiers
 
 [**.slot**]  
@@ -224,3 +242,26 @@ A colon before the first argument states explicitly the beginning of that argume
 ---
 
 For strange edge cases of the basic syntax and the built-in configuration, see the test modules. Note that they may not be *very* readable; we're considering moving to another format.
+
+## Diagnostic Messages
+
+|Code|Error|Suggestions|
+|---:|-----|-|
+|  1 | Syntax error: expecting <...>
+|  2 | Undefined modifier <...> | *did you mean ... ?*
+|    | | *did you forget to escape?*
+|  3 | Unclosed inline modifier
+|  4 | Argument count mismatch, <...> expected
+|  5 | Failed to expand argument
+|  6 | Invalid argument
+|  7 | Invalid entity in inline modifier definition
+|  8 | Reached recursion limit (<...>)
+|  9 | Slot modifier used outside a definition
+
+|Code|Warning|Suggestions|
+|---:|-------|-|
+|  1 |Unnecessary newline(s)| *remove*
+|  2 | Block should begin in a new line to avoid confusion| *add a line break*
+|  3 | Content should begin in a new line to avoid confusion | *add a line break*
+|  4 | Modifier already defined, overwriting
+|  5 | Undefined variable, will expand to empty string

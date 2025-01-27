@@ -12,6 +12,11 @@ declare module '../interface' {
             inlineSlotDelayedStack: string[];
             blockSlotData: [string, BlockInstantiationData][];
             inlineSlotData: [string, InlineInstantiationData][];
+            notationStack: {
+                blocks: readonly BlockModifierDefinition<unknown>[],
+                inlines: readonly InlineModifierDefinition<unknown>[],
+                // shorthands...
+            }[];
         };
     }
 }
@@ -21,7 +26,8 @@ export function initParseContext(cxt: ParseContext) {
         blockSlotDelayedStack: [],
         inlineSlotDelayedStack: [],
         blockSlotData: [],
-        inlineSlotData: []
+        inlineSlotData: [],
+        notationStack: []
     });
 }
 
