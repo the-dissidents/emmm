@@ -83,7 +83,7 @@ You can also use the brackets without a modifier. However, this has little effec
 Suppose the modifier `[.pre]` accepts a preformatted block:
 
 ```
-[.pre] Preformatted content, suitable for code and ASCII art. Always treated as plain text, even if I write [.foo] or [/foo] or /[.
+[.pre] Preformatted content, suitable for code and ASCII art. Always treated as plain text, even if I write [.foo] or [/foo] or \[.
 
 However, like in a normal paragraph, a blank line creates a new block so this is no longer in the pre. Use brackets:
 
@@ -106,7 +106,7 @@ Use a `;` before `]` to signify empty content. Modifiers that don't accept conte
 
 In normal paragraphs, use a slash `\` to **escape** the character immediately after it, so that it will not be interpreted as a special character (e.g. the beginning of a modifier).
 
-**Inline modifiers** are similar to block modifiers, but occur in paragraphs. They are written as `[/baa]` or `[/baa args]`. If  accepting content, use `[;]` to mark the end of their scope.
+**Inline modifiers** are similar to block modifiers, but occur in paragraphs. They are written as `[/baa]` or `[/baa args]`. If accepting content, use `[;]` to mark the end of their scope.
 
 ```
 Behold a baa: [/baa]content of baa[;].
@@ -137,7 +137,7 @@ As in paragraphs, use `\` to **escape** characters in arguments.
 span 
 many 
 
-lines:but colons (\:) and square brackets (\[\]) need escaping]
+lines:but colons (\:), semicolons (\;) and square brackets (\[\]) need escaping;]
 
 Suppose the variables are "x" = "y", "y" = "1".
 

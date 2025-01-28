@@ -5,7 +5,6 @@ import * as Parser from "../src/parser";
 import { stripDocument } from "../src/util";
 import { BlockModifierDefinition, Configuration, InlineModifierDefinition, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
-import { checkArguments } from "../src/modifier-helper";
 
 const TestConfig = new Configuration(BuiltinConfiguration);
 TestConfig.blockModifiers.add(

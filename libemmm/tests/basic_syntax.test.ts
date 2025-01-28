@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { SimpleScanner } from "../src/front";
 import * as Parser from "../src/parser";
-import { MessageSeverity, Configuration, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags, BlockEntity, NodeType } from "../src/interface";
+import { MessageSeverity, Configuration, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags, NodeType } from "../src/interface";
 
 const TestConfig = new Configuration();
 TestConfig.blockModifiers.add(

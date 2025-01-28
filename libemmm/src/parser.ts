@@ -578,10 +578,12 @@ class Parser {
                 content.push({
                     type: NodeType.Escaped,
                     content: this.scanner.acceptChar(),
-                    start: posEnd - 2, end: posEnd
+                    start: posEnd - 1, end: posEnd + 1
                 });
                 continue;
             }
+
+            const beforeInterp = this.scanner.position();
             const result = this.cxt.config.argumentInterpolators.find(
                 (x) => this.scanner.accept(x.name));
             if (result !== undefined) {
@@ -590,7 +592,7 @@ class Parser {
                 content.push({
                     type: NodeType.Interpolation,
                     definition: result, argument: inner,
-                    start: posEnd - 2, end: posEnd
+                    start: beforeInterp, end: posEnd
                 });
                 if (!ok2) {
                     this.emit.message(new ExpectedMessage(posEnd, result.postfix));
