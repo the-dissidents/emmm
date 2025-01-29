@@ -1,15 +1,16 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { EditorView } from "@codemirror/view";
-  import { createEditorState, emmmConfiguration } from "./EditorTheme";
+  import { createEditorState, emmmConfiguration, emmmDocument } from "./EditorTheme";
   import { EditorState } from "@codemirror/state";
   import * as emmm from '@the_dissidents/libemmm';
 
   interface Props {
     onchange?(text: string): void;
+    onparse?(doc: emmm.Document): void;
   }
 
-  let { onchange = undefined }: Props = $props();
+  let { onchange = undefined, onparse = undefined }: Props = $props();
 
   let editorContainer: HTMLDivElement;
   let view: EditorView;
@@ -21,15 +22,26 @@
 
   const exts = [
     EditorView.updateListener.of((update) => {
-      if (update.docChanged && onchange) {
+      const prev = update.startState.field(emmmDocument);
+      const doc = update.state.field(emmmDocument);
+      if (prev !== doc && doc && onparse)
+        onparse(doc.data);
+
+      if (update.docChanged && onchange)
         onchange(update.view.state.doc.toString());
-      }
+      
     }),
     emmmConfiguration.of(config)
   ];
 
   onMount(() => {
-    let text = '';
+    let text = `[-define-block wrapper:var:name]
+[-define-block $(name):value]
+[-var $(var):$(value)]
+
+[.wrapper COLOR:color;]
+
+[.color 123;]`;
     state = createEditorState(text, exts);
     view = new EditorView({
       parent: editorContainer,

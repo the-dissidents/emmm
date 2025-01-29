@@ -7,21 +7,20 @@
   let left = $state<HTMLElement>(), right = $state<HTMLElement>();
   let status = $state('ok');
 
-  function test(source: string) {
-    emmm.setDebugLevel(emmm.DebugLevel.Warning);
-    const scanner = new emmm.SimpleScanner(source);
-    const config = new emmm.Configuration(emmm.BuiltinConfiguration);
-    const start = performance.now();
-    const doc = emmm.parse(scanner, config);
-    status = `Parse time: ${(performance.now() - start).toFixed(1)}`;
-    // console.log(doc.root);
+  let source: string = ``;
+
+  function onchange(src: string) {
+    source = src;
+  }
+
+  function test(doc: emmm.Document) {
     output.value = doc.debugPrint(source);
   }
 </script>
 
 <div class="hlayout flexgrow">
   <div class="pane flexgrow" bind:this={left}>
-    <Editor onchange={(x) => test(x)} />
+    <Editor onparse={test} onchange={onchange} />
   </div>
   <Resizer first={left} second={right} vertical={true} reverse={true}/>
   <div class="pane vlayout" bind:this={right}>
@@ -42,4 +41,3 @@
     box-sizing: border-box;
   }
 </style>
-

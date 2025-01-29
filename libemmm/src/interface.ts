@@ -46,7 +46,9 @@ export type Message = {
 
 export type PositionRange = {
     start: number,
-    end: number
+    end: number,
+    // eh...
+    actualEnd?: number
 };
 
 export enum NodeType {

@@ -1,20 +1,102 @@
 import { defaultKeymap, history, indentWithTab } from "@codemirror/commands";
 import { linter, type Diagnostic } from "@codemirror/lint";
 import { EditorState, Facet, RangeSet, RangeSetBuilder, StateEffect, StateField, Text, type Extension } from "@codemirror/state";
-import { Decoration, drawSelection, EditorView, keymap, lineNumbers, ViewPlugin, ViewUpdate, type DecorationSet } from "@codemirror/view";
+import { Decoration, drawSelection, EditorView, gutter, GutterMarker, keymap, lineNumbers, ViewPlugin, ViewUpdate, type DecorationSet } from "@codemirror/view";
 import * as emmm from '@the_dissidents/libemmm';
 
-export const emmmDocument = StateField.define<emmm.Document | undefined>({
-    create() {
-        return undefined;
+enum FoldUnit {
+    Begin, End, Vertical, Top, Bottom, Space, BottomJoin, TopJoin
+}
+
+export type EmmmParseData = {
+    data: emmm.Document,
+    time: number,
+    foldStructure: FoldUnit[][]
+}
+
+export const emmmDocument = StateField.define<EmmmParseData | undefined>({
+    create(state) {
+        let folds: FoldUnit[][] = [];
+        for (let i = 0; i < state.doc.lines; i++) folds.push([]);
+
+        function lineAt(pos: number) {
+            return state.doc.lineAt(pos).number
+        }
+        function remakeLine(len: number, 
+            line: FoldUnit[], uend: FoldUnit, uline: FoldUnit, urepl: FoldUnit) 
+        {
+            const oldLen = line.length;
+            for (let i = 0; i < oldLen; i++) {
+                if (line[i] == FoldUnit.Space) line[i] = uline;
+                else if (line[i] == FoldUnit.Begin || line[i] == FoldUnit.End)
+                    line[i] = urepl;
+            }
+            for (let j = oldLen; j <= len; j++) {
+                if (j == len) line.push(uend);
+                else line.push(uline);
+            }
+        }
+        function makeContent(l1: number, l2: number, content: emmm.DocumentNode[]) {
+            if (l1 == l2) return 0;
+            if (content.length == 0) return 0;
+            let inside = 0;
+            content.forEach((x) => 
+                { inside = Math.max(inside, makeFold(x)); });
+            remakeLine(inside, folds[l1], FoldUnit.Begin, FoldUnit.Top, FoldUnit.TopJoin);
+            for (let i = l1+1; i < l2; i++) {
+                for (let j = folds[i].length; j < inside; j++)
+                    folds[i].push(FoldUnit.Space);
+                folds[i].push(FoldUnit.Vertical);
+            }
+            remakeLine(inside, folds[l2], FoldUnit.End, FoldUnit.Bottom, FoldUnit.BottomJoin);
+            return inside + 1;
+        }
+        function makeFold(node: emmm.DocumentNode): number {
+            let inside = 0;
+            switch (node.type) {
+                case emmm.NodeType.Root:
+                    node.content.forEach((x) => 
+                        { inside = Math.max(inside, makeFold(x)); });
+                    return inside;
+                case emmm.NodeType.Paragraph:
+                    // FIXME: should include --:
+                    return makeContent(
+                        lineAt(node.start), 
+                        lineAt(node.actualEnd ?? node.end), node.content);
+                case emmm.NodeType.SystemModifier:
+                case emmm.NodeType.InlineModifier:
+                case emmm.NodeType.BlockModifier:
+                    let l1 = lineAt(node.head.end);
+                    let l2 = lineAt(node.actualEnd ?? node.end);
+                    if (node.content.length == 1 
+                     && lineAt(node.content[0].start) == l1)
+                        return makeFold(node.content[0]);
+                    return makeContent(l1, l2, node.content);
+                case emmm.NodeType.Preformatted:
+                case emmm.NodeType.Text:
+                case emmm.NodeType.Escaped:
+                default:
+                    return 0;
+            }
+        }
+
+        emmm.setDebugLevel(emmm.DebugLevel.Warning);
+        const config = state.facet(emmmConfiguration);
+        const start = performance.now();
+        const scanner = new emmm.SimpleScanner(state.doc.toString());
+        const result = emmm.parse(scanner, new emmm.Configuration(config));
+        makeFold(result.root);
+        return {
+            data: result,
+            time: performance.now() - start,
+            foldStructure: folds
+        };
     },
+
     update(value, transaction) {
         if (!transaction.docChanged) return value;
         const state = transaction.state;
-        const config = state.facet(emmmConfiguration);
-        const scanner = new emmm.SimpleScanner(state.doc.toString());
-        const result = emmm.parse(scanner, new emmm.Configuration(config));
-        return result;
+        return this.create(state);
     }
 });
 
@@ -95,24 +177,32 @@ export const EmmmLanguageSupport: Extension = [
     ViewPlugin.fromClass(class {
         decorations: DecorationSet = RangeSet.empty;
 
+        make(doc: EmmmParseData) {
+            let builder = new RangeSetBuilder<Decoration>();
+            highlightNode(doc.data.root, builder);
+            this.decorations = builder.finish();
+        }
+
+        constructor(view: EditorView) {
+            const doc = view.state.field(emmmDocument);
+            if (!doc) return;
+            this.make(doc);
+        }
+
         update(update: ViewUpdate) {
             const prev = update.startState.field(emmmDocument);
             const doc = update.state.field(emmmDocument);
-            if (doc && doc !== prev) {
-                console.log('highlighting');
-                let builder = new RangeSetBuilder<Decoration>();
-                highlightNode(doc.root, builder);
-                this.decorations = builder.finish();
-            }
+            if (doc && doc !== prev) this.make(doc);
         }
     }, {
         decorations: v => v.decorations
     }),
+    // messages
     linter((view) => {
         const doc = view.state.field(emmmDocument);
         if (!doc) return [];
         let msgs: Diagnostic[] = [];
-        for (const msg of doc.messages) {
+        for (const msg of doc.data.messages) {
             msgs.push({
                 from: msg.position,
                 to: msg.position + msg.length,
@@ -126,7 +216,36 @@ export const EmmmLanguageSupport: Extension = [
             });
         }
         return msgs;
-    }, { delay: 1 })
+    }, { delay: 1 }),
+    // fold gutter
+    gutter({
+        lineMarker(view, line, otherMarkers) {
+            const doc = view.state.field(emmmDocument);
+            if (!doc) return null;
+            const n = view.state.doc.lineAt(line.from).number;
+            const units = doc.foldStructure.at(n)?.toReversed();
+            if (!units?.length) return null;
+            return new class extends GutterMarker {
+                toDOM(view: EditorView): Node {
+                    let div = document.createElement('div');
+                    div.className = 'fu-structure-container';
+                    for (const unit of units) {
+                        let span = document.createElement('span');
+                        span.className = `fu-structure fu-${FoldUnit[unit]}`;
+                        div.appendChild(span);
+                    }
+                    return div;
+                }
+            };
+        },
+        initialSpacer(view) {
+            return new class extends GutterMarker {
+                toDOM(view: EditorView): Node {
+                    return document.createTextNode("?");
+                }
+            };
+        },
+    })
 ]
 
 export const WrapIndent = ViewPlugin.fromClass(class {
@@ -178,7 +297,7 @@ export let DefaultTheme = EditorView.baseTheme({
     },
     ".cm-content": {
         caretColor: "black",
-        fontFamily: 'Menlo',
+        fontFamily: 'Menlo, 黑体, Consolas, monospace',
     },
     ".cm-line": {
         // avoid messing up wrap indent above
@@ -226,15 +345,46 @@ export let DefaultTheme = EditorView.baseTheme({
     },
     ".em-interp": {
         color: 'darkorange',
-        fontWeight: 'bold'
+        fontWeight: '600'
     },
     ".em-system": {
         color: 'palevioletred',
-        fontWeight: 'bold'
+        fontWeight: '600'
     },
     ".em-modifier": {
-        color: 'royalblue',
-        fontWeight: 'bold'
+        color: 'steelblue',
+        fontWeight: '600'
+    },
+    ".fu-structure-container": {
+        height: '100%',
+        textAlign: 'right'
+    },
+    ".fu-structure": {
+        display: 'inline-block',
+        // backgroundColor: 'red',
+        boxSizeing: 'content-box',
+        width: '6px',
+        height: '100%',
+    },
+    ".fu-Top": {
+        boxShadow: '0 0.5px 0 white inset, 0 -0.5px 0 white',
+        transform: 'translate(0, 6px)',
+    },
+    ".fu-Bottom": {
+        boxShadow: '0 -0.5px 0 white inset, 0 0.5px 0 white',
+        transform: 'translate(0, -6px)',
+    },
+    ".fu-Vertical": {
+        boxShadow: '-1px 0 0 white',
+        transform: 'translate(50%, 0)',
+    },
+    ".fu-Begin, .fu-TopJoin": {
+        boxShadow: '-1px -0.5px 0 white, 0 0.5px 0 white inset',
+        transform: 'translate(50%, 6px)',
+    },
+    ".fu-End, .fu-BottomJoin": {
+        boxShadow: '-1px 0.5px 0 white, 0 -0.5px 0 white inset',
+        transform: 'translate(50%, -6px)',
     },
 });
 
@@ -244,13 +394,13 @@ export function createEditorState(text: Text | string, exts: Extension[]) {
         extensions: [
             keymap.of([...defaultKeymap, indentWithTab]),
             history(),
-            drawSelection(),
-            lineNumbers(),
             DefaultTheme,
             EditorView.lineWrapping,
             EditorState.tabSize.of(4),
             WrapIndent,
             EmmmLanguageSupport,
+            lineNumbers(),
+            drawSelection(),
             exts
         ],
     });

@@ -60,7 +60,7 @@ export class ExpectedMessage implements Message {
         private what: string) {}
     readonly code = 1;
     readonly severity = MessageSeverity.Error;
-    get length(): number { return this.what.length; }
+    get length(): number { return 0; }
     get info(): string { return `expected '${this.what}'` }
     get fixes(): readonly FixSuggestion[] {
         return [];

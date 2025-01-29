@@ -387,6 +387,8 @@ class Parser {
             }
             this.emit.endBlock();
         }
+        const last = node.content.at(-1);
+        node.actualEnd = last?.actualEnd ?? last?.end;
         if (node.mod.delayContentExpansion) this.delayDepth--;
         if (node.mod.afterParseContent)
             this.emit.message(...node.mod.afterParseContent(node as any, this.cxt, immediate));
@@ -472,6 +474,8 @@ class Parser {
         this.emit.startInline(node);
         while (!this.scanner.isEOF() && this.INLINE_ENTITY()) {}
         this.emit.endInline();
+        const last = node.content.at(-1);
+        node.actualEnd = last?.actualEnd ?? last?.end;
         debug.trace('PARSE para end');
     }
 
