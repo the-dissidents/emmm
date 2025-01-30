@@ -60,7 +60,7 @@ This paragraph is NOT under foo, [.foo] but this immediately starts a new one un
 [.foo] ... and this is another block of foo.
 
 [.foo]
-[.foo] However, this is foo inside foo, since the outer foo hasn't encountered any block before the parser met the inner foo, which became the content of the outer one.
+[.foo] However, this is foo inside foo, since the outer foo hadn't encountered any block before the parser met the inner foo, which became the content of the outer one.
 
 [.foo]
 :--
@@ -158,6 +158,10 @@ A colon before the first argument states explicitly the beginning of that argume
 ## A Synopsis of the Built-in Configuration
 
 ### System modifiers
+
+[**-comment**]
+
+> Effe
 
 [**-define-block** *name*:*args...*]  
 [**-define-block** *name*:*args...*:(*slot*)]  

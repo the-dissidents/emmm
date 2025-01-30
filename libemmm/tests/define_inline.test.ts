@@ -110,7 +110,7 @@ describe('[-define-inline]', () => {
             ] }
         ]);
     });
-    test('arguments: no reference in user scope', () => {
+    test('arguments: no reference in user scope (modifier)', () => {
         let doc = parse(`[-define-inline p:x]\n:--\n[/slot][/$x]\n--:\n[/p:1][/$x][;]`);
         expect.soft(doc.messages).toMatchObject([
             { code: 5, severity: MessageSeverity.Warning }
@@ -121,7 +121,18 @@ describe('[-define-inline]', () => {
             ] }
         ]);
     });
-    test('arguments: reference in separate scopes', () => {
+    test('arguments: no reference in user scope (interp)', () => {
+        let doc = parse(`[-define-inline p:x]\n:--\n[/slot][/print $(x)]\n--:\n[/p:1][/print $(x)][;]`);
+        expect.soft(doc.messages).toMatchObject([
+            { code: 5, severity: MessageSeverity.Error }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '1' }
+            ] }
+        ]);
+    });
+    test('arguments: reference in separate scopes (modifier)', () => {
         let doc = parse(`[-define-inline p:x][/$x]\n\n[-define-inline q:x][/p 0;][/$x]\n\n[/q:1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
@@ -131,8 +142,25 @@ describe('[-define-inline]', () => {
             ] }
         ]);
     });
-    test('arguments: reference in nested scopes', () => {
+    test('arguments: reference in separate scopes (interp)', () => {
+        let doc = parse(`[-define-inline p:x][/print $(x)]\n\n[-define-inline q:x][/p 0;][/print $(x)]\n\n[/q:1;]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '0' },
+                { type: NodeType.Text, content: '1' }
+            ] }
+        ]);
+    });
+    test('arguments: reference in nested scopes (modifier)', () => {
         let doc = parse(`[-define-inline p:x][-define-inline q:x][/$x]\n\n[/p:0;][/q:1;]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
+        ]);
+    });
+    test('arguments: reference in nested scopes (interp)', () => {
+        let doc = parse(`[-define-inline p:x][-define-inline q:x][/print $(x)]\n\n[/p:0;][/q:1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }

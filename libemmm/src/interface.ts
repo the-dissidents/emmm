@@ -194,17 +194,15 @@ export class ArgumentInterpolatorDefinition {
     expand?: (content: string, cxt: ParseContext, immediate: boolean) => string | undefined;
 }
 
-export type BlockInstantiationData = {
-    mod: BlockModifierDefinition<any>,
-    slotContent: BlockEntity[],
-    args: Map<string, string>
+type Shorthand<TMod> = {
+    name: string,
+    parts: readonly string[],
+    postfix: string | undefined,
+    mod: TMod
 }
 
-export type InlineInstantiationData = {
-    mod: InlineModifierDefinition<any>,
-    slotContent: InlineEntity[],
-    args: Map<string, string>
-}
+export type BlockShorthand<TState> = Shorthand<BlockModifierDefinition<TState>>;
+export type InlineShorthand<TState> = Shorthand<InlineModifierDefinition<TState>>;
 
 export interface ParseContextStoreDefinitions {} 
 export type ParseContextStoreKey = keyof ParseContextStoreDefinitions;
@@ -253,15 +251,21 @@ export interface ReadonlyConfiguration {
     inlineModifiers: ReadonlyNameManager<InlineModifierDefinition<any>>;
     systemModifiers: ReadonlyNameManager<SystemModifierDefinition<any>>;
     argumentInterpolators: ReadonlyNameManager<ArgumentInterpolatorDefinition>;
+
+    blockShorthands: ReadonlyNameManager<BlockShorthand<any>>;
+    inlineShorthands: ReadonlyNameManager<InlineShorthand<any>>;
     reparseDepthLimit: number;
 }
 
-export class Configuration {
+export class Configuration implements ReadonlyConfiguration {
     initializers: ((cxt: ParseContext) => void)[] = [];
     blockModifiers: NameManager<BlockModifierDefinition<any>>;
     inlineModifiers: NameManager<InlineModifierDefinition<any>>;
     systemModifiers: NameManager<SystemModifierDefinition<any>>;
     argumentInterpolators: NameManager<ArgumentInterpolatorDefinition>;
+
+    blockShorthands: NameManager<BlockShorthand<any>>;
+    inlineShorthands: NameManager<InlineShorthand<any>>;
     reparseDepthLimit = 10;
     
     constructor(from?: ReadonlyConfiguration) {
@@ -269,6 +273,8 @@ export class Configuration {
         this.inlineModifiers = new NameManager(from?.inlineModifiers);
         this.systemModifiers = new NameManager(from?.systemModifiers);
         this.argumentInterpolators = new NameManager(from?.argumentInterpolators);
+        this.blockShorthands = new NameManager(from?.blockShorthands);
+        this.inlineShorthands = new NameManager(from?.inlineShorthands);
         if (from) {
             this.initializers = [...from.initializers];
             this.reparseDepthLimit = from.reparseDepthLimit;

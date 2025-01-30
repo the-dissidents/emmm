@@ -1,5 +1,5 @@
 import { debug } from "./debug";
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner, ArgumentEntity, ArgumentInterpolatorDefinition, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
+import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType, InlineShorthand } from "./interface";
 import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, ReachedRecursionLimitMessage as ReachedReparseLimitMessage, ReferredMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
 import { _Def } from "./typing-helper";
 import { assert, debugPrintNodes, has, NameManager } from "./util";
@@ -224,13 +224,12 @@ class Parser {
         if (node.mod.expand) {
             node.expansion = node.mod.expand(node as any, this.cxt, immediate);
             if (!node.expansion) {
+                // debug.trace('manually delaying expansion of', node.mod.name);
                 return true;
-            } else if (node.expansion.length > 0) {
-                debug.trace(`${this.delayDepth > 0 ? 'early ' : ''}expanding:`, node.mod.name);
-                debug.trace(() => '-->\n' + debugPrintNodes(node.expansion!, '  '));
-            } else {
-                debug.trace(`${this.delayDepth > 0 ? 'early ' : ''}expanding:`, node.mod.name);
             }
+            debug.trace(`${this.delayDepth > 0 ? 'early ' : ''}expanding:`, node.mod.name);
+            if (node.expansion.length > 0)
+                debug.trace(() => '-->\n' + debugPrintNodes(node.expansion!, '  '));
         }
 
         const expansion = node.expansion ?? node.content;
@@ -281,7 +280,7 @@ class Parser {
         }
         const end = this.scanner.position();
         if (nlines > n) this.emit.message(
-            new UnnecessaryNewlineMessage(start, end - start));
+            new UnnecessaryNewlineMessage(start, end));
     }
 
     private DOCUMENT() {
@@ -480,6 +479,65 @@ class Parser {
     }
 
     // returns false if breaking out of paragraph
+    private INLINE_SHORTHAND(d: InlineShorthand<unknown>): boolean {
+        const posStart = this.scanner.position() - d.name.length;
+        let args: ModifierArgument[] = [];
+        for (const part of d.parts) {
+            let [arg, ok] = this.ARGUMENT_CONTENT(part, ['\n\n']);
+            if (!ok) {
+                this.emit.message(new ExpectedMessage(this.scanner.position(), part));
+                return false;
+            }
+            args.push(arg);
+        }
+
+        const headEnd = this.scanner.position();
+        const node: ModifierNode = {
+            type: NodeType.InlineModifier, 
+            mod: d.mod,
+            head: {start: posStart, end: headEnd},
+            arguments: args,
+            start: posStart, end: headEnd,
+            content: [],
+            expansion: undefined
+        };
+
+        this.#expandArguments(node);
+
+        const immediate = this.delayDepth == 0;
+        if (node.mod.beforeParseContent)
+            this.emit.message(...node.mod.beforeParseContent(node as any, this.cxt, immediate));
+        if (node.mod.delayContentExpansion) this.delayDepth++;
+
+        let ok = true;
+        if (has(d.mod.flags, ModifierFlags.Marker)) {
+            this.emit.addInlineNode(node);
+        } else {
+            this.emit.startInline(node);
+            const entity = has(d.mod.flags, ModifierFlags.Preformatted)
+                ? this.PREFORMATTED_INLINE_ENTITY.bind(this)
+                : this.INLINE_ENTITY.bind(this);
+            while (true) {
+                if (d.postfix && this.scanner.accept(d.postfix)) break;
+                if (this.scanner.isEOF() || !(ok = entity())) {
+                    if (d.postfix) this.emit.message(
+                        new ExpectedMessage(this.scanner.position(), d.postfix));
+                    break;
+                }
+            }
+            this.emit.endInline();
+        }
+
+        const last = node.content.at(-1);
+        node.actualEnd = last?.actualEnd ?? last?.end;
+        if (node.mod.delayContentExpansion) this.delayDepth--;
+        if (node.mod.afterParseContent)
+            this.emit.message(...node.mod.afterParseContent(node as any, this.cxt, immediate));
+        this.#expand(node);
+        return ok;
+    }
+
+    // returns false if breaking out of paragraph
     private INLINE_ENTITY(): boolean {
         assert(!this.scanner.isEOF());
         if (this.scanner.peek(MODIFIER_BLOCK_OPEN)) 
@@ -494,6 +552,9 @@ class Parser {
         if (this.scanner.peek(MODIFIER_SYSTEM_OPEN)) {
             return false;
         }
+
+        const short = this.cxt.config.inlineShorthands.find((x) => this.scanner.accept(x.name));
+        if (short) return this.INLINE_SHORTHAND(short);
 
         // TODO: don't know if this is enough
         if (this.scanner.accept('\\')) {
@@ -536,7 +597,11 @@ class Parser {
         return true;
     }
 
-    private ARGUMENT_CONTENT(end?: string): [ModifierArgument, boolean] {
+    // returns argument and isOk
+    private ARGUMENT_CONTENT(
+        end: string | undefined = undefined, 
+        close: string[] = [MODIFIER_END_SIGN, MODIFIER_CLOSE_SIGN]
+    ): [ModifierArgument, boolean] {
         let ok = true;
         const content: ArgumentEntity[] = [];
         const posStart = this.scanner.position();
@@ -560,12 +625,9 @@ class Parser {
         while (true) {
             if (end !== undefined && this.scanner.accept(end))
                 break;
-            if (this.scanner.accept(':')) {
-                ok = (end === undefined);
+            if (end === undefined && this.scanner.accept(':'))
                 break;
-            }
-            if (this.scanner.peek(MODIFIER_END_SIGN)
-             || this.scanner.peek(MODIFIER_CLOSE_SIGN)
+            if (close.find((x) => this.scanner.peek(x))
              || this.scanner.isEOF())
             {
                 ok = false;

@@ -22,17 +22,14 @@ export const DefineInlineMod = new SystemModifierDefinition<{
         const msgs: Message[] = [];
         const name = node.arguments[0];
         const nameValue = name.expansion;
-        if (nameValue && cxt.config.inlineModifiers.has(nameValue))
-            msgs.push(new NameAlreadyDefinedMessage(
-                node.start, name.end, nameValue));
 
         let slotName = '';
         if (node.arguments.length > 1) {
             const last = node.arguments.at(-1)!;
-            if (last.expansion)
-                slotName = /^\(.+\)$/.test(last.expansion) 
-                    ? last.expansion.substring(1, last.expansion.length - 1) : '';
-            else msgs.push(
+            if (last.expansion) {
+                const match = /^\((.*)\)$/.exec(last.expansion);
+                slotName = match ? match[1] : '';
+            } else msgs.push(
                 new InvalidArgumentMessage(last.start, last.end));
         }
 
@@ -46,14 +43,14 @@ export const DefineInlineMod = new SystemModifierDefinition<{
         node.state = { name: nameValue, slotName, args, msgs };
 
         const store = cxt.get(builtins)!;
-        store.inlineSlotDelayedStack.push(node.state.slotName);
+        store.inlineSlotDelayedStack.push({ slotName, args });
         debug.trace('entering inline definition:', node.state.name);
         return [];
     },
     afterParseContent(node, cxt) {
         if (!node.state) return [];
         const store = cxt.get(builtins)!;
-        assert(store.inlineSlotDelayedStack.pop() == node.state.slotName);
+        assert(store.inlineSlotDelayedStack.pop()?.slotName == node.state.slotName);
         debug.trace('leaving inline definition', node.state.name);
         return [];
     },
@@ -63,10 +60,9 @@ export const DefineInlineMod = new SystemModifierDefinition<{
         if (!node.state.name) 
             return [new InvalidArgumentMessage(arg.start, arg.end)];
 
-        const msgs: Message[] = [];
+        const msgs = node.state.msgs;
         if (cxt.config.inlineModifiers.has(node.state.name))
-            msgs.push(new NameAlreadyDefinedMessage(
-                arg.start, arg.end - arg.start, node.state.name));
+            msgs.push(new NameAlreadyDefinedMessage(arg.start, arg.end, node.state.name));
                 
         let lastIsParagraph = false;
         let concat: InlineEntity[] = [];
@@ -99,8 +95,9 @@ export const DefineInlineMod = new SystemModifierDefinition<{
             if (cxt.config.inlineModifiers.has(node.state.name))
                 cxt.config.inlineModifiers.remove(node.state.name);
             cxt.config.inlineModifiers.add(
-                customModifier(NodeType.InlineModifier, node.state.name, node.state.args,
-                    node.state.slotName, node.state.definition!));
+                customModifier(NodeType.InlineModifier, node.state.name, 
+                    ModifierFlags.Normal,
+                    node.state.args, node.state.slotName, node.state.definition!));
         }
         return [];
     },

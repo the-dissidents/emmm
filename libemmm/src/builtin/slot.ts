@@ -48,7 +48,7 @@ function slotModifier<T extends NodeType.InlineModifier | NodeType.BlockModifier
             return [];
         }
         const stack = isInline ? store.inlineSlotDelayedStack : store.blockSlotDelayedStack;
-        if (stack.includes(id)) {
+        if (stack.find((x) => x.slotName == id)) {
             debug.trace('delaying', id == '' ? 'unnamed slot' : 'slot: ' + id);
             return [];
         }

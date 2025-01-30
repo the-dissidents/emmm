@@ -25,10 +25,10 @@ export const DefineBlockMod = new SystemModifierDefinition<{
         let slotName = '';
         if (node.arguments.length > 1) {
             const last = node.arguments.at(-1)!;
-            if (last.expansion) 
-                slotName = /^\(.+\)$/.test(last.expansion) 
-                    ? last.expansion.substring(1, last.expansion.length - 1) : '';
-            else msgs.push(
+            if (last.expansion) {
+                const match = /^\((.*)\)$/.exec(last.expansion);
+                slotName = match ? match[1] : '';
+            } else msgs.push(
                 new InvalidArgumentMessage(last.start, last.end));
         }
 
@@ -42,26 +42,26 @@ export const DefineBlockMod = new SystemModifierDefinition<{
         node.state = { name: nameValue, slotName, args, msgs };
 
         const store = cxt.get(builtins)!;
-        store.blockSlotDelayedStack.push(node.state.slotName);
+        store.blockSlotDelayedStack.push({ slotName, args });
         debug.trace('entering block definition:', node.state.name);
         return [];
     },
     afterParseContent(node, cxt) {
         if (!node.state) return [];
         const store = cxt.get(builtins)!;
-        assert(store.blockSlotDelayedStack.pop() == node.state.slotName);
+        assert(store.blockSlotDelayedStack.pop()?.slotName == node.state.slotName);
         debug.trace('leaving block definition', node.state.name);
         return [];
     },
     prepareExpand(node, cxt, immediate) {
         if (!immediate || !node.state) return [];
         const arg = node.arguments[0];
+        const msgs = node.state.msgs;
         if (!node.state.name) 
-            return [new InvalidArgumentMessage(arg.start, arg.end)];
-        if (cxt.config.blockModifiers.has(node.state.name))
-            return [new NameAlreadyDefinedMessage(
-                arg.start, arg.end, node.state.name)];
-        return [];
+            msgs.push(new InvalidArgumentMessage(arg.start, arg.end));
+        else if (cxt.config.blockModifiers.has(node.state.name))
+            msgs.push(new NameAlreadyDefinedMessage(arg.start, arg.end, node.state.name));
+        return msgs;
     },
     expand(node, cxt, immediate) {
         if (!immediate) return undefined;
@@ -69,8 +69,9 @@ export const DefineBlockMod = new SystemModifierDefinition<{
             if (cxt.config.blockModifiers.has(node.state.name))
                 cxt.config.blockModifiers.remove(node.state.name);
             cxt.config.blockModifiers.add(
-                customModifier(NodeType.BlockModifier, node.state.name, node.state.args,
-                    node.state.slotName, node.content));
+                customModifier(NodeType.BlockModifier, node.state.name, 
+                    ModifierFlags.Normal,
+                    node.state.args, node.state.slotName, node.content));
         }
         return [];
     }

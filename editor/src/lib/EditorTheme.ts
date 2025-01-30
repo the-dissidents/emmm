@@ -166,7 +166,15 @@ function highlightNode(node: emmm.DocumentNode, builder: RangeSetBuilder<Decorat
                     highlight(cls, {start: node.arguments[i].end, end: p2});
                 }
             }
-            node.content.forEach((x) => highlightNode(x, builder));
+            if (node.type == emmm.NodeType.InlineModifier 
+             && node.mod.flags == emmm.ModifierFlags.Preformatted)
+            {
+                highlight('em-pre', {start: node.head.end, end: node.actualEnd ?? node.end});
+            } else {
+                node.content.forEach((x) => highlightNode(x, builder));
+            }
+            if (node.actualEnd)
+                highlight(cls, {start: node.actualEnd, end: node.end});
             return;
         default:
             break;
@@ -206,8 +214,7 @@ export const EmmmLanguageSupport: Extension = [
         let msgs: Diagnostic[] = [];
         for (const msg of doc.data.messages) {
             msgs.push({
-                from: msg.position,
-                to: msg.position + msg.length,
+                from: msg.start, to: msg.end,
                 severity: ({
                     [emmm.MessageSeverity.Info]: 'info',
                     [emmm.MessageSeverity.Warning]: 'warning',
