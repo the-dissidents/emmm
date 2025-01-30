@@ -16,7 +16,7 @@ export type EmmmParseData = {
 
 export const emmmDocument = StateField.define<EmmmParseData | undefined>({
     create(state) {
-        let folds: FoldUnit[][] = [];
+        let folds: FoldUnit[][] = [[]];
         for (let i = 0; i < state.doc.lines; i++) folds.push([]);
 
         function lineAt(pos: number) {
@@ -37,6 +37,8 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
             }
         }
         function makeContent(l1: number, l2: number, content: emmm.DocumentNode[]) {
+            if (l1 >= folds.length) return 0;
+            if (l2 >= folds.length) l2 = folds.length - 1;
             if (l1 == l2) return 0;
             if (content.length == 0) return 0;
             let inside = 0;
@@ -297,7 +299,7 @@ export let DefaultTheme = EditorView.baseTheme({
     },
     ".cm-content": {
         caretColor: "black",
-        fontFamily: 'Menlo, 黑体, Consolas, monospace',
+        fontFamily: 'Roboto Mono, Menlo, 黑体, Consolas, monospace',
     },
     ".cm-line": {
         // avoid messing up wrap indent above
@@ -323,7 +325,7 @@ export let DefaultTheme = EditorView.baseTheme({
         minWidth: '50px',
         border: "none"
     },
-    ".cm-lineNumbers .cm-gutterElement:nth-child(even)": {
+    ".cm-gutterElement:nth-child(even)": {
         // TODO: change background color (needs to extend, how?)
         // backgroundColor: "lightpink",
     },
