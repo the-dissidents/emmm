@@ -240,10 +240,10 @@ export function debugDumpDocument(doc: Document, source: string): string {
     }
 
     function dumpMsg(m: Message) {
-        let result = `at ${pos2lc(m.position)}, len ${m.length}: ${MessageSeverity[m.severity]}[${m.code}]: ${m.info}`;
+        let result = `at ${pos2lc(m.start)}-${pos2lc(m.end)}: ${MessageSeverity[m.severity]}[${m.code}]: ${m.info}`;
         while (m instanceof ReferredMessage) {
             m = m.original;
-            result += `\n---> original at: ${pos2lc(m.position)}, len ${m.length}`
+            result += `\n---> original at: ${pos2lc(m.start)}-${pos2lc(m.end)}`
         }
         return result;
     }

@@ -3,8 +3,8 @@ import { Message, MessageSeverity, FixSuggestion } from "./interface";
 export class ReferredMessage implements Message {
     constructor(
         public readonly original: Message,
-        public readonly position: number, 
-        public readonly length: number) {}
+        public readonly start: number, 
+        public readonly end: number) {}
     get severity() { return this.original.severity; }
     get info() { return this.original.info; }
     get code() { return this.original.code; }
@@ -15,19 +15,19 @@ class AddThingMessage implements Message {
     constructor(
         public readonly code: number,
         public readonly severity: MessageSeverity, 
-        public readonly position: number, 
-        public readonly length: number,
+        public readonly start: number, 
+        public readonly end: number,
         public readonly info: string, 
         private fixstr: string, private what: string){}
     get fixes(): readonly FixSuggestion[] {
-        let [pos, what, fixstr] = [this.position, this.what, this.fixstr];
+        let [start, what, fixstr] = [this.start, this.what, this.fixstr];
         return [{
             get info() { return fixstr; },
             apply(src: string, cursor: number) {
-                let newCursor = (cursor < pos) 
+                let newCursor = (cursor < start) 
                     ? cursor 
                     : cursor + what.length;
-                return [src.substring(0, pos) + what + src.substring(pos), newCursor];
+                return [src.substring(0, start) + what + src.substring(start), newCursor];
             }
         }];
     }
@@ -37,18 +37,18 @@ class RemoveThingMessage implements Message {
     constructor(
         public readonly code: number,
         public readonly severity: MessageSeverity, 
-        public readonly position: number, 
-        public readonly length: number,
+        public readonly start: number, 
+        public readonly end: number,
         public readonly info: string, private fixstr: string){}
     get fixes(): readonly FixSuggestion[] {
-        let [pos, len, fixstr] = [this.position, this.length, this.fixstr];
+        let [start, end, fixstr] = [this.start, this.end, this.fixstr];
         return [{
             get info() { return fixstr; },
             apply(src: string, cursor: number) {
-                let newCursor = (cursor < pos + len && cursor >= pos) 
-                    ? pos 
-                    : cursor - len;
-                return [src.substring(0, pos) + src.substring(pos + len), newCursor];
+                let newCursor = (cursor < end && cursor >= start) 
+                    ? start 
+                    : cursor; // Removing text, cursor shouldn't shift if it's outside the removed range
+                return [src.substring(0, start) + src.substring(end), newCursor];
             }
         }];
     }
@@ -56,11 +56,11 @@ class RemoveThingMessage implements Message {
 
 export class ExpectedMessage implements Message {
     constructor(
-        public readonly position: number,
+        public readonly start: number,
         private what: string) {}
     readonly code = 1;
     readonly severity = MessageSeverity.Error;
-    get length(): number { return 0; }
+    get end(): number { return this.start; }
     get info(): string { return `expected '${this.what}'` }
     get fixes(): readonly FixSuggestion[] {
         return [];
@@ -69,21 +69,21 @@ export class ExpectedMessage implements Message {
 
 export class UnknownModifierMessage implements Message {
     constructor(
-        public readonly position: number, 
-        public readonly length: number,
+        public readonly start: number, 
+        public readonly end: number,
         private what: string) {}
     readonly code = 2;
     readonly severity =  MessageSeverity.Error;
     get info() { return `unknown modifier '${this.what}'; did you forget to escape it?`; };
     get fixes(): readonly FixSuggestion[] {
-        let [pos, len] = [this.position, this.length];
+        let [start, end] = [this.start, this.end];
         return [{
             get info() { return 'this is not a modifier -- escape it'; },
             apply(src: string, cursor: number) {
-                let newCursor = (cursor < pos) 
+                let newCursor = (cursor < start) 
                     ? cursor 
                     : cursor + 1;
-                return [src.substring(0, pos) + '\\' + src.substring(pos), newCursor];
+                return [src.substring(0, start) + '\\' + src.substring(start), newCursor];
             }
         }];
     }
@@ -91,19 +91,19 @@ export class UnknownModifierMessage implements Message {
 
 export class UnclosedInlineModifierMessage implements Message {
     constructor(
-        public readonly position: number,
+        public readonly start: number,
         private what: string) {}
     readonly code = 3;
     readonly severity = MessageSeverity.Error;
-    readonly length = 0;
+    get end(): number { return this.start; }
     readonly fixes: readonly FixSuggestion[] = []
     get info(): string { return `unclosed inline modifier ${this.what}'` }
 }
 
 export class ArgumentCountMismatchMessage implements Message {
     constructor(
-        public readonly position: number,
-        public readonly length: number,
+        public readonly start: number,
+        public readonly end: number,
         min?: number, max?: number)
     {
         if (min !== undefined) {
@@ -123,8 +123,8 @@ export class ArgumentCountMismatchMessage implements Message {
 
 export class CannotExpandArgumentMessage implements Message {
     constructor(
-        public readonly position: number,
-        public readonly length: number,
+        public readonly start: number,
+        public readonly end: number,
         private what?: string) {}
     readonly code = 5;
     readonly severity = MessageSeverity.Error;
@@ -134,8 +134,8 @@ export class CannotExpandArgumentMessage implements Message {
 
 export class InvalidArgumentMessage implements Message {
     constructor(
-        public readonly position: number,
-        public readonly length: number,
+        public readonly start: number,
+        public readonly end: number,
         private what?: string) {}
     readonly code = 6;
     readonly severity = MessageSeverity.Error;
@@ -145,8 +145,8 @@ export class InvalidArgumentMessage implements Message {
 
 export class InlineDefinitonInvalidEntityMessage implements Message {
     constructor(
-        public readonly position: number,
-        public readonly length: number) {}
+        public readonly start: number,
+        public readonly end: number) {}
     readonly code = 7;
     readonly severity = MessageSeverity.Error;
     readonly fixes: readonly FixSuggestion[] = []
@@ -155,8 +155,8 @@ export class InlineDefinitonInvalidEntityMessage implements Message {
 
 export class ReachedRecursionLimitMessage implements Message {
     constructor(
-        public readonly position: number,
-        public readonly length: number,
+        public readonly start: number,
+        public readonly end: number,
         private limit: number,
         private what: string) {}
     readonly code = 8;
@@ -169,8 +169,8 @@ export class ReachedRecursionLimitMessage implements Message {
 
 export class SlotUsedOutsideDefinitionMessage implements Message {
     constructor(
-        public readonly position: number,
-        public readonly length: number) {}
+        public readonly start: number,
+        public readonly end: number) {}
     readonly code = 9;
     readonly severity = MessageSeverity.Error;
     readonly fixes: readonly FixSuggestion[] = []
@@ -179,8 +179,8 @@ export class SlotUsedOutsideDefinitionMessage implements Message {
 
 export class CannotPopNotationMessage implements Message {
     constructor(
-        public readonly position: number,
-        public readonly length: number) {}
+        public readonly start: number,
+        public readonly end: number) {}
     readonly code = 10;
     readonly severity = MessageSeverity.Error;
     readonly fixes: readonly FixSuggestion[] = []
@@ -190,8 +190,8 @@ export class CannotPopNotationMessage implements Message {
 // warnings
 
 export class UnnecessaryNewlineMessage extends RemoveThingMessage {
-    constructor(pos: number, len: number) {
-        super(1, MessageSeverity.Warning, pos, len, 
+    constructor(start: number, end: number) {
+        super(1, MessageSeverity.Warning, start, end, 
             'more than one newlines have the same effect as one', 
             'remove the redundant newlines');
     }
@@ -199,7 +199,7 @@ export class UnnecessaryNewlineMessage extends RemoveThingMessage {
 
 export class NewBlockShouldBeOnNewlineMessage extends AddThingMessage {
     constructor(pos: number) {
-        super(2, MessageSeverity.Warning, pos, 0, 
+        super(2, MessageSeverity.Warning, pos, pos,
             'a new block should begin in a new line to avoid confusion', 
             'add a line break', '\n');
     }
@@ -207,7 +207,7 @@ export class NewBlockShouldBeOnNewlineMessage extends AddThingMessage {
 
 export class ContentShouldBeOnNewlineMessage extends AddThingMessage {
     constructor(pos: number) {
-        super(3, MessageSeverity.Warning, pos, 0, 
+        super(3, MessageSeverity.Warning, pos, pos,
             'the content should begin in a new line to avoid confusion', 
             'add a line break', '\n');
     }
@@ -215,8 +215,8 @@ export class ContentShouldBeOnNewlineMessage extends AddThingMessage {
 
 export class NameAlreadyDefinedMessage implements Message {
     constructor(
-        public readonly position: number,
-        public readonly length: number,
+        public readonly start: number,
+        public readonly end: number,
         private what: string) {}
     readonly code = 4;
     readonly severity = MessageSeverity.Warning;
@@ -226,8 +226,8 @@ export class NameAlreadyDefinedMessage implements Message {
 
 export class UndefinedVariableMessage implements Message {
     constructor(
-        public readonly position: number,
-        public readonly length: number,
+        public readonly start: number,
+        public readonly end: number,
         private what: string) {}
     readonly code = 5;
     readonly severity = MessageSeverity.Warning;

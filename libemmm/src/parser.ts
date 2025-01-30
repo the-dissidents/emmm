@@ -247,7 +247,7 @@ class Parser {
         if (!ok && depth == 0) {
             const limit = this.cxt.config.reparseDepthLimit;
             this.emit.message(new ReachedReparseLimitMessage(
-                node.start, node.end - node.start, limit, node.mod.name));
+                node.start, node.end, limit, node.mod.name));
         }
         return ok;
     }
@@ -328,7 +328,7 @@ class Parser {
                 name += this.scanner.acceptChar();
             }
             this.emit.message(
-                new UnknownModifierMessage(posStart, this.scanner.position() - posStart, name));
+                new UnknownModifierMessage(posStart, this.scanner.position(), name));
         }
         const args = this.ARGUMENTS();
         debug.trace(`PARSE ${NodeType[type]}:`, mod.name);
@@ -484,7 +484,8 @@ class Parser {
         assert(!this.scanner.isEOF());
         if (this.scanner.peek(MODIFIER_BLOCK_OPEN)) 
         {
-            this.emit.message(new NewBlockShouldBeOnNewlineMessage(this.scanner.position()))
+            this.emit.message(
+                new NewBlockShouldBeOnNewlineMessage(this.scanner.position()))
             return false;
         }
         if (this.scanner.peek(MODIFIER_INLINE_OPEN)) {

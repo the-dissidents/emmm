@@ -24,7 +24,7 @@ export const DefineInlineMod = new SystemModifierDefinition<{
         const nameValue = name.expansion;
         if (nameValue && cxt.config.inlineModifiers.has(nameValue))
             msgs.push(new NameAlreadyDefinedMessage(
-                node.start, name.end - name.start, nameValue));
+                node.start, name.end, nameValue));
 
         let slotName = '';
         if (node.arguments.length > 1) {
@@ -33,14 +33,14 @@ export const DefineInlineMod = new SystemModifierDefinition<{
                 slotName = /^\(.+\)$/.test(last.expansion) 
                     ? last.expansion.substring(1, last.expansion.length - 1) : '';
             else msgs.push(
-                new InvalidArgumentMessage(last.start, last.end - last.start));
+                new InvalidArgumentMessage(last.start, last.end));
         }
 
         const args = node.arguments.slice(1, (slotName !== '')
             ? node.arguments.length - 1 : undefined).map((x) => 
         {
             if (!x.expansion) msgs.push(
-                new InvalidArgumentMessage(x.start, x.end - x.start));
+                new InvalidArgumentMessage(x.start, x.end));
             return x.expansion ?? '';
         });
         node.state = { name: nameValue, slotName, args, msgs };
@@ -61,7 +61,7 @@ export const DefineInlineMod = new SystemModifierDefinition<{
         if (!immediate || !node.state) return [];
         const arg = node.arguments[0];
         if (!node.state.name) 
-            return [new InvalidArgumentMessage(arg.start, arg.end - arg.start)];
+            return [new InvalidArgumentMessage(arg.start, arg.end)];
 
         const msgs: Message[] = [];
         if (cxt.config.inlineModifiers.has(node.state.name))
@@ -80,7 +80,7 @@ export const DefineInlineMod = new SystemModifierDefinition<{
                     }
                 case NodeType.Preformatted:
                 case NodeType.BlockModifier:
-                    msgs.push(new InlineDefinitonInvalidEntityMessage(n.start, n.end - n.start));
+                    msgs.push(new InlineDefinitonInvalidEntityMessage(n.start, n.end));
                     break;
                 case NodeType.SystemModifier:
                     lastIsParagraph = false;

@@ -23,7 +23,7 @@ export const PopNotationMod =
         const data = cxt.get(builtins)!;
         const result = data.notationStack.pop();
         if (!result) return [
-            new CannotPopNotationMessage(node.start, node.end - node.start)];
+            new CannotPopNotationMessage(node.start, node.end)];
         cxt.config.blockModifiers = new NameManager(result.blocks);
         cxt.config.inlineModifiers = new NameManager(result.inlines);
         return [];

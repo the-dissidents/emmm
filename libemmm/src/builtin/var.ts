@@ -31,11 +31,11 @@ export const GetVarInlineMod = new InlineModifierDefinition<{ value: string; }>(
         const arg = node.arguments[0];
         const id = arg.expansion!;
         if (id == '')
-            return [new InvalidArgumentMessage(arg.start, arg.end - arg.start)];
+            return [new InvalidArgumentMessage(arg.start, arg.end)];
 
         const value = resolveId(id, cxt);
         if (value === undefined)
-            return [new UndefinedVariableMessage(arg.start, arg.end - arg.start, id)];
+            return [new UndefinedVariableMessage(arg.start, arg.end, id)];
         node.state = { value };
         return [];
     },
@@ -82,7 +82,7 @@ export const VarMod = new SystemModifierDefinition<{
         const arg = node.arguments[0];
         const id = arg.expansion!;
         if (id == '')
-            return [new InvalidArgumentMessage(arg.start, arg.end - arg.start)];
+            return [new InvalidArgumentMessage(arg.start, arg.end)];
         node.state = {
             id,
             value: node.arguments[1].expansion!

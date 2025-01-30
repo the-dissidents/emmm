@@ -36,14 +36,14 @@ function slotModifier<T extends NodeType.InlineModifier | NodeType.BlockModifier
             const arg = node.arguments[0];
             if (!arg.expansion) {
                 node.state = { ok: false };
-                return [new InvalidArgumentMessage(arg.start, arg.end - arg.start)];
+                return [new InvalidArgumentMessage(arg.start, arg.end)];
             }
             id = arg.expansion;
         }
         if (data.length == 0) {
             if (immediate) {
                 node.state = { ok: false };
-                return [new SlotUsedOutsideDefinitionMessage(node.start, node.head.end - node.start)];
+                return [new SlotUsedOutsideDefinitionMessage(node.start, node.head.end)];
             }
             return [];
         }
@@ -63,7 +63,7 @@ function slotModifier<T extends NodeType.InlineModifier | NodeType.BlockModifier
         if (immediate) {
             node.state = { ok: false };
             const arg = node.arguments[0];
-            return [new InvalidArgumentMessage(arg.start, arg.end - arg.start, id)];
+            return [new InvalidArgumentMessage(arg.start, arg.end, id)];
         }
         return [];
     };

@@ -37,8 +37,8 @@ export type FixSuggestion = {
 
 export type Message = {
     readonly severity: MessageSeverity,
-    readonly position: number,
-    readonly length: number,
+    readonly start: number,
+    readonly end: number,
     readonly info: string,
     readonly code: number,
     readonly fixes: readonly FixSuggestion[]

@@ -29,14 +29,14 @@ export const DefineBlockMod = new SystemModifierDefinition<{
                 slotName = /^\(.+\)$/.test(last.expansion) 
                     ? last.expansion.substring(1, last.expansion.length - 1) : '';
             else msgs.push(
-                new InvalidArgumentMessage(last.start, last.end - last.start));
+                new InvalidArgumentMessage(last.start, last.end));
         }
 
         const args = node.arguments.slice(1, (slotName !== '')
             ? node.arguments.length - 1 : undefined).map((x) => 
         {
             if (!x.expansion) msgs.push(
-                new InvalidArgumentMessage(x.start, x.end - x.start));
+                new InvalidArgumentMessage(x.start, x.end));
             return x.expansion ?? '';
         });
         node.state = { name: nameValue, slotName, args, msgs };
@@ -57,10 +57,10 @@ export const DefineBlockMod = new SystemModifierDefinition<{
         if (!immediate || !node.state) return [];
         const arg = node.arguments[0];
         if (!node.state.name) 
-            return [new InvalidArgumentMessage(arg.start, arg.end - arg.start)];
+            return [new InvalidArgumentMessage(arg.start, arg.end)];
         if (cxt.config.blockModifiers.has(node.state.name))
             return [new NameAlreadyDefinedMessage(
-                arg.start, arg.end - arg.start, node.state.name)];
+                arg.start, arg.end, node.state.name)];
         return [];
     },
     expand(node, cxt, immediate) {
