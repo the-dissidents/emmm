@@ -183,18 +183,26 @@ A colon before the first argument states explicitly the beginning of that argume
 
 > Not implemented yet
 
-[**-define-inline-shorthand** *opening*:*ending*:]  
-[**-define-inline-shorthand** *opening*:(*slot*):*ending*:]  
-[**-define-inline-shorthand** *opening*:(*slot1*):*mid1*:(*slot2*):*mid2*:(*slot3*)...:*ending*:]
+[**-define-inline-shorthand** *prefix*]  
+[**-define-inline-shorthand** *prefix*:(*slot*):*postfix*]  
+[**-define-inline-shorthand** *prefix*:*arg1*:*mid1*:*arg2*:*mid2*...]  
+[**-define-inline-shorthand** *prefix*:*arg1*:*mid1*:*arg2*:*mid2*...:(*slot*):*postfix*]  
 
-> Not implemented yet
+> Defines an inline shorthand. A shorthand notation consists of a prefix, zero or more pairs of argument and middle part, and optionally a slot and a postfix. You must specify a slot name if you want to use one, although you can specify an empty one using `()`. You may also specify an *empty* last argument, i.e. a `:` before the `]` that ends the modifier head, to make the postfix stand out better.
+> ```
+> [-inline-shorthand:\[!:url:|:():\]:] content
+> ```
+> This creates: `[!` argument:url `|` slot `]`
+> ```
+> [-inline-shorthand:\[!:url:|:text:\]:] content
+> ```
+> This creates: `[!` argument:url `|` argument:text `]`
+> 
+> Note the first shorthand has a slot, while the second doesn't. This means you can't put formatted content as text in the second shorthand.
 
-[**-push-notation**]  
-[**-pop-notation**]
+[**-use** *module-name*]
 
-> Pushes the current notation data (modifiers and shorthands) onto a stack, or pop the stack to revert to the situation before pushing.
->
-> This is useful, for example, when you implement a `[.table]` modifier and want to have a lot of shorthands for table rows and cells etc. that only function inside this modifier. In this case, functioning everywhere just doesn't make sense and pollutes the syntax.
+> Activates the definitions in a module for the whole document; see `[.use]`.
 
 ### Block modifiers
 
@@ -217,6 +225,14 @@ A colon before the first argument states explicitly the beginning of that argume
 > [.q] 456
 > ```
 > Note the first, unnamed `.slot` refers to the slot of `q`.
+
+[**.module** *module-name*]
+
+> Causes the definitions in the content to become part of a **module**. They don't take effect outside the `[.module]` modifier *unless* activated by a `[.use]` or `[-use]` modifier.
+
+[**.use** *module-name*]
+
+> Activates the definitions in a module for the content *within this modifier*. Use `[-use]` to activate for the whole document instead.
 
 ### Inline modifiers
 

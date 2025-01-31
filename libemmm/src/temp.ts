@@ -2,9 +2,8 @@ import { SimpleScanner } from "./front";
 import * as Parser from "./parser";
 import { BuiltinConfiguration } from "./builtin/builtin";
 import { debug, DebugLevel } from "./debug";
-import { BlockModifierDefinition, Configuration, InlineModifierDefinition, ModifierFlags, NodeType } from "./interface";
+import { BlockModifierDefinition, Configuration, ModifierFlags } from "./interface";
 import { debugDumpDocument, stripDocument } from "./util";
-import { checkArguments } from "./modifier-helper";
 
 const TestConfig = new Configuration(BuiltinConfiguration);
 TestConfig.blockModifiers.add(
@@ -21,9 +20,9 @@ Version [/$version], created by [/$name]
 `;
 
 text2 = String.raw`
-[-define-inline p:x][-define-inline q:x][/$x]
-
-[/p:0;][/q:1;]`;
+[.module a][-inline-shorthand p]123
+[-define-block q][.use a][.slot]
+[.q]p`;
 
 debug.level = DebugLevel.Trace;
 let scanner = new SimpleScanner(text2);

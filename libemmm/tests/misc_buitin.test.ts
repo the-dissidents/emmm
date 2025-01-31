@@ -19,28 +19,89 @@ function parse(src: string) {
 }
 debug.level = DebugLevel.Warning;
 
-describe('[-push-notation] [-pop-notation]', () => {
-    test('block', () => {
-        let doc = parse(`
-[-define-block p;][-push-notation][-define-block q;][-push-notation][-define-block r;]\n[.p;][.q;][.r;]\n[-pop-notation][.p;][.q;][.r;]\n[-pop-notation][.p;][.q;][.r;]`);
-        expect.soft(doc.messages).toMatchObject([
-            { code: 2, what: 'r' },
-            { code: 2, what: 'q' },
-            { code: 2, what: 'r' }
+describe('modules', () => {
+    test('content scoping: shorthands', () => {
+        let doc = parse(`[.module test][-inline-shorthand p] 123\n\np\n[.use test] p\n\np`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'p' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'p' }] }
         ]);
     });
-    test('inline', () => {
-        let doc = parse(`
-[-define-inline p;][-push-notation][-define-inline q;][-push-notation][-define-inline r;]\n[/p;][/q;][/r;]\n[-pop-notation][/p;][/q;][/r;]\n[-pop-notation][/p;][/q;][/r;]`);
+    test('content scoping: modifiers', () => {
+        let doc = parse(`[.module test]:--\n[-define-inline p]123\n[-define-block q]456\n--:\n[/p;]\n[.q;]\n[.use test]:--\n[/p;]\n[.q;]\n--:\n[/p;]\n[.q;]`);
         expect.soft(doc.messages).toMatchObject([
-            { code: 2, what: 'r' },
+            { code: 2, what: 'p' },
             { code: 2, what: 'q' },
-            { code: 2, what: 'r' }
+            { code: 2, what: 'p' },
+            { code: 2, what: 'q' },
+        ]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.InlineModifier }] },
+            { type: NodeType.BlockModifier },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.InlineModifier }] },
+            { type: NodeType.BlockModifier },
         ]);
     });
-    test('error - cannot pop', () => {
-        let doc = parse(`[-push-notation][-pop-notation][-pop-notation]`);
-        expect.soft(doc.messages).toMatchObject([{ code: 10 }]);
+    test('preserves outer definitions', () => {
+        let doc = parse(`[-define-inline p]123\n[-define-block q]456\n[-inline-shorthand r]789\n[.module test][-inline-shorthand s] abc\n\n[/p;]\n[.q;]\nrs\n[.use test]:--\n[/p;]\n[.q;]\nrs\n--:\n[/p;]\n[.q;]\nrs`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] },
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '789' },
+                { type: NodeType.Text, content: 's' }
+            ] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] },
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '789' },
+                { type: NodeType.Text, content: 'abc' }
+            ] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] },
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '789' },
+                { type: NodeType.Text, content: 's' }
+            ] },
+        ]);
+    });
+    test('definition merging', () => {
+        let doc = parse(`[.module a][-define-inline p]123\n[.use a][/p;]\n[.module a][-inline-shorthand q]456\n[.use a]q[/p;]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '456' },
+                { type: NodeType.Text, content: '123' }
+            ] },
+        ]);
+    });
+    test('error: nested modules', () => {
+        let doc = parse(`[.module a][.module b;]`);
+        expect.soft(doc.messages).toMatchObject([
+            { code: 10, severity: MessageSeverity.Error }
+        ]);
         expect.soft(doc.root.content).toMatchObject([]);
+    });
+    test('error: use self', () => {
+        let doc = parse(`[.module a]123\n[.module a][.use a]456`);
+        expect.soft(doc.messages).toMatchObject([
+            { code: 11, severity: MessageSeverity.Error }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([]);
+    });
+    test('warning: overwrite definitions', () => {
+        let doc = parse(`[.module a][-inline-shorthand p]123\n[-inline-shorthand p]456\n[.use a]p`);
+        expect.soft(doc.messages).toMatchObject([
+            { code: 6, severity: MessageSeverity.Warning }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
+        ]);
     });
 });

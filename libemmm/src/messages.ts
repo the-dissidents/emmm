@@ -177,14 +177,24 @@ export class SlotUsedOutsideDefinitionMessage implements Message {
     get info(): string { return `slot used outside a definition` }
 }
 
-export class CannotPopNotationMessage implements Message {
+export class NoNestedModuleMessage implements Message {
     constructor(
         public readonly start: number,
         public readonly end: number) {}
     readonly code = 10;
     readonly severity = MessageSeverity.Error;
     readonly fixes: readonly FixSuggestion[] = []
-    get info(): string { return `cannot pop notation` }
+    get info(): string { return `nested module definitions not allowed` }
+}
+
+export class CannotUseModuleInSelfMessage implements Message {
+    constructor(
+        public readonly start: number,
+        public readonly end: number) {}
+    readonly code = 11;
+    readonly severity = MessageSeverity.Error;
+    readonly fixes: readonly FixSuggestion[] = []
+    get info(): string { return `cannot use the same module inside its definition` }
 }
 
 // warnings
@@ -233,4 +243,15 @@ export class UndefinedVariableMessage implements Message {
     readonly severity = MessageSeverity.Warning;
     readonly fixes: readonly FixSuggestion[] = []
     get info(): string { return `variable is undefined, will expand to empty string: ${this.what}` }
+}
+
+export class OverwriteDefinitionsMessage implements Message {
+    constructor(
+        public readonly start: number,
+        public readonly end: number,
+        private what: string) {}
+    readonly code = 6;
+    readonly severity = MessageSeverity.Warning;
+    readonly fixes: readonly FixSuggestion[] = []
+    get info(): string { return `using this module will overwrite: ${this.what}` }
 }

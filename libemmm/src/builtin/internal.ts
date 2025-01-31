@@ -1,9 +1,10 @@
 import { debug } from "../debug";
-import { BlockEntity, InlineEntity } from "../interface";
+import { BlockEntity, BlockShorthand, InlineEntity, InlineShorthand } from "../interface";
 import { ParseContext, ModifierNode, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags, NodeType } from "../interface";
 import { checkArguments } from "../modifier-helper";
 import { _Ent, _Def } from "../typing-helper";
 import { debugPrintNodes, cloneNodes, assert } from "../util";
+import { ConfigDefinitions } from "./module";
 
 export type ModifierSignature = {
     slotName: string,
@@ -31,12 +32,9 @@ declare module '../interface' {
             inlineSlotDelayedStack: ModifierSignature[];
             blockSlotData: [string, BlockInstantiationData][];
             inlineSlotData: [string, InlineInstantiationData][];
-            notationStack: {
-                blocks: readonly BlockModifierDefinition<unknown>[],
-                inlines: readonly InlineModifierDefinition<unknown>[],
-                inlineShorthands: readonly InlineShorthand<unknown>[],
-                blockShorthands: readonly BlockShorthand<unknown>[]
-            }[];
+            modules: Map<string, ConfigDefinitions>;
+            usedModules: Set<string>;
+            insideModule: string | undefined;
         };
     }
 }
@@ -47,7 +45,9 @@ export function initParseContext(cxt: ParseContext) {
         inlineSlotDelayedStack: [],
         blockSlotData: [],
         inlineSlotData: [],
-        notationStack: []
+        modules: new Map(),
+        usedModules: new Set(),
+        insideModule: undefined
     });
 }
 

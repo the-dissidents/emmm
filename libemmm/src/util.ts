@@ -1,28 +1,32 @@
 import { debug } from "./debug";
-import { Document, Message, MessageSeverity, DocumentNode, PositionRange, ArgumentEntity, ModifierArgument, NodeType } from "./interface";
+import { Document, Message, MessageSeverity, DocumentNode, PositionRange, ArgumentEntity, ModifierArgument, NodeType, InlineModifierDefinition, BlockModifierDefinition, InlineShorthand } from "./interface";
 import { ReferredMessage } from "./messages";
-
 
 // TODO: use a prefix tree to find names?
 export class NameManager<T extends {name: string}> {
     private array: {k: string, v: T}[] = [];
     private data = new Map<string, T>();
     
-    constructor(from?: ReadonlyNameManager<T> | readonly T[]) {
+    constructor(from?: ReadonlyNameManager<T> | readonly T[] | ReadonlySet<T>) {
         if (from === undefined) return;
         if (from instanceof NameManager) {
             this.array = [...from.array];
             this.data = new Map(from.data);
         } else {
-            assert(Array.isArray(from));
-            this.array = from.map((x) => ({k: x.name, v: x}));
+            const array = [...from as (readonly T[] | ReadonlySet<T>)];
+            assert((from instanceof Set ? from : new Set(array)).size == array.length);
+            this.array = array.map((x) => ({k: x.name, v: x}));
             this.array.sort((a, b) => b.k.length - a.k.length);
-            this.data = new Map(from.map((x) => [x.name, x]));
+            this.data = new Map(array.map((x) => [x.name, x]));
         }
     }
 
-    toArray(): readonly T[] {
+    toArray(): T[] {
         return this.array.map(({v}) => v);
+    }
+
+    toSet(): Set<T> {
+        return new Set(this.toArray());
     }
 
     get(name: string) {
@@ -101,7 +105,6 @@ const cloneArgument = (arg: ModifierArgument): ModifierArgument => ({
         }
     })
 });
-
 
 export function cloneNode(node: DocumentNode, referring?: PositionRange): DocumentNode {
     switch (node.type) {
