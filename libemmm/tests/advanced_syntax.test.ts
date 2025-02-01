@@ -2,7 +2,6 @@ import { describe, expect, test } from "vitest";
 import { BuiltinConfiguration } from "../src/builtin/builtin";
 import { SimpleScanner } from "../src/front";
 import * as Parser from "../src/parser";
-import { stripDocument } from "../src/util";
 import { BlockModifierDefinition, Configuration, InlineModifierDefinition, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
 
@@ -13,8 +12,7 @@ TestConfig.blockModifiers.add(
 
 function parse(src: string) {
     const config = new Configuration(TestConfig);
-    let doc = Parser.parse(new SimpleScanner(src), config);
-    stripDocument(doc);
+    let doc = Parser.parse(new SimpleScanner(src), config).toStripped();
     return doc;
 }
 

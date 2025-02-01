@@ -1,8 +1,9 @@
 import { debug } from "./debug";
+import { debugPrint } from "./debug-print";
 import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType, InlineShorthand } from "./interface";
 import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, ReachedRecursionLimitMessage as ReachedReparseLimitMessage, ReferredMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
 import { _Def } from "./typing-helper";
-import { assert, debugPrintNodes, has, NameManager } from "./util";
+import { assert, has, NameManager } from "./util";
 
 const GROUP_BEGIN = ':--';
 const GROUP_END = '--:';
@@ -40,7 +41,7 @@ class EmitEnvironment {
         const referringReverse = [...this.referringStack].reverse();
         for (let msg of m) {
             for (const range of referringReverse)
-                msg = new ReferredMessage(msg, range.start, range.end - range.start);
+                msg = new ReferredMessage(msg, range.start, range.end);
             this.messages.push(msg);
             debug.trace('issued msg', msg.code, msg.info);
         }
@@ -229,7 +230,7 @@ class Parser {
             }
             debug.trace(`${this.delayDepth > 0 ? 'early ' : ''}expanding:`, node.mod.name);
             if (node.expansion.length > 0)
-                debug.trace(() => '-->\n' + debugPrintNodes(node.expansion!, '  '));
+                debug.trace(() => '-->\n' + debugPrint.node(...node.expansion!));
         }
 
         const expansion = node.expansion ?? node.content;

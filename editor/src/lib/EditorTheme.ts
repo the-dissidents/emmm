@@ -1,7 +1,8 @@
+import { closeBrackets } from "@codemirror/autocomplete";
 import { defaultKeymap, history, indentWithTab } from "@codemirror/commands";
 import { linter, type Diagnostic } from "@codemirror/lint";
 import { EditorState, Facet, RangeSet, RangeSetBuilder, StateEffect, StateField, Text, type Extension } from "@codemirror/state";
-import { Decoration, drawSelection, EditorView, gutter, GutterMarker, keymap, lineNumbers, ViewPlugin, ViewUpdate, type DecorationSet } from "@codemirror/view";
+import { Decoration, drawSelection, EditorView, gutter, GutterMarker, highlightWhitespace, keymap, lineNumbers, ViewPlugin, ViewUpdate, type DecorationSet } from "@codemirror/view";
 import * as emmm from '@the_dissidents/libemmm';
 
 enum FoldUnit {
@@ -339,7 +340,9 @@ export let DefaultTheme = EditorView.baseTheme({
     ".cm-lineNumbers .cm-gutterElement": {
         // TODO: vertically center text
     },
-
+    ".cm-highlightSpace": {
+        backgroundImage: "radial-gradient(circle at 50% 55%, #fff 15%, transparent 5%)"
+    },
     ".em-pre": {
         fontFamily: 'Courier'
     },
@@ -410,6 +413,8 @@ export function createEditorState(text: Text | string, exts: Extension[]) {
             EmmmLanguageSupport,
             lineNumbers(),
             drawSelection(),
+            closeBrackets(),
+            highlightWhitespace(),
             exts
         ],
     });

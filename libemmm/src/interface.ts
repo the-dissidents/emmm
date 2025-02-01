@@ -1,5 +1,6 @@
 
-import { assert, debugDumpDocument, NameManager, ReadonlyNameManager } from "./util"
+import { debug } from "./debug";
+import { assert, cloneNode, NameManager, ReadonlyNameManager } from "./util";
 
 // The scanner of any implementation should be capable of handling UTF-8 
 // strings at least as well as Typescript.
@@ -236,12 +237,34 @@ export class ParseContext {
 
 export class Document {
     constructor(
-        public root: RootNode,
-        public context: ParseContext,
-        public messages: Message[]) {};
+        public readonly root: RootNode,
+        public readonly context: ParseContext,
+        public readonly messages: readonly Message[]) {};
     
-    debugPrint(source: string) {
-        return debugDumpDocument(this, source)
+    toStripped() {
+        function stripNode(node: DocumentNode): DocumentNode[] {
+            switch (node.type) {
+                case NodeType.Preformatted:
+                case NodeType.Text:
+                case NodeType.Escaped:
+                    return [node];
+                case NodeType.BlockModifier:
+                case NodeType.InlineModifier:
+                    if (node.expansion !== undefined)
+                        return node.expansion.flatMap((x) => stripNode(x));
+                case NodeType.Paragraph:
+                case NodeType.Root:
+                    node.content = node.content.flatMap((x) => stripNode(x)) as any;
+                    return [node];
+                case NodeType.SystemModifier:
+                    return [];
+                default:
+                    return debug.never(node);
+            }
+        }
+        let doc = new Document(
+            stripNode(cloneNode(this.root))[0] as RootNode, this.context, this.messages);
+        return doc;
     }
 }
 

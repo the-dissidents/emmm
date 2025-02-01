@@ -1,4 +1,5 @@
 import { debug } from "../debug";
+import { debugPrint } from "../debug-print";
 import { BlockModifierDefinition, BlockShorthand, Configuration, InlineModifierDefinition, InlineShorthand, Message, ModifierFlags, ParseContext, SystemModifierDefinition } from "../interface";
 import { CannotUseModuleInSelfMessage, InvalidArgumentMessage, NoNestedModuleMessage, OverwriteDefinitionsMessage } from "../messages";
 import { checkArguments } from "../modifier-helper";
@@ -33,28 +34,6 @@ function applyDefs(cxt: ParseContext, defs: ConfigDefinitions) {
     cxt.config.blockShorthands = new NameManager(defs.blockShorthands);
 }
 
-function printBlockModDef(x: BlockModifierDefinition<any>) {
-    return `[.${x.name}] (${ModifierFlags[x.flags]})`;
-}
-
-function printInlineModDef(x: InlineModifierDefinition<any>) {
-    return `[/${x.name}] (${ModifierFlags[x.flags]})`;
-}
-
-function printInlineShorthandDef(x: InlineShorthand<any>) {
-    return x.name 
-        + x.parts.map((x, i) => ` .. <arg${i}> .. ${x}`).join('') 
-        + (has(x.mod.flags, ModifierFlags.Marker)
-            ? '' : ` .. <slot> .. ${x.postfix ?? '<no postfix>'}`);
-}
-
-function printBlockShorthandDef(x: BlockShorthand<any>) {
-    return x.name 
-        + x.parts.map((x, i) => ` .. <arg${i}> .. ${x}`).join('') 
-        + (has(x.mod.flags, ModifierFlags.Marker)
-            ? '' : ` .. <slot> .. ${x.postfix ?? '<no postfix>'}`);
-}
-
 function add<T extends {name: string}>(
     snew: ReadonlySet<T>, sold: ReadonlySet<T>, transform: (x: T) => string
 ): [Set<T>, string] {
@@ -82,13 +61,13 @@ function diffDef(cnew: ConfigDefinitions, cold: ConfigDefinitions): ConfigDefini
 
 function addDef(cnew: ConfigDefinitions, cold: ConfigDefinitions): [ConfigDefinitions, string] {
     let [blocks, s1] = 
-        add(cnew.blocks, cold.blocks, printBlockModDef);
+        add(cnew.blocks, cold.blocks, debugPrint.blockModifier);
     let [inlines, s2] =
-        add(cnew.inlines, cold.inlines, printInlineModDef);
+        add(cnew.inlines, cold.inlines, debugPrint.inlineModifier);
     let [inlineShorthands, s3] = 
-        add(cnew.inlineShorthands, cold.inlineShorthands, printInlineShorthandDef);
+        add(cnew.inlineShorthands, cold.inlineShorthands, debugPrint.inlineShorthand);
     let [blockShorthands, s4] = 
-        add(cnew.blockShorthands, cold.blockShorthands, printBlockShorthandDef);
+        add(cnew.blockShorthands, cold.blockShorthands, debugPrint.blockShorthand);
     return [{
         usedModules: cnew.usedModules.union(cold.usedModules),
         blocks, inlines, inlineShorthands, blockShorthands

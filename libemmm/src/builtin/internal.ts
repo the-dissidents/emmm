@@ -1,9 +1,10 @@
 import { debug } from "../debug";
+import { debugPrint } from "../debug-print";
 import { BlockEntity, BlockShorthand, InlineEntity, InlineShorthand } from "../interface";
 import { ParseContext, ModifierNode, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags, NodeType } from "../interface";
 import { checkArguments } from "../modifier-helper";
 import { _Ent, _Def } from "../typing-helper";
-import { debugPrintNodes, cloneNodes, assert } from "../util";
+import { cloneNodes, assert } from "../util";
 import { ConfigDefinitions } from "./module";
 
 export type ModifierSignature = {
@@ -56,7 +57,7 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
 {
     debug.info(`created custom ${NodeType[type]}:`, name);
     debug.info('args:', argNames, `with ${slotName == '' ? 'no slot name' : 'slot name: ' + slotName}`);
-    debug.trace(() => 'content is\n' + debugPrintNodes(content));
+    debug.trace(() => 'content is\n' + debugPrint.node(...content));
 
     type State = {
         ok: boolean,

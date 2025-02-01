@@ -6,6 +6,7 @@ export * from './parser';
 export * as messages from './messages';
 export * from './builtin/builtin';
 export { DebugLevel } from './debug';
+export { debugPrint } from './debug-print';
 
 export function setDebugLevel(level: DebugLevel) {
     debug.level = level;
