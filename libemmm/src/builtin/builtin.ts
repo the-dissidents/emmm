@@ -1,7 +1,6 @@
 import { Configuration, ReadonlyConfiguration } from "../interface";
-import { DefineBlockMod } from "./define-block";
-import { DefineInlineMod } from "./define-inline";
-import { DefineInlineShorthandMod } from "./define-shorthand";
+import { DefineBlockMod, DefineInlineMod } from "./define-modifier";
+import { DefineBlockShorthandMod, DefineInlineShorthandMod } from "./define-shorthand";
 import { initParseContext } from "./internal";
 import { ModuleMod, UseBlockMod, UseSystemMod } from "./module";
 import { SlotBlockMod, SlotInlineMod } from "./slot";
@@ -10,7 +9,8 @@ import { VarMod, GetVarInlineMod, GetVarInterpolator, PrintInlineMod } from "./v
 let basic = new Configuration();
 basic.initializers = [initParseContext];
 basic.systemModifiers.add(
-    DefineBlockMod, DefineInlineMod, DefineInlineShorthandMod,
+    DefineBlockMod, DefineInlineMod, 
+    DefineBlockShorthandMod, DefineInlineShorthandMod, 
     VarMod, 
     UseSystemMod);
 basic.blockModifiers.add(

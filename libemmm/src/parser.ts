@@ -1,8 +1,8 @@
 import { debug } from "./debug";
 import { debugPrint } from "./debug-print";
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType, InlineShorthand } from "./interface";
-import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, ReachedRecursionLimitMessage as ReachedReparseLimitMessage, ReferredMessage, UnclosedInlineModifierMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
-import { _Def } from "./typing-helper";
+import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
+import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, ReachedRecursionLimitMessage as ReachedReparseLimitMessage, ReferredMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
+import { _Def, _Node, _Shorthand } from "./typing-helper";
 import { assert, has, NameManager } from "./util";
 
 const GROUP_BEGIN = ':--';
@@ -302,11 +302,18 @@ class Parser {
             this.MODIFIER(NodeType.SystemModifier);
             return;
         }
+
+        const short = this.cxt.config.blockShorthands.find((x) => this.scanner.accept(x.name));
+        if (short) return this.SHORTHAND(NodeType.BlockModifier, short);
+
         // simple paragraph(s)
         this.MAYBE_GROUPED_PARAGRAPH();
     }
 
-    private MODIFIER<Type extends NodeType.BlockModifier | NodeType.SystemModifier | NodeType.InlineModifier>(type: Type) {
+    private MODIFIER
+        <Type extends NodeType.BlockModifier | NodeType.SystemModifier | NodeType.InlineModifier>
+        (type: Type): boolean 
+    {
         const posStart = this.scanner.position();
         assert(this.scanner.accept({
             [NodeType.BlockModifier]: MODIFIER_BLOCK_OPEN,
@@ -335,15 +342,13 @@ class Parser {
 
         const endsign = this.scanner.accept(MODIFIER_END_SIGN);
         const flagMarker = has(mod.flags, ModifierFlags.Marker);
-        const isMarker = flagMarker || endsign;
         if (!this.scanner.accept(MODIFIER_CLOSE_SIGN))
             this.emit.message(new ExpectedMessage(
                 this.scanner.position(), MODIFIER_CLOSE_SIGN));
 
         const headEnd = this.scanner.position();
         const node: ModifierNode = {
-            type: type as any, 
-            mod: mod as any,
+            type, mod: mod as any,
             head: {start: posStart, end: headEnd},
             arguments: args,
             start: posStart, end: headEnd,
@@ -351,49 +356,8 @@ class Parser {
             expansion: undefined
         };
 
-        this.#expandArguments(node);
-
-        const immediate = this.delayDepth == 0;
-        if (node.mod.beforeParseContent)
-            this.emit.message(...node.mod.beforeParseContent(node as any, this.cxt, immediate));
-        if (node.mod.delayContentExpansion) this.delayDepth++;
-
-        let ok = true;
-        if (isMarker) {
-            if (type === NodeType.InlineModifier) this.emit.addInlineNode(node as InlineEntity);
-            else this.emit.addBlockNode(node as BlockEntity);
-        } else if (type == NodeType.InlineModifier) {
-            this.emit.startInline(node as any);
-            const entity = has(mod.flags, ModifierFlags.Preformatted)
-                ? this.PREFORMATTED_INLINE_ENTITY.bind(this)
-                : this.INLINE_ENTITY.bind(this);
-            while (true) {
-                if (this.scanner.accept(MODIFIER_INLINE_END_TAG)) break;
-                if (this.scanner.isEOF() || !(ok = entity())) {
-                    this.emit.message(new UnclosedInlineModifierMessage(
-                        this.scanner.position(), mod.name));
-                    break;
-                }
-            }
-            this.emit.endInline();
-        } else {
-            this.emit.startBlock(node as any);
-            this.WARN_IF_MORE_NEWLINES_THAN(1);
-            if (!this.scanner.isEOF()) {
-                if (has(mod.flags, ModifierFlags.Preformatted))
-                    this.PRE_PARAGRAPH();
-                else
-                    this.BLOCK_ENTITY();
-            }
-            this.emit.endBlock();
-        }
-        const last = node.content.at(-1);
-        node.actualEnd = last?.actualEnd ?? last?.end;
-        if (node.mod.delayContentExpansion) this.delayDepth--;
-        if (node.mod.afterParseContent)
-            this.emit.message(...node.mod.afterParseContent(node as any, this.cxt, immediate));
-        this.#expand(node);
-        return ok;
+        const isMarker = flagMarker || endsign;
+        return this.MODIFIER_BODY(type, node, MODIFIER_INLINE_END_TAG, isMarker);
     }
 
     // also handles "grouped" (delimited) pre-paragraphs
@@ -417,8 +381,8 @@ class Parser {
                  || (!grouped && this.scanner.accept('\n'))) break;
 
                 if (this.scanner.isEOF()) {
-                    if (grouped) this.emit.message(new ExpectedMessage(
-                        this.scanner.position(), GROUP_END));
+                    if (grouped) this.emit.message(
+                        new ExpectedMessage(this.scanner.position(), GROUP_END));
                     break;
                 }
                 string += white;
@@ -455,8 +419,8 @@ class Parser {
                 this.WARN_IF_MORE_NEWLINES_THAN(1);
             }
             // EOF
-            this.emit.message(new ExpectedMessage(
-                this.scanner.position(), GROUP_END))
+            this.emit.message(
+                new ExpectedMessage(this.scanner.position(), GROUP_END));
         } else {
             this.PARAGRAPH();
         }
@@ -480,7 +444,10 @@ class Parser {
     }
 
     // returns false if breaking out of paragraph
-    private INLINE_SHORTHAND(d: InlineShorthand<unknown>): boolean {
+    private SHORTHAND
+        <Type extends NodeType.BlockModifier | NodeType.InlineModifier>
+        (type: Type, d: _Shorthand<Type>): boolean 
+    {
         const posStart = this.scanner.position() - d.name.length;
         let args: ModifierArgument[] = [];
         for (const part of d.parts) {
@@ -494,8 +461,7 @@ class Parser {
 
         const headEnd = this.scanner.position();
         const node: ModifierNode = {
-            type: NodeType.InlineModifier, 
-            mod: d.mod,
+            type, mod: d.mod as any,
             head: {start: posStart, end: headEnd},
             arguments: args,
             start: posStart, end: headEnd,
@@ -503,30 +469,50 @@ class Parser {
             expansion: undefined
         };
 
-        this.#expandArguments(node);
+        const isMarker = has(node.mod.flags, ModifierFlags.Marker);
+        return this.MODIFIER_BODY<Type>(type, node, d.postfix, isMarker);
+    }
 
+    private MODIFIER_BODY
+        <Type extends NodeType.BlockModifier | NodeType.InlineModifier | NodeType.SystemModifier>
+        (type: Type, node: ModifierNode, postfix: string | undefined, isMarker: boolean) 
+    {
+        this.#expandArguments(node);
         const immediate = this.delayDepth == 0;
         if (node.mod.beforeParseContent)
             this.emit.message(...node.mod.beforeParseContent(node as any, this.cxt, immediate));
         if (node.mod.delayContentExpansion) this.delayDepth++;
 
         let ok = true;
-        if (has(d.mod.flags, ModifierFlags.Marker)) {
-            this.emit.addInlineNode(node);
-        } else {
-            this.emit.startInline(node);
-            const entity = has(d.mod.flags, ModifierFlags.Preformatted)
+        if (isMarker) {
+            if (type === NodeType.InlineModifier) this.emit.addInlineNode(node as InlineEntity);
+            else this.emit.addBlockNode(node as BlockEntity);
+        } else if (type == NodeType.InlineModifier) {
+            this.emit.startInline(node as InlineModifierNode<unknown>);
+            const entity = has(node.mod.flags, ModifierFlags.Preformatted)
                 ? this.PREFORMATTED_INLINE_ENTITY.bind(this)
                 : this.INLINE_ENTITY.bind(this);
             while (true) {
-                if (d.postfix && this.scanner.accept(d.postfix)) break;
+                if (postfix && this.scanner.accept(postfix)) break;
                 if (this.scanner.isEOF() || !(ok = entity())) {
-                    if (d.postfix) this.emit.message(
-                        new ExpectedMessage(this.scanner.position(), d.postfix));
+                    // TODO: use error 3
+                    if (postfix) this.emit.message(
+                        new ExpectedMessage(this.scanner.position(), postfix));
                     break;
                 }
             }
             this.emit.endInline();
+        } else {
+            this.emit.startBlock(node as any);
+            this.WARN_IF_MORE_NEWLINES_THAN(1);
+            if (!this.scanner.isEOF()) {
+                if (has(node.mod.flags, ModifierFlags.Preformatted))
+                    this.PRE_PARAGRAPH();
+
+                else
+                    this.BLOCK_ENTITY();
+            }
+            this.emit.endBlock();
         }
 
         const last = node.content.at(-1);
@@ -547,17 +533,14 @@ class Parser {
                 new NewBlockShouldBeOnNewlineMessage(this.scanner.position()))
             return false;
         }
-        if (this.scanner.peek(MODIFIER_INLINE_OPEN)) {
+        if (this.scanner.peek(MODIFIER_INLINE_OPEN))
             return this.MODIFIER(NodeType.InlineModifier);
-        }
-        if (this.scanner.peek(MODIFIER_SYSTEM_OPEN)) {
+        if (this.scanner.peek(MODIFIER_SYSTEM_OPEN))
             return false;
-        }
 
         const short = this.cxt.config.inlineShorthands.find((x) => this.scanner.accept(x.name));
-        if (short) return this.INLINE_SHORTHAND(short);
+        if (short) return this.SHORTHAND(NodeType.InlineModifier, short);
 
-        // TODO: don't know if this is enough
         if (this.scanner.accept('\\')) {
             if (this.scanner.isEOF()) {
                 this.emit.addString('\\');

@@ -200,7 +200,7 @@ type Shorthand<TMod> = {
     parts: readonly string[],
     postfix: string | undefined,
     mod: TMod
-}
+};
 
 export type BlockShorthand<TState> = Shorthand<BlockModifierDefinition<TState>>;
 export type InlineShorthand<TState> = Shorthand<InlineModifierDefinition<TState>>;

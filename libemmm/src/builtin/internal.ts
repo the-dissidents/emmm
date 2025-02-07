@@ -1,7 +1,8 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { BlockEntity, BlockShorthand, InlineEntity, InlineShorthand } from "../interface";
+import { BlockEntity, BlockShorthand, InlineEntity, InlineShorthand, Message, SystemModifierNode } from "../interface";
 import { ParseContext, ModifierNode, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags, NodeType } from "../interface";
+import { InlineDefinitonInvalidEntityMessage } from "../messages";
 import { checkArguments } from "../modifier-helper";
 import { _Ent, _Def } from "../typing-helper";
 import { cloneNodes, assert } from "../util";
@@ -110,4 +111,28 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
     return mod;
 }
 
-
+export function makeInlineDefinition(node: SystemModifierNode<any>, msgs: Message[]) {
+    let lastIsParagraph = false;
+    let concat: InlineEntity[] = [];
+    for (const n of node.content) {
+        switch (n.type) {
+            case NodeType.Paragraph:
+                if (!lastIsParagraph) {
+                    lastIsParagraph = true;
+                    concat.push(...n.content);
+                    continue;
+                }
+            case NodeType.Preformatted:
+            case NodeType.BlockModifier:
+                msgs.push(new InlineDefinitonInvalidEntityMessage(n.start, n.end));
+                break;
+            case NodeType.SystemModifier:
+                lastIsParagraph = false;
+                concat.push(n);
+                break;
+            default:
+                debug.never(n);
+        }
+    }
+    return concat;
+}
