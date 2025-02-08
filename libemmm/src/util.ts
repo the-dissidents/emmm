@@ -138,7 +138,7 @@ export function cloneNode(node: DocumentNode, referring?: PositionRange): Docume
     }
 }
 
-export function cloneNodes(nodes: DocumentNode[]): DocumentNode[] {
+export function cloneNodes(nodes: readonly DocumentNode[]): DocumentNode[] {
     return nodes.map((x) => cloneNode(x));
 }
 

@@ -10,7 +10,8 @@ TestConfig.blockModifiers.add(
     new BlockModifierDefinition('normal', ModifierFlags.Normal)
 );
 TestConfig.inlineModifiers.add(
-    new InlineModifierDefinition('test', ModifierFlags.Normal)
+    new InlineModifierDefinition('test', ModifierFlags.Normal),
+    new InlineModifierDefinition('pre', ModifierFlags.Preformatted)
 );
 
 function parse(src: string) {
@@ -52,6 +53,18 @@ describe('[-define-inline]', () => {
             { type: NodeType.Paragraph, content: [
                 { type: NodeType.Text, content: 'abc' },
                 { type: NodeType.Text, content: '[/test]def' },
+                { type: NodeType.Text, content: '[;]' },
+            ] },
+        ]);
+    });
+    test('slots: injection', () => {
+        let doc = parse(`[-define-inline p][/inject-pre-slot pre]\n\n[/p][/test]def[;][;]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.InlineModifier, content: [
+                    { type: NodeType.Text, content: '[/test]def' }
+                ] },
                 { type: NodeType.Text, content: '[;]' },
             ] },
         ]);
@@ -188,11 +201,6 @@ describe('[-define-inline]', () => {
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [] }
         ]);
-        // doc = parse(`[-define-inline p:(0)][/slot 0]\n\n[/p][-define-inline q][/slot 0][;]\n[/q]`);
-        // expect.soft(doc.messages).toMatchObject([
-        //     { severity: MessageSeverity.Error, code: 6 }
-        // ]);
-        // expect.soft(doc.root.content).toMatchObject([]);
     });
     test('error - slot outside definition', () => {
         let doc = parse(`[.normal][/slot]`);
@@ -209,6 +217,24 @@ describe('[-define-inline]', () => {
         ]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [] }
+        ]);
+    });
+    test('error - mixing up pre and normal slots', () => {
+        let doc = parse(`[-define-inline p][/inject-pre-slot pre][/slot]`);
+        expect.soft(doc.messages).toMatchObject([
+            {severity: MessageSeverity.Error, code: 12}
+        ]);
+        doc = parse(`[-define-inline p][/slot][/inject-pre-slot pre]`);
+        expect.soft(doc.messages).toMatchObject([
+            {severity: MessageSeverity.Error, code: 12}
+        ]);
+        doc = parse(`[-define-inline p][/pre-slot][/slot]`);
+        expect.soft(doc.messages).toMatchObject([
+            {severity: MessageSeverity.Error, code: 12}
+        ]);
+        doc = parse(`[-define-inline p][/slot][/pre-slot]`);
+        expect.soft(doc.messages).toMatchObject([
+            {severity: MessageSeverity.Error, code: 12}
         ]);
     });
     test('warning - redefiniton', () => {

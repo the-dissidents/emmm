@@ -7,7 +7,8 @@ import { debug, DebugLevel } from "../src/debug";
 
 const TestConfig = new Configuration(BuiltinConfiguration);
 TestConfig.blockModifiers.add(
-    new BlockModifierDefinition('normal', ModifierFlags.Normal)
+    new BlockModifierDefinition('normal', ModifierFlags.Normal),
+    new BlockModifierDefinition('pre', ModifierFlags.Normal)
 );
 
 function parse(src: string) {
@@ -28,12 +29,31 @@ describe('[-define-block]', () => {
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([]);
     });
-    test('slots: simple', () => {
-        let doc = parse(`[-define-block p][.slot]\n[.p]abc\n[.p]def`);
+    test('slots: normal', () => {
+        let doc = parse(`[-define-block p][.slot]\n[.p]abc\n[.p][.normal]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
+            { type: NodeType.BlockModifier, content: [{ 
+                type: NodeType.Paragraph, 
+                content: [{ type: NodeType.Text, content: 'def' }] 
+            }] }
+        ]);
+    });
+    test('slots: preformatted', () => {
+        let doc = parse(`[-define-block p][.pre-slot]\n[.p]abc\n[.p][.normal]def`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Preformatted, content: { text: 'abc\n[.p][.normal]def' } },
+        ]);
+    });
+    test('slots: injection', () => {
+        let doc = parse(`[-define-block p][.inject-pre-slot pre]\n[.p]abc\n[.p][.normal]def`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.BlockModifier, content: [
+                { type: NodeType.Preformatted, content: { text: 'abc\n[.p][.normal]def' } },
+            ] },
         ]);
     });
     test('slots: multiple instantiations', () => {

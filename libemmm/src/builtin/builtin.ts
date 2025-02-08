@@ -3,7 +3,7 @@ import { DefineBlockMod, DefineInlineMod } from "./define-modifier";
 import { DefineBlockShorthandMod, DefineInlineShorthandMod } from "./define-shorthand";
 import { initParseContext } from "./internal";
 import { ModuleMod, UseBlockMod, UseSystemMod } from "./module";
-import { PreSlotBlockMod, PreSlotInlineMod, SlotBlockMod, SlotInlineMod } from "./slot";
+import { InjectPreSlotBlockMod, InjectPreSlotInlineMod, PreSlotBlockMod, PreSlotInlineMod, SlotBlockMod, SlotInlineMod } from "./slot";
 import { VarMod, GetVarInlineMod, GetVarInterpolator, PrintInlineMod } from "./var";
 
 let basic = new Configuration();
@@ -14,10 +14,10 @@ basic.systemModifiers.add(
     VarMod, 
     UseSystemMod);
 basic.blockModifiers.add(
-    SlotBlockMod, PreSlotBlockMod,
+    SlotBlockMod, PreSlotBlockMod, InjectPreSlotBlockMod,
     ModuleMod, UseBlockMod);
 basic.inlineModifiers.add(
-    SlotInlineMod, PreSlotInlineMod,
+    SlotInlineMod, PreSlotInlineMod, InjectPreSlotInlineMod,
     GetVarInlineMod, PrintInlineMod);
 basic.argumentInterpolators.add(GetVarInterpolator);
 
