@@ -12,7 +12,7 @@ type ModifierState = {
 };
 
 function parseDefineArguments(
-    node: SystemModifierNode<ModifierState>, cxt: ParseContext,
+    node: SystemModifierNode<ModifierState>,
     stack: ModifierSignature[]
 ) {
     const check = checkArgumentLength(node, 1, Infinity);
@@ -21,6 +21,8 @@ function parseDefineArguments(
     const msgs: Message[] = [];
     const name = node.arguments[0];
     const nameValue = name.expansion;
+    if (nameValue === '' || nameValue?.includes('\n')) return [
+        new InvalidArgumentMessage(name.start, name.end, nameValue)];
 
     let slotName = '';
     if (node.arguments.length > 1) {
@@ -54,7 +56,7 @@ export const DefineBlockMod = new SystemModifierDefinition
     alwaysTryExpand: true,
     beforeParseContent(node, cxt) {
         const store = cxt.get(builtins)!;
-        const check = parseDefineArguments(node, cxt, store.blockSlotDelayedStack);
+        const check = parseDefineArguments(node, store.blockSlotDelayedStack);
         if (check) return check;
         debug.trace('entering block definition:', node.state!.name);
         return [];
@@ -98,7 +100,7 @@ export const DefineInlineMod = new SystemModifierDefinition
     alwaysTryExpand: true,
     beforeParseContent(node, cxt) {
         const store = cxt.get(builtins)!;
-        const check = parseDefineArguments(node, cxt, store.inlineSlotDelayedStack);
+        const check = parseDefineArguments(node, store.inlineSlotDelayedStack);
         if (check) return check;
         debug.trace('entering inline definition:', node.state!.name);
         return [];

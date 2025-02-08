@@ -135,27 +135,31 @@ function highlightArgument(arg: emmm.ModifierArgument, builder: RangeSetBuilder<
     });
 }
 
-function highlightNode(node: emmm.DocumentNode, builder: RangeSetBuilder<Decoration>) {
+function highlightNode(
+    node: emmm.DocumentNode, role: emmm.ModifierRole, builder: RangeSetBuilder<Decoration>
+) {
     function highlight(cls: string, range: emmm.PositionRange = node) {
         builder.add(range.start, range.end, Decoration.mark({class: cls})); 
     }
+    const base = ' em-role-' + emmm.ModifierRole[role];
     switch (node.type) {
         case emmm.NodeType.Root:
         case emmm.NodeType.Paragraph:
-            node.content.forEach((x) => highlightNode(x, builder));
+            node.content.forEach((x) => highlightNode(x, role, builder));
             return;
         case emmm.NodeType.Preformatted:
-            return highlight('em-pre');
+            return highlight(base + ' em-pre');
         case emmm.NodeType.Text:
-            return highlight('em-text');
+            return highlight(base + ' em-text');
         case emmm.NodeType.Escaped:
-            highlight('em-escape', {start: node.start, end: node.start+1});
-            return highlight('em-text', {start: node.start+1, end: node.end});
+            highlight(base + ' em-escape', {start: node.start, end: node.start+1});
+            return highlight(base + ' em-text', {start: node.start+1, end: node.end});
         case emmm.NodeType.SystemModifier:
         case emmm.NodeType.InlineModifier:
         case emmm.NodeType.BlockModifier:
-            const cls = node.type == emmm.NodeType.SystemModifier 
-                ? 'em-system' : 'em-modifier';
+            role = node.mod.roleHint;
+            const cls = (node.type == emmm.NodeType.SystemModifier 
+                ? 'em-system' : 'em-modifier') + ' em-role-' + emmm.ModifierRole[role];
             if (node.arguments.length == 0) {
                 highlight(cls, node.head);
             } else {
@@ -170,9 +174,10 @@ function highlightNode(node: emmm.DocumentNode, builder: RangeSetBuilder<Decorat
             if (node.type == emmm.NodeType.InlineModifier 
              && node.mod.flags == emmm.ModifierFlags.Preformatted)
             {
-                highlight('em-pre', {start: node.head.end, end: node.actualEnd ?? node.end});
+                highlight(cls + ' em-pre', 
+                    { start: node.head.end, end: node.actualEnd ?? node.end });
             } else {
-                node.content.forEach((x) => highlightNode(x, builder));
+                node.content.forEach((x) => highlightNode(x, role, builder));
             }
             if (node.actualEnd)
                 highlight(cls, {start: node.actualEnd, end: node.end});
@@ -190,7 +195,7 @@ export const EmmmLanguageSupport: Extension = [
 
         make(doc: EmmmParseData) {
             let builder = new RangeSetBuilder<Decoration>();
-            highlightNode(doc.data.root, builder);
+            highlightNode(doc.data.root, emmm.ModifierRole.Default, builder);
             this.decorations = builder.finish();
         }
 
@@ -343,11 +348,9 @@ export let DefaultTheme = EditorView.baseTheme({
     ".cm-highlightSpace": {
         backgroundImage: "radial-gradient(circle at 50% 55%, #fff 15%, transparent 5%)"
     },
+
     ".em-pre": {
         fontFamily: 'Courier'
-    },
-    ".em-text": {
-        
     },
     ".em-args": {
         color: 'dimgray'
@@ -367,13 +370,24 @@ export let DefaultTheme = EditorView.baseTheme({
         color: 'steelblue',
         fontWeight: '600'
     },
+    ".em-role-Link": {
+        textDecoration: 'underline'
+    },
+    ".em-role-Heading": {
+        color: 'darkred',
+        fontWeight: '600'
+    },
+    ".em-role-Comment": {
+        color: 'darkgreen',
+        fontStyle: 'italic'
+    },
+
     ".fu-structure-container": {
         height: '100%',
         textAlign: 'right'
     },
     ".fu-structure": {
         display: 'inline-block',
-        // backgroundColor: 'red',
         boxSizeing: 'content-box',
         width: '6px',
         height: '100%',

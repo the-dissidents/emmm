@@ -19,9 +19,6 @@ export interface Scanner {
 
     // newlines are NOT whitespaces
     acceptWhitespaceChar(): string | null,
-
-    // returns null if encountered EOF before str
-    acceptUntil(str: string): string | null
 }
 
 export enum MessageSeverity {
@@ -43,6 +40,17 @@ export type Message = {
     readonly info: string,
     readonly code: number,
     readonly fixes: readonly FixSuggestion[]
+}
+
+export enum ModifierRole {
+    Default,
+    Heading,
+    Link,
+    Quotation,
+    Code,
+    Note,
+    Emphasis,
+    Comment
 }
 
 export type PositionRange = {
@@ -160,6 +168,7 @@ class ModifierBase<TNode, TEntity> {
         if (args) Object.assign(this, args);
     }
 
+    roleHint = ModifierRole.Default;
     delayContentExpansion = false;
     alwaysTryExpand = false;
 

@@ -25,6 +25,8 @@ function parseDefineArguments(
     const msgs: Message[] = [];
     const name = node.arguments[0];
     const nameValue = name.expansion!;
+    if (nameValue === '' || nameValue?.includes('\n')) return [
+        new InvalidArgumentMessage(name.start, name.end, nameValue)];
 
     let slotName: string | undefined = undefined;
     let parts: [string, string][] = [];
@@ -119,6 +121,8 @@ export const DefineBlockShorthandMod = new SystemModifierDefinition
             postfix: node.state.postfix,
             mod, parts
         };
+        if (cxt.config.blockShorthands.has(node.state.name))
+            cxt.config.blockShorthands.remove(node.state.name);
         cxt.config.blockShorthands.add(shorthand);
         debug.info(() => 'created block shorthand: ' + debugPrint.blockShorthand(shorthand));
         return [];
@@ -162,7 +166,6 @@ export const DefineInlineShorthandMod = new SystemModifierDefinition
     expand(node, cxt, immediate) {
         if (!immediate || !node.state) return undefined;
         const name = '<inline shorthand>';
-        const args = node.state.parts.map((x) => x[0]);
         const parts = node.state.parts.map((x) => x[1]);
         const mod = customModifier(NodeType.InlineModifier, 
             name, node.state.signature, node.state.definition!);
@@ -171,6 +174,8 @@ export const DefineInlineShorthandMod = new SystemModifierDefinition
             postfix: node.state.postfix,
             mod, parts
         };
+        if (cxt.config.inlineShorthands.has(node.state.name))
+            cxt.config.inlineShorthands.remove(node.state.name);
         cxt.config.inlineShorthands.add(shorthand);
         debug.info(() => 'created inline shorthand: ' + debugPrint.inlineShorthand(shorthand));
         return [];

@@ -76,6 +76,11 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
     ) as _Def<T, State>;
     const isInline = type == NodeType.InlineModifier;
 
+    if (content.length == 1 && (
+           content[0].type == NodeType.BlockModifier 
+        || content[0].type == NodeType.InlineModifier))
+        mod.roleHint = content[0].mod.roleHint;
+
     mod.delayContentExpansion = true;
     mod.prepareExpand = (node: ModifierNode<State>, cxt: ParseContext) => {
         let check = checkArguments(node, signature.args.length);

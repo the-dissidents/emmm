@@ -16,11 +16,7 @@
   let view: EditorView;
   let state: EditorState;
 
-  let config = new emmm.Configuration(emmm.BuiltinConfiguration);
-  config.blockModifiers.add(new emmm.BlockModifierDefinition(
-    'pre', emmm.ModifierFlags.Preformatted));
-  config.inlineModifiers.add(new emmm.InlineModifierDefinition(
-    'pre', emmm.ModifierFlags.Preformatted));
+  let config = new emmm.Configuration(emmm.DefaultConfiguration);
 
   const exts = [
     EditorView.updateListener.of((update) => {

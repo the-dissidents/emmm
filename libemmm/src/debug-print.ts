@@ -57,8 +57,10 @@ function debugPrintNode(node: DocumentNode, prefix = '') {
             else result += `-${node.end} />`;
             break;
         case NodeType.Escaped:
-        case NodeType.Preformatted:
             result += `>\n${prefix}  ${node.content}\n${prefix}</${NodeType[node.type]}@${node.end}>`;
+            break;
+        case NodeType.Preformatted:
+            result += `>\n${prefix}  ${node.content.text}\n${prefix}</${NodeType[node.type]}@${node.end}>`;
             break;
         case NodeType.InlineModifier:
         case NodeType.BlockModifier:

@@ -1,4 +1,5 @@
 import { Scanner } from "./interface";
+import { assert } from "./util";
 
 export class SimpleScanner implements Scanner {
     private pos = 0;
@@ -13,6 +14,7 @@ export class SimpleScanner implements Scanner {
     }
 
     peek(str: string): boolean {
+        assert(str !== '');
         let next = this.pos + str.length;
         if (next > this.src.length) return false;
         return this.src.slice(this.pos, this.pos + str.length) == str;
@@ -37,17 +39,5 @@ export class SimpleScanner implements Scanner {
         if (!' \t'.includes(char)) return null;
         this.pos++;
         return char;
-    }
-
-    acceptUntil(str: string): string | null {
-        let start = this.pos;
-        while (!this.isEOF()) {
-            if (this.peek(str)) {
-                let result = this.src.slice(start, this.pos);
-                return result;
-            }
-            this.pos++;
-        }
-        return null;
     }
 }
