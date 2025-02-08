@@ -470,7 +470,7 @@ class Parser {
         };
 
         const isMarker = has(node.mod.flags, ModifierFlags.Marker);
-        return this.MODIFIER_BODY<Type>(type, node, d.postfix, isMarker);
+        return this.MODIFIER_BODY(type, node, d.postfix, isMarker);
     }
 
     private MODIFIER_BODY
@@ -508,7 +508,6 @@ class Parser {
             if (!this.scanner.isEOF()) {
                 if (has(node.mod.flags, ModifierFlags.Preformatted))
                     this.PRE_PARAGRAPH();
-
                 else
                     this.BLOCK_ENTITY();
             }

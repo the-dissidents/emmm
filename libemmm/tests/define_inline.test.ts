@@ -2,12 +2,15 @@ import { describe, expect, test } from "vitest";
 import { BuiltinConfiguration } from "../src/builtin/builtin";
 import { SimpleScanner } from "../src/front";
 import * as Parser from "../src/parser";
-import { BlockModifierDefinition, Configuration, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
+import { BlockModifierDefinition, Configuration, InlineModifierDefinition, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
 
 const TestConfig = new Configuration(BuiltinConfiguration);
 TestConfig.blockModifiers.add(
     new BlockModifierDefinition('normal', ModifierFlags.Normal)
+);
+TestConfig.inlineModifiers.add(
+    new InlineModifierDefinition('test', ModifierFlags.Normal)
 );
 
 function parse(src: string) {
@@ -30,13 +33,26 @@ describe('[-define-inline]', () => {
             { type: NodeType.Paragraph, content: [] }
         ]);
     });
-    test('slots: simple', () => {
-        let doc = parse(`[-define-inline p][/slot]\n\n[/p]abc[;][/p]def[;]`);
+    test('slots: normal', () => {
+        let doc = parse(`[-define-inline p][/slot]\n\n[/p]abc[;][/p][/test]def[;][;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
                 { type: NodeType.Text, content: 'abc' },
-                { type: NodeType.Text, content: 'def' }
+                { type: NodeType.InlineModifier, content: [
+                    { type: NodeType.Text, content: 'def' }
+                ] }
+            ] },
+        ]);
+    });
+    test('slots: preformatted', () => {
+        let doc = parse(`[-define-inline p][/pre-slot]\n\n[/p]abc[;][/p][/test]def[;][;]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: 'abc' },
+                { type: NodeType.Text, content: '[/test]def' },
+                { type: NodeType.Text, content: '[;]' },
             ] },
         ]);
     });

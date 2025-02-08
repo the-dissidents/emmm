@@ -9,20 +9,21 @@ import { cloneNodes, assert } from "../util";
 import { ConfigDefinitions } from "./module";
 
 export type ModifierSignature = {
-    slotName: string,
-    args: string[]
+    readonly slotName: string | undefined,
+    readonly args: readonly string[],
+    preformatted: boolean | undefined,
 }
 
 export type BlockInstantiationData = {
-    mod: BlockModifierDefinition<any>
-    slotContent: BlockEntity[]
-    args: Map<string, string>
+    readonly mod: BlockModifierDefinition<any>
+    readonly slotContent: readonly BlockEntity[]
+    readonly args: ReadonlyMap<string, string>
 }
 
 export type InlineInstantiationData = {
-    mod: InlineModifierDefinition<any>
-    slotContent: InlineEntity[]
-    args: Map<string, string>
+    readonly mod: InlineModifierDefinition<any>
+    readonly slotContent: readonly InlineEntity[]
+    readonly args: ReadonlyMap<string, string>
 }
 
 export const builtins = Symbol();
@@ -54,10 +55,10 @@ export function initParseContext(cxt: ParseContext) {
 }
 
 export function customModifier<T extends NodeType.InlineModifier | NodeType.BlockModifier>(
-    type: T, name: string, flag: ModifierFlags, argNames: string[], slotName: string, content: _Ent<T>[])
+    type: T, name: string, signature: ModifierSignature, content: _Ent<T>[])
 {
     debug.info(`created custom ${NodeType[type]}:`, name);
-    debug.info('args:', argNames, `with ${slotName == '' ? 'no slot name' : 'slot name: ' + slotName}`);
+    debug.info('args:', signature.args, `with ${signature.slotName == '' ? 'no slot name' : 'slot name: ' + signature.slotName}`);
     debug.trace(() => 'content is\n' + debugPrint.node(...content));
 
     type State = {
@@ -65,6 +66,10 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
         args: Map<string, string>
     }
 
+    const flag = 
+        signature.slotName === undefined ? ModifierFlags.Marker : 
+        signature.preformatted ? ModifierFlags.Preformatted 
+        : ModifierFlags.Normal;
     const mod = (type == NodeType.BlockModifier
         ? new BlockModifierDefinition<State>(name, flag)
         : new InlineModifierDefinition<State>(name, flag)
@@ -73,11 +78,11 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
 
     mod.delayContentExpansion = true;
     mod.prepareExpand = (node: ModifierNode<State>, cxt: ParseContext) => {
-        let check = checkArguments(node, argNames.length);
+        let check = checkArguments(node, signature.args.length);
         if (check) return check;
         node.state = { 
             ok: true,
-            args: new Map(node.arguments.map((x, i) => [argNames[i], x.expansion!]))
+            args: new Map(node.arguments.map((x, i) => [signature.args[i], x.expansion!]))
         } satisfies State;
         return [];
     };
@@ -87,25 +92,25 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
         return contentClone;
     };
     mod.beforeProcessExpansion = (node: ModifierNode<State>, cxt: ParseContext) => {
-        if (!node.state?.ok) return [];
+        if (!node.state?.ok || signature.slotName === undefined) return [];
         const store = cxt.get(builtins)!;
         const data = isInline ? store.inlineSlotData : store.blockSlotData;
-        data.push([slotName, { 
+        data.push([signature.slotName, { 
             mod: mod as any, args: node.state.args, 
             slotContent: node.content as any 
         }]);
         debug.trace(`pushed ${NodeType[type]} slot data for`, name,
-            slotName == '' ? '(unnamed)' : `= ${slotName}`);
+            signature.slotName == '' ? '(unnamed)' : `= ${signature.slotName}`);
         return [];
     };
     mod.afterProcessExpansion = (node: ModifierNode<State>, cxt: ParseContext) => {
-        if (!node.state?.ok) return [];
+        if (!node.state?.ok || signature.slotName === undefined) return [];
         const store = cxt.get(builtins)!;
         const data = isInline ? store.inlineSlotData : store.blockSlotData;
         const pop = data.pop();
-        assert(pop !== undefined && pop[0] == slotName);
+        assert(pop !== undefined && pop[0] == signature.slotName);
         debug.trace(`popped ${NodeType[type]} slot data for`, name,
-            slotName == '' ? '(unnamed)' : `= ${slotName}`);
+            signature.slotName == '' ? '(unnamed)' : `= ${signature.slotName}`);
         return [];
     };
     return mod;

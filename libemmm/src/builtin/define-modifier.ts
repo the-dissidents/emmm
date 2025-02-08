@@ -7,8 +7,7 @@ import { builtins, customModifier, makeInlineDefinition, ModifierSignature } fro
 
 type ModifierState = {
     name?: string;
-    slotName: string;
-    args: string[];
+    signature: ModifierSignature;
     msgs: Message[];
 };
 
@@ -40,9 +39,11 @@ function parseDefineArguments(
             new InvalidArgumentMessage(x.start, x.end));
         return x.expansion ?? '';
     });
-    node.state = { name: nameValue, slotName, args, msgs };
-    stack.push({ slotName, args });
-    return [];
+
+    let signature: ModifierSignature = { slotName, args, preformatted: undefined };
+    node.state = { name: nameValue, signature, msgs };
+    stack.push(signature);
+    return undefined;
 }
 
 export const DefineBlockMod = new SystemModifierDefinition
@@ -61,7 +62,8 @@ export const DefineBlockMod = new SystemModifierDefinition
     afterParseContent(node, cxt) {
         if (!node.state) return [];
         const store = cxt.get(builtins)!;
-        assert(store.blockSlotDelayedStack.pop()?.slotName == node.state.slotName);
+        const pop = store.blockSlotDelayedStack.pop();
+        assert(pop === node.state.signature);
         debug.trace('leaving block definition', node.state.name);
         return [];
     },
@@ -80,9 +82,8 @@ export const DefineBlockMod = new SystemModifierDefinition
         if (node.state?.name) {
             if (cxt.config.blockModifiers.has(node.state.name))
                 cxt.config.blockModifiers.remove(node.state.name);
-            cxt.config.blockModifiers.add(customModifier(
-                    NodeType.BlockModifier, node.state.name, ModifierFlags.Normal,
-                    node.state.args, node.state.slotName, node.content));
+            cxt.config.blockModifiers.add(customModifier(NodeType.BlockModifier, 
+                node.state.name, node.state.signature, node.content));
         }
         return [];
     }
@@ -105,7 +106,8 @@ export const DefineInlineMod = new SystemModifierDefinition
     afterParseContent(node, cxt) {
         if (!node.state) return [];
         const store = cxt.get(builtins)!;
-        assert(store.inlineSlotDelayedStack.pop()?.slotName == node.state.slotName);
+        const pop = store.inlineSlotDelayedStack.pop();
+        assert(pop === node.state.signature);
         debug.trace('leaving inline definition', node.state.name);
         return [];
     },
@@ -128,9 +130,8 @@ export const DefineInlineMod = new SystemModifierDefinition
             if (cxt.config.inlineModifiers.has(node.state.name))
                 cxt.config.inlineModifiers.remove(node.state.name);
             cxt.config.inlineModifiers.add(
-                customModifier(NodeType.InlineModifier, node.state.name, 
-                    ModifierFlags.Normal,
-                    node.state.args, node.state.slotName, node.state.definition!));
+                customModifier(NodeType.InlineModifier, 
+                    node.state.name, node.state.signature, node.state.definition!));
         }
         return [];
     },

@@ -3,7 +3,7 @@ import { DefineBlockMod, DefineInlineMod } from "./define-modifier";
 import { DefineBlockShorthandMod, DefineInlineShorthandMod } from "./define-shorthand";
 import { initParseContext } from "./internal";
 import { ModuleMod, UseBlockMod, UseSystemMod } from "./module";
-import { SlotBlockMod, SlotInlineMod } from "./slot";
+import { PreSlotBlockMod, PreSlotInlineMod, SlotBlockMod, SlotInlineMod } from "./slot";
 import { VarMod, GetVarInlineMod, GetVarInterpolator, PrintInlineMod } from "./var";
 
 let basic = new Configuration();
@@ -14,8 +14,11 @@ basic.systemModifiers.add(
     VarMod, 
     UseSystemMod);
 basic.blockModifiers.add(
-    SlotBlockMod, ModuleMod, UseBlockMod);
-basic.inlineModifiers.add(SlotInlineMod, GetVarInlineMod, PrintInlineMod);
+    SlotBlockMod, PreSlotBlockMod,
+    ModuleMod, UseBlockMod);
+basic.inlineModifiers.add(
+    SlotInlineMod, PreSlotInlineMod,
+    GetVarInlineMod, PrintInlineMod);
 basic.argumentInterpolators.add(GetVarInterpolator);
 
 export const BuiltinConfiguration: ReadonlyConfiguration = Object.freeze(basic);

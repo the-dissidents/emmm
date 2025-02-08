@@ -197,6 +197,16 @@ export class CannotUseModuleInSelfMessage implements Message {
     get info(): string { return `cannot use the same module inside its definition` }
 }
 
+export class EitherNormalOrPreMessage implements Message {
+    constructor(
+        public readonly start: number,
+        public readonly end: number) {}
+    readonly code = 12;
+    readonly severity = MessageSeverity.Error;
+    readonly fixes: readonly FixSuggestion[] = []
+    get info(): string { return `a definition cannot be at once normal and preformatted` }
+}
+
 // warnings
 
 export class UnnecessaryNewlineMessage extends RemoveThingMessage {
