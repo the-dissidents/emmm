@@ -136,16 +136,15 @@ function highlightArgument(arg: emmm.ModifierArgument, builder: RangeSetBuilder<
 }
 
 function highlightNode(
-    node: emmm.DocumentNode, role: emmm.ModifierRole, builder: RangeSetBuilder<Decoration>
+    node: emmm.DocumentNode, base: string, builder: RangeSetBuilder<Decoration>
 ) {
     function highlight(cls: string, range: emmm.PositionRange = node) {
         builder.add(range.start, range.end, Decoration.mark({class: cls})); 
     }
-    const base = ' em-role-' + emmm.ModifierRole[role];
     switch (node.type) {
         case emmm.NodeType.Root:
         case emmm.NodeType.Paragraph:
-            node.content.forEach((x) => highlightNode(x, role, builder));
+            node.content.forEach((x) => highlightNode(x, base, builder));
             return;
         case emmm.NodeType.Preformatted:
             return highlight(base + ' em-pre');
@@ -157,9 +156,10 @@ function highlightNode(
         case emmm.NodeType.SystemModifier:
         case emmm.NodeType.InlineModifier:
         case emmm.NodeType.BlockModifier:
-            role = node.mod.roleHint;
+            if (node.mod.roleHint)
+                base += ' em-role-' + node.mod.roleHint;
             const cls = (node.type == emmm.NodeType.SystemModifier 
-                ? 'em-system' : 'em-modifier') + ' em-role-' + emmm.ModifierRole[role];
+                ? 'em-system' : 'em-modifier') + base;
             if (node.arguments.length == 0) {
                 highlight(cls, node.head);
             } else {
@@ -174,10 +174,10 @@ function highlightNode(
             if (node.type == emmm.NodeType.InlineModifier 
              && node.mod.flags == emmm.ModifierFlags.Preformatted)
             {
-                highlight(cls + ' em-pre', 
+                highlight(base + ' em-pre', 
                     { start: node.head.end, end: node.actualEnd ?? node.end });
             } else {
-                node.content.forEach((x) => highlightNode(x, role, builder));
+                node.content.forEach((x) => highlightNode(x, base, builder));
             }
             if (node.actualEnd)
                 highlight(cls, {start: node.actualEnd, end: node.end});
@@ -195,7 +195,7 @@ export const EmmmLanguageSupport: Extension = [
 
         make(doc: EmmmParseData) {
             let builder = new RangeSetBuilder<Decoration>();
-            highlightNode(doc.data.root, emmm.ModifierRole.Default, builder);
+            highlightNode(doc.data.root, '', builder);
             this.decorations = builder.finish();
         }
 
@@ -370,14 +370,27 @@ export let DefaultTheme = EditorView.baseTheme({
         color: 'steelblue',
         fontWeight: '600'
     },
-    ".em-role-Link": {
+    ".em-role-link": {
+        color: 'darkblue',
         textDecoration: 'underline'
     },
-    ".em-role-Heading": {
+    ".em-role-heading": {
         color: 'darkred',
         fontWeight: '600'
     },
-    ".em-role-Comment": {
+    ".em-role-emphasis": {
+        fontWeight: '600'
+    },
+    ".em-role-keyword": {
+        textDecoration: 'underline'
+    },
+    ".em-role-highlight": {
+        background: 'lightgoldenrodyellow'
+    },
+    ".em-role-commentary": {
+        color: 'gray',
+    },
+    ".em-role-comment": {
         color: 'darkgreen',
         fontStyle: 'italic'
     },

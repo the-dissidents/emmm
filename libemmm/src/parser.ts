@@ -606,7 +606,7 @@ class Parser {
         };
 
         while (true) {
-            if (end !== undefined && this.scanner.accept(end))
+            if (end && this.scanner.accept(end))
                 break;
             if (end === undefined && this.scanner.accept(':'))
                 break;

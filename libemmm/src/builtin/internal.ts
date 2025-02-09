@@ -58,7 +58,7 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
     type: T, name: string, signature: ModifierSignature, content: _Ent<T>[])
 {
     debug.info(`created custom ${NodeType[type]}:`, name);
-    debug.info('args:', signature.args, `with ${signature.slotName == '' ? 'no slot name' : 'slot name: ' + signature.slotName}`);
+    debug.info('args:', signature.args, `with ${signature.slotName === undefined ? 'no slot' : signature.slotName == '' ? 'empty slot name' : 'slot name: ' + signature.slotName}`);
     debug.trace(() => 'content is\n' + debugPrint.node(...content));
 
     type State = {

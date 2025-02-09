@@ -20,9 +20,14 @@ Version [/$version], created by [/$name]
 `;
 
 text2 = String.raw`
-[-define-inline p][/pre-slot]
+[-inline-shorthand p:x:p][/print $(x)]
 
-[/p]abc[;][/p][/test]def[;][;]`;
+p1p`;
+
+text2 = String.raw`
+[-inline-shorthand p:x:p:():p][/print $(x)]
+
+p1p1p`;
 
 debug.level = DebugLevel.Trace;
 let scanner = new SimpleScanner(text2);

@@ -42,17 +42,6 @@ export type Message = {
     readonly fixes: readonly FixSuggestion[]
 }
 
-export enum ModifierRole {
-    Default,
-    Heading,
-    Link,
-    Quotation,
-    Code,
-    Note,
-    Emphasis,
-    Comment
-}
-
 export type PositionRange = {
     start: number,
     end: number,
@@ -168,7 +157,7 @@ class ModifierBase<TNode, TEntity> {
         if (args) Object.assign(this, args);
     }
 
-    roleHint = ModifierRole.Default;
+    roleHint?: string
     delayContentExpansion = false;
     alwaysTryExpand = false;
 

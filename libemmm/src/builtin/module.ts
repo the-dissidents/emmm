@@ -1,6 +1,6 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { BlockModifierDefinition, BlockShorthand, Configuration, InlineModifierDefinition, InlineShorthand, Message, ModifierFlags, ModifierRole, ParseContext, SystemModifierDefinition } from "../interface";
+import { BlockModifierDefinition, BlockShorthand, Configuration, InlineModifierDefinition, InlineShorthand, Message, ModifierFlags, ParseContext, SystemModifierDefinition } from "../interface";
 import { CannotUseModuleInSelfMessage, InvalidArgumentMessage, NoNestedModuleMessage, OverwriteDefinitionsMessage } from "../messages";
 import { checkArguments } from "../modifier-helper";
 import { NameManager } from "../util";

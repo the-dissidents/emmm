@@ -44,7 +44,7 @@ function slotModifier
         if (check) {
             node.state = { ok: false };
             return check;
-        } 
+        }
 
         const msgs = (() => {
             const store = cxt.get(builtins)!;
@@ -81,9 +81,8 @@ function slotModifier
                 return [new InvalidArgumentMessage(arg.start, arg.end, id)];
             }
         })();
-        if (msgs) return msgs;
 
-        if (inject && node.state?.ok) {
+        if (inject) {
             const arg = node.arguments.at(-1)!;
             const modName = arg.expansion!;
             const mod = ((isInline 
@@ -93,8 +92,11 @@ function slotModifier
                 node.state = { ok: false };
                 return [new UnknownModifierMessage(arg.start, arg.end, modName)];
             }
-            node.state.injectMod = mod;
+            if (node.state?.ok)
+                node.state.injectMod = mod;
         }
+
+        if (msgs) return msgs;
         return [];
     };
     mod.expand = (node: ModifierNode<TState>, cxt: ParseContext) => {

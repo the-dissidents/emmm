@@ -55,7 +55,16 @@ function parseDefineArguments(
         
         i++;
         if (i < node.arguments.length) {
-            parts.push([arg.expansion!, node.arguments[i].expansion!]);
+            const id = arg.expansion!;
+            if (id === '') {
+                return [new InvalidArgumentMessage(arg.start, arg.end, 'id')];
+            }
+            const part = node.arguments[i].expansion!;
+            if (part === '') {
+                return [new InvalidArgumentMessage(
+                    node.arguments[i].start, node.arguments[i].end, 'part')];
+            }
+            parts.push([id, part]);
             i++;
         } else {
             msgs.push(new ArgumentCountMismatchMessage(node.start, node.end));
