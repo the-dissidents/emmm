@@ -40,12 +40,7 @@ export const OrderedListItemBlock = new BlockModifierDefinition(
 
 export const SubItemBlock = new BlockModifierDefinition(
     'subitem', ModifierFlags.Normal,
-    {
-        roleHint: undefined,
-        prepareExpand(node) {
-            return checkArguments(node, 1) ?? [];
-        },
-    });
+    { roleHint: undefined });
 
 export const CodeBlock = new BlockModifierDefinition(
     'code', ModifierFlags.Preformatted,

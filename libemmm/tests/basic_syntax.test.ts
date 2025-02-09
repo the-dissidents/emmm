@@ -220,11 +220,6 @@ describe('basic syntax', () => {
         ];
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject(obj1);
-        doc = parse(`[.normal][.normal]abc[.pre]def`);
-        expect.soft(doc.messages).toMatchObject([
-            { severity: MessageSeverity.Warning, code: 2 }
-        ]);
-        expect.soft(doc.root.content).toMatchObject(obj1);
     });
     test('normal inline modifier', () => {
         let doc = parse(`[/normal] abc [;]`);
@@ -387,20 +382,5 @@ describe('basic syntax', () => {
                 content: [{ type: NodeType.Preformatted, content: {text: 'abc'} }]
             },
         ]);
-        doc = parse(`[.normal]abc[.normal]def`);
-        expect.soft(doc.messages).toMatchObject([
-            { severity: MessageSeverity.Warning, code: 2 }
-        ]);
-        expect.soft(doc.root.content).toMatchObject([
-            {
-                type: NodeType.BlockModifier, mod: {name: 'normal'},
-                content: [{ type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] }]
-            },
-            {
-                type: NodeType.BlockModifier, mod: {name: 'normal'},
-                content: [{ type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }]
-            }
-        ]);
     });
-    // TODO: arguments
 });

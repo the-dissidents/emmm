@@ -273,11 +273,15 @@ For strange edge cases of the basic syntax and the built-in configuration, see t
 |  7 | Invalid entity in inline modifier definition
 |  8 | Reached recursion limit (<...>)
 |  9 | Slot modifier used outside a definition
+| 10 | Nested module definitions not allowed
+| 11 | Cannot use the same module inside its definition
+| 12 | A definition cannot be at once normal and preformatted
 
 |Code|Warning|Suggestions|
 |---:|-------|-|
 |  1 |Unnecessary newline(s)| *remove*
-|  2 | Block should begin in a new line to avoid confusion| *add a line break*
+|  ~~2~~ | ~~Block should begin in a new line to avoid confusion~~| ~~*add a line break*~~
 |  3 | Content should begin in a new line to avoid confusion | *add a line break*
 |  4 | Modifier already defined, overwriting
 |  5 | Undefined variable, will expand to empty string
+|  6 | Using this module will overwrite: <...>

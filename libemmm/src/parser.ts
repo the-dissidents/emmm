@@ -526,12 +526,12 @@ class Parser {
     // returns false if breaking out of paragraph
     private INLINE_ENTITY(): boolean {
         assert(!this.scanner.isEOF());
-        if (this.scanner.peek(MODIFIER_BLOCK_OPEN)) 
-        {
-            this.emit.message(
-                new NewBlockShouldBeOnNewlineMessage(this.scanner.position()))
-            return false;
-        }
+        // if (this.scanner.peek(MODIFIER_BLOCK_OPEN)) 
+        // {
+        //     this.emit.message(
+        //         new NewBlockShouldBeOnNewlineMessage(this.scanner.position()))
+        //     return false;
+        // }
         if (this.scanner.peek(MODIFIER_INLINE_OPEN))
             return this.MODIFIER(NodeType.InlineModifier);
         if (this.scanner.peek(MODIFIER_SYSTEM_OPEN))
@@ -565,6 +565,7 @@ class Parser {
             while (this.scanner.acceptWhitespaceChar() !== null) {}
             if  (this.scanner.peek(MODIFIER_BLOCK_OPEN)
              ||  this.scanner.peek(MODIFIER_SYSTEM_OPEN)
+             ||  this.cxt.config.blockShorthands.find((x) => this.scanner.peek(x.name))
              || (this.scanner.peek(GROUP_END) && this.groupDepth > 0)
              ||  this.scanner.isEOF()) return false;
 

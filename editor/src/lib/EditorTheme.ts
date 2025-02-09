@@ -13,16 +13,16 @@ export type EmmmParseData = {
     data: emmm.Document,
     time: number,
     foldStructure: FoldUnit[][],
-    hangingIndentation: number[]
+    indentation: {hanging: number, normal: number}[]
 }
 
 export const emmmDocument = StateField.define<EmmmParseData | undefined>({
     create(state) {
         let folds: FoldUnit[][] = [[]];
-        let hanging: number[] = [];
+        let hanging: {hanging: number, normal: number}[] = [];
         for (let i = 0; i < state.doc.lines; i++) {
             folds.push([]);
-            hanging.push(0);
+            hanging.push({ hanging: 0, normal: 0 });
         }
 
         function lineAt(pos: number) {
@@ -78,10 +78,16 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
                     let {number: l2} = lineAt(node.actualEnd ?? node.end);
                     if (node.content.length > 0) {
                         let {number, from} = lineAt(node.content[0].start);
-                        hanging[number] = Math.max(hanging[number], node.content[0].start - from);
-                        if (node.content.length == 1 && lineAt(node.content[0].start).number == l1)
-                            return makeFold(node.content[0]);
+                        if (number == l1 && node.type === emmm.NodeType.BlockModifier) {
+                            // do hanging indentation
+                            let hang = node.content[0].start - from;
+                            if (l2 > number) for (let i = number + 1; i <= l2; i++)
+                                hanging[i].normal = Math.max(hanging[i].normal, hang);
+                            hanging[number].hanging = Math.max(hanging[number].hanging, hang);
+                        }
                     }
+                    if (node.content.length == 1 && lineAt(node.content[0].start).number == l1)
+                        return makeFold(node.content[0]);
                     return makeContent(l1, l2, node.content);
                 case emmm.NodeType.Preformatted:
                 case emmm.NodeType.Text:
@@ -101,7 +107,7 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
             data: result,
             time: performance.now() - start,
             foldStructure: folds,
-            hangingIndentation: hanging
+            indentation: hanging
         };
     },
 
@@ -276,17 +282,18 @@ export const WrapIndent = ViewPlugin.fromClass(class {
     decorations: DecorationSet;
     makeDecorations(view: EditorView): DecorationSet {
         let builder = new RangeSetBuilder<Decoration>();
-        const tabSize = view.state.facet(EditorState.tabSize);
         const doc = view.state.field(emmmDocument);
         if (!doc) return builder.finish();
 
         for (const {from, to} of view.visibleRanges) {
             for (let pos = from; pos <= to;) {
                 const line = view.state.doc.lineAt(pos);
-                const len = doc.hangingIndentation[line.number];
-                if (len > 0) builder.add(line.from, line.from, Decoration.line({
-                    attributes: { style: `text-indent:-${len}ch;padding-left:${len}ch;` }
-                }));
+                const indentation = doc.indentation[line.number];
+                if (indentation && indentation.hanging + indentation.normal > 0) {
+                    builder.add(line.from, line.from, Decoration.line({
+                        attributes: { style: `text-indent:-${indentation.hanging}ch;padding-left:${indentation.hanging + indentation.normal}ch;` }
+                    }));
+                }
                 pos = line.to + 1;
             }
         }
