@@ -12,16 +12,21 @@ enum FoldUnit {
 export type EmmmParseData = {
     data: emmm.Document,
     time: number,
-    foldStructure: FoldUnit[][]
+    foldStructure: FoldUnit[][],
+    hangingIndentation: number[]
 }
 
 export const emmmDocument = StateField.define<EmmmParseData | undefined>({
     create(state) {
         let folds: FoldUnit[][] = [[]];
-        for (let i = 0; i < state.doc.lines; i++) folds.push([]);
+        let hanging: number[] = [];
+        for (let i = 0; i < state.doc.lines; i++) {
+            folds.push([]);
+            hanging.push(0);
+        }
 
         function lineAt(pos: number) {
-            return state.doc.lineAt(pos).number
+            return state.doc.lineAt(pos)
         }
         function remakeLine(len: number, 
             line: FoldUnit[], uend: FoldUnit, uline: FoldUnit, urepl: FoldUnit) 
@@ -64,16 +69,19 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
                 case emmm.NodeType.Paragraph:
                     // FIXME: should include --:
                     return makeContent(
-                        lineAt(node.start), 
-                        lineAt(node.actualEnd ?? node.end), node.content);
+                        lineAt(node.start).number, 
+                        lineAt(node.actualEnd ?? node.end).number, node.content);
                 case emmm.NodeType.SystemModifier:
                 case emmm.NodeType.InlineModifier:
                 case emmm.NodeType.BlockModifier:
-                    let l1 = lineAt(node.head.end);
-                    let l2 = lineAt(node.actualEnd ?? node.end);
-                    if (node.content.length == 1 
-                     && lineAt(node.content[0].start) == l1)
-                        return makeFold(node.content[0]);
+                    let {number: l1} = lineAt(node.head.end);
+                    let {number: l2} = lineAt(node.actualEnd ?? node.end);
+                    if (node.content.length > 0) {
+                        let {number, from} = lineAt(node.content[0].start);
+                        hanging[number] = Math.max(hanging[number], node.content[0].start - from);
+                        if (node.content.length == 1 && lineAt(node.content[0].start).number == l1)
+                            return makeFold(node.content[0]);
+                    }
                     return makeContent(l1, l2, node.content);
                 case emmm.NodeType.Preformatted:
                 case emmm.NodeType.Text:
@@ -92,7 +100,8 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
         return {
             data: result,
             time: performance.now() - start,
-            foldStructure: folds
+            foldStructure: folds,
+            hangingIndentation: hanging
         };
     },
 
@@ -108,26 +117,26 @@ export const emmmConfiguration =
         combine: (values) => values.length ? values.at(-1)! : emmm.BuiltinConfiguration,
     });
 
-function highlightArgument(arg: emmm.ModifierArgument, builder: RangeSetBuilder<Decoration>) {
+function highlightArgument(arg: emmm.ModifierArgument, base: string, builder: RangeSetBuilder<Decoration>) {
     function highlight(cls: string, range: emmm.PositionRange) {
         builder.add(range.start, range.end, Decoration.mark({class: cls})); 
     }
     arg.content.forEach((x) => {
         switch (x.type) {
             case emmm.NodeType.Text:
-                return highlight('em-args', x);
+                return highlight(base + ' em-args', x);
             case emmm.NodeType.Escaped:
-                highlight('em-escape', {start: x.start, end: x.start+1});
-                return highlight('em-args', {start: x.start+1, end: x.end});
+                highlight(base + ' em-escape', {start: x.start, end: x.start+1});
+                return highlight(base + ' em-args', {start: x.start+1, end: x.end});
             case emmm.NodeType.Interpolation:
                 const p1 = x.argument.start;
                 const p2 = x.argument.end;
                 if (p1 == p2)
-                    return highlight('em-interp', x);
+                    return highlight(base + ' em-interp', x);
                 else {
-                    highlight('em-interp', {start: x.start, end: p1});
-                    highlightArgument(x.argument, builder);
-                    return highlight('em-interp', {start: p2, end: x.end});
+                    highlight(base + ' em-interp', {start: x.start, end: p1});
+                    highlightArgument(x.argument, base, builder);
+                    return highlight(base + ' em-interp', {start: p2, end: x.end});
                 }
             default:
                 return;
@@ -166,7 +175,7 @@ function highlightNode(
                 const p1 = node.arguments[0].start;
                 highlight(cls, {start: node.head.start, end: p1});
                 for (let i = 0; i < node.arguments.length; i++) {
-                    highlightArgument(node.arguments[i], builder);
+                    highlightArgument(node.arguments[i], base, builder);
                     const p2 = node.arguments.at(i+1)?.start ?? node.head.end;
                     highlight(cls, {start: node.arguments[i].end, end: p2});
                 }
@@ -253,30 +262,28 @@ export const EmmmLanguageSupport: Extension = [
                 }
             };
         },
-        initialSpacer(view) {
-            return new class extends GutterMarker {
-                toDOM(view: EditorView): Node {
-                    return document.createTextNode("?");
-                }
-            };
-        },
+        // initialSpacer(view) {
+        //     return new class extends GutterMarker {
+        //         toDOM(view: EditorView): Node {
+        //             return document.createTextNode("?");
+        //         }
+        //     };
+        // },
     })
 ]
 
 export const WrapIndent = ViewPlugin.fromClass(class {
     decorations: DecorationSet;
     makeDecorations(view: EditorView): DecorationSet {
-        let tabSize = view.state.facet(EditorState.tabSize);
         let builder = new RangeSetBuilder<Decoration>();
+        const tabSize = view.state.facet(EditorState.tabSize);
+        const doc = view.state.field(emmmDocument);
+        if (!doc) return builder.finish();
+
         for (const {from, to} of view.visibleRanges) {
             for (let pos = from; pos <= to;) {
-                let line = view.state.doc.lineAt(pos);
-                let len = 0;
-                for (const ch of line.text) {
-                    if (ch == ' ') len += 1;
-                    else if (ch == '\t') len += tabSize;
-                    else break;
-                }
+                const line = view.state.doc.lineAt(pos);
+                const len = doc.hangingIndentation[line.number];
                 if (len > 0) builder.add(line.from, line.from, Decoration.line({
                     attributes: { style: `text-indent:-${len}ch;padding-left:${len}ch;` }
                 }));
@@ -370,7 +377,7 @@ export let DefaultTheme = EditorView.baseTheme({
         color: 'steelblue',
         fontWeight: '600'
     },
-    ".em-role-link": {
+    ":where(.em-role-link)": {
         color: 'darkblue',
         textDecoration: 'underline'
     },

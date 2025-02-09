@@ -28,7 +28,7 @@ let doc = emmm.parse(scanner, config);
 - `doc.messages` is the array of diagnostic messages.
 - You may want to call `doc.debugPrint(source)` to get a pretty-printed debug string of the AST.
 
-## Reference to `emmm` Syntax
+## A Semi-Technical Reference to `emmm` Syntax
 
 ![AST Structure](./doc-images/ast.svg)
 
@@ -158,10 +158,6 @@ A colon before the first argument states explicitly the beginning of that argume
 ## A Synopsis of the Built-in Configuration
 
 ### System modifiers
-
-[**-comment**]
-
-> Effe
 
 [**-define-block** *name*:*args...*]  
 [**-define-block** *name*:*args...*:(*slot*)]  
