@@ -9,21 +9,23 @@ import { cloneNodes, assert } from "../util";
 import { ConfigDefinitions } from "./module";
 
 export type ModifierSignature = {
-    readonly slotName: string | undefined,
-    readonly args: readonly string[],
-    preformatted: boolean | undefined,
+    readonly slotName: string | undefined;
+    readonly args: readonly string[];
+    preformatted: boolean | undefined;
 }
 
 export type BlockInstantiationData = {
-    readonly mod: BlockModifierDefinition<any>
-    readonly slotContent: readonly BlockEntity[]
-    readonly args: ReadonlyMap<string, string>
+    readonly slotName: string | undefined;
+    readonly mod: BlockModifierDefinition<any>;
+    readonly slotContent: readonly BlockEntity[];
+    readonly args: ReadonlyMap<string, string>;
 }
 
 export type InlineInstantiationData = {
-    readonly mod: InlineModifierDefinition<any>
-    readonly slotContent: readonly InlineEntity[]
-    readonly args: ReadonlyMap<string, string>
+    readonly slotName: string | undefined;
+    readonly mod: InlineModifierDefinition<any>;
+    readonly slotContent: readonly InlineEntity[];
+    readonly args: ReadonlyMap<string, string>;
 }
 
 export const builtins = Symbol();
@@ -33,8 +35,8 @@ declare module '../interface' {
         [builtins]?: {
             blockSlotDelayedStack: ModifierSignature[];
             inlineSlotDelayedStack: ModifierSignature[];
-            blockSlotData: [string, BlockInstantiationData][];
-            inlineSlotData: [string, InlineInstantiationData][];
+            blockInstantiationData: BlockInstantiationData[];
+            inlineInstantiationData: InlineInstantiationData[];
             modules: Map<string, ConfigDefinitions>;
             usedModules: Set<string>;
             insideModule: string | undefined;
@@ -46,8 +48,8 @@ export function initParseContext(cxt: ParseContext) {
     cxt.init(builtins, {
         blockSlotDelayedStack: [],
         inlineSlotDelayedStack: [],
-        blockSlotData: [],
-        inlineSlotData: [],
+        blockInstantiationData: [],
+        inlineInstantiationData: [],
         modules: new Map(),
         usedModules: new Set(),
         insideModule: undefined
@@ -97,13 +99,14 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
         return contentClone;
     };
     mod.beforeProcessExpansion = (node: ModifierNode<State>, cxt: ParseContext) => {
-        if (!node.state?.ok || signature.slotName === undefined) return [];
+        if (!node.state?.ok) return [];
         const store = cxt.get(builtins)!;
-        const data = isInline ? store.inlineSlotData : store.blockSlotData;
-        data.push([signature.slotName, { 
+        const data = isInline ? store.inlineInstantiationData : store.blockInstantiationData;
+        data.push({ 
+            slotName: signature.slotName,
             mod: mod as any, args: node.state.args, 
             slotContent: node.content as any 
-        }]);
+        });
         debug.trace(`pushed ${NodeType[type]} slot data for`, name,
             signature.slotName == '' ? '(unnamed)' : `= ${signature.slotName}`);
         return [];
@@ -111,9 +114,9 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
     mod.afterProcessExpansion = (node: ModifierNode<State>, cxt: ParseContext) => {
         if (!node.state?.ok || signature.slotName === undefined) return [];
         const store = cxt.get(builtins)!;
-        const data = isInline ? store.inlineSlotData : store.blockSlotData;
+        const data = isInline ? store.inlineInstantiationData : store.blockInstantiationData;
         const pop = data.pop();
-        assert(pop !== undefined && pop[0] == signature.slotName);
+        assert(pop !== undefined);
         debug.trace(`popped ${NodeType[type]} slot data for`, name,
             signature.slotName == '' ? '(unnamed)' : `= ${signature.slotName}`);
         return [];

@@ -15,13 +15,13 @@ function resolveId(id: string, cxt: ParseContext): string | undefined {
     }
 
     let value: string | undefined = undefined;
-    for (let i = store.inlineSlotData.length - 1; i >= 0; i--) {
-        const [_, data] = store.inlineSlotData[i];
+    for (let i = store.inlineInstantiationData.length - 1; i >= 0; i--) {
+        const data = store.inlineInstantiationData[i];
         if ((value = data.args.get(id)) !== undefined)
             break;
     }
-    for (let i = store.blockSlotData.length - 1; i >= 0; i--) {
-        const [_, data] = store.blockSlotData[i];
+    for (let i = store.blockInstantiationData.length - 1; i >= 0; i--) {
+        const data = store.blockInstantiationData[i];
         if ((value = data.args.get(id)) !== undefined)
             break;
     }

@@ -24,10 +24,10 @@ text2 = String.raw`
 
 p1p`;
 
-text2 = String.raw`
-[-inline-shorthand p:x:p:():p][/print $(x)]
+// text2 = String.raw`
+// [-inline-shorthand p:x:p:():p][/print $(x)]
 
-p1p1p`;
+// p1p1p`;
 
 debug.level = DebugLevel.Trace;
 let scanner = new SimpleScanner(text2);

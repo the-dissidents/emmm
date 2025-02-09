@@ -12,7 +12,7 @@ function slotModifier
 {
     type TState = {
         ok: true;
-        data: [string, _InstData<T>];
+        data: _InstData<T>;
         index: number;
         injectMod?: _Def<T>
     } | { ok: false; };
@@ -48,7 +48,7 @@ function slotModifier
 
         const msgs = (() => {
             const store = cxt.get(builtins)!;
-            const data = isInline ? store.inlineSlotData : store.blockSlotData;
+            const data = isInline ? store.inlineInstantiationData : store.blockInstantiationData;
             const stack = isInline ? store.inlineSlotDelayedStack : store.blockSlotDelayedStack;
     
             // check inside definition
@@ -69,7 +69,7 @@ function slotModifier
             const id = node.arguments[0].expansion!;
             let signature = stack.find((x) => x.slotName == id);
             if (signature) return processSignature(signature); // delay
-            for (let i = data.length - 1; i >= 0; i--) if (data[i][0] == id) {
+            for (let i = data.length - 1; i >= 0; i--) if (data[i].slotName === id) {
                 node.state = { ok: true, data: data[i] as any, index: i };
                 return;
             }
@@ -102,7 +102,7 @@ function slotModifier
     mod.expand = (node: ModifierNode<TState>, cxt: ParseContext) => {
         if (!node.state) return undefined;
         if (!node.state.ok) return [];
-        let cloned = cloneNodes(node.state.data[1].slotContent) as _Ent<T>[];
+        let cloned = cloneNodes(node.state.data.slotContent) as _Ent<T>[];
         if (inject) {
             const mod = node.state.injectMod! as any;
             const modNode: ModifierNode = {
@@ -116,22 +116,22 @@ function slotModifier
             return [modNode];
         } else return cloned as any;
     };
-    mod.beforeProcessExpansion = (node: ModifierNode, cxt: ParseContext) => {
+    mod.beforeProcessExpansion = (node: ModifierNode<TState>, cxt: ParseContext) => {
         // TODO: not sure if this works
         if (!node.state?.ok) return [];
         const store = cxt.get(builtins)!;
-        debug.trace('temporarily removed slot data for', node.state.data[1].mod.name);
-        const data = isInline ? store.inlineSlotData : store.blockSlotData;
+        debug.trace('temporarily removed slot data for', node.state.data.mod.name);
+        const data = isInline ? store.inlineInstantiationData : store.blockInstantiationData;
         data.splice(node.state.index, 1);
         return [];
     };
-    mod.afterProcessExpansion = (node: ModifierNode, cxt: ParseContext) => {
+    mod.afterProcessExpansion = (node: ModifierNode<TState>, cxt: ParseContext) => {
         // TODO: not sure if this works
         if (!node.state?.ok) return [];
         const store = cxt.get(builtins)!;
-        debug.trace('reinstated slot data for', node.state.data[1].mod.name);
-        const data = isInline ? store.inlineSlotData : store.blockSlotData;
-        data.splice(node.state.index, 0, node.state.data);
+        debug.trace('reinstated slot data for', node.state.data.mod.name);
+        const data = isInline ? store.inlineInstantiationData : store.blockInstantiationData;
+        data.splice(node.state.index, 0, node.state.data as any);
         return [];
     };
     return mod;
