@@ -105,7 +105,9 @@ const cloneArgument = (arg: ModifierArgument): ModifierArgument => ({
     })
 });
 
-export function cloneNode(node: DocumentNode, referring?: PositionRange): DocumentNode {
+export function cloneNode(node: DocumentNode, 
+    referring?: PositionRange, withState = false): DocumentNode 
+{
     switch (node.type) {
         case NodeType.BlockModifier:
         case NodeType.InlineModifier:
@@ -115,11 +117,11 @@ export function cloneNode(node: DocumentNode, referring?: PositionRange): Docume
                 end: node.end,
                 type: node.type as any,
                 mod: node.mod,
-                state: undefined,
+                state: withState ? node.state : undefined,
                 head: structuredClone(node.head),
                 arguments: node.arguments.map(cloneArgument),
-                content: node.content.map((x) => cloneNode(x, referring) as any),
-                expansion: node.expansion ? cloneNodes(node.expansion) as any : undefined
+                content: node.content.map((x) => cloneNode(x, referring, withState) as any),
+                expansion: node.expansion ? cloneNodes(node.expansion, withState) as any : undefined
             };
         case NodeType.Root:
         case NodeType.Paragraph:
@@ -127,7 +129,7 @@ export function cloneNode(node: DocumentNode, referring?: PositionRange): Docume
                 type: node.type as any,
                 start: node.start,
                 end: node.end,
-                content: node.content.map((x) => cloneNode(x) as any)
+                content: node.content.map((x) => cloneNode(x, undefined, withState) as any)
             }
         case NodeType.Preformatted:
         case NodeType.Text:
@@ -138,8 +140,8 @@ export function cloneNode(node: DocumentNode, referring?: PositionRange): Docume
     }
 }
 
-export function cloneNodes(nodes: readonly DocumentNode[]): DocumentNode[] {
-    return nodes.map((x) => cloneNode(x));
+export function cloneNodes(nodes: readonly DocumentNode[], withState = false): DocumentNode[] {
+    return nodes.map((x) => cloneNode(x, undefined, withState));
 }
 
 

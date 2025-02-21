@@ -4,13 +4,15 @@ import { BuiltinConfiguration } from "./builtin/builtin";
 import { debug, DebugLevel } from "./debug";
 import { BlockModifierDefinition, Configuration, ModifierFlags } from "./interface";
 import { debugPrint } from "./debug-print";
+import { DefaultConfiguration } from "./default/default";
+import { HTMLRenderConfiguration, HTMLRenderState } from "./default/html-renderer";
 
-const TestConfig = new Configuration(BuiltinConfiguration);
-TestConfig.blockModifiers.add(
-    new BlockModifierDefinition('normal', ModifierFlags.Normal),
-    new BlockModifierDefinition('pre', ModifierFlags.Preformatted),
-    new BlockModifierDefinition('marker', ModifierFlags.Marker)
-);
+const TestConfig = Configuration.from(DefaultConfiguration);
+// TestConfig.blockModifiers.add(
+//     new BlockModifierDefinition('normal', ModifierFlags.Normal),
+//     new BlockModifierDefinition('pre', ModifierFlags.Preformatted),
+//     new BlockModifierDefinition('marker', ModifierFlags.Marker)
+// );
 
 let text2 = String.raw`
 [-var name:foobar]
@@ -20,19 +22,23 @@ Version [/$version], created by [/$name]
 `;
 
 text2 = String.raw`
-[-inline-shorthand p:x:p][/print $(x)]
+[.heading 1] Heading
 
-p1p`;
+»Setzt Sie das in solches Erstaunen?« fragte der Diener.
 
-// text2 = String.raw`
-// [-inline-shorthand p:x:p:():p][/print $(x)]
+»Ich will es mir nur zurechtlegen. Wenn man solche Beziehungen nicht kennt, kann man ja die größten Fehler machen«, antwortete Karl.
 
-// p1p1p`;
+[.bullet-item] a & b > c: should be escaped.
+[.bullet-item] So I can also write: <script> ..? </script>`;
 
 debug.level = DebugLevel.Trace;
 let scanner = new SimpleScanner(text2);
 let t0 = performance.now();
-let doc = Parser.parse(scanner, new Configuration(TestConfig)).toStripped();
+let doc = Parser.parse(scanner, Configuration.from(TestConfig));
+doc = doc.toStripped();
 console.log(debugPrint.document(doc, text2))
-console.log(performance.now() - t0);
-console.log('ok');
+// console.log(performance.now() - t0);
+
+let renderConfig = HTMLRenderConfiguration;
+let html = renderConfig.render(doc, new HTMLRenderState());
+console.log(html);

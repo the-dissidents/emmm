@@ -250,6 +250,7 @@ export class Document {
                 case NodeType.InlineModifier:
                     if (node.expansion !== undefined)
                         return node.expansion.flatMap((x) => stripNode(x));
+                    // else fallthrough!
                 case NodeType.Paragraph:
                 case NodeType.Root:
                     node.content = node.content.flatMap((x) => stripNode(x)) as any;
@@ -261,44 +262,164 @@ export class Document {
             }
         }
         let doc = new Document(
-            stripNode(cloneNode(this.root))[0] as RootNode, this.context, this.messages);
+            stripNode(cloneNode(this.root, undefined, true))[0] as RootNode, this.context, this.messages);
         return doc;
     }
 }
 
 export interface ReadonlyConfiguration {
-    initializers: readonly ((cxt: ParseContext) => void)[];
-    blockModifiers: ReadonlyNameManager<BlockModifierDefinition<any>>;
-    inlineModifiers: ReadonlyNameManager<InlineModifierDefinition<any>>;
-    systemModifiers: ReadonlyNameManager<SystemModifierDefinition<any>>;
-    argumentInterpolators: ReadonlyNameManager<ArgumentInterpolatorDefinition>;
+    readonly initializers: readonly ((cxt: ParseContext) => void)[];
+    readonly blockModifiers: ReadonlyNameManager<BlockModifierDefinition<any>>;
+    readonly inlineModifiers: ReadonlyNameManager<InlineModifierDefinition<any>>;
+    readonly systemModifiers: ReadonlyNameManager<SystemModifierDefinition<any>>;
+    readonly argumentInterpolators: ReadonlyNameManager<ArgumentInterpolatorDefinition>;
 
-    blockShorthands: ReadonlyNameManager<BlockShorthand<any>>;
-    inlineShorthands: ReadonlyNameManager<InlineShorthand<any>>;
-    reparseDepthLimit: number;
+    readonly blockShorthands: ReadonlyNameManager<BlockShorthand<any>>;
+    readonly inlineShorthands: ReadonlyNameManager<InlineShorthand<any>>;
+    readonly reparseDepthLimit: number;
 }
 
 export class Configuration implements ReadonlyConfiguration {
     initializers: ((cxt: ParseContext) => void)[] = [];
-    blockModifiers: NameManager<BlockModifierDefinition<any>>;
-    inlineModifiers: NameManager<InlineModifierDefinition<any>>;
-    systemModifiers: NameManager<SystemModifierDefinition<any>>;
-    argumentInterpolators: NameManager<ArgumentInterpolatorDefinition>;
+    blockModifiers = new NameManager<BlockModifierDefinition<any>>;
+    inlineModifiers = new NameManager<InlineModifierDefinition<any>>;
+    systemModifiers = new NameManager<SystemModifierDefinition<any>>;
+    argumentInterpolators = new NameManager<ArgumentInterpolatorDefinition>;
 
-    blockShorthands: NameManager<BlockShorthand<any>>;
-    inlineShorthands: NameManager<InlineShorthand<any>>;
+    blockShorthands = new NameManager<BlockShorthand<any>>;
+    inlineShorthands = new NameManager<InlineShorthand<any>>;
     reparseDepthLimit = 10;
-    
-    constructor(from?: ReadonlyConfiguration) {
-        this.blockModifiers = new NameManager(from?.blockModifiers);
-        this.inlineModifiers = new NameManager(from?.inlineModifiers);
-        this.systemModifiers = new NameManager(from?.systemModifiers);
-        this.argumentInterpolators = new NameManager(from?.argumentInterpolators);
-        this.blockShorthands = new NameManager(from?.blockShorthands);
-        this.inlineShorthands = new NameManager(from?.inlineShorthands);
-        if (from) {
-            this.initializers = [...from.initializers];
-            this.reparseDepthLimit = from.reparseDepthLimit;
+
+    static from(from: ReadonlyConfiguration) {
+        let config = new Configuration();
+        config.initializers = [...from.initializers];
+        config.reparseDepthLimit = from.reparseDepthLimit;
+        config.blockModifiers = new NameManager(from.blockModifiers);
+        config.inlineModifiers = new NameManager(from.inlineModifiers);
+        config.systemModifiers = new NameManager(from.systemModifiers);
+        config.argumentInterpolators = new NameManager(from.argumentInterpolators);
+        config.blockShorthands = new NameManager(from.blockShorthands);
+        config.inlineShorthands = new NameManager(from.inlineShorthands);
+        return config;
+    }
+}
+
+export type RendererType<TState, TReturn> = {
+    state: TState,
+    return: TReturn
+};
+
+type getState<Type> = Type extends RendererType<infer T, any> ? T : never;
+type getReturn<Type> = Type extends RendererType<any, infer T> ? T : never;
+
+export type NodeRenderer<Type extends RendererType<any, any>, TNode> =
+    (node: TNode, cxt: RenderContext<Type>) => getReturn<Type>;
+
+export type NodeRendererDefinition<Type extends RendererType<any, any>, TNode, TDef> = 
+    [def: TDef, renderer: NodeRenderer<Type, TNode>];
+
+export class RenderContext<Type extends RendererType<any, any>> {
+    renderEntity(node: BlockEntity | InlineEntity): getReturn<Type> | undefined {
+        switch (node.type) {
+            case NodeType.Paragraph:
+                return this.config.paragraphRenderer?.(node, this);
+            case NodeType.Preformatted:
+            case NodeType.Text:
+            case NodeType.Escaped:
+                return this.config.textRenderer?.(node, this);
+            case NodeType.InlineModifier:
+                let ir = this.config.inlineRenderers.get(node.mod);
+                if (ir) return ir(node, this);
+                return this.config.undefinedInlineRenderer?.(node, this);
+            case NodeType.BlockModifier:
+                let br = this.config.blockRenderers.get(node.mod);
+                if (br) return br(node, this);
+                return this.config.undefinedBlockRenderer?.(node, this);
+            case NodeType.SystemModifier:
+                return undefined;
+            default:
+                return debug.never(node);
         }
+    }
+
+    constructor(
+        public readonly config: RenderConfiguration<Type>,
+        public readonly parseContext: ParseContext,
+        public state: getState<Type>) {}
+}
+
+export interface ReadonlyRenderConfiguration<Type extends RendererType<any, any>> {
+    readonly paragraphRenderer?: NodeRenderer<Type, ParagraphNode>;
+    readonly textRenderer?: NodeRenderer<Type, TextNode | PreNode | EscapedNode>;
+
+    readonly undefinedBlockRenderer?: NodeRenderer<Type, BlockModifierNode<any>>;
+    readonly undefinedInlineRenderer?: NodeRenderer<Type, InlineModifierNode<any>>;
+
+    readonly blockRenderers: ReadonlyMap<
+        BlockModifierDefinition<any>, 
+        NodeRenderer<Type, BlockModifierNode<any>>>;
+    readonly inlineRenderers: ReadonlyMap<
+        InlineModifierDefinition<any>, 
+        NodeRenderer<Type, InlineModifierNode<any>>>;
+
+    readonly postprocessor: 
+        (results: getReturn<Type>[], cxt: RenderContext<Type>) => getReturn<Type>;
+    
+    render(doc: Document, state: getState<Type>): getReturn<Type>;
+}
+
+export type BlockRendererDefiniton<Type extends RendererType<any, any>, ModState = any> = 
+    NodeRendererDefinition<Type, BlockModifierNode<ModState>, BlockModifierDefinition<ModState>>;
+
+export type InlineRendererDefiniton<Type extends RendererType<any, any>, ModState = any> = 
+    NodeRendererDefinition<Type, InlineModifierNode<ModState>, InlineModifierDefinition<ModState>>;
+
+export class RenderConfiguration<Type extends RendererType<any, any>>
+    implements ReadonlyRenderConfiguration<Type>
+{
+    paragraphRenderer?: NodeRenderer<Type, ParagraphNode>;
+    textRenderer?: NodeRenderer<Type, TextNode | PreNode | EscapedNode>;
+
+    undefinedBlockRenderer?: NodeRenderer<Type, BlockModifierNode<any>>;
+    undefinedInlineRenderer?: NodeRenderer<Type, InlineModifierNode<any>>;
+
+    blockRenderers = new Map<
+        BlockModifierDefinition<any>, 
+        NodeRenderer<Type, BlockModifierNode<any>>>;
+    inlineRenderers = new Map<
+        InlineModifierDefinition<any>, 
+        NodeRenderer<Type, InlineModifierNode<any>>>;
+    
+    constructor(
+        public postprocessor: 
+            (results: getReturn<Type>[], cxt: RenderContext<Type>) => getReturn<Type>) {}
+
+    render(doc: Document, state: getState<Type>): getReturn<Type> {
+        let cxt = new RenderContext(this, doc.context, state);
+        let results = doc.toStripped()
+            .root.content
+            .map((x) => cxt.renderEntity(x))
+            // not exactly sure why 'as' is needed here
+            .filter((x) => (x !== undefined)) as getReturn<Type>[];
+        return this.postprocessor(results, cxt);
+    }
+
+    addBlockRenderer(...rs: BlockRendererDefiniton<Type>[]) {
+        rs.forEach(([x, y]) => this.blockRenderers.set(x, y));
+    }
+
+    addInlineRenderer(...rs: InlineRendererDefiniton<Type>[]) {
+        rs.forEach(([x, y]) => this.inlineRenderers.set(x, y));
+    }
+
+    static from<Type extends RendererType<any, any>>(from: ReadonlyRenderConfiguration<Type>) {
+        let config = new RenderConfiguration(from.postprocessor);
+        config.paragraphRenderer = from.paragraphRenderer;
+        config.textRenderer = from.textRenderer;
+        config.undefinedBlockRenderer = from.undefinedBlockRenderer;
+        config.undefinedInlineRenderer = from.undefinedInlineRenderer;
+        config.inlineRenderers = new Map(from.inlineRenderers);
+        config.blockRenderers = new Map(from.blockRenderers);
+        return config;
     }
 }

@@ -1,21 +1,26 @@
 import { BuiltinConfiguration } from "../builtin/builtin";
 import { Configuration, ReadonlyConfiguration } from "../interface";
-import { CommentShorthand, HeadingBlock, NumberedHeadingBlock, BulletItemBlock, OrderedListItemBlock, SubItemBlock, CodeBlock, CodeInline, EmphasisInline, KeywordInline, HighlightInline, RubyInline, LinkInline, CommentaryInline, QuoteBlock, EpitaphBlock, AttributionBlock, NoteBlock, NoteInline, NoteMarkerInline } from "./misc";
+import { BulletBlocks } from "./bullets";
+import { HeadingBlocks } from "./headings";
+import { NoteBlock, NoteInline, NoteMarkerInline } from "./notes";
+import { CodeBlock, CodeInline } from "./code";
+import { QuoteBlocks } from "./quotes";
+import { InlineStyles } from "./inline-styles";
+import { MiscInlines } from "./misc";
 
-let config = new Configuration(BuiltinConfiguration);
-config.blockShorthands.add(
-    CommentShorthand);
+let config = Configuration.from(BuiltinConfiguration);
+config.blockShorthands.add();
 config.blockModifiers.add(
-    HeadingBlock, NumberedHeadingBlock,
-    BulletItemBlock, OrderedListItemBlock, SubItemBlock,
+    ...HeadingBlocks,
+    ...BulletBlocks,
     CodeBlock,
-    QuoteBlock, EpitaphBlock, AttributionBlock,
+    ...QuoteBlocks,
     NoteBlock
 );
 config.inlineModifiers.add(
     CodeInline,
-    EmphasisInline, KeywordInline, HighlightInline, CommentaryInline,
-    RubyInline, LinkInline,
+    ...InlineStyles,
+    ...MiscInlines,
     NoteInline, NoteMarkerInline
 );
 

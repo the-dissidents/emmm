@@ -207,6 +207,27 @@ export class EitherNormalOrPreMessage implements Message {
     get info(): string { return `a definition cannot be at once normal and preformatted` }
 }
 
+export class MultipleBlocksNotPermittedMessage implements Message {
+    constructor(
+        public readonly start: number,
+        public readonly end: number) {}
+    readonly code = 13;
+    readonly severity = MessageSeverity.Error;
+    readonly fixes: readonly FixSuggestion[] = []
+    get info(): string { return `multiple blocks are not permitted here` }
+}
+
+export class OnlySimpleParagraphsPermittedMessage implements Message {
+    constructor(
+        public readonly start: number,
+        public readonly end: number) {}
+    readonly code = 14;
+    readonly severity = MessageSeverity.Error;
+    readonly fixes: readonly FixSuggestion[] = []
+    get info(): string { return `Only simple paragraphs are permitted here` }
+}
+
+
 // warnings
 
 export class UnnecessaryNewlineMessage extends RemoveThingMessage {

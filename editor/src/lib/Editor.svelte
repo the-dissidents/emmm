@@ -27,7 +27,6 @@
 
       if (update.docChanged && onchange)
         onchange(update.view.state.doc.toString());
-      
     }),
     emmmConfiguration.of(config)
   ];

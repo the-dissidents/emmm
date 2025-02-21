@@ -5,14 +5,14 @@ import * as Parser from "../src/parser";
 import { BlockModifierDefinition, Configuration, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
 
-const TestConfig = new Configuration(BuiltinConfiguration);
+const TestConfig = Configuration.from(BuiltinConfiguration);
 TestConfig.blockModifiers.add(
     new BlockModifierDefinition('normal', ModifierFlags.Normal),
     new BlockModifierDefinition('pre', ModifierFlags.Normal)
 );
 
 function parse(src: string) {
-    const config = new Configuration(TestConfig);
+    const config = Configuration.from(TestConfig);
     let doc = Parser.parse(new SimpleScanner(src), config).toStripped();
     return doc;
 }

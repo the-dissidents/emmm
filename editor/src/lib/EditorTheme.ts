@@ -101,7 +101,7 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
         const config = state.facet(emmmConfiguration);
         const start = performance.now();
         const scanner = new emmm.SimpleScanner(state.doc.toString());
-        const result = emmm.parse(scanner, new emmm.Configuration(config));
+        const result = emmm.parse(scanner, emmm.Configuration.from(config));
         makeFold(result.root);
         return {
             data: result,
