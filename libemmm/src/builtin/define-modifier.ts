@@ -1,5 +1,5 @@
 import { debug } from "../debug";
-import { SystemModifierDefinition, ModifierFlags, Message, NodeType, ParseContext, SystemModifierNode, InlineEntity } from "../interface";
+import { SystemModifierDefinition, ModifierSlotType, Message, NodeType, SystemModifierNode, InlineEntity } from "../interface";
 import { InvalidArgumentMessage, NameAlreadyDefinedMessage } from "../messages";
 import { checkArgumentLength } from "../modifier-helper";
 import { assert } from "../util";
@@ -49,7 +49,7 @@ function parseDefineArguments(
 }
 
 export const DefineBlockMod = new SystemModifierDefinition
-    <ModifierState>('define-block', ModifierFlags.Normal, 
+    <ModifierState>('define-block', ModifierSlotType.Normal, 
 {
     // .define-block:name:args...[:(slot-id)]
     delayContentExpansion: true,
@@ -93,7 +93,7 @@ export const DefineBlockMod = new SystemModifierDefinition
 
 export const DefineInlineMod = new SystemModifierDefinition
     <ModifierState & { definition?: InlineEntity[]; }>(
-    'define-inline', ModifierFlags.Normal, 
+    'define-inline', ModifierSlotType.Normal, 
 {
     // .define-inline name:args...[:(slot-id)]
     delayContentExpansion: true,

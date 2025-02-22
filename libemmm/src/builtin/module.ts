@@ -1,8 +1,9 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { BlockModifierDefinition, BlockShorthand, Configuration, InlineModifierDefinition, InlineShorthand, Message, ModifierFlags, ParseContext, SystemModifierDefinition } from "../interface";
+import { BlockModifierDefinition, BlockShorthand, InlineModifierDefinition, InlineShorthand, Message, ModifierSlotType, SystemModifierDefinition } from "../interface";
 import { CannotUseModuleInSelfMessage, InvalidArgumentMessage, NoNestedModuleMessage, OverwriteDefinitionsMessage } from "../messages";
 import { checkArguments } from "../modifier-helper";
+import { ParseContext } from "../parser-config";
 import { NameManager } from "../util";
 import { builtins } from "./internal";
 
@@ -82,7 +83,7 @@ export const ModuleMod =
     new BlockModifierDefinition<{
         name: string,
         defs: ConfigDefinitions
-    }>('module', ModifierFlags.Normal, 
+    }>('module', ModifierSlotType.Normal, 
 {
     expand(node) {
         // no need to clone?
@@ -126,7 +127,7 @@ export const ModuleMod =
 });
 
 export const UseSystemMod = 
-    new SystemModifierDefinition<ConfigDefinitions>('use', ModifierFlags.Marker, 
+    new SystemModifierDefinition<ConfigDefinitions>('use', ModifierSlotType.None, 
 {
     prepareExpand(node, cxt) {
         const check = checkArguments(node, 1);
@@ -155,7 +156,7 @@ export const UseSystemMod =
 export const UseBlockMod = 
     new BlockModifierDefinition<{
         old: ConfigDefinitions
-    }>('use', ModifierFlags.Normal, 
+    }>('use', ModifierSlotType.Normal, 
 {
     beforeParseContent(node, cxt) {
         const check = checkArguments(node, 1);

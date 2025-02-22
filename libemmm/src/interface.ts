@@ -1,6 +1,4 @@
-
-import { debug } from "./debug";
-import { assert, cloneNode, NameManager, ReadonlyNameManager } from "./util";
+import { ParseContext } from "./parser-config";
 
 export enum MessageSeverity {
     Info,
@@ -121,24 +119,24 @@ export type ModifierArgument = PositionRange & {
 
 export type ArgumentEntity = TextNode | EscapedNode | InterpolationNode;
 
-export enum ModifierFlags {
-    Normal = 0,
+export enum ModifierSlotType {
+    Normal,
     /** Content is preformatted: no escaping, no inner tags */
-    Preformatted = 1,
+    Preformatted,
     /** No content slot */
-    Marker = 2
+    None
 }
 
 class ModifierBase<TNode, TEntity> {
     constructor(
         public readonly name: string, 
-        public readonly flags: ModifierFlags = ModifierFlags.Normal,
+        public readonly slotType = ModifierSlotType.Normal,
         args?: Partial<ModifierBase<TNode, TEntity>>) 
     {
         if (args) Object.assign(this, args);
     }
 
-    roleHint?: string
+    roleHint?: string;
     delayContentExpansion = false;
     alwaysTryExpand = false;
 
@@ -183,110 +181,3 @@ type Shorthand<TMod> = {
 
 export type BlockShorthand<TState> = Shorthand<BlockModifierDefinition<TState>>;
 export type InlineShorthand<TState> = Shorthand<InlineModifierDefinition<TState>>;
-
-export interface ParseContextStoreDefinitions {} 
-export type ParseContextStoreKey = keyof ParseContextStoreDefinitions;
-type ParseContextStoreEntry<S extends ParseContextStoreKey> = ParseContextStoreDefinitions[S];
-
-export class ParseContext {
-    private data: ParseContextStoreDefinitions = {};
-
-    constructor(
-        public config: Configuration, 
-        public variables = new Map<string, string>)
-    {
-        config.initializers.forEach((x) => x(this));
-    }
-    
-    init<S extends ParseContextStoreKey>(key: S, obj: ParseContextStoreEntry<S>) {
-        assert(!(key in this.data));
-        this.data[key] = obj;
-    }
-
-    set<S extends ParseContextStoreKey>(key: S, obj: ParseContextStoreEntry<S>) {
-        assert(key in this.data);
-        this.data[key] = obj;
-    }
-
-    get<S extends ParseContextStoreKey>(key: S): ParseContextStoreEntry<S> {
-        assert(key in this.data);
-        return this.data[key];
-    }
-}
-
-/// Warning: modifies the original nodes
-export function stripNode(...nodes: DocumentNode[]): DocumentNode[] {
-    return nodes.flatMap((node) => {
-        switch (node.type) {
-            case NodeType.Preformatted:
-            case NodeType.Text:
-            case NodeType.Escaped:
-                return [node];
-            case NodeType.BlockModifier:
-            case NodeType.InlineModifier:
-                if (node.expansion !== undefined)
-                    return node.expansion.flatMap((x) => stripNode(x));
-                // else fallthrough!
-            case NodeType.Paragraph:
-            case NodeType.Root:
-                node.content = node.content.flatMap((x) => stripNode(x)) as any;
-                return [node];
-            case NodeType.SystemModifier:
-                return [];
-            default:
-                return debug.never(node);
-        }
-    });
-}
-
-export class Document {
-    constructor(
-        public readonly root: RootNode,
-        public readonly context: ParseContext,
-        public readonly messages: readonly Message[]) {};
-    
-    toStripped() {
-        let doc = new Document(
-            stripNode(cloneNode(this.root, undefined, true))[0] as RootNode, 
-            this.context, this.messages);
-        return doc;
-    }
-}
-
-export interface ReadonlyConfiguration {
-    readonly initializers: readonly ((cxt: ParseContext) => void)[];
-    readonly blockModifiers: ReadonlyNameManager<BlockModifierDefinition<any>>;
-    readonly inlineModifiers: ReadonlyNameManager<InlineModifierDefinition<any>>;
-    readonly systemModifiers: ReadonlyNameManager<SystemModifierDefinition<any>>;
-    readonly argumentInterpolators: ReadonlyNameManager<ArgumentInterpolatorDefinition>;
-
-    readonly blockShorthands: ReadonlyNameManager<BlockShorthand<any>>;
-    readonly inlineShorthands: ReadonlyNameManager<InlineShorthand<any>>;
-    readonly reparseDepthLimit: number;
-}
-
-export class Configuration implements ReadonlyConfiguration {
-    initializers: ((cxt: ParseContext) => void)[] = [];
-    blockModifiers = new NameManager<BlockModifierDefinition<any>>;
-    inlineModifiers = new NameManager<InlineModifierDefinition<any>>;
-    systemModifiers = new NameManager<SystemModifierDefinition<any>>;
-    argumentInterpolators = new NameManager<ArgumentInterpolatorDefinition>;
-
-    blockShorthands = new NameManager<BlockShorthand<any>>;
-    inlineShorthands = new NameManager<InlineShorthand<any>>;
-    reparseDepthLimit = 10;
-
-    static from(from: ReadonlyConfiguration) {
-        let config = new Configuration();
-        config.initializers = [...from.initializers];
-        config.reparseDepthLimit = from.reparseDepthLimit;
-        config.blockModifiers = new NameManager(from.blockModifiers);
-        config.inlineModifiers = new NameManager(from.inlineModifiers);
-        config.systemModifiers = new NameManager(from.systemModifiers);
-        config.argumentInterpolators = new NameManager(from.argumentInterpolators);
-        config.blockShorthands = new NameManager(from.blockShorthands);
-        config.inlineShorthands = new NameManager(from.inlineShorthands);
-        return config;
-    }
-}
-

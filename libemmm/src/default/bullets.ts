@@ -1,15 +1,15 @@
-import { BlockModifierDefinition, ModifierFlags } from "../interface";
+import { BlockModifierDefinition, ModifierSlotType } from "../interface";
 import { InvalidArgumentMessage } from "../messages";
 import { checkArguments } from "../modifier-helper";
 import { BlockRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
 
 const bulletItemBlock = new BlockModifierDefinition(
-    'bullet-item', ModifierFlags.Normal,
+    'bullet-item', ModifierSlotType.Normal,
     { roleHint: undefined });
 
 const orderedListItemBlock = new BlockModifierDefinition<number>(
-    'ordered-item', ModifierFlags.Normal,
+    'ordered-item', ModifierSlotType.Normal,
     {
         roleHint: undefined,
         prepareExpand(node) {
@@ -25,7 +25,7 @@ const orderedListItemBlock = new BlockModifierDefinition<number>(
     });
 
 const subItemBlock = new BlockModifierDefinition(
-    'subitem', ModifierFlags.Normal,
+    'subitem', ModifierSlotType.Normal,
     { roleHint: undefined });
 
 export const BulletBlocks = [bulletItemBlock, orderedListItemBlock, subItemBlock];

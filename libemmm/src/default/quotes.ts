@@ -1,18 +1,18 @@
-import { BlockModifierDefinition, ModifierFlags, ParagraphNode } from "../interface";
+import { BlockModifierDefinition, ModifierSlotType, ParagraphNode } from "../interface";
 import { onlyPermitSingleBlock, onlyPermitSimpleParagraphs } from "../modifier-helper";
 import { BlockRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
 
 const quoteBlock = new BlockModifierDefinition(
-    'quote', ModifierFlags.Normal,
+    'quote', ModifierSlotType.Normal,
     { roleHint: 'quote' });
 
 const epitaphBlock = new BlockModifierDefinition(
-    'epitaph', ModifierFlags.Normal,
+    'epitaph', ModifierSlotType.Normal,
     { roleHint: 'quote' });
 
 const attributionBlock = new BlockModifierDefinition<boolean>(
-    'by', ModifierFlags.Normal,
+    'by', ModifierSlotType.Normal,
     {
         roleHint: 'quote',
         prepareExpand(node) {

@@ -1,11 +1,10 @@
 import { SimpleScanner } from "./scanner";
 import * as Parser from "./parser";
-import { BuiltinConfiguration } from "./builtin/builtin";
 import { debug, DebugLevel } from "./debug";
-import { BlockModifierDefinition, Configuration, ModifierFlags } from "./interface";
 import { debugPrint } from "./debug-print";
 import { DefaultConfiguration } from "./default/default";
 import { HTMLRenderConfiguration, HTMLRenderState } from "./default/html-renderer";
+import { Configuration } from "./parser-config";
 
 const TestConfig = Configuration.from(DefaultConfiguration);
 // TestConfig.blockModifiers.add(

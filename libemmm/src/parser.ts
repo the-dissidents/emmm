@@ -1,10 +1,11 @@
 import { debug } from "./debug";
 import { debugPrint } from "./debug-print";
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
+import { BlockEntity, BlockModifierDefinition, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierSlotType, ParagraphNode, PositionRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
 import { ContentShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, ReferredMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
+import { ParseContext, Configuration, Document } from "./parser-config";
 import { Scanner } from "./scanner";
 import { _Def, _Node, _Shorthand } from "./typing-helper";
-import { assert, has, NameManager } from "./util";
+import { assert, NameManager } from "./util";
 
 const GROUP_BEGIN = ':--';
 const GROUP_END = '--:';
@@ -19,9 +20,9 @@ const MODIFIER_INLINE_END_TAG = '[;]';
 const MODIFIER_SYSTEM_OPEN = '[-';
 
 const UnknownModifier = {
-    [NodeType.BlockModifier]: new BlockModifierDefinition('UNKNOWN', ModifierFlags.Normal),
-    [NodeType.InlineModifier]: new InlineModifierDefinition('UNKNOWN', ModifierFlags.Normal),
-    [NodeType.SystemModifier]: new SystemModifierDefinition('UNKNOWN', ModifierFlags.Normal)
+    [NodeType.BlockModifier]: new BlockModifierDefinition('UNKNOWN', ModifierSlotType.Normal),
+    [NodeType.InlineModifier]: new InlineModifierDefinition('UNKNOWN', ModifierSlotType.Normal),
+    [NodeType.SystemModifier]: new SystemModifierDefinition('UNKNOWN', ModifierSlotType.Normal)
 };
 
 type NodeWithBlockContent = 
@@ -342,7 +343,7 @@ class Parser {
         debug.trace(`PARSE ${NodeType[type]}:`, mod.name);
 
         const endsign = this.scanner.accept(MODIFIER_END_SIGN);
-        const flagMarker = has(mod.flags, ModifierFlags.Marker);
+        const flagMarker = mod.slotType == ModifierSlotType.None;
         if (!this.scanner.accept(MODIFIER_CLOSE_SIGN))
             this.emit.message(new ExpectedMessage(
                 this.scanner.position(), MODIFIER_CLOSE_SIGN));
@@ -470,7 +471,7 @@ class Parser {
             expansion: undefined
         };
 
-        const isMarker = has(node.mod.flags, ModifierFlags.Marker);
+        const isMarker = node.mod.slotType == ModifierSlotType.None;
         return this.MODIFIER_BODY(type, node, d.postfix, isMarker);
     }
 
@@ -490,7 +491,7 @@ class Parser {
             else this.emit.addBlockNode(node as BlockEntity);
         } else if (type == NodeType.InlineModifier) {
             this.emit.startInline(node as InlineModifierNode<unknown>);
-            const entity = has(node.mod.flags, ModifierFlags.Preformatted)
+            const entity = node.mod.slotType == ModifierSlotType.Preformatted
                 ? this.PREFORMATTED_INLINE_ENTITY.bind(this)
                 : this.INLINE_ENTITY.bind(this);
             while (true) {
@@ -507,7 +508,7 @@ class Parser {
             this.emit.startBlock(node as any);
             this.WARN_IF_MORE_NEWLINES_THAN(1);
             if (!this.scanner.isEOF()) {
-                if (has(node.mod.flags, ModifierFlags.Preformatted))
+                if (node.mod.slotType == ModifierSlotType.Preformatted)
                     this.PRE_PARAGRAPH();
                 else
                     this.BLOCK_ENTITY();

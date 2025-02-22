@@ -1,8 +1,9 @@
 import { debug } from "../debug";
-import { ParseContext, InlineModifierDefinition, ModifierFlags, ArgumentInterpolatorDefinition, SystemModifierDefinition, NodeType } from "../interface";
+import { InlineModifierDefinition, ModifierSlotType, ArgumentInterpolatorDefinition, SystemModifierDefinition, NodeType } from "../interface";
 import { InvalidArgumentMessage, UndefinedVariableMessage } from "../messages";
 import { builtins } from "./internal";
 import { checkArguments } from "../modifier-helper";
+import { ParseContext } from "../parser-config";
 
 function resolveId(id: string, cxt: ParseContext): string | undefined {
     const store = cxt.get(builtins)!;
@@ -31,7 +32,7 @@ function resolveId(id: string, cxt: ParseContext): string | undefined {
 }
 
 export const GetVarInlineMod = 
-    new InlineModifierDefinition<{ value: string; }>('$', ModifierFlags.Marker, 
+    new InlineModifierDefinition<{ value: string; }>('$', ModifierSlotType.None, 
 {
     alwaysTryExpand: true,
     // .$:id
@@ -58,7 +59,7 @@ export const GetVarInlineMod =
 });
 
 export const PrintInlineMod = 
-    new InlineModifierDefinition<{ value: string; }>('print', ModifierFlags.Marker, 
+    new InlineModifierDefinition<{ value: string; }>('print', ModifierSlotType.None, 
 {
     // .print:args...
     prepareExpand(node) {
@@ -86,7 +87,7 @@ export const GetVarInterpolator =
 
 export const VarMod = new SystemModifierDefinition<{
     id: string; value: string;
-}>('var', ModifierFlags.Marker, {
+}>('var', ModifierSlotType.None, {
     // .var id:value
     prepareExpand(node, cxt) {
         const check = checkArguments(node, 2);

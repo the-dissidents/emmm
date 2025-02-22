@@ -1,5 +1,5 @@
 import { debug } from "../debug";
-import { BlockModifierDefinition, ModifierFlags, ParagraphNode } from "../interface";
+import { BlockModifierDefinition, ModifierSlotType, ParagraphNode } from "../interface";
 import { InvalidArgumentMessage } from "../messages";
 import { checkArguments, onlyPermitSimpleParagraphs, onlyPermitSingleBlock } from "../modifier-helper";
 import { BlockRendererDefiniton } from "../renderer";
@@ -7,7 +7,7 @@ import { assert } from "../util";
 import { HTMLRenderType } from "./html-renderer";
 
 const headingBlock = new BlockModifierDefinition<number>(
-    'heading', ModifierFlags.Normal,
+    'heading', ModifierSlotType.Normal,
     {
         roleHint: 'heading',
         prepareExpand(node) {
@@ -32,7 +32,7 @@ const headingBlock = new BlockModifierDefinition<number>(
     });
 
 const numberedHeadingBlock = new BlockModifierDefinition<string[]>(
-    'numbered-heading', ModifierFlags.Normal,
+    'numbered-heading', ModifierSlotType.Normal,
     {
         roleHint: 'heading',
         prepareExpand(node) {

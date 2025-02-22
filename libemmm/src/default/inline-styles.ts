@@ -1,21 +1,21 @@
-import { InlineModifierDefinition, ModifierFlags } from "../interface";
+import { InlineModifierDefinition, ModifierSlotType } from "../interface";
 import { InlineRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
 
 const emphasisInline = new InlineModifierDefinition(
-    'emphasis', ModifierFlags.Normal,
+    'emphasis', ModifierSlotType.Normal,
     { roleHint: 'emphasis' });
 
 const keywordInline = new InlineModifierDefinition(
-    'keyword', ModifierFlags.Normal,
+    'keyword', ModifierSlotType.Normal,
     { roleHint: 'keyword' });
 
 const highlightInline = new InlineModifierDefinition(
-    'highlight', ModifierFlags.Normal,
+    'highlight', ModifierSlotType.Normal,
     { roleHint: 'highlight' });
 
 const commentaryInline = new InlineModifierDefinition(
-    'commentary', ModifierFlags.Normal,
+    'commentary', ModifierSlotType.Normal,
     { roleHint: 'commentary' });
 
 export const InlineStyles = [emphasisInline, keywordInline, highlightInline, commentaryInline];

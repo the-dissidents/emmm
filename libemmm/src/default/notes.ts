@@ -1,8 +1,10 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { InlineModifierDefinition, ModifierFlags, BlockModifierDefinition, BlockEntity, ParseContext, NodeType, stripNode } from "../interface";
+import { InlineModifierDefinition, ModifierSlotType, BlockModifierDefinition, BlockEntity, NodeType } from "../interface";
 import { checkArguments } from "../modifier-helper";
+import { ParseContext } from "../parser-config";
 import { InlineRendererDefiniton } from "../renderer";
+import { stripNode } from "../util";
 import { HTMLPostprocessPlugin, HTMLRenderType } from "./html-renderer";
 
 export const notes = Symbol();
@@ -20,7 +22,7 @@ type NoteDefinition = {
     content: BlockEntity[]
 }
 
-declare module '../interface' {
+declare module '../parser-config' {
     export interface ParseContextStoreDefinitions {
         [notes]?: {
             systems: Map<string, NoteSystem>,
@@ -37,7 +39,7 @@ export function initNotes(cxt: ParseContext) {
 }
 
 const noteMarkerInline = new InlineModifierDefinition<string>(
-    'note', ModifierFlags.Marker,
+    'note', ModifierSlotType.None,
     {
         roleHint: 'link',
         prepareExpand(node) {
@@ -49,7 +51,7 @@ const noteMarkerInline = new InlineModifierDefinition<string>(
     });
 
 const noteInline = new InlineModifierDefinition<string>(
-    'note-inline', ModifierFlags.Normal,
+    'note-inline', ModifierSlotType.Normal,
     {
         roleHint: 'quote',
         prepareExpand(node) {
@@ -77,7 +79,7 @@ const noteInline = new InlineModifierDefinition<string>(
     });
 
 const noteBlock = new BlockModifierDefinition<string>(
-    'note', ModifierFlags.Normal,
+    'note', ModifierSlotType.Normal,
     {
         roleHint: 'quote',
         prepareExpand(node) {

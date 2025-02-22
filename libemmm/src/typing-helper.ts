@@ -22,5 +22,5 @@ export type _Ent<T extends NodeType.InlineModifier | NodeType.BlockModifier | No
 export type _InstData<T extends NodeType.InlineModifier | NodeType.BlockModifier> = 
     T extends NodeType.InlineModifier ? InlineInstantiationData : BlockInstantiationData;
 
-export type _Shorthand<T extends NodeType.InlineModifier | NodeType.BlockModifier, TState = unknown> = 
+export type _Shorthand<T extends NodeType.InlineModifier | NodeType.BlockModifier> = 
     T extends NodeType.InlineModifier ? InlineShorthand<T> : BlockShorthand<T>;

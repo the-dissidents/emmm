@@ -1,13 +1,13 @@
-import { BlockModifierDefinition, ModifierFlags, InlineModifierDefinition } from "../interface";
+import { BlockModifierDefinition, ModifierSlotType, InlineModifierDefinition } from "../interface";
 import { BlockRendererDefiniton, InlineRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
 
 export const CodeBlock = new BlockModifierDefinition(
-    'code', ModifierFlags.Preformatted,
+    'code', ModifierSlotType.Preformatted,
     { roleHint: 'code' });
 
 export const CodeInline = new InlineModifierDefinition(
-    'code', ModifierFlags.Preformatted,
+    'code', ModifierSlotType.Preformatted,
     { roleHint: 'code' });
 
 export const CodeBlockRendererHTML = 

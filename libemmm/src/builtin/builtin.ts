@@ -1,4 +1,4 @@
-import { Configuration, ReadonlyConfiguration } from "../interface";
+import { Configuration, ReadonlyConfiguration } from "../parser-config";
 import { DefineBlockMod, DefineInlineMod } from "./define-modifier";
 import { DefineBlockShorthandMod, DefineInlineShorthandMod } from "./define-shorthand";
 import { initParseContext } from "./internal";

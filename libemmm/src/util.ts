@@ -1,5 +1,5 @@
 import { debug } from "./debug";
-import { DocumentNode, PositionRange, ModifierArgument, NodeType, InlineModifierDefinition, BlockModifierDefinition, InlineShorthand } from "./interface";
+import { DocumentNode, PositionRange, ModifierArgument, NodeType } from "./interface";
 
 // TODO: use a prefix tree to find names?
 export class NameManager<T extends {name: string}> {
@@ -144,5 +144,27 @@ export function cloneNodes(nodes: readonly DocumentNode[], withState = false): D
     return nodes.map((x) => cloneNode(x, undefined, withState));
 }
 
-
-
+/** Warning: modifies the original nodes */
+export function stripNode(...nodes: DocumentNode[]): DocumentNode[] {
+    return nodes.flatMap((node) => {
+        switch (node.type) {
+            case NodeType.Preformatted:
+            case NodeType.Text:
+            case NodeType.Escaped:
+                return [node];
+            case NodeType.BlockModifier:
+            case NodeType.InlineModifier:
+                if (node.expansion !== undefined)
+                    return node.expansion.flatMap((x) => stripNode(x));
+            // else fallthrough!
+            case NodeType.Paragraph:
+            case NodeType.Root:
+                node.content = node.content.flatMap((x) => stripNode(x)) as any;
+                return [node];
+            case NodeType.SystemModifier:
+                return [];
+            default:
+                return debug.never(node);
+        }
+    });
+}

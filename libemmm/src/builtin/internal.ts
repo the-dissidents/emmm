@@ -1,9 +1,9 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { BlockEntity, BlockShorthand, InlineEntity, InlineShorthand, Message, SystemModifierNode } from "../interface";
-import { ParseContext, ModifierNode, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags, NodeType } from "../interface";
+import { BlockEntity, InlineEntity, Message, SystemModifierNode, ModifierNode, BlockModifierDefinition, InlineModifierDefinition, ModifierSlotType, NodeType } from "../interface";
 import { InlineDefinitonInvalidEntityMessage } from "../messages";
 import { checkArguments } from "../modifier-helper";
+import { ParseContext } from "../parser-config";
 import { _Ent, _Def } from "../typing-helper";
 import { cloneNodes, assert } from "../util";
 import { ConfigDefinitions } from "./module";
@@ -30,7 +30,7 @@ export type InlineInstantiationData = {
 
 export const builtins = Symbol();
 
-declare module '../interface' {
+declare module '../parser-config' {
     export interface ParseContextStoreDefinitions {
         [builtins]?: {
             blockSlotDelayedStack: ModifierSignature[];
@@ -69,9 +69,9 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
     }
 
     const flag = 
-        signature.slotName === undefined ? ModifierFlags.Marker : 
-        signature.preformatted ? ModifierFlags.Preformatted 
-        : ModifierFlags.Normal;
+        signature.slotName === undefined ? ModifierSlotType.None : 
+        signature.preformatted ? ModifierSlotType.Preformatted 
+        : ModifierSlotType.Normal;
     const mod = (type == NodeType.BlockModifier
         ? new BlockModifierDefinition<State>(name, flag)
         : new InlineModifierDefinition<State>(name, flag)

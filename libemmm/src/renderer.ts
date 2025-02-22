@@ -1,5 +1,6 @@
 import { debug } from "./debug";
-import { BlockEntity, InlineEntity, NodeType, ParseContext, ParagraphNode, TextNode, PreNode, EscapedNode, BlockModifierNode, InlineModifierNode, BlockModifierDefinition, InlineModifierDefinition, Document } from "./interface";
+import { BlockEntity, InlineEntity, NodeType, ParagraphNode, TextNode, PreNode, EscapedNode, BlockModifierNode, InlineModifierNode, BlockModifierDefinition, InlineModifierDefinition } from "./interface";
+import { Document, ParseContext } from "./parser-config";
 
 export type RendererType<TState, TReturn, TOptions = undefined> = {
     state: TState;

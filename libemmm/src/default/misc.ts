@@ -1,10 +1,10 @@
-import { ModifierFlags, InlineModifierDefinition } from "../interface";
+import { ModifierSlotType, InlineModifierDefinition } from "../interface";
 import { checkArguments } from "../modifier-helper";
 import { InlineRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
 
 const rubyInline = new InlineModifierDefinition<string>(
-    'ruby', ModifierFlags.Normal,
+    'ruby', ModifierSlotType.Normal,
     {
         roleHint: undefined,
         prepareExpand(node) {
@@ -16,7 +16,7 @@ const rubyInline = new InlineModifierDefinition<string>(
     });
 
 const linkInline = new InlineModifierDefinition<string>(
-    'link', ModifierFlags.Normal,
+    'link', ModifierSlotType.Normal,
     {
         roleHint: 'link',
         prepareExpand(node) {

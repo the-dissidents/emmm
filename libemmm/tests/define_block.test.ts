@@ -2,13 +2,14 @@ import { describe, expect, test } from "vitest";
 import { BuiltinConfiguration } from "../src/builtin/builtin";
 import { SimpleScanner } from "../src/scanner";
 import * as Parser from "../src/parser";
-import { BlockModifierDefinition, Configuration, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
+import { BlockModifierDefinition, MessageSeverity, ModifierSlotType, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
+import { Configuration } from "../src/parser-config";
 
 const TestConfig = Configuration.from(BuiltinConfiguration);
 TestConfig.blockModifiers.add(
-    new BlockModifierDefinition('normal', ModifierFlags.Normal),
-    new BlockModifierDefinition('pre', ModifierFlags.Normal)
+    new BlockModifierDefinition('normal', ModifierSlotType.Normal),
+    new BlockModifierDefinition('pre', ModifierSlotType.Normal)
 );
 
 function parse(src: string) {

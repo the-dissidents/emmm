@@ -1,23 +1,24 @@
 import { debug } from "./debug";
-import { ArgumentEntity, NodeType, ModifierArgument, DocumentNode, Document, Message, MessageSeverity, BlockModifierDefinition, BlockShorthand, InlineModifierDefinition, InlineShorthand, ModifierFlags } from "./interface";
+import { ArgumentEntity, NodeType, ModifierArgument, DocumentNode, Message, MessageSeverity, BlockModifierDefinition, BlockShorthand, InlineModifierDefinition, InlineShorthand, ModifierSlotType } from "./interface";
 import { ReferredMessage } from "./messages";
-import { has, linePositions } from "./util";
+import { Document } from "./parser-config";
+import { linePositions } from "./util";
 
 export const debugPrint = {
     blockModifier: (x: BlockModifierDefinition<any>) => 
-        `[.${x.name}] (${ModifierFlags[x.flags]})`,
+        `[.${x.name}] (${ModifierSlotType[x.slotType]})`,
     
     inlineModifier: (x: InlineModifierDefinition<any>) => 
-        `[/${x.name}] (${ModifierFlags[x.flags]})`,
+        `[/${x.name}] (${ModifierSlotType[x.slotType]})`,
     
     inlineShorthand: (x: InlineShorthand<any>) =>
         x.name + x.parts.map((x, i) => ` .. <arg${i}> .. ${x}`).join('') 
-               + (has(x.mod.flags, ModifierFlags.Marker)
+               + (x.mod.slotType == ModifierSlotType.None
                     ? '' : ` .. <slot> .. ${x.postfix ?? '<no postfix>'}`),
 
     blockShorthand: (x: BlockShorthand<any>) =>
         x.name + x.parts.map((x, i) => ` .. <arg${i}> .. ${x}`).join('') 
-               + (has(x.mod.flags, ModifierFlags.Marker)
+               + (x.mod.slotType == ModifierSlotType.None
                     ? '' : ` .. <slot> .. ${x.postfix ?? '<no postfix>'}`),
     
     argument: (arg: ModifierArgument) => 

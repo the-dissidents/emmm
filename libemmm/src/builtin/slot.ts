@@ -1,7 +1,8 @@
 import { debug } from "../debug";
-import { BlockModifierDefinition, ModifierFlags, InlineModifierDefinition, ModifierNode, ParseContext, NodeType } from "../interface";
+import { BlockModifierDefinition, ModifierSlotType, InlineModifierDefinition, ModifierNode, NodeType } from "../interface";
 import { SlotUsedOutsideDefinitionMessage, InvalidArgumentMessage, EitherNormalOrPreMessage, UnknownModifierMessage } from "../messages";
-import { checkArgumentLength, checkArguments } from "../modifier-helper";
+import { checkArguments } from "../modifier-helper";
+import { ParseContext } from "../parser-config";
 import { _Def, _Ent, _InstData, _Node } from "../typing-helper";
 import { cloneNodes, NameManager } from "../util";
 import { builtins, ModifierSignature } from "./internal";
@@ -18,8 +19,8 @@ function slotModifier
     } | { ok: false; };
 
     const mod = (type == NodeType.BlockModifier
-        ? new BlockModifierDefinition<TState>(name, ModifierFlags.Marker)
-        : new InlineModifierDefinition<TState>(name, ModifierFlags.Marker)
+        ? new BlockModifierDefinition<TState>(name, ModifierSlotType.None)
+        : new InlineModifierDefinition<TState>(name, ModifierSlotType.None)
     ) as _Def<T, TState>;
     const isInline = type == NodeType.InlineModifier;
 

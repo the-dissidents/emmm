@@ -1,6 +1,6 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { SystemModifierDefinition, InlineEntity, ModifierFlags, Message, NodeType, ParseContext, SystemModifierNode, InlineShorthand, BlockShorthand } from "../interface";
+import { SystemModifierDefinition, InlineEntity, ModifierSlotType, Message, NodeType, SystemModifierNode, InlineShorthand, BlockShorthand } from "../interface";
 import { NameAlreadyDefinedMessage, InvalidArgumentMessage, ArgumentCountMismatchMessage } from "../messages";
 import { checkArguments } from "../modifier-helper";
 import { assert } from "../util";
@@ -88,7 +88,7 @@ function parseDefineArguments(
 
 export const DefineBlockShorthandMod = new SystemModifierDefinition
     <ShorthandState>
-    ('block-shorthand', ModifierFlags.Normal, 
+    ('block-shorthand', ModifierSlotType.Normal, 
 {
     // -inline-shorthand prefix:arg1:part1:arg2:part2...:(slot):postfix:
     delayContentExpansion: true,
@@ -140,7 +140,7 @@ export const DefineBlockShorthandMod = new SystemModifierDefinition
 
 export const DefineInlineShorthandMod = new SystemModifierDefinition
     <ShorthandState & { definition?: InlineEntity[]; }>
-    ('inline-shorthand', ModifierFlags.Normal, 
+    ('inline-shorthand', ModifierSlotType.Normal, 
 {
     // -inline-shorthand prefix:arg1:part1:arg2:part2...:(slot):postfix:
     delayContentExpansion: true,

@@ -3,6 +3,8 @@ import { debug, DebugLevel } from './debug';
 export * from './interface';
 export * from './scanner';
 export * from './parser';
+export * from './parser-config';
+export * from './renderer';
 export * as messages from './messages';
 export * from './builtin/builtin';
 export * from './default/default';
