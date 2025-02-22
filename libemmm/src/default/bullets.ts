@@ -1,6 +1,7 @@
-import { BlockModifierDefinition, BlockRendererDefiniton, ModifierFlags } from "../interface";
+import { BlockModifierDefinition, ModifierFlags } from "../interface";
 import { InvalidArgumentMessage } from "../messages";
 import { checkArguments } from "../modifier-helper";
+import { BlockRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
 
 const bulletItemBlock = new BlockModifierDefinition(

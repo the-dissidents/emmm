@@ -20,7 +20,7 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
     create(state) {
         let folds: FoldUnit[][] = [[]];
         let hanging: {hanging: number, normal: number}[] = [];
-        for (let i = 0; i < state.doc.lines; i++) {
+        for (let i = 0; i <= state.doc.lines; i++) {
             folds.push([]);
             hanging.push({ hanging: 0, normal: 0 });
         }
@@ -268,13 +268,6 @@ export const EmmmLanguageSupport: Extension = [
                 }
             };
         },
-        // initialSpacer(view) {
-        //     return new class extends GutterMarker {
-        //         toDOM(view: EditorView): Node {
-        //             return document.createTextNode("?");
-        //         }
-        //     };
-        // },
     })
 ]
 
@@ -390,13 +383,13 @@ export let DefaultTheme = EditorView.baseTheme({
     },
     ".em-role-heading": {
         color: 'darkred',
-        fontWeight: '600'
+        fontWeight: 'bold'
     },
     ".em-role-emphasis": {
-        fontWeight: '600'
+        fontStyle: 'italic'
     },
     ".em-role-keyword": {
-        textDecoration: 'underline'
+        fontWeight: 'bold'
     },
     ".em-role-highlight": {
         background: 'lightgoldenrodyellow'

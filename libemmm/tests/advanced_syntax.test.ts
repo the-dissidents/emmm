@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { BuiltinConfiguration } from "../src/builtin/builtin";
-import { SimpleScanner } from "../src/front";
+import { SimpleScanner } from "../src/scanner";
 import * as Parser from "../src/parser";
 import { BlockModifierDefinition, Configuration, InlineModifierDefinition, MessageSeverity, ModifierFlags, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";

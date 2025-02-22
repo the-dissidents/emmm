@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { SimpleScanner } from "../src/front";
+import { SimpleScanner } from "../src/scanner";
 import * as Parser from "../src/parser";
 import { MessageSeverity, Configuration, BlockModifierDefinition, InlineModifierDefinition, ModifierFlags, NodeType } from "../src/interface";
 

@@ -1,5 +1,6 @@
-import { ModifierFlags, InlineModifierDefinition, InlineRendererDefiniton } from "../interface";
+import { ModifierFlags, InlineModifierDefinition } from "../interface";
 import { checkArguments } from "../modifier-helper";
+import { InlineRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
 
 const rubyInline = new InlineModifierDefinition<string>(
@@ -33,7 +34,7 @@ export const MiscInlineRenderersHTML = [
     [rubyInline, (node, cxt) => {
         if (node.state === undefined)
             return cxt.state.invalidInline(node, 'bad format');
-        return `<rb>${cxt.state.render(node.content, cxt)}<rp>${node.state}</rp></rb>`
+        return `<ruby>${cxt.state.render(node.content, cxt)}<rt>${node.state}</rt></ruby>`
     }] satisfies InlineRendererDefiniton<HTMLRenderType, string>,
     [linkInline, (node, cxt) => {
         if (node.state === undefined)

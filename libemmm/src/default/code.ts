@@ -1,4 +1,5 @@
-import { BlockModifierDefinition, ModifierFlags, InlineModifierDefinition, BlockRendererDefiniton, InlineRendererDefiniton } from "../interface";
+import { BlockModifierDefinition, ModifierFlags, InlineModifierDefinition } from "../interface";
+import { BlockRendererDefiniton, InlineRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
 
 export const CodeBlock = new BlockModifierDefinition(
@@ -16,5 +17,5 @@ export const CodeBlockRendererHTML =
 
 export const CodeInlineRendererHTML = 
     [CodeInline, (node, cxt) => {
-        return `<code>${cxt.state.render(node.content, cxt)}</code>`
+        return `<span><code>${cxt.state.render(node.content, cxt)}</code></span>`
     }] satisfies InlineRendererDefiniton<HTMLRenderType>;

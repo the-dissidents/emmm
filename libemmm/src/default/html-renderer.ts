@@ -1,15 +1,31 @@
 import { debug } from "../debug";
-import { BlockEntity, InlineEntity, NodeType, ReadonlyRenderConfiguration, RenderConfiguration, RenderContext } from "../interface";
+import { BlockEntity, InlineEntity, NodeType } from "../interface";
+import { RenderContext, RenderConfiguration, ReadonlyRenderConfiguration } from "../renderer";
 import { BulletBlockRenderersHTML } from "./bullets";
 import { CodeBlockRendererHTML, CodeInlineRendererHTML } from "./code";
 import { HeadingBlockRenderersHTML } from "./headings";
+import { InlineStyleRenderersHTML } from "./inline-styles";
 import { MiscInlineRenderersHTML } from "./misc";
+import { NoteInlineRenderersHTML, NotesFooterPlugin } from "./notes";
 import { QuoteBlockRenderersHTML } from "./quotes";
+
+export type HTMLRendererOptions = {
+    headPlugins: HTMLPostprocessPlugin[];
+    headerPlugins: HTMLPostprocessPlugin[];
+    footerPlugins: HTMLPostprocessPlugin[];
+}
 
 export type HTMLRenderType = {
     state: HTMLRenderState,
-    return: string
-}; 
+    options: HTMLRendererOptions,
+    return: string,
+};
+
+export type HTMLRenderPlugin = 
+    (elem: BlockEntity | InlineEntity, cxt: RenderContext<HTMLRenderType>) => string | undefined;
+
+export type HTMLPostprocessPlugin = 
+    (cxt: RenderContext<HTMLRenderType>) => string | undefined;
 
 export class HTMLRenderState {
     title: string = '';
@@ -22,7 +38,8 @@ export class HTMLRenderState {
             .replaceAll("<", "&lt;")
             .replaceAll(">", "&gt;")
             .replaceAll('"', "&quot;")
-            .replaceAll("'", "&#39;");
+            .replaceAll("'", "&#39;")
+            .replaceAll('\n', '<br/>');
     }
 
     invalidBlock(node: BlockEntity, msg: string) {
@@ -30,7 +47,7 @@ export class HTMLRenderState {
         if (node.type === NodeType.BlockModifier)
             name += ` (${node.mod.name})`;
         // TODO: include details
-        return `<div class='invalid'>Invalid ${this.escape(name)}<br><i>${this.escape(msg)}</i></div>`
+        return `<details class='invalid'><summary>Invalid ${this.escape(name)}</summary><i>${this.escape(msg)}</i></details>`
     }
 
     invalidInline(node: InlineEntity, msg: string) {
@@ -38,7 +55,7 @@ export class HTMLRenderState {
         if (node.type === NodeType.InlineModifier)
             name += ` (${node.mod.name})`;
         // TODO: include details
-        return `<span class='invalid'>Invalid ${this.escape(name)}<br><i>${this.escape(msg)}</i></span>`
+        return `<span class='invalid'>Invalid ${this.escape(name)} – <i>${this.escape(msg)}</i></span>`
     }
 
     render(elems: (BlockEntity | InlineEntity)[], cxt: RenderContext<HTMLRenderType>) {
@@ -47,15 +64,35 @@ export class HTMLRenderState {
 }
 
 const htmlConfig = new RenderConfiguration<HTMLRenderType>(
+    {
+        headPlugins: [],
+        headerPlugins: [],
+        footerPlugins: [NotesFooterPlugin]
+    },
     (results, cxt) => 
 `<!DOCTYPE html>
 <html>
 <head>
-<title>${cxt.state.escape(cxt.state.title)}</title>`+`
-<style>${cxt.state.stylesheet}</style>`+`
+<meta charset="UTF-8">
+<title>${cxt.state.escape(cxt.state.title)}</title>
+<style>
+${cxt.state.stylesheet}
+</style>
+${cxt.config.options.headPlugins
+    .map((x) => x(cxt))
+    .filter((x) => x !== undefined)
+    .join('\n')}
 </head>
 <body>
+${cxt.config.options.headerPlugins
+    .map((x) => x(cxt))
+    .filter((x) => x !== undefined)
+    .join('\n')}
 ${results.join('\n')}
+${cxt.config.options.footerPlugins
+    .map((x) => x(cxt))
+    .filter((x) => x !== undefined)
+    .join('\n')}
 </body>
 </html>`);
 
@@ -94,7 +131,9 @@ htmlConfig.addBlockRenderer(
 
 htmlConfig.addInlineRenderer(
     CodeInlineRendererHTML,
-    ...MiscInlineRenderersHTML
+    ...InlineStyleRenderersHTML,
+    ...MiscInlineRenderersHTML,
+    ...NoteInlineRenderersHTML
 )
 
 export const HTMLRenderConfiguration

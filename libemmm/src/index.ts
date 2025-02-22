@@ -1,7 +1,7 @@
 import { debug, DebugLevel } from './debug';
 
 export * from './interface';
-export * from './front';
+export * from './scanner';
 export * from './parser';
 export * as messages from './messages';
 export * from './builtin/builtin';

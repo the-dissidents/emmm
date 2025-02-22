@@ -1,7 +1,8 @@
 import { debug } from "./debug";
 import { debugPrint } from "./debug-print";
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, Scanner, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
-import { ContentShouldBeOnNewlineMessage, ExpectedMessage, NewBlockShouldBeOnNewlineMessage, ReachedRecursionLimitMessage as ReachedReparseLimitMessage, ReferredMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
+import { BlockEntity, BlockModifierDefinition, BlockModifierNode, Configuration, Document, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierFlags, ParagraphNode, ParseContext, PositionRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
+import { ContentShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, ReferredMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
+import { Scanner } from "./scanner";
 import { _Def, _Node, _Shorthand } from "./typing-helper";
 import { assert, has, NameManager } from "./util";
 
@@ -246,7 +247,7 @@ class Parser {
             this.emit.message(...node.mod.afterProcessExpansion(node as any, this.cxt, immediate));
         if (!ok && depth == 0) {
             const limit = this.cxt.config.reparseDepthLimit;
-            this.emit.message(new ReachedReparseLimitMessage(
+            this.emit.message(new ReachedRecursionLimitMessage(
                 node.start, node.end, limit, node.mod.name));
         }
         return ok;
@@ -526,12 +527,6 @@ class Parser {
     // returns false if breaking out of paragraph
     private INLINE_ENTITY(): boolean {
         assert(!this.scanner.isEOF());
-        // if (this.scanner.peek(MODIFIER_BLOCK_OPEN)) 
-        // {
-        //     this.emit.message(
-        //         new NewBlockShouldBeOnNewlineMessage(this.scanner.position()))
-        //     return false;
-        // }
         if (this.scanner.peek(MODIFIER_INLINE_OPEN))
             return this.MODIFIER(NodeType.InlineModifier);
         if (this.scanner.peek(MODIFIER_SYSTEM_OPEN))

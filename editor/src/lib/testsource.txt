@@ -1,0 +1,41 @@
+[-inline-shorthand _:():_]
+[/emphasis][/slot][;]
+
+[-inline-shorthand *:():*]
+[/keyword][/slot][;]
+
+[-inline-shorthand <<:():>>]
+[/highlight][/slot][;]
+
+[-inline-shorthand（:():）]
+[/commentary]（[/slot]）[;]
+
+[-inline-shorthand:`:():`]
+[/inject-pre-slot code]
+
+[-block-shorthand >:()]
+[.quote][.slot]
+
+[-inline-shorthand:[[:id:\]\]]
+[/note $(id);]
+
+[-block-shorthand:[\::id:\]:()]
+[.note $(id)][.slot]
+
+An _emphasized_ word or _a phrase_; this is a [/link xyz] hyperlink [;]. << Highlighted _text_[[1]] is like this >>. An important *concept* is best accentuated by making it a keyword.
+
+[:1] A footnote explaining there is an emphasis inside the highlighted text.
+
+中文字体没有真正意义上斜体的概念[[2]]，所以通常都将*重要字词*标记为关键字。使用\*是因为比较便于输入；\_在输入法下会变成破折号。上面使用了\\进行转义，但是也许更清楚的写法是利用行内代码块：`*`便于输入，`_`会变成破折号。
+
+[:2] 可能有人认为，在外文使用斜体的情况下，中文排版中应该使用楷体、仿宋等字体。这种做法实际上只是对外文排版习俗的一种*借译*（calque），不符合惯用的做法。
+
+Below is a blockquote; note that the single newlines are preserved.
+
+> When to the sessions of sweet silent thought
+I summon up remembrance of things past,
+I sigh the lack of many a thing I sought,
+And with old woes new wail my dear time's waste
+[.by] Shakespeare, Sonnet 30
+
+支持注音：[/ruby Hiraishin]避雷針[;]

@@ -1,7 +1,8 @@
 import { debug } from "../debug";
-import { BlockModifierDefinition, ModifierFlags, BlockRendererDefiniton, ParagraphNode } from "../interface";
+import { BlockModifierDefinition, ModifierFlags, ParagraphNode } from "../interface";
 import { InvalidArgumentMessage } from "../messages";
 import { checkArguments, onlyPermitSimpleParagraphs, onlyPermitSingleBlock } from "../modifier-helper";
+import { BlockRendererDefiniton } from "../renderer";
 import { assert } from "../util";
 import { HTMLRenderType } from "./html-renderer";
 

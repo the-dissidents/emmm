@@ -5,6 +5,8 @@
   import { EditorState } from "@codemirror/state";
   import * as emmm from '@the_dissidents/libemmm';
 
+  import testString from './testsource.txt?raw';
+
   interface Props {
     onchange?(text: string): void;
     onparse?(doc: emmm.Document): void;
@@ -16,13 +18,13 @@
   let view: EditorView;
   let state: EditorState;
 
-  let config = new emmm.Configuration(emmm.DefaultConfiguration);
+  let config = emmm.Configuration.from(emmm.DefaultConfiguration);
 
   const exts = [
     EditorView.updateListener.of((update) => {
       const prev = update.startState.field(emmmDocument);
       const doc = update.state.field(emmmDocument);
-      if (prev !== doc && doc && onparse)
+      if (/*prev !== doc &&*/ doc && onparse)
         onparse(doc.data);
 
       if (update.docChanged && onchange)
@@ -32,14 +34,7 @@
   ];
 
   onMount(() => {
-    let text = `[-define-block wrapper:var:name]
-[-define-block $(name):value]
-[-var $(var):$(value)]
-
-[.wrapper COLOR:color;]
-
-[.color 123;]`;
-    state = createEditorState(text, exts);
+    state = createEditorState(testString, exts);
     view = new EditorView({
       parent: editorContainer,
       state,

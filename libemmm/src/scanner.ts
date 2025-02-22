@@ -1,4 +1,3 @@
-import { Scanner } from "./interface";
 import { assert } from "./util";
 
 export class SimpleScanner implements Scanner {
@@ -40,4 +39,23 @@ export class SimpleScanner implements Scanner {
         this.pos++;
         return char;
     }
+}
+
+// The scanner of any implementation should be capable of handling UTF-8 
+// strings at least as well as Typescript.
+export interface Scanner {
+    position(): number;
+    isEOF(): boolean;
+
+    // return true if sees str immediately
+    peek(str: string): boolean;
+
+    // if sees str immediately, consumes it and returns true
+    accept(str: string): boolean;
+
+    // consumes a character and returns it; throws at EOF
+    acceptChar(): string;
+
+    // newlines are NOT whitespaces
+    acceptWhitespaceChar(): string | null;
 }

@@ -1,4 +1,5 @@
-import { BlockRendererDefiniton, InlineModifierDefinition, InlineRendererDefiniton, ModifierFlags } from "../interface";
+import { InlineModifierDefinition, ModifierFlags } from "../interface";
+import { InlineRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
 
 const emphasisInline = new InlineModifierDefinition(
