@@ -259,13 +259,17 @@ class Parser {
         return new Document(this.emit.root, this.cxt, this.emit.messages);
     }
 
+    private WHITESPACES() {
+        while (this.scanner.acceptWhitespaceChar() !== null) {}
+    }
+
     private WHITESPACES_OR_NEWLINES() {
         while (this.scanner.acceptWhitespaceChar() !== null
             || this.scanner.accept('\n')) {}
     }
 
     private SHOULD_BE_A_NEWLINE() {
-        while (this.scanner.acceptWhitespaceChar() !== null) { }
+        this.WHITESPACES();
         if (!this.scanner.accept('\n')) this.emit.message(
             new ContentShouldBeOnNewlineMessage(this.scanner.position()));
     }
@@ -428,6 +432,16 @@ class Parser {
         }
     }
 
+    #trimNode(node: ParagraphNode | ModifierNode) {
+        if (node.content.length == 0) return;
+        let first = node.content[0];
+        let last = node.content.at(-1)!;
+        if (first.type == NodeType.Text)
+            first.content = first.content.trimStart();
+        if (last.type == NodeType.Text)
+            last.content = last.content.trimEnd();
+    }
+
     private PARAGRAPH() {
         assert(!this.scanner.isEOF());
         const node: ParagraphNode = {
@@ -436,13 +450,14 @@ class Parser {
             end: -1,
             content: []
         };
-        debug.trace('PARSE para');
+        // debug.trace('PARSE para');
         this.emit.startInline(node);
         while (!this.scanner.isEOF() && this.INLINE_ENTITY()) {}
         this.emit.endInline();
         const last = node.content.at(-1);
         node.actualEnd = last?.actualEnd ?? last?.end;
-        debug.trace('PARSE para end');
+        this.#trimNode(node);
+        // debug.trace('PARSE para end');
     }
 
     // returns false if breaking out of paragraph
@@ -490,8 +505,10 @@ class Parser {
             if (type === NodeType.InlineModifier) this.emit.addInlineNode(node as InlineEntity);
             else this.emit.addBlockNode(node as BlockEntity);
         } else if (type == NodeType.InlineModifier) {
-            this.emit.startInline(node as InlineModifierNode<unknown>);
-            const entity = node.mod.slotType == ModifierSlotType.Preformatted
+            node = node as InlineModifierNode<unknown>;
+            this.emit.startInline(node);
+            const pre = node.mod.slotType == ModifierSlotType.Preformatted;
+            const entity = pre
                 ? this.PREFORMATTED_INLINE_ENTITY.bind(this)
                 : this.INLINE_ENTITY.bind(this);
             while (true) {
@@ -504,6 +521,9 @@ class Parser {
                 }
             }
             this.emit.endInline();
+            if (!pre && node.content.length > 0) {
+                this.#trimNode(node)
+            }
         } else {
             this.emit.startBlock(node as any);
             this.WARN_IF_MORE_NEWLINES_THAN(1);
@@ -558,7 +578,7 @@ class Parser {
         assert(!this.scanner.isEOF());
         if (this.scanner.accept('\n')) {
             // these whitespaces in a blank line have no effect
-            while (this.scanner.acceptWhitespaceChar() !== null) {}
+            this.WHITESPACES();
             if  (this.scanner.peek(MODIFIER_BLOCK_OPEN)
              ||  this.scanner.peek(MODIFIER_SYSTEM_OPEN)
              ||  this.cxt.config.blockShorthands.find((x) => this.scanner.peek(x.name))

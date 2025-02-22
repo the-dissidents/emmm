@@ -55,7 +55,7 @@ describe('basic syntax', () => {
                 content: [{ type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] }]
             }
         ]);
-        doc = parse(`   [.normal]   \n   abc\n   def`);
+        doc = parse(`   [.normal]   \n   abc\n   def   `);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
@@ -97,7 +97,7 @@ describe('basic syntax', () => {
                 ]
             },
         ]);
-        doc = parse(`   [.normal]   \n   :--\nabc\n--:`);
+        doc = parse(`   [.normal]   \n   :--\n   abc   \n--:`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
@@ -223,13 +223,22 @@ describe('basic syntax', () => {
         expect.soft(doc.root.content).toMatchObject(obj1);
     });
     test('normal inline modifier', () => {
-        let doc = parse(`[/normal] abc [;]`);
+        let doc = parse(`[/normal]abc[;]`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.Paragraph,
             content: [ {
                 type: NodeType.InlineModifier, mod: {name: 'normal'},
-                content: [{type: NodeType.Text, content: ' abc '}]
+                content: [{type: NodeType.Text, content: 'abc'}]
+            } ]
+        } ]);
+        doc = parse(`[/normal] abc [;]`);
+        expect.soft(doc.messages).toHaveLength(0);
+        expect.soft(doc.root.content).toMatchObject([ {
+            type: NodeType.Paragraph,
+            content: [ {
+                type: NodeType.InlineModifier, mod: {name: 'normal'},
+                content: [{type: NodeType.Text, content: 'abc'}]
             } ]
         } ]);
         doc = parse(`[/normal]abc[/normal]def[;][;]`);
