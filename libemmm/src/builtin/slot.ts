@@ -33,7 +33,7 @@ function slotModifier
                 s.preformatted = preformatted;
                 debug.trace('set preformatted to ', preformatted);
             } else if (s.preformatted !== preformatted) {
-                return [new EitherNormalOrPreMessage(node.start, node.end)];
+                return [new EitherNormalOrPreMessage(node.location)];
             }
             return [];
         }
@@ -55,7 +55,7 @@ function slotModifier
             // check inside definition
             if (data.length == 0 && stack.length == 0) {
                 node.state = { ok: false };
-                return [new SlotUsedOutsideDefinitionMessage(node.start, node.head.end)];
+                return [new SlotUsedOutsideDefinitionMessage(node.location)];
             }
     
             // find default
@@ -79,7 +79,7 @@ function slotModifier
             if (immediate) {
                 node.state = { ok: false };
                 const arg = node.arguments[0];
-                return [new InvalidArgumentMessage(arg.start, arg.end, id)];
+                return [new InvalidArgumentMessage(arg.location, id)];
             }
         })();
 
@@ -87,11 +87,11 @@ function slotModifier
             const arg = node.arguments.at(-1)!;
             const modName = arg.expansion!;
             const mod = ((isInline 
-                ? cxt.config.inlineModifiers : cxt.config.blockModifiers) as NameManager<_Def<T>>)
-                .get(modName);
+                ? cxt.config.inlineModifiers 
+                : cxt.config.blockModifiers) as NameManager<_Def<T>>).get(modName);
             if (!mod) {
                 node.state = { ok: false };
-                return [new UnknownModifierMessage(arg.start, arg.end, modName)];
+                return [new UnknownModifierMessage(arg.location, modName)];
             }
             if (node.state?.ok)
                 node.state.injectMod = mod;
@@ -108,9 +108,8 @@ function slotModifier
             const mod = node.state.injectMod! as any;
             const modNode: ModifierNode = {
                 type, mod,
-                start: node.start,
-                end: node.end,
-                head: { start: node.start, end: node.end },
+                location: node.location,
+                head: node.head,
                 arguments: [], // TODO: enable injecting args
                 content: cloned as any
             };

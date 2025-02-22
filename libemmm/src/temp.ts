@@ -4,7 +4,7 @@ import { debug, DebugLevel } from "./debug";
 import { debugPrint } from "./debug-print";
 import { DefaultConfiguration } from "./default/default";
 import { HTMLRenderConfiguration, HTMLRenderState } from "./default/html-renderer";
-import { Configuration } from "./parser-config";
+import { Configuration, ParseContext } from "./parser-config";
 
 const TestConfig = Configuration.from(DefaultConfiguration);
 // TestConfig.blockModifiers.add(
@@ -13,17 +13,17 @@ const TestConfig = Configuration.from(DefaultConfiguration);
 //     new BlockModifierDefinition('marker', ModifierFlags.Marker)
 // );
 
-let text2 = String.raw`
+let text1 = String.raw`
 [-var name:foobar]
 [-var version:0.1.0]
+
+[-block-shorthand:[\::id:\]:()]
+[.note $(id)][.slot]
 
 Version [/$version], created by [/$name]
 `;
 
-text2 = String.raw`
-[-block-shorthand:[\::id:\]:()]
-[.note $(id)][.slot]
-
+let text2 = String.raw`
 [.heading 1] Heading
 
 »Setzt Sie das in solches Erstaunen?« fragte der Diener.
@@ -36,12 +36,13 @@ text2 = String.raw`
 [.bullet-item] So I can also write: <script> ..? </script>`;
 
 debug.level = DebugLevel.Trace;
-let scanner = new SimpleScanner(text2);
-let t0 = performance.now();
-let doc = Parser.parse(scanner, Configuration.from(TestConfig));
+let context = new ParseContext(TestConfig);
+
+Parser.parse(new SimpleScanner(text1, {name: '<lib>'}), context);
+
+let doc = Parser.parse(new SimpleScanner(text2, {name: '<source>'}), context);
 doc = doc.toStripped();
 console.log(debugPrint.document(doc, text2))
-// console.log(performance.now() - t0);
 
 let renderConfig = HTMLRenderConfiguration;
 let html = renderConfig.render(doc, new HTMLRenderState());

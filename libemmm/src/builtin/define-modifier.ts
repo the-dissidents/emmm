@@ -22,7 +22,7 @@ function parseDefineArguments(
     const name = node.arguments[0];
     const nameValue = name.expansion;
     if (nameValue === '' || nameValue?.includes('\n')) return [
-        new InvalidArgumentMessage(name.start, name.end, nameValue)];
+        new InvalidArgumentMessage(name.location, nameValue)];
 
     let slotName = '';
     if (node.arguments.length > 1) {
@@ -31,14 +31,14 @@ function parseDefineArguments(
             const match = /^\((.*)\)$/.exec(last.expansion);
             slotName = match ? match[1] : '';
         } else msgs.push(
-            new InvalidArgumentMessage(last.start, last.end));
+            new InvalidArgumentMessage(last.location));
     }
 
     const args = node.arguments.slice(1, (slotName !== '')
         ? node.arguments.length - 1 : undefined).map((x) => 
     {
         if (!x.expansion) msgs.push(
-            new InvalidArgumentMessage(x.start, x.end));
+            new InvalidArgumentMessage(x.location));
         return x.expansion ?? '';
     });
 
@@ -74,9 +74,9 @@ export const DefineBlockMod = new SystemModifierDefinition
         const arg = node.arguments[0];
         const msgs = node.state.msgs;
         if (!node.state.name) 
-            msgs.push(new InvalidArgumentMessage(arg.start, arg.end));
+            msgs.push(new InvalidArgumentMessage(arg.location));
         else if (cxt.config.blockModifiers.has(node.state.name))
-            msgs.push(new NameAlreadyDefinedMessage(arg.start, arg.end, node.state.name));
+            msgs.push(new NameAlreadyDefinedMessage(arg.location, node.state.name));
         return msgs;
     },
     expand(node, cxt, immediate) {
@@ -117,11 +117,11 @@ export const DefineInlineMod = new SystemModifierDefinition
         if (!immediate || !node.state) return [];
         const arg = node.arguments[0];
         if (!node.state.name) 
-            return [new InvalidArgumentMessage(arg.start, arg.end)];
+            return [new InvalidArgumentMessage(arg.location)];
 
         const msgs = node.state.msgs;
         if (cxt.config.inlineModifiers.has(node.state.name))
-            msgs.push(new NameAlreadyDefinedMessage(arg.start, arg.end, node.state.name));
+            msgs.push(new NameAlreadyDefinedMessage(arg.location, node.state.name));
         
         node.state.definition = makeInlineDefinition(node, msgs);
         return msgs;

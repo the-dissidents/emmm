@@ -1,6 +1,5 @@
 import { debug } from "./debug";
-import { ArgumentEntity, NodeType, ModifierArgument, DocumentNode, Message, MessageSeverity, BlockModifierDefinition, BlockShorthand, InlineModifierDefinition, InlineShorthand, ModifierSlotType } from "./interface";
-import { ReferredMessage } from "./messages";
+import { ArgumentEntity, NodeType, ModifierArgument, DocumentNode, Message, MessageSeverity, BlockModifierDefinition, BlockShorthand, InlineModifierDefinition, InlineShorthand, ModifierSlotType, BlockEntity, InlineEntity, LocationRange } from "./interface";
 import { Document } from "./parser-config";
 import { linePositions } from "./util";
 
@@ -24,7 +23,8 @@ export const debugPrint = {
     argument: (arg: ModifierArgument) => 
         arg.content.map(debugPrintArgEntity).join(''),
 
-    node: (...nodes: DocumentNode[]) => nodes.map((x) => debugPrintNode(x)).join('\n'),
+    node: (...nodes: (BlockEntity | InlineEntity)[]) => 
+        nodes.map((x) => debugPrintNode(x)).join('\n'),
 
     document: debugDumpDocument
 }
@@ -42,34 +42,33 @@ function debugPrintArgEntity(node: ArgumentEntity): string {
     }
 }
 
-function debugPrintNode(node: DocumentNode, prefix = '') {
-    function debugPrintNodes(content: DocumentNode[], prefix: string = '') {
+function debugPrintNode(node: BlockEntity | InlineEntity, prefix = '') {
+    function debugPrintNodes(content: (BlockEntity | InlineEntity)[], prefix: string = '') {
         let dumps = content.map((x) => debugPrintNode(x, prefix + '  ')).filter((x) => x.length > 0);
         if (dumps.length == 0) return '';
         return dumps.map((x) => `${prefix}  ${x}`).join('\n');
     }
-    let result = `<${NodeType[node.type]}@${node.start}`;
+    let result = `<${NodeType[node.type]}@${node.location.start}`;
     switch (node.type) {
-        case NodeType.Root:
         case NodeType.Paragraph:
             const content = debugPrintNodes(node.content, prefix);
             if (content.length > 0)
-                result += `>\n${content}\n${prefix}</${NodeType[node.type]}@${node.end}>`;
-            else result += `-${node.end} />`;
+                result += `>\n${content}\n${prefix}</${NodeType[node.type]}@${node.location.end}>`;
+            else result += `-${node.location.end} />`;
             break;
         case NodeType.Escaped:
-            result += `>\n${prefix}  ${node.content}\n${prefix}</${NodeType[node.type]}@${node.end}>`;
+            result += `>\n${prefix}  ${node.content}\n${prefix}</${NodeType[node.type]}@${node.location.end}>`;
             break;
         case NodeType.Preformatted:
-            result += `>\n${prefix}  ${node.content.text}\n${prefix}</${NodeType[node.type]}@${node.end}>`;
+            result += `>\n${prefix}  ${node.content.text}\n${prefix}</${NodeType[node.type]}@${node.location.end}>`;
             break;
         case NodeType.InlineModifier:
         case NodeType.BlockModifier:
         case NodeType.SystemModifier:
-            const args = node.arguments.map((x, i) => `\n${prefix}    (${i})@${x.start}-${x.end}=${debugPrint.argument(x)}`).join('');
+            const args = node.arguments.map((x, i) => `\n${prefix}    (${i})@${x.location.start}-${x.location.end}=${debugPrint.argument(x)}`).join('');
             if (node.content.length > 0) {
-                result += ` id=${node.mod.name}${args}>\n` + debugPrintNodes(node.content, prefix) + `\n${prefix}</${NodeType[node.type]}@${node.end}>`;
-            } else result += `-${node.end} id=${node.mod.name}${args} />`;
+                result += ` id=${node.mod.name}${args}>\n` + debugPrintNodes(node.content, prefix) + `\n${prefix}</${NodeType[node.type]}@${node.location.end}>`;
+            } else result += `-${node.location.end} id=${node.mod.name}${args} />`;
             if (node.expansion) {
                 const content = debugPrintNodes(node.expansion, prefix);
                 if (content.length > 0)
@@ -102,16 +101,16 @@ function debugDumpDocument(doc: Document, source: string): string {
     }
 
     function dumpMsg(m: Message) {
-        let result = `at ${pos2lc(m.start)}-${pos2lc(m.end)}: ${MessageSeverity[m.severity]}[${m.code}]: ${m.info}`;
-        while (m instanceof ReferredMessage) {
-            m = m.original;
-            result += `\n---> original at: ${pos2lc(m.start)}-${pos2lc(m.end)}`;
+        let loc: LocationRange | undefined = m.location;
+        let result = `at ${pos2lc(loc.start)}-${pos2lc(loc.end)}: ${MessageSeverity[m.severity]}[${m.code}]: ${m.info}`;
+        while (loc = loc.original) {
+            result += `\n---> original at: ${pos2lc(loc.start)}-${pos2lc(loc.end)}`;
         }
         return result;
     }
 
-    let root = debugPrintNode(doc.root);
+    let root = debugPrint.node(...doc.root.content);
     let msgs = doc.messages.map(dumpMsg).join('\n');
     if (msgs.length > 0) msgs += '\n';
-    return `${msgs}${root}`;
+    return `Document: ${doc.root.source.name}\n${msgs}${root}`;
 }

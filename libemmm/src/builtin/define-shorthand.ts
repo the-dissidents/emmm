@@ -26,7 +26,7 @@ function parseDefineArguments(
     const name = node.arguments[0];
     const nameValue = name.expansion!;
     if (nameValue === '' || nameValue?.includes('\n')) return [
-        new InvalidArgumentMessage(name.start, name.end, nameValue)];
+        new InvalidArgumentMessage(name.location, nameValue)];
 
     let slotName: string | undefined = undefined;
     let parts: [string, string][] = [];
@@ -42,13 +42,13 @@ function parseDefineArguments(
                 if (i < node.arguments.length) {
                     if (node.arguments[i].expansion === '') {
                         msgs.push(new InvalidArgumentMessage(
-                            node.arguments[i].start, node.arguments[i].end, 'postfix'));
+                            node.arguments[i].location, 'postfix'));
                     } else {
                         postfix = node.arguments[i].expansion!;
                         i++;
                     }
                 } else msgs.push(
-                    new ArgumentCountMismatchMessage(node.start, node.end));
+                    new ArgumentCountMismatchMessage(node.location));
             }
             break;
         }
@@ -57,17 +57,17 @@ function parseDefineArguments(
         if (i < node.arguments.length) {
             const id = arg.expansion!;
             if (id === '') {
-                return [new InvalidArgumentMessage(arg.start, arg.end, 'id')];
+                return [new InvalidArgumentMessage(arg.location, 'id')];
             }
             const part = node.arguments[i].expansion!;
             if (part === '') {
                 return [new InvalidArgumentMessage(
-                    node.arguments[i].start, node.arguments[i].end, 'part')];
+                    node.arguments[i].location, 'part')];
             }
             parts.push([id, part]);
             i++;
         } else {
-            msgs.push(new ArgumentCountMismatchMessage(node.start, node.end));
+            msgs.push(new ArgumentCountMismatchMessage(node.location));
             break;
         }
     }
@@ -75,9 +75,9 @@ function parseDefineArguments(
     if (i == node.arguments.length - 1) {
         const last = node.arguments[i];
         if (last.expansion !== '') msgs.push(
-            new InvalidArgumentMessage(last.start, last.end, '(must be empty)'));
+            new InvalidArgumentMessage(last.location, '(must be empty)'));
     } else if (i < node.arguments.length - 1)
-        msgs.push(new ArgumentCountMismatchMessage(node.start, node.end));
+        msgs.push(new ArgumentCountMismatchMessage(node.location));
 
     let signature: ModifierSignature = 
         { slotName, args: parts.map((x) => x[0]), preformatted: undefined };
@@ -113,10 +113,10 @@ export const DefineBlockShorthandMod = new SystemModifierDefinition
         if (!immediate || !node.state) return [];
         const arg = node.arguments[0];
         if (!node.state) 
-            return [new InvalidArgumentMessage(arg.start, arg.end)];
+            return [new InvalidArgumentMessage(arg.location)];
         const msgs = node.state.msgs;
         if (cxt.config.blockShorthands.has(node.state.name))
-            msgs.push(new NameAlreadyDefinedMessage(arg.start, arg.end, node.state.name));
+            msgs.push(new NameAlreadyDefinedMessage(arg.location, node.state.name));
         return msgs;
     },
     expand(node, cxt, immediate) {
@@ -165,10 +165,10 @@ export const DefineInlineShorthandMod = new SystemModifierDefinition
         if (!immediate || !node.state) return [];
         const arg = node.arguments[0];
         if (!node.state) 
-            return [new InvalidArgumentMessage(arg.start, arg.end)];
+            return [new InvalidArgumentMessage(arg.location)];
         const msgs = node.state.msgs;
         if (cxt.config.inlineShorthands.has(node.state.name))
-            msgs.push(new NameAlreadyDefinedMessage(arg.start, arg.end, node.state.name));
+            msgs.push(new NameAlreadyDefinedMessage(arg.location, node.state.name));
         node.state.definition = makeInlineDefinition(node, msgs);
         return msgs;
     },

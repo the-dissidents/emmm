@@ -93,9 +93,9 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
         } satisfies State;
         return [];
     };
-    mod.expand = (node: ModifierNode<State>, cxt: ParseContext) => {
+    mod.expand = (node: ModifierNode<State>) => {
         if (!node.state?.ok) return [];
-        const contentClone = cloneNodes(content) as any[];
+        const contentClone = cloneNodes(content, {newLocation: node.location}) as any[];
         return contentClone;
     };
     mod.beforeProcessExpansion = (node: ModifierNode<State>, cxt: ParseContext) => {
@@ -137,7 +137,7 @@ export function makeInlineDefinition(node: SystemModifierNode<any>, msgs: Messag
                 }
             case NodeType.Preformatted:
             case NodeType.BlockModifier:
-                msgs.push(new InlineDefinitonInvalidEntityMessage(n.start, n.end));
+                msgs.push(new InlineDefinitonInvalidEntityMessage(n.location));
                 break;
             case NodeType.SystemModifier:
                 lastIsParagraph = false;

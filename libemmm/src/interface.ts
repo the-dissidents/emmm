@@ -6,25 +6,24 @@ export enum MessageSeverity {
     Error
 }
 
-// Fixes are optional language-server features
-export type FixSuggestion = {
-    info: string,
-    apply(src: string, cursor: number): [out_src: string, new_cursor: number]
-}
-
 export type Message = {
     readonly severity: MessageSeverity,
-    readonly start: number,
-    readonly end: number,
+    readonly location: LocationRange,
     readonly info: string,
-    readonly code: number,
-    readonly fixes: readonly FixSuggestion[]
+    readonly code: number
 }
 
-export type PositionRange = {
+export type SourceDescriptor = {
+    name: string
+}
+
+export type LocationRange = {
+    original?: LocationRange
+    source: SourceDescriptor,
     start: number,
     end: number,
-    // eh...
+
+    // FIXME: eh...
     actualEnd?: number
 };
 
@@ -40,59 +39,71 @@ export enum NodeType {
     Interpolation
 }
 
-export type ParagraphNode = PositionRange & {
+export type ParagraphNode = {
+    location: LocationRange,
     type: NodeType.Paragraph,
     content: InlineEntity[]
 };
 
-export type PreNode = PositionRange & {
+export type PreNode = {
+    location: LocationRange,
     type: NodeType.Preformatted,
-    content: PositionRange & {text: string}
+    content: {
+        start: number,
+        end: number,
+        text: string
+    }
 };
 
-export type TextNode = PositionRange & {
+export type TextNode = {
+    location: LocationRange,
     type: NodeType.Text,
     content: string
 };
 
-export type EscapedNode = PositionRange & {
+export type EscapedNode = {
+    location: LocationRange,
     type: NodeType.Escaped,
     content: string
 }
 
-export type SystemModifierNode<TState> = PositionRange & {
+export type SystemModifierNode<TState> = {
+    location: LocationRange,
     type: NodeType.SystemModifier,
     mod: SystemModifierDefinition<TState>,
     state?: TState,
-    head: PositionRange,
+    head: LocationRange,
     arguments: ModifierArgument[],
     content: BlockEntity[],
     expansion?: never[]
 };
 
-export type BlockModifierNode<TState> = PositionRange & {
+export type BlockModifierNode<TState> = {
+    location: LocationRange,
     type: NodeType.BlockModifier,
     mod: BlockModifierDefinition<TState>,
     state?: TState,
-    head: PositionRange,
+    head: LocationRange,
     arguments: ModifierArgument[],
     content: BlockEntity[],
     expansion?: BlockEntity[]
 };
 
-export type InlineModifierNode<TState> = PositionRange & {
+export type InlineModifierNode<TState> = {
+    location: LocationRange,
     type: NodeType.InlineModifier,
     mod: InlineModifierDefinition<TState>,
     state?: TState,
-    head: PositionRange,
+    head: LocationRange,
     arguments: ModifierArgument[],
     content: InlineEntity[],
     expansion?: InlineEntity[]
 };
 
-export type RootNode = PositionRange & {
+export type RootNode = {
     type: NodeType.Root
-    content: BlockEntity[]
+    content: BlockEntity[],
+    source: SourceDescriptor
 }
 
 export type ModifierNode<T = any> = 
@@ -105,14 +116,16 @@ export type DocumentNode =
     BlockEntity | InlineEntity | RootNode;
 
 // used in arguments only
-export type InterpolationNode = PositionRange & {
+export type InterpolationNode = {
+    location: LocationRange,
     type: NodeType.Interpolation,
     definition: ArgumentInterpolatorDefinition,
     argument: ModifierArgument,
     expansion?: string
 }
 
-export type ModifierArgument = PositionRange & {
+export type ModifierArgument = {
+    location: LocationRange,
     content: ArgumentEntity[]
     expansion?: string
 }

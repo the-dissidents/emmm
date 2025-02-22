@@ -97,7 +97,7 @@ export const ModuleMod =
         const defs = getDefs(cxt);
 
         if (data.insideModule !== undefined) {
-            return [new NoNestedModuleMessage(node.head.start, node.head.end)];
+            return [new NoNestedModuleMessage(node.head)];
         }
 
         let msgs: Message[] = [];
@@ -106,7 +106,7 @@ export const ModuleMod =
         if (data.modules.has(name)) {
             const [added, msg] = addDef(defs, data.modules.get(name)!);
             if (msg) msgs.push(
-                new OverwriteDefinitionsMessage(node.head.start, node.head.end, msg));
+                new OverwriteDefinitionsMessage(node.head, msg));
             applyDefs(cxt, added);
             debug.trace('entering defs for module', name, '(earlier data loaded)');
         } else {
@@ -135,15 +135,15 @@ export const UseSystemMod =
         const data = cxt.get(builtins)!;
         const name = node.arguments[0];
         if (!data.modules.has(name.expansion!))
-            return [new InvalidArgumentMessage(name.start, name.end)];
+            return [new InvalidArgumentMessage(name.location)];
         if (data.insideModule === name.expansion!)
-            return [new CannotUseModuleInSelfMessage(name.start, name.end)];
+            return [new CannotUseModuleInSelfMessage(name.location)];
 
         const [added, msg] = addDef(data.modules.get(name.expansion!)!, getDefs(cxt));
         node.state = added;
 
         if (msg) 
-            return [new OverwriteDefinitionsMessage(node.head.start, node.head.end, msg)];
+            return [new OverwriteDefinitionsMessage(node.head, msg)];
         return [];
     },
     expand(node, cxt) {
@@ -164,9 +164,9 @@ export const UseBlockMod =
         const data = cxt.get(builtins)!;
         const name = node.arguments[0];
         if (!data.modules.has(name.expansion!))
-            return [new InvalidArgumentMessage(name.start, name.end)];
+            return [new InvalidArgumentMessage(name.location)];
         if (data.insideModule === name.expansion!)
-            return [new CannotUseModuleInSelfMessage(name.start, name.end)];
+            return [new CannotUseModuleInSelfMessage(name.location)];
 
         const old = getDefs(cxt);
         const [added, msg] = addDef(data.modules.get(name.expansion!)!, old);
@@ -174,7 +174,7 @@ export const UseBlockMod =
         node.state = { old };
 
         if (msg) 
-            return [new OverwriteDefinitionsMessage(node.head.start, node.head.end, msg)];
+            return [new OverwriteDefinitionsMessage(node.head, msg)];
         return [];
     },
     afterParseContent(node, cxt) {

@@ -1,7 +1,7 @@
 import { debug } from "./debug";
 import { debugPrint } from "./debug-print";
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierSlotType, ParagraphNode, PositionRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
-import { ContentShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, ReferredMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
+import { BlockEntity, BlockModifierDefinition, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierSlotType, ParagraphNode, LocationRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
+import { ContentShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
 import { ParseContext, Configuration, Document } from "./parser-config";
 import { Scanner } from "./scanner";
 import { _Def, _Node, _Shorthand } from "./typing-helper";
@@ -26,41 +26,29 @@ const UnknownModifier = {
 };
 
 type NodeWithBlockContent = 
-    RootNode | BlockModifierNode<unknown> | SystemModifierNode<unknown>;
+    BlockModifierNode<unknown> | SystemModifierNode<unknown>;
 type NodeWithInlineContent = 
     InlineModifierNode<unknown> | ParagraphNode;
 
 class EmitEnvironment {
-    public root: RootNode = {type: NodeType.Root, start: 0, end: -1, content: []};
+    public root: RootNode;
     public messages: Message[] = [];
-    private blockStack: NodeWithBlockContent[] = [this.root];
+    private blockStack: NodeWithBlockContent[] = [];
     private inlineStack: NodeWithInlineContent[] = [];
-    private referringStack: PositionRange[] = [];
 
-    constructor(private scanner: Scanner) {}
+    constructor(private scanner: Scanner) {
+        this.root = {type: NodeType.Root, source: scanner.source, content: []};
+    }
 
     message(...m: Message[]) {
-        const referringReverse = [...this.referringStack].reverse();
         for (let msg of m) {
-            for (const range of referringReverse)
-                msg = new ReferredMessage(msg, range.start, range.end);
             this.messages.push(msg);
             debug.trace('issued msg', msg.code, msg.info);
         }
     }
 
-    pushReferring(start: number, end: number) {
-        this.referringStack.push({start, end});
-    }
-
-    popReferring() {
-        assert(this.referringStack.length > 0);
-        this.referringStack.pop();
-    }
-
     addBlockNode(n: BlockEntity) {
-        assert(this.blockStack.length > 0);
-        this.blockStack.at(-1)!.content.push(n);
+        (this.blockStack.at(-1) ?? this.root).content.push(n);
         return n;
     }
 
@@ -76,11 +64,14 @@ class EmitEnvironment {
         const last = content.at(-1);
         if (last?.type == NodeType.Text) {
             last.content += str;
-            last.end = this.scanner.position();
+            last.location.end = this.scanner.position();
         } else content.push({
             type: NodeType.Text,
-            start: this.scanner.position() - str.length,
-            end: this.scanner.position(),
+            location: {
+                source: this.scanner.source,
+                start: this.scanner.position() - str.length,
+                end: this.scanner.position(),
+            },
             content: str
         });
     }
@@ -91,9 +82,9 @@ class EmitEnvironment {
     }
 
     endBlock() {
-        assert(this.blockStack.length >= 2);
+        assert(this.blockStack.length > 0);
         const node = this.blockStack.pop()!;
-        node.end = this.scanner.position();
+        node.location.end = this.scanner.position();
     }
 
     startInline(n: InlineModifierNode<unknown> | ParagraphNode) {
@@ -105,19 +96,36 @@ class EmitEnvironment {
     endInline() {
         assert(this.inlineStack.length > 0);
         const node = this.inlineStack.pop()!;
-        node.end = this.scanner.position();
+        node.location.end = this.scanner.position();
     }
 }
 
 class Parser {
     private emit: EmitEnvironment;
-    private cxt: ParseContext;
     private delayDepth = 0;
     private groupDepth = 0;
 
-    constructor(private scanner: Scanner, config: Configuration) {
+    constructor(
+        private scanner: Scanner, 
+        private cxt: ParseContext
+    ) {
         this.emit = new EmitEnvironment(scanner);
-        this.cxt = new ParseContext(config);
+    }
+
+    #loc(to?: number): LocationRange {
+        return {
+            source: this.scanner.source,
+            start: this.scanner.position(),
+            end: to ?? this.scanner.position()
+        };
+    }
+
+    #locFrom(from: number, to?: number): LocationRange {
+        return {
+            source: this.scanner.source,
+            start: from,
+            end: to ?? this.scanner.position()
+        };
     }
 
     #defs<Type extends NodeType.BlockModifier | NodeType.SystemModifier | NodeType.InlineModifier>(type: Type): NameManager<_Def<Type, any>> {
@@ -240,16 +248,14 @@ class Parser {
         if (node.mod.beforeProcessExpansion)
             this.emit.message(...node.mod.beforeProcessExpansion(node as any, this.cxt, immediate));
 
-        this.emit.pushReferring(node.start, node.end);
         let ok = this.#reparse(expansion, depth);
-        this.emit.popReferring();
 
         if (node.mod.afterProcessExpansion)
             this.emit.message(...node.mod.afterProcessExpansion(node as any, this.cxt, immediate));
         if (!ok && depth == 0) {
             const limit = this.cxt.config.reparseDepthLimit;
-            this.emit.message(new ReachedRecursionLimitMessage(
-                node.start, node.end, limit, node.mod.name));
+            this.emit.message(
+                new ReachedRecursionLimitMessage(node.location, limit, node.mod.name));
         }
         return ok;
     }
@@ -271,7 +277,7 @@ class Parser {
     private SHOULD_BE_A_NEWLINE() {
         this.WHITESPACES();
         if (!this.scanner.accept('\n')) this.emit.message(
-            new ContentShouldBeOnNewlineMessage(this.scanner.position()));
+            new ContentShouldBeOnNewlineMessage(this.#loc()));
     }
 
     // TODO: this is awkward and doesn't emit messages in the most appropriate way
@@ -287,7 +293,7 @@ class Parser {
         }
         const end = this.scanner.position();
         if (nlines > n) this.emit.message(
-            new UnnecessaryNewlineMessage(start, end));
+            new UnnecessaryNewlineMessage(this.#locFrom(start, end)));
     }
 
     private DOCUMENT() {
@@ -341,7 +347,7 @@ class Parser {
                 name += this.scanner.acceptChar();
             }
             this.emit.message(
-                new UnknownModifierMessage(posStart, this.scanner.position(), name));
+                new UnknownModifierMessage(this.#locFrom(posStart), name));
         }
         const args = this.ARGUMENTS();
         debug.trace(`PARSE ${NodeType[type]}:`, mod.name);
@@ -349,15 +355,15 @@ class Parser {
         const endsign = this.scanner.accept(MODIFIER_END_SIGN);
         const flagMarker = mod.slotType == ModifierSlotType.None;
         if (!this.scanner.accept(MODIFIER_CLOSE_SIGN))
-            this.emit.message(new ExpectedMessage(
-                this.scanner.position(), MODIFIER_CLOSE_SIGN));
+            this.emit.message(
+                new ExpectedMessage(this.#loc(), MODIFIER_CLOSE_SIGN));
 
         const headEnd = this.scanner.position();
         const node: ModifierNode = {
             type, mod: mod as any,
-            head: {start: posStart, end: headEnd},
+            head: this.#locFrom(posStart, headEnd),
+            location: this.#locFrom(posStart, headEnd),
             arguments: args,
-            start: posStart, end: headEnd,
             content: [],
             expansion: undefined
         };
@@ -388,7 +394,7 @@ class Parser {
 
                 if (this.scanner.isEOF()) {
                     if (grouped) this.emit.message(
-                        new ExpectedMessage(this.scanner.position(), GROUP_END));
+                        new ExpectedMessage(this.#loc(), GROUP_END));
                     break;
                 }
                 string += white;
@@ -399,8 +405,7 @@ class Parser {
         }
         const node: PreNode = {
             type: NodeType.Preformatted, 
-            start: posStart,
-            end: this.scanner.position(),
+            location: this.#locFrom(posStart),
             content: {
                 start: posContentStart,
                 end: posContentEnd,
@@ -426,7 +431,7 @@ class Parser {
             }
             // EOF
             this.emit.message(
-                new ExpectedMessage(this.scanner.position(), GROUP_END));
+                new ExpectedMessage(this.#loc(), GROUP_END));
         } else {
             this.PARAGRAPH();
         }
@@ -446,8 +451,7 @@ class Parser {
         assert(!this.scanner.isEOF());
         const node: ParagraphNode = {
             type: NodeType.Paragraph,
-            start: this.scanner.position(),
-            end: -1,
+            location: this.#loc(),
             content: []
         };
         // debug.trace('PARSE para');
@@ -455,7 +459,7 @@ class Parser {
         while (!this.scanner.isEOF() && this.INLINE_ENTITY()) {}
         this.emit.endInline();
         const last = node.content.at(-1);
-        node.actualEnd = last?.actualEnd ?? last?.end;
+        node.location.actualEnd = last?.location.actualEnd ?? last?.location.end;
         this.#trimNode(node);
         // debug.trace('PARSE para end');
     }
@@ -470,7 +474,7 @@ class Parser {
         for (const part of d.parts) {
             let [arg, ok] = this.ARGUMENT_CONTENT(part, ['\n\n']);
             if (!ok) {
-                this.emit.message(new ExpectedMessage(this.scanner.position(), part));
+                this.emit.message(new ExpectedMessage(this.#loc(), part));
                 return false;
             }
             args.push(arg);
@@ -479,9 +483,9 @@ class Parser {
         const headEnd = this.scanner.position();
         const node: ModifierNode = {
             type, mod: d.mod as any,
-            head: {start: posStart, end: headEnd},
+            head: this.#locFrom(posStart, headEnd),
+            location: this.#locFrom(posStart, headEnd),
             arguments: args,
-            start: posStart, end: headEnd,
             content: [],
             expansion: undefined
         };
@@ -516,7 +520,7 @@ class Parser {
                 if (this.scanner.isEOF() || !(ok = entity())) {
                     // TODO: use error 3
                     if (postfix) this.emit.message(
-                        new ExpectedMessage(this.scanner.position(), postfix));
+                        new ExpectedMessage(this.#loc(), postfix));
                     break;
                 }
             }
@@ -537,7 +541,7 @@ class Parser {
         }
 
         const last = node.content.at(-1);
-        node.actualEnd = last?.actualEnd ?? last?.end;
+        node.location.actualEnd = last?.location.actualEnd ?? last?.location.end;
         if (node.mod.delayContentExpansion) this.delayDepth--;
         if (node.mod.afterParseContent)
             this.emit.message(...node.mod.afterParseContent(node as any, this.cxt, immediate));
@@ -561,11 +565,11 @@ class Parser {
                 this.emit.addString('\\');
                 return true;
             }
+            const start = this.scanner.position();
             const node: EscapedNode = {
                 type: NodeType.Escaped,
-                start: this.scanner.position() - 1,
                 content: this.scanner.acceptChar(),
-                end: this.scanner.position()
+                location: this.#locFrom(start - 1)
             };
             this.emit.addInlineNode(node);
             return true;
@@ -611,12 +615,12 @@ class Parser {
             const last = content.at(-1);
             if (last?.type == NodeType.Text) {
                 last.content += s;
-                last.end += s.length;
+                last.location.end += s.length;
             } else {
                 const end = this.scanner.position();
                 content.push({
                     type: NodeType.Text, 
-                    end, start: end - s.length,
+                    location: this.#locFrom(end - s.length),
                     content: s
                 });
             }
@@ -645,8 +649,8 @@ class Parser {
                 content.push({
                     type: NodeType.Escaped,
                     content: this.scanner.acceptChar(),
-                    start: posEnd - 1, end: posEnd + 1
-                });
+                    location: this.#locFrom(posEnd - 1)
+                } satisfies EscapedNode);
                 continue;
             }
 
@@ -659,10 +663,10 @@ class Parser {
                 content.push({
                     type: NodeType.Interpolation,
                     definition: result, argument: inner,
-                    start: beforeInterp, end: posEnd
+                    location: this.#locFrom(beforeInterp)
                 });
                 if (!ok2) {
-                    this.emit.message(new ExpectedMessage(posEnd, result.postfix));
+                    this.emit.message(new ExpectedMessage(this.#loc(), result.postfix));
                     ok = false;
                     break;
                 }
@@ -672,7 +676,7 @@ class Parser {
             }
         }
         return [{
-            start: posStart, end: posEnd,
+            location: this.#locFrom(posStart, posEnd),
             content
         }, ok];
     }
@@ -699,6 +703,6 @@ class Parser {
     }
 }
 
-export function parse(scanner: Scanner, config: Configuration) {
-    return new Parser(scanner, config).parse();
+export function parse(scanner: Scanner, cxt: ParseContext) {
+    return new Parser(scanner, cxt).parse();
 }

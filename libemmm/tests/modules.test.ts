@@ -4,7 +4,7 @@ import { SimpleScanner } from "../src/scanner";
 import * as Parser from "../src/parser";
 import { BlockModifierDefinition, MessageSeverity, ModifierSlotType, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
-import { Configuration } from "../src/parser-config";
+import { Configuration, ParseContext } from "../src/parser-config";
 
 const TestConfig = Configuration.from(BuiltinConfiguration);
 TestConfig.blockModifiers.add(
@@ -13,7 +13,7 @@ TestConfig.blockModifiers.add(
 
 function parse(src: string) {
     const config = Configuration.from(TestConfig);
-    let doc = Parser.parse(new SimpleScanner(src), config).toStripped();
+    let doc = Parser.parse(new SimpleScanner(src), new ParseContext(config)).toStripped();
     return doc;
 }
 debug.level = DebugLevel.Warning;

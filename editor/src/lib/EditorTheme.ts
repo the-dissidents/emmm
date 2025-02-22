@@ -61,6 +61,8 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
         }
         function makeFold(node: emmm.DocumentNode): number {
             let inside = 0;
+            if (node.type !== emmm.NodeType.Root 
+             && node.location.source != result.root.source) return 0;
             switch (node.type) {
                 case emmm.NodeType.Root:
                     node.content.forEach((x) => 
@@ -69,24 +71,25 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
                 case emmm.NodeType.Paragraph:
                     // FIXME: should include --:
                     return makeContent(
-                        lineAt(node.start).number, 
-                        lineAt(node.actualEnd ?? node.end).number, node.content);
+                        lineAt(node.location.start).number, 
+                        lineAt(node.location.actualEnd ?? node.location.end).number, node.content);
                 case emmm.NodeType.SystemModifier:
                 case emmm.NodeType.InlineModifier:
                 case emmm.NodeType.BlockModifier:
                     let {number: l1} = lineAt(node.head.end);
-                    let {number: l2} = lineAt(node.actualEnd ?? node.end);
+                    let {number: l2} = lineAt(node.location.actualEnd ?? node.location.end);
                     if (node.content.length > 0) {
-                        let {number, from} = lineAt(node.content[0].start);
+                        let {number, from} = lineAt(node.content[0].location.start);
                         if (number == l1 && node.type === emmm.NodeType.BlockModifier) {
                             // do hanging indentation
-                            let hang = node.content[0].start - from;
+                            let hang = node.content[0].location.start - from;
                             if (l2 > number) for (let i = number + 1; i <= l2; i++)
                                 hanging[i].normal = Math.max(hanging[i].normal, hang);
                             hanging[number].hanging = Math.max(hanging[number].hanging, hang);
                         }
                     }
-                    if (node.content.length == 1 && lineAt(node.content[0].start).number == l1)
+                    if (node.content.length == 1 
+                     && lineAt(node.content[0].location.start).number == l1)
                         return makeFold(node.content[0]);
                     return makeContent(l1, l2, node.content);
                 case emmm.NodeType.Preformatted:
@@ -98,10 +101,10 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
         }
 
         emmm.setDebugLevel(emmm.DebugLevel.Warning);
-        const config = state.facet(emmmConfiguration);
+        const config = emmm.Configuration.from(state.facet(emmmConfiguration));
         const start = performance.now();
         const scanner = new emmm.SimpleScanner(state.doc.toString());
-        const result = emmm.parse(scanner, emmm.Configuration.from(config));
+        const result = emmm.parse(scanner, new emmm.ParseContext(config));
         makeFold(result.root);
         return {
             data: result,
@@ -124,25 +127,25 @@ export const emmmConfiguration =
     });
 
 function highlightArgument(arg: emmm.ModifierArgument, base: string, builder: RangeSetBuilder<Decoration>) {
-    function highlight(cls: string, range: emmm.PositionRange) {
-        builder.add(range.start, range.end, Decoration.mark({class: cls})); 
+    function highlight(cls: string, start: number, end: number) {
+        builder.add(start, end, Decoration.mark({class: cls})); 
     }
     arg.content.forEach((x) => {
         switch (x.type) {
             case emmm.NodeType.Text:
-                return highlight(base + ' em-args', x);
+                return highlight(base + ' em-args', x.location.start, x.location.end);
             case emmm.NodeType.Escaped:
-                highlight(base + ' em-escape', {start: x.start, end: x.start+1});
-                return highlight(base + ' em-args', {start: x.start+1, end: x.end});
+                highlight(base + ' em-escape', x.location.start, x.location.start+1);
+                return highlight(base + ' em-args', x.location.start+1, x.location.end);
             case emmm.NodeType.Interpolation:
-                const p1 = x.argument.start;
-                const p2 = x.argument.end;
+                const p1 = x.argument.location.start;
+                const p2 = x.argument.location.end;
                 if (p1 == p2)
-                    return highlight(base + ' em-interp', x);
+                    return highlight(base + ' em-interp', x.location.start, x.location.end);
                 else {
-                    highlight(base + ' em-interp', {start: x.start, end: p1});
+                    highlight(base + ' em-interp', x.location.start, p1);
                     highlightArgument(x.argument, base, builder);
-                    return highlight(base + ' em-interp', {start: p2, end: x.end});
+                    return highlight(base + ' em-interp', p2, x.location.end);
                 }
             default:
                 return;
@@ -151,23 +154,27 @@ function highlightArgument(arg: emmm.ModifierArgument, base: string, builder: Ra
 }
 
 function highlightNode(
-    node: emmm.DocumentNode, base: string, builder: RangeSetBuilder<Decoration>
+    node: emmm.DocumentNode, base: string, 
+    builder: RangeSetBuilder<Decoration>, source: emmm.SourceDescriptor
 ) {
-    function highlight(cls: string, range: emmm.PositionRange = node) {
-        builder.add(range.start, range.end, Decoration.mark({class: cls})); 
+    if (node.type !== emmm.NodeType.Root 
+     && node.location.source != source) return 0;
+    
+    function highlight(cls: string, start: number, end: number) {
+        builder.add(start, end, Decoration.mark({class: cls})); 
     }
     switch (node.type) {
         case emmm.NodeType.Root:
         case emmm.NodeType.Paragraph:
-            node.content.forEach((x) => highlightNode(x, base, builder));
+            node.content.forEach((x) => highlightNode(x, base, builder, source));
             return;
         case emmm.NodeType.Preformatted:
-            return highlight(base + ' em-pre');
+            return highlight(base + ' em-pre', node.location.start, node.location.end);
         case emmm.NodeType.Text:
-            return highlight(base + ' em-text');
+            return highlight(base + ' em-text', node.location.start, node.location.end);
         case emmm.NodeType.Escaped:
-            highlight(base + ' em-escape', {start: node.start, end: node.start+1});
-            return highlight(base + ' em-text', {start: node.start+1, end: node.end});
+            highlight(base + ' em-escape', node.location.start, node.location.start+1);
+            return highlight(base + ' em-text', node.location.start+1, node.location.end);
         case emmm.NodeType.SystemModifier:
         case emmm.NodeType.InlineModifier:
         case emmm.NodeType.BlockModifier:
@@ -176,26 +183,26 @@ function highlightNode(
             const cls = (node.type == emmm.NodeType.SystemModifier 
                 ? 'em-system' : 'em-modifier') + base;
             if (node.arguments.length == 0) {
-                highlight(cls, node.head);
+                highlight(cls, node.head.start, node.head.end);
             } else {
-                const p1 = node.arguments[0].start;
-                highlight(cls, {start: node.head.start, end: p1});
+                const p1 = node.arguments[0].location.start;
+                highlight(cls, node.head.start, p1);
                 for (let i = 0; i < node.arguments.length; i++) {
                     highlightArgument(node.arguments[i], base, builder);
-                    const p2 = node.arguments.at(i+1)?.start ?? node.head.end;
-                    highlight(cls, {start: node.arguments[i].end, end: p2});
+                    const p2 = node.arguments.at(i+1)?.location.start ?? node.head.end;
+                    highlight(cls, node.arguments[i].location.end, p2);
                 }
             }
             if (node.type == emmm.NodeType.InlineModifier 
-             && node.mod.flags == emmm.ModifierFlags.Preformatted)
+             && node.mod.slotType == emmm.ModifierSlotType.Preformatted)
             {
                 highlight(base + ' em-pre', 
-                    { start: node.head.end, end: node.actualEnd ?? node.end });
+                    node.head.end, node.location.actualEnd ?? node.location.end);
             } else {
-                node.content.forEach((x) => highlightNode(x, base, builder));
+                node.content.forEach((x) => highlightNode(x, base, builder, source));
             }
-            if (node.actualEnd)
-                highlight(cls, {start: node.actualEnd, end: node.end});
+            if (node.location.actualEnd)
+                highlight(cls, node.location.actualEnd, node.location.end);
             return;
         default:
             break;
@@ -210,7 +217,7 @@ export const EmmmLanguageSupport: Extension = [
 
         make(doc: EmmmParseData) {
             let builder = new RangeSetBuilder<Decoration>();
-            highlightNode(doc.data.root, '', builder);
+            highlightNode(doc.data.root, '', builder, doc.data.root.source);
             this.decorations = builder.finish();
         }
 
@@ -235,7 +242,7 @@ export const EmmmLanguageSupport: Extension = [
         let msgs: Diagnostic[] = [];
         for (const msg of doc.data.messages) {
             msgs.push({
-                from: msg.start, to: msg.end,
+                from: msg.location.start, to: msg.location.end,
                 severity: ({
                     [emmm.MessageSeverity.Info]: 'info',
                     [emmm.MessageSeverity.Warning]: 'warning',

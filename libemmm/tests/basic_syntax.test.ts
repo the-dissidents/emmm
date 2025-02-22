@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { SimpleScanner } from "../src/scanner";
 import * as Parser from "../src/parser";
 import { MessageSeverity, BlockModifierDefinition, InlineModifierDefinition, ModifierSlotType, NodeType } from "../src/interface";
-import { Configuration } from "../src/parser-config";
+import { Configuration, ParseContext } from "../src/parser-config";
 
 const TestConfig = new Configuration();
 TestConfig.blockModifiers.add(
@@ -17,7 +17,7 @@ TestConfig.inlineModifiers.add(
 );
 
 function parse(src: string) {
-    return Parser.parse(new SimpleScanner(src), TestConfig);
+    return Parser.parse(new SimpleScanner(src), new ParseContext(TestConfig));
 }
 
 describe('basic syntax', () => {

@@ -17,8 +17,8 @@ const orderedListItemBlock = new BlockModifierDefinition<number>(
             if (msgs) return msgs;
             let arg = node.arguments[0];
             let num = Number.parseInt(arg.expansion!);
-            if (isNaN(num)) return [new InvalidArgumentMessage(
-                arg.start, arg.end, 'should be a number')];
+            if (isNaN(num)) return [
+                new InvalidArgumentMessage(arg.location, 'should be a number')];
             node.state = num;
             return []
         },

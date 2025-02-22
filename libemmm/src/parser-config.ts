@@ -38,7 +38,7 @@ export class Document {
 
     toStripped() {
         let doc = new Document(
-            stripNode(cloneNode(this.root, undefined, true))[0] as RootNode,
+            stripNode(cloneNode(this.root, {withState: true}))[0] as RootNode,
             this.context, this.messages);
         return doc;
     }

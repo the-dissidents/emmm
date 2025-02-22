@@ -44,17 +44,17 @@ export const GetVarInlineMod =
         const arg = node.arguments[0];
         const id = arg.expansion!;
         if (id == '')
-            return immediate ? [new InvalidArgumentMessage(arg.start, arg.end)] : [];
+            return immediate ? [new InvalidArgumentMessage(arg.location)] : [];
 
         const value = resolveId(id, cxt);
         if (value === undefined)
-            return immediate ? [new UndefinedVariableMessage(arg.start, arg.end, id)] : [];
+            return immediate ? [new UndefinedVariableMessage(arg.location, id)] : [];
         node.state = { value };
         return [];
     },
-    expand(node, cxt, immediate) {
+    expand(node, _, immediate) {
         if (!node.state) return immediate ? [] : undefined;
-        return [{ type: NodeType.Text, content: node.state.value, start: -1, end: -1 }];
+        return [{ type: NodeType.Text, content: node.state.value, location: node.location }];
     },
 });
 
@@ -70,7 +70,7 @@ export const PrintInlineMod =
     },
     expand(node) {
         if (!node.state) return [];
-        return [{ type: NodeType.Text, content: node.state.value, start: -1, end: -1 }];
+        return [{ type: NodeType.Text, content: node.state.value, location: node.location }];
     },
 });
 
@@ -96,7 +96,7 @@ export const VarMod = new SystemModifierDefinition<{
         const arg = node.arguments[0];
         const id = arg.expansion!;
         if (id == '')
-            return [new InvalidArgumentMessage(arg.start, arg.end)];
+            return [new InvalidArgumentMessage(arg.location)];
         node.state = {
             id,
             value: node.arguments[1].expansion!

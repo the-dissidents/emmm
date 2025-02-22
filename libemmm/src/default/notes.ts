@@ -1,6 +1,6 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { InlineModifierDefinition, ModifierSlotType, BlockModifierDefinition, BlockEntity, NodeType } from "../interface";
+import { InlineModifierDefinition, ModifierSlotType, BlockModifierDefinition, BlockEntity, NodeType, LocationRange } from "../interface";
 import { checkArguments } from "../modifier-helper";
 import { ParseContext } from "../parser-config";
 import { InlineRendererDefiniton } from "../renderer";
@@ -17,8 +17,7 @@ type NoteSystem = {
 type NoteDefinition = {
     system: string;
     name: string;
-    // FIXME: this is broken. Need a better way to figure out real positions so as not to get stuck in definitions.
-    position: number;
+    location: LocationRange;
     content: BlockEntity[]
 }
 
@@ -65,11 +64,14 @@ const noteInline = new InlineModifierDefinition<string>(
                 cxt.get(notes)!.definitions.push({
                     system: '',
                     name: node.state,
-                    position: node.start,
+                    location: node.location,
                     content: [{
                         type: NodeType.Paragraph,
-                        start: node.head.end,
-                        end: node.end,
+                        location: {
+                            source: node.location.source,
+                            start: node.head.end,
+                            end: node.location.actualEnd ?? node.location.end
+                        },
                         content: node.content
                     }]
                 });
@@ -92,12 +94,12 @@ const noteBlock = new BlockModifierDefinition<string>(
             if (node.state !== undefined) {
                 // TODO: check if this is sound in typing
                 let content = stripNode(...node.content) as BlockEntity[];
-                debug.trace(`added note: system=<${''}> name=${node.state} @${node.start}`);
+                debug.trace(`add note: system=<${''}> name=${node.state} @${node.location.start}`);
                 debug.trace(`-->\n`, debugPrint.node(...content));
                 cxt.get(notes)!.definitions.push({
                     system: '',
                     name: node.state,
-                    position: node.start,
+                    location: node.location,
                     content: content
                 });
             }

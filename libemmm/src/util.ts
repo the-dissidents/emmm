@@ -1,5 +1,5 @@
 import { debug } from "./debug";
-import { DocumentNode, PositionRange, ModifierArgument, NodeType } from "./interface";
+import { DocumentNode, LocationRange, ModifierArgument, NodeType } from "./interface";
 
 // TODO: use a prefix tree to find names?
 export class NameManager<T extends {name: string}> {
@@ -83,8 +83,13 @@ export function linePositions(src: string): number[] {
     return result;
 }
 
-const cloneArgument = (arg: ModifierArgument): ModifierArgument => ({
-    start: arg.start, end: arg.end,
+export type CloneNodeOptions = {
+    newLocation?: LocationRange,
+    withState?: boolean
+}
+
+const cloneArgument = (arg: ModifierArgument, options: CloneNodeOptions): ModifierArgument => ({
+    location: clonePosition(arg.location, options),
     content: arg.content.map((ent) => {
         switch (ent.type) {
             case NodeType.Text:
@@ -93,10 +98,9 @@ const cloneArgument = (arg: ModifierArgument): ModifierArgument => ({
             case NodeType.Interpolation:
                 return {
                     type: ent.type,
-                    start: ent.start,
-                    end: ent.end,
+                    location: clonePosition(arg.location, options),
                     definition: ent.definition,
-                    argument: cloneArgument(ent.argument),
+                    argument: cloneArgument(ent.argument, options),
                     expansion: ent.expansion
                 };
             default:
@@ -105,31 +109,44 @@ const cloneArgument = (arg: ModifierArgument): ModifierArgument => ({
     })
 });
 
-export function cloneNode(node: DocumentNode, 
-    referring?: PositionRange, withState = false): DocumentNode 
+function clonePosition(pos: LocationRange, options: CloneNodeOptions): LocationRange {
+    let base = options.newLocation ?? pos;
+    return {
+        start: base.start,
+        end: base.end,
+        actualEnd: base.actualEnd,
+        original: options.newLocation ? pos : pos.original,
+        source: base.source
+    };
+}
+
+export function cloneNode(node: DocumentNode, options: CloneNodeOptions = {}): DocumentNode 
 {
     switch (node.type) {
         case NodeType.BlockModifier:
         case NodeType.InlineModifier:
         case NodeType.SystemModifier:
             return {
-                start: node.start,
-                end: node.end,
+                location: clonePosition(node.location, options),
                 type: node.type as any,
                 mod: node.mod,
-                state: withState ? node.state : undefined,
+                state: options.withState ? node.state : undefined,
                 head: structuredClone(node.head),
-                arguments: node.arguments.map(cloneArgument),
-                content: node.content.map((x) => cloneNode(x, referring, withState) as any),
-                expansion: node.expansion ? cloneNodes(node.expansion, withState) as any : undefined
+                arguments: node.arguments.map((x) => cloneArgument(x, options)),
+                content: node.content.map((x) => cloneNode(x, options) as any),
+                expansion: node.expansion ? cloneNodes(node.expansion, options) as any : undefined
             };
         case NodeType.Root:
+            return {
+                type: node.type as any,
+                source: node.source,
+                content: node.content.map((x) => cloneNode(x, options) as any)
+            }
         case NodeType.Paragraph:
             return {
                 type: node.type as any,
-                start: node.start,
-                end: node.end,
-                content: node.content.map((x) => cloneNode(x, undefined, withState) as any)
+                location: clonePosition(node.location, options),
+                content: node.content.map((x) => cloneNode(x, options) as any)
             }
         case NodeType.Preformatted:
         case NodeType.Text:
@@ -140,8 +157,10 @@ export function cloneNode(node: DocumentNode,
     }
 }
 
-export function cloneNodes(nodes: readonly DocumentNode[], withState = false): DocumentNode[] {
-    return nodes.map((x) => cloneNode(x, undefined, withState));
+export function cloneNodes(
+    nodes: readonly DocumentNode[], options: CloneNodeOptions = {}
+): DocumentNode[] {
+    return nodes.map((x) => cloneNode(x, options));
 }
 
 /** Warning: modifies the original nodes */

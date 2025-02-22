@@ -21,8 +21,8 @@ const headingBlock = new BlockModifierDefinition<number>(
             if (node.arguments.length == 1) {
                 let arg = node.arguments[0];
                 let num = Number.parseInt(arg.expansion!);
-                if (isNaN(num)) return [new InvalidArgumentMessage(
-                    arg.start, arg.end, 'should be a number between 1 and 6')];
+                if (isNaN(num)) return [
+                    new InvalidArgumentMessage(arg.location, 'should be a number between 1 and 6')];
                 node.state = num;
             } else {
                 node.state = 1;
@@ -45,8 +45,8 @@ const numberedHeadingBlock = new BlockModifierDefinition<string[]>(
 
             let arg = node.arguments[0];
             let split = arg.expansion!.trim().split('.').filter((x) => x.length > 0);
-            if (split.length == 0 || split.length > 6) return [new InvalidArgumentMessage(
-                arg.start, arg.end, 'the heading level must be between 1 and 6')];
+            if (split.length == 0 || split.length > 6) return [
+                new InvalidArgumentMessage(arg.location, 'heading level must be between 1 and 6')];
             node.state = split;
             debug.trace('numbered-heading', node.state);
             return [];
