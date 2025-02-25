@@ -17,30 +17,38 @@ let text1 = String.raw`
 [-var name:foobar]
 [-var version:0.1.0]
 
+[-inline-shorthand:»:():«]
+[/emphasis][/slot][;]
+
 [-block-shorthand:[\::id:\]:()]
 [.note $(id)][.slot]
+
+[-block-shorthand #:()]
+[.heading 1][.slot]
 
 Version [/$version], created by [/$name]
 `;
 
 let text2 = String.raw`
-[.heading 1] Heading
+# Heading
 
 »Setzt Sie das in solches Erstaunen?« fragte der Diener.
 
 »Ich will es mir nur zurechtlegen. Wenn man solche Beziehungen nicht kennt, kann man ja die größten Fehler machen«, antwortete Karl.[/note 1]
 
 [:1] Franz Kafka: Gesammelte Werke. Band 6, Frankfurt a.M. 1950 ff., S. 88.
-
-[.bullet-item] a & b > c: should be escaped.
-[.bullet-item] So I can also write: <script> ..? </script>`;
+`;
 
 debug.level = DebugLevel.Trace;
 let context = new ParseContext(TestConfig);
 
-Parser.parse(new SimpleScanner(text1, {name: '<lib>'}), context);
+console.log('-----');
+let doc = Parser.parse(new SimpleScanner(text1, {name: '<lib>'}), context);
+doc = doc.toStripped();
+console.log(debugPrint.document(doc, text2))
 
-let doc = Parser.parse(new SimpleScanner(text2, {name: '<source>'}), context);
+console.log('-----');
+doc = Parser.parse(new SimpleScanner(text2, {name: '<source>'}), context);
 doc = doc.toStripped();
 console.log(debugPrint.document(doc, text2))
 

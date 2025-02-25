@@ -10,9 +10,10 @@ import { NoteInlineRenderersHTML, NotesFooterPlugin } from "./notes";
 import { QuoteBlockRenderersHTML } from "./quotes";
 
 export type HTMLRendererOptions = {
-    headPlugins: HTMLPostprocessPlugin[];
-    headerPlugins: HTMLPostprocessPlugin[];
-    footerPlugins: HTMLPostprocessPlugin[];
+    headPlugins: HTMLComponentPlugin[];
+    headerPlugins: HTMLComponentPlugin[];
+    footerPlugins: HTMLComponentPlugin[];
+    // postprocessPlugins: HTMLPostprocessPlugin[];
 }
 
 export type HTMLRenderType = {
@@ -24,8 +25,11 @@ export type HTMLRenderType = {
 export type HTMLRenderPlugin = 
     (elem: BlockEntity | InlineEntity, cxt: RenderContext<HTMLRenderType>) => string | undefined;
 
-export type HTMLPostprocessPlugin = 
+export type HTMLComponentPlugin = 
     (cxt: RenderContext<HTMLRenderType>) => string | undefined;
+
+export type HTMLPostprocessPlugin = 
+    (cxt: RenderContext<HTMLRenderType>, output: string) => string;
 
 export class HTMLRenderState {
     title: string = '';
@@ -67,7 +71,8 @@ const htmlConfig = new RenderConfiguration<HTMLRenderType>(
     {
         headPlugins: [],
         headerPlugins: [],
-        footerPlugins: [NotesFooterPlugin]
+        footerPlugins: [NotesFooterPlugin],
+        // postprocessPlugins: []
     },
     (results, cxt) => 
 `<!DOCTYPE html>
@@ -84,6 +89,8 @@ ${cxt.config.options.headPlugins
     .join('\n')}
 </head>
 <body>
+<article>
+<section class="article-body">
 ${cxt.config.options.headerPlugins
     .map((x) => x(cxt))
     .filter((x) => x !== undefined)
@@ -93,6 +100,8 @@ ${cxt.config.options.footerPlugins
     .map((x) => x(cxt))
     .filter((x) => x !== undefined)
     .join('\n')}
+</section>
+</article>
 </body>
 </html>`);
 

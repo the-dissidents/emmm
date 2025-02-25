@@ -9,6 +9,7 @@ import { HTMLRenderType } from "./html-renderer";
 const headingBlock = new BlockModifierDefinition<number>(
     'heading', ModifierSlotType.Normal,
     {
+        delayContentExpansion: true,
         roleHint: 'heading',
         prepareExpand(node) {
             let msgs = checkArguments(node, 0, 1);
@@ -34,6 +35,7 @@ const headingBlock = new BlockModifierDefinition<number>(
 const numberedHeadingBlock = new BlockModifierDefinition<string[]>(
     'numbered-heading', ModifierSlotType.Normal,
     {
+        delayContentExpansion: true,
         roleHint: 'heading',
         prepareExpand(node) {
             let msgs = checkArguments(node, 1);
@@ -63,7 +65,7 @@ export const HeadingBlockRenderersHTML = [
             let para = node.content[0] as ParagraphNode;
             return `<${tag}>${cxt.state.render(para.content, cxt)}</${tag}>`;
         }
-        console.log(node);
+        // console.log(node);
         return cxt.state.invalidBlock(node, 'Bad format');
     }] satisfies BlockRendererDefiniton<HTMLRenderType, number>,
 

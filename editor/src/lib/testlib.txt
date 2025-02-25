@@ -1,0 +1,32 @@
+[-block-shorthand #[:num\]:()]
+[.numbered-heading $(num)][.slot]
+
+[-block-shorthand #:()]    [.heading 1][.slot]
+[-block-shorthand ##:()]   [.heading 2][.slot]
+[-block-shorthand ###:()]  [.heading 3][.slot]
+[-block-shorthand ####:()] [.heading 4][.slot]
+[-block-shorthand #####:()][.heading 5][.slot]
+
+[-inline-shorthand _:():_]
+[/emphasis][/slot][;]
+
+[-inline-shorthand *:():*]
+[/keyword][/slot][;]
+
+[-inline-shorthand <<:():>>]
+[/highlight][/slot][;]
+
+[-inline-shorthand:[=:():\]]
+[/commentary][[/slot]][;]
+
+[-inline-shorthand:`:():`]
+[/inject-pre-slot code]
+
+[-block-shorthand >:()]
+[.quote][.slot]
+
+[-inline-shorthand:[[:id:\]\]]
+[/note $(id);]
+
+[-block-shorthand:[\::id:\]:()]
+[.note $(id)][.slot]

@@ -1,7 +1,7 @@
 import { closeBrackets } from "@codemirror/autocomplete";
 import { defaultKeymap, history, indentWithTab } from "@codemirror/commands";
 import { linter, type Diagnostic } from "@codemirror/lint";
-import { EditorState, Facet, RangeSet, RangeSetBuilder, StateEffect, StateField, Text, type Extension } from "@codemirror/state";
+import { EditorState, Facet, RangeSet, RangeSetBuilder, StateField, Text, type Extension } from "@codemirror/state";
 import { Decoration, drawSelection, EditorView, gutter, GutterMarker, highlightWhitespace, keymap, lineNumbers, ViewPlugin, ViewUpdate, type DecorationSet } from "@codemirror/view";
 import * as emmm from '@the_dissidents/libemmm';
 
@@ -11,6 +11,7 @@ enum FoldUnit {
 
 export type EmmmParseData = {
     data: emmm.Document,
+    source: string,
     time: number,
     foldStructure: FoldUnit[][],
     indentation: {hanging: number, normal: number}[]
@@ -101,13 +102,16 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
         }
 
         emmm.setDebugLevel(emmm.DebugLevel.Warning);
-        const config = emmm.Configuration.from(state.facet(emmmConfiguration));
+        const context = state.facet(emmmContextProvider)() 
+            ?? new emmm.ParseContext(emmm.Configuration.from(emmm.DefaultConfiguration));
         const start = performance.now();
-        const scanner = new emmm.SimpleScanner(state.doc.toString());
-        const result = emmm.parse(scanner, new emmm.ParseContext(config));
+        const text = state.doc.toString();
+        const scanner = new emmm.SimpleScanner(text, state.facet(emmmSourceDescriptorProvider));
+        const result = emmm.parse(scanner, context);
         makeFold(result.root);
         return {
             data: result,
+            source: text,
             time: performance.now() - start,
             foldStructure: folds,
             indentation: hanging
@@ -121,9 +125,16 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
     }
 });
 
-export const emmmConfiguration = 
-    Facet.define<emmm.ReadonlyConfiguration, emmm.ReadonlyConfiguration>({
-        combine: (values) => values.length ? values.at(-1)! : emmm.BuiltinConfiguration,
+export type ContextProvider = () => (emmm.ParseContext | undefined);
+
+export const emmmContextProvider = 
+    Facet.define<ContextProvider, ContextProvider>({
+        combine: (values) => values.at(-1) ?? (() => undefined),
+    });
+
+export const emmmSourceDescriptorProvider = 
+    Facet.define<emmm.SourceDescriptor, emmm.SourceDescriptor>({
+        combine: (values) => values.at(-1) ?? { name: '<unnamed>' },
     });
 
 function highlightArgument(arg: emmm.ModifierArgument, base: string, builder: RangeSetBuilder<Decoration>) {
@@ -248,8 +259,7 @@ export const EmmmLanguageSupport: Extension = [
                     [emmm.MessageSeverity.Warning]: 'warning',
                     [emmm.MessageSeverity.Error]: 'error'
                 } as const)[msg.severity],
-                message: msg.info,
-                // TODO: fixes
+                message: emmm.debugPrint.message(msg, doc.source)
             });
         }
         return msgs;
@@ -399,7 +409,7 @@ export let DefaultTheme = EditorView.baseTheme({
         fontWeight: 'bold'
     },
     ".em-role-highlight": {
-        background: 'lightgoldenrodyellow'
+        backgroundColor: 'color-mix(in srgb, yellow, transparent 50%)'
     },
     ".em-role-commentary": {
         color: 'gray',

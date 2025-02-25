@@ -5,7 +5,7 @@ import { checkArguments } from "../modifier-helper";
 import { ParseContext } from "../parser-config";
 import { InlineRendererDefiniton } from "../renderer";
 import { stripNode } from "../util";
-import { HTMLPostprocessPlugin, HTMLRenderType } from "./html-renderer";
+import { HTMLComponentPlugin, HTMLRenderType } from "./html-renderer";
 
 export const notes = Symbol();
 
@@ -125,7 +125,7 @@ export const NoteInlineRenderersHTML = [
     }] satisfies InlineRendererDefiniton<HTMLRenderType, string>
 ];
 
-export const NotesFooterPlugin: HTMLPostprocessPlugin = (cxt) => {
+export const NotesFooterPlugin: HTMLComponentPlugin = (cxt) => {
     let defs = cxt.parseContext.get(notes)!.definitions;
     if (defs.length == 0) return undefined;
     return `<hr/><table class='notes'><tbody>

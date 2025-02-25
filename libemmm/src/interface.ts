@@ -14,6 +14,7 @@ export type Message = {
 }
 
 export type SourceDescriptor = {
+    // FIXME: include source information so that messages can be printed correctly!
     name: string
 }
 

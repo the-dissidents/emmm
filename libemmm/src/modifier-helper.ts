@@ -1,4 +1,4 @@
-import { ModifierNode, Message, BlockModifierNode, NodeType } from "./interface";
+import { ModifierNode, Message, BlockModifierNode, NodeType, BlockEntity } from "./interface";
 import { ArgumentCountMismatchMessage, CannotExpandArgumentMessage, MultipleBlocksNotPermittedMessage, OnlySimpleParagraphsPermittedMessage } from "./messages";
 
 export function checkArgumentLength(node: ModifierNode, min?: number, max = min): Message[] | null {
@@ -24,22 +24,36 @@ export function checkArguments(node: ModifierNode, min?: number, max = min): Mes
 }
 
 export function onlyPermitSimpleParagraphs(node: BlockModifierNode<any>): Message[] | null {
-    for (const ent of node.content) {
-        if (ent.type !== NodeType.Paragraph) {
-            return [new OnlySimpleParagraphsPermittedMessage(ent.location)];
+    function check(nodes: BlockEntity[]): Message[] | null {
+        for (let ent of nodes) {
+            if (ent.type == NodeType.BlockModifier && ent.expansion !== undefined) {
+                const cs = check(ent.expansion);
+                if (cs) return cs;
+            } else if (ent.type !== NodeType.Paragraph) {
+                return [new OnlySimpleParagraphsPermittedMessage(ent.location)];
+            }
         }
+        return null;
     }
-    return null;
+    return check(node.content);
 }
 
 export function onlyPermitSingleBlock(node: BlockModifierNode<any>): Message[] | null {
-    if (node.content.length > 1) {
-        let last = node.content.at(-1)!.location;
-        return [new MultipleBlocksNotPermittedMessage({
-            source: node.location.source, 
-            start: node.content[1].location.start, 
-            end: last.actualEnd ?? last.end
-        })];
+    function check(nodes: BlockEntity[]): Message[] | null {
+        if (nodes.length > 1) {
+            let last = nodes.at(-1)!.location;
+            return [new MultipleBlocksNotPermittedMessage({
+                source: last.source, 
+                start: nodes[1].location.start, 
+                end: last.actualEnd ?? last.end
+            })];
+        } else if (nodes.length == 1 
+                && nodes[0].type === NodeType.BlockModifier 
+                && nodes[0].expansion !== undefined)
+        {
+            return check(nodes[0].expansion);
+        }
+        return null;
     }
-    return null;
+    return check(node.content);
 }
