@@ -6,6 +6,7 @@
 
     color: #0f0f0f;
     background-color: #f6f6f6;
+    box-sizing: border-box;
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -20,6 +21,8 @@ html, body {
     height: 100%;
     box-sizing: border-box;
     overflow: hidden;
+    user-select: none; -webkit-user-select: none;
+    -moz-user-select: none; -ms-user-select: none;
 }
 
 button,
@@ -36,7 +39,6 @@ label:has(input[type='checkbox'].button) {
 
     text-align: center;
     text-decoration: none;
-    font-size: 12px;
     padding-block-start: 2px;
     padding-block-end: 3px;
     padding-inline-start: 6px;
@@ -65,11 +67,6 @@ label:has(input[type='checkbox'].button) {
     box-sizing: border-box;
 }
 
-.pane {
-    box-sizing: border-box;
-    padding: 10px;
-}
-
 .scrollable {
     overflow: auto;
 }
@@ -81,21 +78,12 @@ label:has(input[type='checkbox'].button) {
     min-width: 0;
 }
 
-.vlayout>div {
-    width: 100%;
-}
-
 .hlayout {
     display: flex;
     flex-direction: row;
     min-height: 0;
     min-width: 0;
 }
-
-.hlayout>div {
-    height: 100%;
-}
-
 .flexgrow {
     flex: 1 0;
 }

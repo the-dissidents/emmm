@@ -13,6 +13,17 @@
     initialText?: string;
   }
 
+  interface EditorHandleIn {
+    onTextChange?(text: string): void;
+    onParse?(data: EmmmParseData, src: string): void;
+    onCursorPositionChanged?(pos: number, l: number, c: number): void;
+    onTextChange?(text: string): void;
+  }
+
+  interface EditorHandleOut {
+    setText?(text: string): void;
+  }
+
   let { 
     onchange = undefined, 
     onparse = undefined, 
@@ -27,6 +38,9 @@
 
   const exts = [
     EditorView.updateListener.of((update) => {
+      if (update.startState.selection.main.head != update.state.selection.main.head) {
+        
+      }
       const prev = update.startState.field(emmmDocument);
       const doc = update.state.field(emmmDocument);
       if (/*prev !== doc &&*/ doc && onparse)
@@ -57,5 +71,8 @@
     justify-content: center;
     overflow: auto;
     height: 100%;
+    border: 1px solid whitesmoke;
+    border-radius: 3px;
+    box-sizing: border-box;
   }
 </style>

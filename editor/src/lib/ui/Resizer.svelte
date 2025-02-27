@@ -78,6 +78,7 @@
     height: 100%;
     width: 5px;
     margin: 2px;
+    text-align: center;
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -85,16 +86,17 @@
   }
 
   .resizerV .inside {
+    display: inline-block;
     height: 100%;
     width: 1px;
     background-color: gray;
-    transform: translateX(50%);
+    /* transform: translateX(50%); */
     /* transition: all 0.2s ease-out; */
   }
 
   .resizerV:hover .inside {
     width: 3px;
     background-color: palevioletred;
-    transform: translateX(-25%);
+    /* transform: translateX(-25%); */
   }
 </style>

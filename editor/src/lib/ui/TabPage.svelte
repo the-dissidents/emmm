@@ -31,7 +31,7 @@
 
 <style>
 .page {
-    padding: 2px;
+    padding-top: 2px;
     flex: 1 0;
     overflow-x: hidden;
     overflow-y: auto;

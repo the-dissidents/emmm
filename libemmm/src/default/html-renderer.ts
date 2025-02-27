@@ -34,6 +34,7 @@ export type HTMLPostprocessPlugin =
 export class HTMLRenderState {
     title: string = '';
     stylesheet = ''; // FIXME: very unsafe!
+    cssVariables = new Map<string, string>;
 
     // https://stackoverflow.com/questions/7381974
     escape(content: string) {
@@ -74,22 +75,24 @@ const htmlConfig = new RenderConfiguration<HTMLRenderType>(
         footerPlugins: [NotesFooterPlugin],
         // postprocessPlugins: []
     },
-    (results, cxt) => 
-`<!DOCTYPE html>
+    (results, cxt) => {
+        // TODO: seriously...
+        let styles = cxt.state.stylesheet.replaceAll(/var\(--(.*?)\)/g, 
+            (m, c) => cxt.state.cssVariables.get(c) ?? m)
+        return `
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>${cxt.state.escape(cxt.state.title)}</title>
-<style>
-${cxt.state.stylesheet}
-</style>
+<style>${styles}</style>
 ${cxt.config.options.headPlugins
     .map((x) => x(cxt))
     .filter((x) => x !== undefined)
     .join('\n')}
 </head>
 <body>
-<article>
+<section class="article-container">
 <section class="article-body">
 ${cxt.config.options.headerPlugins
     .map((x) => x(cxt))
@@ -101,9 +104,10 @@ ${cxt.config.options.footerPlugins
     .filter((x) => x !== undefined)
     .join('\n')}
 </section>
-</article>
+</section>
 </body>
-</html>`);
+</html>`
+});
 
 htmlConfig.paragraphRenderer = (node, cxt) => 
     `<p>${node.content
