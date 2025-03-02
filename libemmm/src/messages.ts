@@ -124,12 +124,14 @@ export class InvalidArgumentMessage implements Message {
     get info(): string { return `invalid argument` + (this.what === undefined ? '' : `: ${this.what}`) }
 }
 
-export class InlineDefinitonInvalidEntityMessage implements Message {
+export class EntityNotAllowedMessage implements Message {
     constructor(
-        public readonly location: LocationRange) {}
+        public readonly location: LocationRange,
+        private what?: string) {}
     readonly code = 7;
     readonly severity = MessageSeverity.Error;
-    get info(): string { return `Invalid entity in inline modifier definition` }
+    get info(): string { return 'This entity is not allowed here' + 
+        (this.what ? `: ${this.what}` : '') }
 }
 
 export class ReachedRecursionLimitMessage implements Message {

@@ -128,11 +128,13 @@ export const NoteInlineRenderersHTML = [
 export const NotesFooterPlugin: HTMLComponentPlugin = (cxt) => {
     let defs = cxt.parseContext.get(notes)!.definitions;
     if (defs.length == 0) return undefined;
-    return `<hr/><table class='notes'><tbody>
+    return `<hr/>
+<section class='notes'>
 ${defs.map((x, i) => 
-    `<tr id='note-id-${i}'><td class='note-name'><a href='#notemarker-id-${i}'>${x.name}</a></td>
-<td class='note-content'>${
+`<section class='note' id='note-id-${i}'>
+<div class='note-name'><p><a href='#notemarker-id-${i}'>${x.name}</a></p></div>
+<div class='note-content'>${
     cxt.state.render(x.content, cxt)
-}</td></tr>`).join('\n')}
-</tbody></table>`;
+}</div></section>`).join('\n')}
+</section>`;
 }

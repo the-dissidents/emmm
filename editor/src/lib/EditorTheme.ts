@@ -126,6 +126,7 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
 });
 
 export type ContextProvider = () => (emmm.ParseContext | undefined);
+export type DescriptorProvider = () => (emmm.SourceDescriptor | undefined);
 
 export const emmmContextProvider = 
     Facet.define<ContextProvider, ContextProvider>({
@@ -133,8 +134,8 @@ export const emmmContextProvider =
     });
 
 export const emmmSourceDescriptorProvider = 
-    Facet.define<emmm.SourceDescriptor, emmm.SourceDescriptor>({
-        combine: (values) => values.at(-1) ?? { name: '<unnamed>' },
+    Facet.define<DescriptorProvider, emmm.SourceDescriptor>({
+        combine: (values) => values.at(-1)?.() ?? { name: '<unnamed>' },
     });
 
 function highlightArgument(arg: emmm.ModifierArgument, base: string, builder: RangeSetBuilder<Decoration>) {

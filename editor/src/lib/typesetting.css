@@ -1,3 +1,5 @@
+/* large structures */
+
 body {
     font-family: system-ui, sans-serif;
     background-color: white;
@@ -21,6 +23,9 @@ section.article-body {
     line-height: 2;
     letter-spacing: 2px; 
 }
+
+/* meta elements */
+
 details.invalid {
     border-radius: 3px;
     padding: 5px;
@@ -38,6 +43,8 @@ span.invalid {
     color: white;
 }
 
+/* notes */
+
 sup {
     line-height: 0;
     font-size: 65%;
@@ -53,58 +60,47 @@ sup.note a {
     text-decoration: none;
     margin-inline: 2px;
 }
-table.notes {
+sup.note.invalid {
+    color: red;
+}
+
+section.notes {
     color: var(--note-color); 
     font-size: 85%;
     line-height: 1.7;
 }
-table.notes td.note-name a::before {
+section.notes section.note {
+	display: flex;
+}
+section.notes .note-name a::before {
     content: '[';
 }
-table.notes td.note-name a::after {
+section.notes .note-name a::after {
     content: ']';
 }
-table.notes td.note-name a {
+section.notes .note-name p {
+    padding-right: 5px;
+}
+section.notes .note-name * {
     color: var(--link-color);
     text-decoration: none;
 }
 
+/* paragraphs and headings */
+
 p {
     margin-block: 0 1em;
-}
-.note.invalid {
-    color: red;
-}
-td.note-name {
-    padding-right: 5px;
-    vertical-align: text-top;
-    text-align: end;
 }
 p.attribution {
     text-align: end;
 }
-span code {
-    background-color: #eee;
-    padding: 2px 4px;
-    margin: 0 2px;
-    border-radius: 3px;
-}
-span.commentary {
-    font-size: 85%;
-    color: var(--commentary-color); 
-    letter-spacing: 0.5px;
-    margin-inline: 2px;
-}
-hr {
-    margin-block: 3em;
-    height: 0px;
-    border-top: 1px dashed var(--separator-color); 
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-}
+
 :is(h1,h2,h3,h4,h5,h6) {
     margin-block: 3em 3em;
+}
+h1 {
+    font-size: 150%;
+    font-weight: bold;
 }
 h2 {
     font-size: 115%;
@@ -119,4 +115,34 @@ h3 {
 }
 :is(h1,h2,h3,h4,h5,h6) + :is(h1,h2,h3,h4,h5,h6) {
     margin-block-start: 0;
+}
+
+/* inline formattings */
+
+span code {
+    background-color: #eee;
+    padding: 2px 4px;
+    margin: 0 2px;
+    border-radius: 3px;
+}
+span.commentary {
+    font-size: 85%;
+    color: var(--commentary-color); 
+    letter-spacing: 0.5px;
+    margin-inline: 2px;
+}
+mark {
+    background-color: var(--highlight-color);
+    color: var(--text-color); 
+}
+
+/* misc */
+
+hr {
+    margin-block: 3em;
+    height: 0px;
+    border-top: 1px dashed var(--separator-color); 
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
 }

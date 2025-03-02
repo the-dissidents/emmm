@@ -84,12 +84,12 @@ const htmlConfig = new RenderConfiguration<HTMLRenderType>(
 <html>
 <head>
 <meta charset="UTF-8">
-<title>${cxt.state.escape(cxt.state.title)}</title>
-<style>${styles}</style>
 ${cxt.config.options.headPlugins
     .map((x) => x(cxt))
     .filter((x) => x !== undefined)
     .join('\n')}
+<title>${cxt.state.escape(cxt.state.title)}</title>
+<style>${styles}</style>
 </head>
 <body>
 <section class="article-container">

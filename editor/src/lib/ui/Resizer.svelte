@@ -1,6 +1,6 @@
 <script lang="ts">
   interface Props {
-    first: HTMLElement,
+    first?: HTMLElement,
     second?: HTMLElement | null,
     vertical?: boolean,
     reverse?: boolean,
@@ -8,13 +8,33 @@
   };
 
   let { first, second = null, vertical = false, reverse = false, minValue = 100 }: Props = $props();
-
   let cx = 0, cy = 0, orig = 0, orig2 = 0;
   let dragging = false;
+
+  function createOverlay() {
+    const overlay = document.createElement('div');
+    overlay.id = 'drag-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.zIndex = '9999'; // Ensure it's on top of everything
+    overlay.style.backgroundColor = 'transparent'; // Fully transparent
+    document.body.appendChild(overlay);
+  }
+
+  function removeOverlay() {
+    const overlay = document.getElementById('drag-overlay');
+    if (overlay) {
+      document.body.removeChild(overlay);
+    }
+  }
 </script>
 
 <svelte:document
   on:mousemove={(ev) => {
+    if (!first) return;
     if (dragging) {
       let f = reverse ? -1 : 1;
       if (vertical) {
@@ -29,7 +49,10 @@
     }
   }}
   on:mouseup={() => {
-    dragging = false;
+    if (dragging) {
+      dragging = false;
+      removeOverlay();
+    }
   }}
 />
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -37,6 +60,7 @@
   class={vertical ? "resizerV" : "resizerH"}
   style="cursor: {vertical ? 'ew-resize' : 'ns-resize'}"
   onmousedown={(ev) => {
+    if (!first) return;
     cx = ev.clientX;
     cy = ev.clientY;
     orig = vertical ? first.offsetWidth : first.offsetHeight;
@@ -44,6 +68,7 @@
       orig2 = vertical ? second.offsetWidth : second.offsetHeight;
     }
     dragging = true;
+    createOverlay();
   }}
 >
   <div class="inside"></div>

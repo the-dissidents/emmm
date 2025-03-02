@@ -7,6 +7,7 @@ import { QuoteBlocks } from "./quotes";
 import { InlineStyles } from "./inline-styles";
 import { MiscInlines } from "./misc";
 import { Configuration, ReadonlyConfiguration } from "../parser-config";
+import { VarWrappers } from "./vars";
 
 let config = Configuration.from(BuiltinConfiguration);
 config.initializers.push(initNotes);
@@ -23,5 +24,8 @@ config.inlineModifiers.add(
     ...MiscInlines,
     ...NoteInlines
 );
+config.systemModifiers.add(
+    ...VarWrappers
+)
 
 export const DefaultConfiguration: ReadonlyConfiguration = Object.freeze(config);

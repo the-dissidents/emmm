@@ -1,7 +1,7 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
 import { BlockEntity, InlineEntity, Message, SystemModifierNode, ModifierNode, BlockModifierDefinition, InlineModifierDefinition, ModifierSlotType, NodeType } from "../interface";
-import { InlineDefinitonInvalidEntityMessage } from "../messages";
+import { EntityNotAllowedMessage } from "../messages";
 import { checkArguments } from "../modifier-helper";
 import { ParseContext } from "../parser-config";
 import { _Ent, _Def } from "../typing-helper";
@@ -137,7 +137,7 @@ export function makeInlineDefinition(node: SystemModifierNode<any>, msgs: Messag
                 }
             case NodeType.Preformatted:
             case NodeType.BlockModifier:
-                msgs.push(new InlineDefinitonInvalidEntityMessage(n.location));
+                msgs.push(new EntityNotAllowedMessage(n.location));
                 break;
             case NodeType.SystemModifier:
                 lastIsParagraph = false;

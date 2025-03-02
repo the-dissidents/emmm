@@ -6,10 +6,16 @@
     interface Props {
         name: string;
         active?: boolean;
+        onActivate?: () => void;
         children?: import('svelte').Snippet;
     }
 
-    let { name = $bindable(), active = $bindable(false), children }: Props = $props();
+    let { 
+        name = $bindable(), 
+        active = $bindable(false), 
+        onActivate,
+        children 
+    }: Props = $props();
 
     const tabApi: TabAPI = getContext(TabAPIContext);
     const writableName = writable(name);
@@ -20,7 +26,10 @@
     const selection = tabApi.selected();
 
     $effect(() => { writableName.set(name); });
-    $effect(() => { if (active) selection.set(id); });
+    $effect(() => { if (active) {
+        selection.set(id); 
+        onActivate?.();
+    }});
 
     selection.subscribe((x) => { active = x === id; });
 </script>
