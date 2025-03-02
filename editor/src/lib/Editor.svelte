@@ -2,8 +2,6 @@
   import { onMount } from "svelte";
   import { EditorView } from "@codemirror/view";
   import { createEditorState, emmmContextProvider, emmmDocument, emmmSourceDescriptorProvider, type ContextProvider, type DescriptorProvider, type EmmmParseData } from "./EditorTheme";
-  import { EditorState } from "@codemirror/state";
-  import * as emmm from '@the_dissidents/libemmm';
 
   interface Props {
     hin?: EditorHandleIn,

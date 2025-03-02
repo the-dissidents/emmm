@@ -1,4 +1,6 @@
 <script lang="ts">
+  import TestPane from './TestPane.svelte';
+
   import * as emmm from '@the_dissidents/libemmm';
 
   import Editor, { type EditorHandleOut } from './Editor.svelte';
@@ -13,6 +15,9 @@
   import { postprocessWeChat } from './Postprocessors';
   import Colorpicker from './ui/Colorpicker.svelte';
   import Color from 'colorjs.io';
+  import { deriveColorsFrom, getCssVariablesFromColors, type ArticleColors } from './ColorTheme';
+  import ListView, { type ListColumn, type ListItem, type ListViewHandleIn, type ListViewHandleOut } from './ui/ListView.svelte';
+  import { SvelteMap } from 'svelte/reactivity';
 
   let outputAST = $state('');
   let emmmdoc: emmm.Document | undefined;
@@ -20,6 +25,7 @@
   let left = $state<HTMLElement>(), 
       middle = $state<HTMLElement>(), 
       right = $state<HTMLElement>(),
+      bottom = $state<HTMLElement>(),
       frame = $state<HTMLIFrameElement>();
 
   let strip = $state(false);
@@ -60,7 +66,34 @@
     parsedStatus = `parsed in ${doc.time.toFixed(0)}ms`;
     emmmdoc = strip ? doc.data.toStripped() : doc.data;
     outputAST = emmm.debugPrint.document(emmmdoc, source);
+    updateProblemList();
     render();
+  }
+
+  const problemListHeader = new SvelteMap<string, ListColumn>([
+    ['file', {name: 'file', type: 'text', vAlign: 'top', short: true}],
+    ['type', {name: 'T', type: 'text', vAlign: 'top', short: true}],
+    ['code', {name: '#', type: 'text', vAlign: 'top', short: true}],
+    ['line', {name: 'line', type: 'text', vAlign: 'top', short: true}],
+    ['col', {name: 'column', type: 'text', vAlign: 'top', short: true}],
+    ['msg', {name: 'message', type: 'text'}]
+  ]);
+  let problemListHandleOut: ListViewHandleOut | undefined = $state();
+  function updateProblemList() {
+    problemListHandleOut?.reset(emmmdoc!.messages.map((x) => ({
+      cols: {
+        file: {type: 'text', content: x.location.source.name},
+        type: {type: 'text', content: {
+          [emmm.MessageSeverity.Warning]: '⚠️',
+          [emmm.MessageSeverity.Error]: '❌',
+          [emmm.MessageSeverity.Info]: 'ℹ️'
+        }[x.severity]},
+        code: {type: 'text', content: `${x.code}`},
+        line: {type: 'text', content: `${x.location.start}`},
+        col: {type: 'text', content: `${x.location.end}`},
+        msg: {type: 'text', content: x.info},
+      }
+    })));
   }
 
   function render() {
@@ -75,15 +108,7 @@
       ['commentary-color', 'rgb(44, 127, 141)'],
       ['separator-color', 'rgb(44, 127, 141)'],
     ]);
-    state.cssVariables = new Map([
-      ['theme-color', themeColor.to('srgb').toString()],
-      ['text-color', textColor.to('srgb').toString()],
-      ['link-color', linkColor.to('srgb').toString()],
-      ['note-color', commentaryColor.to('srgb').toString()],
-      ['commentary-color', commentaryColor.to('srgb').toString()],
-      ['separator-color', commentaryColor.to('srgb').toString()],
-      ['highlight-color', highlightColor.to('srgb').toString()],
-    ]);
+    state.cssVariables = getCssVariablesFromColors(colors, 'srgb');
     state.stylesheet = testStyles;
     renderedHTML = renderConfig.render(emmmdoc, state);
   }
@@ -104,120 +129,59 @@
     }
   }
 
-  let themeColor = $state(new Color('pink'));
-  let textColor = $state(new Color('black'));
-  let commentaryColor = $state(new Color('black'));
-  let linkColor = $state(new Color('black'));
-  let highlightColor = $state(new Color('yellow'));
+  let colors: ArticleColors = $state({
+    theme: new Color('pink'),
+    text: new Color('black'),
+    commentary: new Color('black'),
+    link: new Color('black'),
+    highlight: new Color('yellow')
+  });
   let autoColor = $state(true);
 
-  function deriveColors() {
-    if (!autoColor) return;
-
-    function f(x: number, a: number, b: number) {
-      return Math.pow(x, a) * b;
-    }
-
-    function invf(x: number, a: number, b: number) {
-      return Math.pow(x, 1/a) * b + (1 - b);
-    }
-
-    if (themeColor.hsl.l > 50) {
-      textColor = themeColor.to('hsl');
-      textColor.s = Math.pow(textColor.s / 100, 0.8) * 100;
-      textColor.l = 10;
-
-      commentaryColor = themeColor.to('hsl');
-      commentaryColor.s = f(commentaryColor.s / 100, 1.5, 0.6) * 100;
-      commentaryColor.l = f(commentaryColor.l / 100, 0.6, 0.5) * 100;
-      commentaryColor.oklch.l = invf(textColor.oklch.l, 1, 0.7);
-
-      linkColor = themeColor.to('hsl');
-      linkColor.s = f(linkColor.s / 100, 1, 0.6) * 100;
-      linkColor.l = f(linkColor.l / 100, 0.5, 0.6) * 100;
-      linkColor.oklch.h = (linkColor.oklch.h + 20) % 360;
-      linkColor.oklch.l = invf(textColor.oklch.l, 1, 0.6);
-
-      highlightColor = themeColor.to('hsl');
-      highlightColor.s = f(highlightColor.s / 100, 0.7, 1) * 100;
-      highlightColor.l = f(themeColor.hsl.l / 100, 1, 0.9) * 100;
-      highlightColor.oklch.h = (highlightColor.oklch.h - 25) % 360;
-      highlightColor.oklch.l = f(themeColor.oklch.l, 0.9, 0.9);
-    } else {
-      textColor = themeColor.to('hsl');
-      textColor.s = Math.pow(textColor.s / 100, 1.25) * 100;
-      textColor.l = 95;
-
-      commentaryColor = themeColor.to('hsl');
-      commentaryColor.s = f(commentaryColor.s / 100, 1.5, 0.6) * 100;
-      commentaryColor.l = invf(commentaryColor.l / 100, 0.6, 0.5) * 100;
-      commentaryColor.oklch.l = f(textColor.oklch.l, 1, 0.8);
-
-      linkColor = themeColor.to('hsl');
-      linkColor.s = f(linkColor.s / 100, 1, 0.6) * 100;
-      linkColor.l = invf(linkColor.l / 100, 0.5, 0.6) * 100;
-      linkColor.oklch.h = (linkColor.oklch.h + 20) % 360;
-      linkColor.oklch.l = f(textColor.oklch.l, 1, 0.9);
-
-      highlightColor = themeColor.to('hsl');
-      highlightColor.s = f(highlightColor.s / 100, 0.7, 1) * 100;
-      highlightColor.l = invf(themeColor.hsl.l / 100, 1, 0.9) * 100;
-      highlightColor.oklch.h = (highlightColor.oklch.h - 25) % 360;
-      highlightColor.oklch.l = invf(themeColor.oklch.l, 0.9, 0.7);
-    }
+  function doDeriveColors() {
+    colors = deriveColorsFrom(colors.theme);
+    render();
   }
 
-  deriveColors();
+  doDeriveColors();
 </script>
 
 <div class="vlayout fill">
+
 <!-- main area -->
-<div class="hlayout flexgrow" style="margin: 5px 0">
+<div class="hlayout flexgrow">
 
 <!-- tools view -->
 <div class="pane" style="width: 250px;" bind:this={left}>
   <TabView>
+    <TabPage name='Test'>
+      <TestPane></TestPane>
+    </TabPage>
     <TabPage name="Options">
       <h5>Theme color</h5>
-      <Colorpicker bind:color={themeColor} mode='hsl'
-        onChange={() => {
-          deriveColors();
-          render();
-        }} />
+      <Colorpicker bind:color={colors.theme} mode='hsl'
+        onChange={doDeriveColors} />
       <hr/>
       <label><input type="checkbox"
           bind:checked={autoColor} onchange={() => {
             if (!autoColor) return;
-            deriveColors(); render();
+            colors = deriveColorsFrom(colors.theme);
+            render();
           }}/>
         automatically derive the rest
       </label>
       <h5>Text color</h5>
-      <Colorpicker color={textColor} mode='hsl'
-        onChange={(x) => {
-          textColor = x;
-          render()
-        }} />
+      <Colorpicker bind:color={colors.text} mode='hsl'
+        onChange={doDeriveColors} />
       <h5>Commentary color</h5>
-      <Colorpicker color={commentaryColor} mode='hsl'
-        onChange={(x) => {
-          commentaryColor = x;
-          render()
-        }} />
+      <Colorpicker bind:color={colors.commentary} mode='hsl'
+        onChange={doDeriveColors} />
       <h5>Link color</h5>
-      <Colorpicker color={linkColor} mode='hsl'
-        onChange={(x) => {
-          linkColor = x;
-          render()
-        }} />
+      <Colorpicker bind:color={colors.link} mode='hsl'
+        onChange={doDeriveColors} />
       <h5>Highlight color</h5>
-      <Colorpicker color={highlightColor} mode='hsl'
-        onChange={(x) => {
-          highlightColor = x;
-          render()
-        }} />
-    </TabPage>
-    <TabPage name="Problems">
+      <Colorpicker bind:color={colors.highlight} mode='hsl'
+        onChange={doDeriveColors} />
     </TabPage>
   </TabView>
 </div>
@@ -276,29 +240,43 @@
 </div>
 </div>
 
-<div class='hlayout status'>
-  <span class='flexgrow'>
-    {status}
-  </span>
-  <hr/>
-  <span>
-    {posStatus}
-  </span>
-  <hr/>
-  <button onclick={copyHTML}>
-    copy rendered result
-  </button>
-  <hr/>
-  <span>
-    {parsedStatus}
-  </span>
+<Resizer first={bottom} reverse={true} />
+
+<div class="pane" style="height: 100px" bind:this={bottom}>
+  <ListView header={problemListHeader} bind:hout={problemListHandleOut}/>
 </div>
+
+<div class="pane">
+  <div class='hlayout status'>
+    <span class='flexgrow'>
+      {status}
+    </span>
+    <hr/>
+    <span>
+      {posStatus}
+    </span>
+    <hr/>
+    <button onclick={copyHTML}>
+      copy rendered result
+    </button>
+    <hr/>
+    <span>
+      {parsedStatus}
+    </span>
+  </div>
+</div>
+
 </div>
 
 
 <style>
   label {
     font-size: 85%;
+  }
+
+  .pane {
+    padding: 2px;
+    box-sizing: border-box;
   }
 
   textarea {
@@ -322,7 +300,7 @@
 
   .status {
     font-size: 85%;
-    border: 1px solid whitesmoke;
+    border: 1px solid pink;
     border-radius: 3px;
     background-color: lightpink;
     padding: 0 10px;

@@ -2,9 +2,50 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
-    "opener:default"
+    "core:window:allow-scale-factor",
+    "core:window:allow-inner-size",
+    "core:window:allow-set-size",
+    "opener:default",
+    "fs:default",
+    "fs:allow-appconfig-read-recursive",
+    "fs:allow-appconfig-write-recursive",
+    {
+      "identifier": "fs:allow-create",
+      "allow": [
+        {
+          "path": "**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:read-all",
+      "allow": [
+        {
+          "path": "**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:write-all",
+      "allow": [
+        {
+          "path": "**"
+        }
+      ]
+    },
+    "http:default",
+    {
+      "identifier": "http:allow-fetch",
+      "allow": [
+        { "url": "https://2025.ipchaxun.com/" },
+        { "url": "https://api.ipify.org/" },
+        { "url": "https://api.weixin.qq.com/" }
+      ]
+    }
   ]
 }

@@ -331,6 +331,7 @@ export let DefaultTheme = EditorView.baseTheme({
         maxWidth: '60em',
         lineHeight: '110%',
         boxShadow: '1px 2px 5px 0px #9E9E9E',
+        border: '1px solid lightcoral',
         "&.cm-focused": {
             outline: 'none'
         }

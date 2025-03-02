@@ -32,6 +32,9 @@ GUI editor for typesetting articles using the `emmm` markup language, developed 
     - [x] copy to editor
     - [x] convert ::before and ::after to inline content
     - [ ] upload to server?
+    - [ ] automatic formatting
+      - [x] color themes
+      - [ ] rule-based typographic tweaks
   - [ ] support for Douban
     - [ ] copy to editor
 - [ ] Collaboration

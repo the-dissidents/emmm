@@ -224,7 +224,7 @@
 </div>
 <div class='values hlayout'>
   <input class="flexgrow" type="text" value={colorModes[mode](value0, value1, value2)} disabled/>
-  {#if outOfGamut}<span class="warning" title="Your screen cannot display this color accurately. It will use the nearest representable color instead.">⚠️</span>{/if}
+  {#if outOfGamut}<span class="warning" title="The sRGB color space cannot display this color accurately. Your monitor might be using the nearest representable color instead.">⚠️</span>{/if}
   <input type="text" bind:value={hex} onchange={() => parseHex()} />
 </div>
 <!-- <p>{range0};{range1};{range2}</p> -->

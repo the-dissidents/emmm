@@ -4,12 +4,18 @@
     second?: HTMLElement | null,
     vertical?: boolean,
     reverse?: boolean,
-    minValue?: number
+    minValue?: number,
+    stretch?: boolean
   };
 
-  let { first, second = null, vertical = false, reverse = false, minValue = 100 }: Props = $props();
+  let { 
+    first, second = null, 
+    vertical = false, reverse = false, 
+    minValue = 100, stretch = false 
+  }: Props = $props();
+
   let cx = 0, cy = 0, orig = 0, orig2 = 0;
-  let dragging = false;
+  let dragging = $state(false);
 
   function createOverlay() {
     const overlay = document.createElement('div');
@@ -57,7 +63,7 @@
 />
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-  class={vertical ? "resizerV" : "resizerH"}
+  class={[vertical ? "resizerV" : "resizerH", stretch && (vertical ? 'stretchY' : 'stretchX')]}
   style="cursor: {vertical ? 'ew-resize' : 'ns-resize'}"
   onmousedown={(ev) => {
     if (!first) return;
@@ -71,57 +77,61 @@
     createOverlay();
   }}
 >
-  <div class="inside"></div>
+  <div class={["inside flexgrow", dragging && 'active']}></div>
 </div>
 
 <style>
   .resizerH {
-    height: 5px;
-    width: 100%;
-    margin: 2px;
+    height: 3px;
+    padding: 0 2px;
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    display: flex;
+    flex-flow: row;
   }
 
   .resizerH .inside {
-    width: 100%;
     height: 1px;
     background-color: gray;
     transform: translateY(50%);
-    /* transition: all 0.2s ease-out; */
+    transition: all 0.1s ease-out;
   }
 
-  .resizerH:hover .inside {
+  .resizerH:hover .inside, .resizerH .inside.active {
     height: 3px;
     background-color: palevioletred;
     transform: translateY(-25%);
   }
 
   .resizerV {
-    height: 100%;
-    width: 5px;
-    margin: 2px;
+    width: 3px;
+    padding: 2px 0;
     text-align: center;
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    display: flex;
+    flex-flow: column;
   }
 
   .resizerV .inside {
     display: inline-block;
-    height: 100%;
+    /* height: 100%; */
     width: 1px;
     background-color: gray;
-    /* transform: translateX(50%); */
-    /* transition: all 0.2s ease-out; */
+    transform: translateX(50%);
+    transition: all 0.1s ease-out;
   }
 
-  .resizerV:hover .inside {
+  .resizerV:hover .inside, .resizerV .inside.active {
     width: 3px;
     background-color: palevioletred;
-    /* transform: translateX(-25%); */
+    transform: translateX(-25%);
   }
+
+  .stretchX { width: 100%; }
+  .stretchY { height: 100%; }
 </style>
