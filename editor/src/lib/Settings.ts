@@ -9,6 +9,7 @@ let settingsInitialized = false;
 let configData = {
     weixinAppId: '',
     weixinAppSecret: '',
+    weixinSmallImageCache: [] as [string, string][],
     windowW: 1400,
     windowH: 900,
     // TODO: these are no-nps for now

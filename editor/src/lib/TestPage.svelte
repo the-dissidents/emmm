@@ -18,18 +18,16 @@
   import { deriveColorsFrom, getCssVariablesFromColors, type ArticleColors } from './ColorTheme';
   import ListView, { type ListColumn, type ListItem, type ListViewHandleIn, type ListViewHandleOut } from './ui/ListView.svelte';
   import { SvelteMap } from 'svelte/reactivity';
+    import { Interface } from './Interface.svelte';
 
   let outputAST = $state('');
-  let emmmdoc: emmm.Document | undefined;
-  let renderedHTML = $state('');
   let left = $state<HTMLElement>(), 
       middle = $state<HTMLElement>(), 
       right = $state<HTMLElement>(),
-      bottom = $state<HTMLElement>(),
-      frame = $state<HTMLIFrameElement>();
+      bottom = $state<HTMLElement>();
 
   let strip = $state(false);
-  let status = $state('ok');
+  let status = Interface.status;
   let parsedStatus = $state('');
   let posStatus = $state('line ?, col ?');
   let sourceHandle = $state<EditorHandleOut>({}),
@@ -64,23 +62,24 @@
 
   function onParse(doc: EmmmParseData, source: string) {
     parsedStatus = `parsed in ${doc.time.toFixed(0)}ms`;
-    emmmdoc = strip ? doc.data.toStripped() : doc.data;
-    outputAST = emmm.debugPrint.document(emmmdoc, source);
-    updateProblemList();
-    render();
+    Interface.parseData.set(doc);
+    outputAST = emmm.debugPrint.document(
+      strip ? doc.data.toStripped() : doc.data, source);
+    Interface.render();
   }
 
   const problemListHeader = new SvelteMap<string, ListColumn>([
-    ['file', {name: 'file', type: 'text', vAlign: 'top', short: true}],
-    ['type', {name: 'T', type: 'text', vAlign: 'top', short: true}],
-    ['code', {name: '#', type: 'text', vAlign: 'top', short: true}],
-    ['line', {name: 'line', type: 'text', vAlign: 'top', short: true}],
-    ['col', {name: 'column', type: 'text', vAlign: 'top', short: true}],
+    ['file', {name: 'file', type: 'text', vAlign: 'top', width: '5%'}],
+    ['type', {name: 'T', type: 'text', vAlign: 'top', width: '5%'}],
+    ['code', {name: '#', type: 'text', vAlign: 'top', width: '5%'}],
+    ['line', {name: 'line', type: 'text', vAlign: 'top', width: '5%'}],
+    ['col', {name: 'column', type: 'text', vAlign: 'top', width: '5%'}],
     ['msg', {name: 'message', type: 'text'}]
   ]);
   let problemListHandleOut: ListViewHandleOut | undefined = $state();
-  function updateProblemList() {
-    problemListHandleOut?.reset(emmmdoc!.messages.map((x) => ({
+
+  Interface.parseData.subscribe((pd) => {
+    problemListHandleOut?.reset(pd!.data.messages.map((x) => ({
       cols: {
         file: {type: 'text', content: x.location.source.name},
         type: {type: 'text', content: {
@@ -94,53 +93,29 @@
         msg: {type: 'text', content: x.info},
       }
     })));
-  }
-
-  function render() {
-    if (!emmmdoc) return;
-    let renderConfig = emmm.HTMLRenderConfiguration;
-    let state = new emmm.HTMLRenderState();
-    state.cssVariables = new Map([
-      ['theme-color', 'rgb(182, 218, 224)'],
-      ['text-color', 'rgb(0, 50, 58)'],
-      ['link-color', 'rgb(44, 127, 200)'],
-      ['note-color', 'rgb(44, 127, 141)'],
-      ['commentary-color', 'rgb(44, 127, 141)'],
-      ['separator-color', 'rgb(44, 127, 141)'],
-    ]);
-    state.cssVariables = getCssVariablesFromColors(colors, 'srgb');
-    state.stylesheet = testStyles;
-    renderedHTML = renderConfig.render(emmmdoc, state);
-  }
+  });
 
   async function copyHTML() {
-    if (!frame) {
-      status = 'error: no frame?';
+    if (!Interface.frame) {
+      $status = 'error: no frame?';
       return;
     }
     try {
-      const processed = postprocessWeChat(frame!);
+      const processed = postprocessWeChat(Interface.frame);
       console.log(processed);
       await navigator.clipboard.write([new ClipboardItem({'text/html': processed})]);
       // await clipboard.writeHtml(renderedHTML);
-      status = 'copied';
+      $status = 'copied';
     } catch (e) {
-      status = `error: ${e}`;
+      $status = `error: ${e}`;
     }
   }
 
-  let colors: ArticleColors = $state({
-    theme: new Color('pink'),
-    text: new Color('black'),
-    commentary: new Color('black'),
-    link: new Color('black'),
-    highlight: new Color('yellow')
-  });
   let autoColor = $state(true);
 
   function doDeriveColors() {
-    colors = deriveColorsFrom(colors.theme);
-    render();
+    if (autoColor) Interface.colors = deriveColorsFrom(Interface.colors.theme);
+    Interface.render();
   }
 
   doDeriveColors();
@@ -152,35 +127,31 @@
 <div class="hlayout flexgrow">
 
 <!-- tools view -->
-<div class="pane" style="width: 250px;" bind:this={left}>
+<div class="pane" style="width: 300px;" bind:this={left}>
   <TabView>
     <TabPage name='Test'>
       <TestPane></TestPane>
     </TabPage>
     <TabPage name="Options">
       <h5>Theme color</h5>
-      <Colorpicker bind:color={colors.theme} mode='hsl'
+      <Colorpicker bind:color={Interface.colors.theme} mode='hsl'
         onChange={doDeriveColors} />
       <hr/>
       <label><input type="checkbox"
-          bind:checked={autoColor} onchange={() => {
-            if (!autoColor) return;
-            colors = deriveColorsFrom(colors.theme);
-            render();
-          }}/>
+          bind:checked={autoColor} onchange={doDeriveColors} />
         automatically derive the rest
       </label>
       <h5>Text color</h5>
-      <Colorpicker bind:color={colors.text} mode='hsl'
+      <Colorpicker bind:color={Interface.colors.text} mode='hsl'
         onChange={doDeriveColors} />
       <h5>Commentary color</h5>
-      <Colorpicker bind:color={colors.commentary} mode='hsl'
+      <Colorpicker bind:color={Interface.colors.commentary} mode='hsl'
         onChange={doDeriveColors} />
       <h5>Link color</h5>
-      <Colorpicker bind:color={colors.link} mode='hsl'
+      <Colorpicker bind:color={Interface.colors.link} mode='hsl'
         onChange={doDeriveColors} />
       <h5>Highlight color</h5>
-      <Colorpicker bind:color={colors.highlight} mode='hsl'
+      <Colorpicker bind:color={Interface.colors.highlight} mode='hsl'
         onChange={doDeriveColors} />
     </TabPage>
   </TabView>
@@ -221,7 +192,8 @@
 <div class="pane" bind:this={right} style="width: 500px;">
   <TabView>
     <TabPage name="Preview" active={true}>
-      <iframe bind:this={frame} title="preview" srcdoc={renderedHTML} sandbox="allow-same-origin">
+      <iframe bind:this={Interface.frame} title="preview" 
+        srcdoc={Interface.renderedHTML} sandbox="allow-same-origin">
       </iframe>
     </TabPage>
     <TabPage name="AST">
@@ -234,7 +206,7 @@
       </div>
     </TabPage>
     <TabPage name="HTML">
-      <textarea class="fill">{renderedHTML}</textarea>
+      <textarea class="fill">{Interface.renderedHTML}</textarea>
     </TabPage>
   </TabView>
 </div>
@@ -249,7 +221,7 @@
 <div class="pane">
   <div class='hlayout status'>
     <span class='flexgrow'>
-      {status}
+      {$status}
     </span>
     <hr/>
     <span>

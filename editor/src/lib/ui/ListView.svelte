@@ -1,25 +1,35 @@
 <script lang="ts" module>
     export type ListColumn = {
         name: string,
-        short?: boolean,
+        width?: string,
         contentStyle?: string,
         hAlign?: 'left' | 'center' | 'right',
         vAlign?: 'bottom' | 'middle' | 'top',
-        type: 'text' | 'html' | 'image',
+        // FIXME: not used
+        type: 'text' | 'html' | 'image' | 'button',
         // grow?: number
     };
 
     export type ListCell = {
         type: 'text',
-        content: string
+        content: string,
+        style?: string
     } | {
         type: 'html',
         content: string
     } | {
         type: 'image',
         url: string,
-        height?: number
-    };
+        height?: string,
+        style?: string
+    } | ListButtonCell;
+
+    export type ListButtonCell = {
+        type: 'button',
+        text: string,
+        onClick?: (self: ListButtonCell) => void,
+        style?: string
+    }
 
     export type ListItem = {
         cols: {[key: string]: ListCell},
@@ -56,7 +66,7 @@
 
     let { header, hin = {}, hout = $bindable() }: Props = $props();
     let items: ListItem[] = $state([]),
-        hasMore = $state(true),
+        loadState: 'hasMore' | 'done' | 'error' = $state('hasMore'),
         loadingLine: HTMLElement | undefined = $state(),
         working = false;
 
@@ -67,17 +77,22 @@
 
     async function fetch() {
         if (!hin.provideMoreItems) {
-            hasMore = false;
+            loadState = 'done';
             return;
         }
-        if (working || !hasMore) return;
+        if (working || loadState != 'hasMore') return;
         working = true;
-        let result = await hin.provideMoreItems();
-        items.push(...result.items);
-        hasMore = result.more;
-        console.log(`got ${result.items.length} item[s]`);
-        if (!hasMore) console.log(`note: no more items`);
-        working = false;
+
+        try {
+            let result = await hin.provideMoreItems();
+            items.push(...result.items);
+            loadState = result.more ? 'hasMore' : 'done';
+        } catch (e) {
+            loadState = 'error';
+            throw e;
+        } finally {
+            working = false;
+        }
         
         // check if it is still visible
         await tick();
@@ -90,8 +105,10 @@
             reset(initial = []) {
                 items = initial;
                 if (hin.provideMoreItems) {
-                    hasMore = true;
+                    loadState = 'hasMore';
                     fetch();
+                } else {
+                    loadState = 'done';
                 }
             },
             getItems() {
@@ -102,7 +119,7 @@
         observer.observe(loadingLine);
     });
 
-let cols: {[key: string]: HTMLElement} = $state({});
+    let cols: {[key: string]: HTMLElement} = $state({});
 
 </script>
 
@@ -113,7 +130,7 @@ let cols: {[key: string]: HTMLElement} = $state({});
         {#each header as [_key, col], i}
         <th scope="col"
             style='text-align: {col.hAlign ?? 'left'};
-                   {col.short ? 'width: 5%; white-space: nowrap;' : 'width: auto;'}'
+                   width: {col.width ?? 'auto'};'
             bind:this={cols[_key]}>{col.name}</th>
         {#if i < header.size - 1}
         <th scope="col"
@@ -130,25 +147,33 @@ let cols: {[key: string]: HTMLElement} = $state({});
         {#each header as [key, col], i}
         <td style='text-align: {col.hAlign ?? 'left'};
                    vertical-align: {col.vAlign ?? 'middle'};
-                   {col.contentStyle}'
-            colspan={i == header.size - 1 ? 1 : 2}>
+                   {col.contentStyle}'>
             {#if item.cols[key]}
             {@const cell = item.cols[key]}
                 {#if      cell.type == 'html'}
                     {@html cell.content}
                 {:else if cell.type == 'text'}
-                    {cell.content}
+                    <span style={cell.style}>{cell.content}</span>
                 {:else if cell.type == 'image'}
-                    <img alt={col.name} height={cell.height} src={cell.url} />
+                    <img alt={col.name} src={cell.url}
+                        style="height: {cell.height ?? 'auto'}; {cell.style}" />
+                {:else if cell.type == 'button'}
+                    <button style={cell.style}
+                        onclick={() => cell.onClick?.(cell)}>{cell.text}</button>
                 {/if}
             {/if}
         </td>
+        {#if i < header.size - 1}
+            <td></td>
+        {/if}
         {/each}
     </tr>
     {/each}
-    <tr class={['loading', !hasMore && 'hidden']}
+    <tr class={[loadState == 'error' ? 'error' : 'loading', loadState == 'done' && 'hidden']}
         bind:this={loadingLine}
-    ><td colspan={header.size * 2 - 1}>loading</td></tr>
+    ><td colspan={header.size * 2 - 1}>
+        {loadState == 'error' ? 'an error occurred when loading' : 'loading'}
+    </td></tr>
 </tbody>
 </table>
 </div>
@@ -182,6 +207,7 @@ let cols: {[key: string]: HTMLElement} = $state({});
         padding: 2px 4px;
         border: none;
         margin: none;
+        max-width: 0;
     }
     .hidden {
         display: none;
@@ -194,5 +220,10 @@ let cols: {[key: string]: HTMLElement} = $state({});
     @keyframes load {
         from { background-color: gainsboro; }
         to { background-color: whitesmoke; }
+    }
+
+    .error {
+        background-color: palevioletred;
+        text-align: center;
     }
 </style>
