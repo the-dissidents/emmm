@@ -5,7 +5,7 @@ import { BulletBlockRenderersHTML } from "./bullets";
 import { CodeBlockRendererHTML, CodeInlineRendererHTML } from "./code";
 import { HeadingBlockRenderersHTML } from "./headings";
 import { InlineStyleRenderersHTML } from "./inline-styles";
-import { MiscInlineRenderersHTML } from "./misc";
+import { MiscBlockRenderersHTML, MiscInlineRenderersHTML } from "./misc";
 import { NoteInlineRenderersHTML, NotesFooterPlugin } from "./notes";
 import { QuoteBlockRenderersHTML } from "./quotes";
 
@@ -14,6 +14,8 @@ export type HTMLRendererOptions = {
     headerPlugins: HTMLComponentPlugin[];
     footerPlugins: HTMLComponentPlugin[];
     // postprocessPlugins: HTMLPostprocessPlugin[];
+    transformAsset: (url: URL) => string | undefined;
+    // transformLink?: (url: URL) => string;
 }
 
 export type HTMLRenderType = {
@@ -73,7 +75,8 @@ const htmlConfig = new RenderConfiguration<HTMLRenderType>(
         headPlugins: [],
         headerPlugins: [],
         footerPlugins: [NotesFooterPlugin],
-        // postprocessPlugins: []
+        transformAsset: (x) => undefined,
+        // postprocessPlugins: [],
     },
     (results, cxt) => {
         // TODO: seriously...
@@ -139,6 +142,7 @@ htmlConfig.addBlockRenderer(
     ...BulletBlockRenderersHTML,
     CodeBlockRendererHTML,
     ...QuoteBlockRenderersHTML,
+    ...MiscBlockRenderersHTML,
     // TODO: notes
 );
 

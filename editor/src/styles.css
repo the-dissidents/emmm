@@ -77,13 +77,23 @@ label:has(input[type='checkbox'].button) {
     min-height: 0;
     min-width: 0;
 }
-
+.vcenter {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
 .hlayout {
     display: flex;
     flex-direction: row;
     min-height: 0;
     min-width: 0;
 }
+.hcenter {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
 .flexgrow {
     flex: 1 0;
 }

@@ -146,3 +146,22 @@ hr {
     border-right: none;
     border-bottom: none;
 }
+
+figure {
+    margin: 0;
+    max-width: 100%;
+    width: 100%;
+    margin-block: 0 1em;
+}
+
+figure img {
+    max-width: 100%;
+    width: 100%;
+}
+
+figure figcaption {
+    text-align: center;
+    font-size: 85%;
+    color: var(--commentary-color); 
+    letter-spacing: 0.5px;
+}

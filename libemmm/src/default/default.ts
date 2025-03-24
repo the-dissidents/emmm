@@ -5,7 +5,7 @@ import { initNotes, NoteBlocks, NoteInlines } from "./notes";
 import { CodeBlock, CodeInline } from "./code";
 import { QuoteBlocks } from "./quotes";
 import { InlineStyles } from "./inline-styles";
-import { MiscInlines } from "./misc";
+import { MiscBlocks, MiscInlines } from "./misc";
 import { Configuration, ReadonlyConfiguration } from "../parser-config";
 import { VarWrappers } from "./vars";
 
@@ -16,6 +16,7 @@ config.blockModifiers.add(
     ...BulletBlocks,
     CodeBlock,
     ...QuoteBlocks,
+    ...MiscBlocks,
     ...NoteBlocks
 );
 config.inlineModifiers.add(

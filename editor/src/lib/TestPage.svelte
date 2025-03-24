@@ -10,13 +10,10 @@
 
   import testString from './testsource.txt?raw';
   import testLib from './testlib.txt?raw';
-  import testStyles from './typesetting.css?raw';
   import type { EmmmParseData } from './EditorTheme';
-  import { postprocessWeChat } from './Postprocessors';
   import Colorpicker from './ui/Colorpicker.svelte';
-  import Color from 'colorjs.io';
-  import { deriveColorsFrom, getCssVariablesFromColors, type ArticleColors } from './ColorTheme';
-  import ListView, { type ListColumn, type ListItem, type ListViewHandleIn, type ListViewHandleOut } from './ui/ListView.svelte';
+  import { deriveColorsFrom } from './ColorTheme';
+  import ListView, { type ListColumn, type ListViewHandleOut } from './ui/ListView.svelte';
   import { SvelteMap } from 'svelte/reactivity';
     import { Interface } from './Interface.svelte';
 
@@ -95,22 +92,6 @@
     })));
   });
 
-  async function copyHTML() {
-    if (!Interface.frame) {
-      $status = 'error: no frame?';
-      return;
-    }
-    try {
-      const processed = postprocessWeChat(Interface.frame);
-      console.log(processed);
-      await navigator.clipboard.write([new ClipboardItem({'text/html': processed})]);
-      // await clipboard.writeHtml(renderedHTML);
-      $status = 'copied';
-    } catch (e) {
-      $status = `error: ${e}`;
-    }
-  }
-
   let autoColor = $state(true);
 
   function doDeriveColors() {
@@ -129,7 +110,7 @@
 <!-- tools view -->
 <div class="pane" style="width: 300px;" bind:this={left}>
   <TabView>
-    <TabPage name='Test'>
+    <TabPage name='Weixin'>
       <TestPane></TestPane>
     </TabPage>
     <TabPage name="Options">
@@ -157,7 +138,9 @@
   </TabView>
 </div>
 
-<Resizer first={left} second={middle} vertical={true} />
+<div style="width: 5px;" class="hcenter">
+  <Resizer first={left} second={middle} vertical={true} />
+</div>
 
 <!-- source view -->
 <div class="pane flexgrow" bind:this={middle}>
@@ -186,14 +169,16 @@
   </TabView>
 </div>
 
-<Resizer first={right} second={middle} vertical={true} reverse={true} />
+<div style="width: 5px;" class="hcenter">
+  <Resizer first={right} second={middle} vertical={true} reverse={true} />
+</div>
 
 <!-- preview -->
 <div class="pane" bind:this={right} style="width: 500px;">
   <TabView>
     <TabPage name="Preview" active={true}>
       <iframe bind:this={Interface.frame} title="preview" 
-        srcdoc={Interface.renderedHTML} sandbox="allow-same-origin">
+        sandbox="allow-same-origin">
       </iframe>
     </TabPage>
     <TabPage name="AST">
@@ -212,7 +197,9 @@
 </div>
 </div>
 
-<Resizer first={bottom} reverse={true} />
+<div style="height: 5px;" class="vcenter">
+  <Resizer first={bottom} reverse={true} />
+</div>
 
 <div class="pane" style="height: 100px" bind:this={bottom}>
   <ListView header={problemListHeader} bind:hout={problemListHandleOut}/>
@@ -227,10 +214,6 @@
     <span>
       {posStatus}
     </span>
-    <hr/>
-    <button onclick={copyHTML}>
-      copy rendered result
-    </button>
     <hr/>
     <span>
       {parsedStatus}
@@ -262,7 +245,7 @@
   }
 
   iframe {
-    border: 1px solid whitesmoke;
+    border: 1px solid gray;
     border-radius: 3px;
     box-sizing: border-box;
     position: sticky;

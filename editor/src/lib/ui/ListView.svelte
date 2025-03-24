@@ -13,7 +13,8 @@
     export type ListCell = {
         type: 'text',
         content: string,
-        style?: string
+        style?: string,
+        alt?: string
     } | {
         type: 'html',
         content: string
@@ -21,7 +22,8 @@
         type: 'image',
         url: string,
         height?: string,
-        style?: string
+        style?: string,
+        alt?: string
     } | ListButtonCell;
 
     export type ListButtonCell = {
@@ -32,7 +34,7 @@
     }
 
     export type ListItem = {
-        cols: {[key: string]: ListCell},
+        cols: {[key: string]: ListCell | undefined},
         onClick?: (self: ListItem) => void
     };
 
@@ -153,9 +155,9 @@
                 {#if      cell.type == 'html'}
                     {@html cell.content}
                 {:else if cell.type == 'text'}
-                    <span style={cell.style}>{cell.content}</span>
+                    <span title={cell.alt} style={cell.style}>{cell.content}</span>
                 {:else if cell.type == 'image'}
-                    <img alt={col.name} src={cell.url}
+                    <img alt={cell.alt} src={cell.url}
                         style="height: {cell.height ?? 'auto'}; {cell.style}" />
                 {:else if cell.type == 'button'}
                     <button style={cell.style}
@@ -187,15 +189,15 @@
         /* margin: 2px 0px; */
         border-radius: 3px;
         border: 1px solid thistle;
+        background-color: white;
     }
 
     table {
-        font-size: 85%;
+        font-size: 80%;
         width: 100%;
         border: none;
         border-collapse: collapse;
         position: relative;
-        background-color: white;
         table-layout: fixed;
     }
     th {

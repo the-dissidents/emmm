@@ -18,7 +18,13 @@
       }
     ],
     "security": {
-      "csp": null
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      },
+      "devCsp": {
+        "img-src": "'self' data: http: file: asset: http://asset.localhost"
+      }
     }
   },
   "bundle": {

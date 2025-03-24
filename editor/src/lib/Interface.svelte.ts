@@ -5,6 +5,7 @@ import Color from "colorjs.io";
 import testStyles from './typesetting.css?raw';
 
 import * as emmm from '@the_dissidents/libemmm';
+import { convertFileSrc } from "@tauri-apps/api/core";
 
 export class EventHost<T extends unknown[] = []> {
     #listeners = new Set<(...args: [...T]) => void>;
@@ -22,6 +23,8 @@ export class EventHost<T extends unknown[] = []> {
 let status = writable<string>('ok');
 let parseData = writable<EmmmParseData | undefined>();
 
+let objUrl: string | undefined;
+
 export const Interface = $state({
     get status() { return status; },
     get parseData() { return parseData; },
@@ -35,23 +38,35 @@ export const Interface = $state({
         link: new Color('black'),
         highlight: new Color('yellow')
     } satisfies ArticleColors,
+    onFrameDOMLoaded: new EventHost(),
     onFrameLoaded: new EventHost(),
 
     render() {
         const pd = get(parseData);
         if (!pd || !this.frame) return;
-        let renderConfig = emmm.HTMLRenderConfiguration;
+        let renderConfig = emmm.RenderConfiguration.from(emmm.HTMLRenderConfiguration);
+        renderConfig.options.transformAsset = (url) => {
+            if (url.protocol != 'file:') return undefined;
+            return convertFileSrc(url.pathname);
+        };
         let state = new emmm.HTMLRenderState();
-        state.cssVariables = getCssVariablesFromColors(Interface.colors, 'srgb');
+        state.cssVariables = getCssVariablesFromColors(this.colors, 'srgb');
         state.stylesheet = testStyles;
-        Interface.renderedHTML = renderConfig.render(pd.data, state);
-        
-        this.frame.addEventListener('load', function callback() {
-            try {
-                Interface.onFrameLoaded.dispatch();
-            } finally {
-                Interface.frame!.removeEventListener('load', callback);
-            }
-        });
+        this.renderedHTML = renderConfig.render(pd.data, state);
+        if (objUrl) URL.revokeObjectURL(objUrl);
+        objUrl = URL.createObjectURL(new Blob([this.renderedHTML]));
+        this.frame.src = objUrl;
+        // FIXME: this does not work
+        this.frame.contentWindow!.document.addEventListener(
+            'DOMContentLoaded', () => {
+                // console.log('DOMContentLoaded');
+                this.onFrameDOMLoaded.dispatch();
+            });
+        // this works
+        this.frame.addEventListener(
+            'load', () => {
+                // console.log('window load');
+                this.onFrameLoaded.dispatch();
+            }, { once: true });
     }
 });
