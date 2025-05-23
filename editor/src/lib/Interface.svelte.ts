@@ -54,7 +54,7 @@ export const Interface = $state({
         state.stylesheet = testStyles;
         this.renderedHTML = renderConfig.render(pd.data, state);
         if (objUrl) URL.revokeObjectURL(objUrl);
-        objUrl = URL.createObjectURL(new Blob([this.renderedHTML]));
+        objUrl = URL.createObjectURL(new Blob([this.renderedHTML], { type: "text/html" }));
         this.frame.src = objUrl;
         // FIXME: this does not work
         this.frame.contentWindow!.document.addEventListener(
