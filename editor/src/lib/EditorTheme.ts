@@ -329,7 +329,7 @@ export let DefaultTheme = EditorView.baseTheme({
         backgroundColor: "white",
         width: '100%',
         maxWidth: '60em',
-        lineHeight: '110%',
+        lineHeight: '120%',
         boxShadow: '1px 2px 5px 0px #9E9E9E',
         border: '1px solid lightcoral',
         "&.cm-focused": {
@@ -338,7 +338,7 @@ export let DefaultTheme = EditorView.baseTheme({
     },
     ".cm-content": {
         caretColor: "black",
-        fontFamily: 'Roboto Mono, Menlo, 黑体, Consolas, monospace',
+        fontFamily: 'Roboto Mono, Menlo, Consolas, 等线, monospace',
     },
     ".cm-line": {
         // avoid messing up wrap indent above
@@ -355,6 +355,7 @@ export let DefaultTheme = EditorView.baseTheme({
     },
     ".cm-gutters": {
         fontSize: '85%',
+        fontFamily: 'Roboto Mono, Menlo, Consolas, 等线, monospace',
         backgroundColor: "lightcoral",
         color: "lavenderblush",
         padding: '0 5px 0 10px',

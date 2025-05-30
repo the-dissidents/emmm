@@ -24,6 +24,7 @@
     "@tauri-apps/plugin-fs": "^2.2.0",
     "@tauri-apps/plugin-http": "^2.3.0",
     "@tauri-apps/plugin-opener": "^2",
+    "@the_dissidents/libemmm": "^0.0.3",
     "browser-image-compression": "^2.0.2",
     "colorjs.io": "^0.5.2",
     "inline-css": "^4.0.3",
