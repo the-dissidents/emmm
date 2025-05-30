@@ -5,13 +5,14 @@ import { debugPrint } from "./debug-print";
 import { DefaultConfiguration } from "./default/default";
 import { HTMLRenderConfiguration, HTMLRenderState } from "./default/html-renderer";
 import { Configuration, ParseContext } from "./parser-config";
+import { BlockModifierDefinition, ModifierSlotType } from "./interface";
 
 const TestConfig = Configuration.from(DefaultConfiguration);
-// TestConfig.blockModifiers.add(
-//     new BlockModifierDefinition('normal', ModifierFlags.Normal),
-//     new BlockModifierDefinition('pre', ModifierFlags.Preformatted),
-//     new BlockModifierDefinition('marker', ModifierFlags.Marker)
-// );
+TestConfig.blockModifiers.add(
+    new BlockModifierDefinition('normal', ModifierSlotType.Normal),
+    new BlockModifierDefinition('pre', ModifierSlotType.Preformatted),
+    new BlockModifierDefinition('marker', ModifierSlotType.None)
+);
 
 let text1 = String.raw`
 [-var name:foobar]
@@ -29,28 +30,58 @@ let text1 = String.raw`
 Version [/$version], created by [/$name]
 `;
 
-let text2 = String.raw`
-# Heading
+text1 = `
+[-define-block recommend:path:id]
+[.style gallery][.link $(path)][.image $(id)][.slot]
 
-»Setzt Sie das in solches Erstaunen?« fragte der Diener.
+[.recommend:path/to/article:imgid] title`;
 
-»Ich will es mir nur zurechtlegen. Wenn man solche Beziehungen nicht kennt, kann man ja die größten Fehler machen«, antwortete Karl.[/note 1]
+text1 = `
+[.heading 1] Chapter 1
 
-[:1] Franz Kafka: Gesammelte Werke. Band 6, Frankfurt a.M. 1950 ff., S. 88.
+[.heading 2] Section 1
+
+Text
+
+[.heading] Section 2
+
+First
+
+[.implicit-heading]
+
+Second
+
+[.implicit-heading]
+
+Third
+
+[.heading 2] Section 3
+
+Text
 `;
+
+text1 = `[.heading 1] Head\n\n[.implicit-heading 6]\n\nBody\n[.heading 6] Head\n\nBody\n\n[.implicit-heading 1]`;
+
+// text1 = `[.pre]abc
+
+
+// def`;
 
 debug.level = DebugLevel.Trace;
 let context = new ParseContext(TestConfig);
 
-console.log('-----');
-let doc = Parser.parse(new SimpleScanner(text1, {name: '<lib>'}), context);
-doc = doc.toStripped();
-console.log(debugPrint.document(doc, text2))
+export let doc = Parser.parse(new SimpleScanner(text1), context);
+console.log(debugPrint.document(doc, text1));
 
-console.log('-----');
-doc = Parser.parse(new SimpleScanner(text2, {name: '<source>'}), context);
-doc = doc.toStripped();
-console.log(debugPrint.document(doc, text2))
+// console.log('-----');
+// let doc = Parser.parse(new SimpleScanner(text1, {name: '<lib>'}), context);
+// doc = doc.toStripped();
+// console.log(debugPrint.document(doc, text2))
+
+// console.log('-----');
+// doc = Parser.parse(new SimpleScanner(text2, {name: '<source>'}), context);
+// doc = doc.toStripped();
+// console.log(debugPrint.document(doc, text2))
 
 let renderConfig = HTMLRenderConfiguration;
 let html = renderConfig.render(doc, new HTMLRenderState());

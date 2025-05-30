@@ -20,9 +20,9 @@
 </script>
 
 <main class="container vlayout fill">
-  <div>
+  <!-- <div>
     Menu bar
-  </div>
+  </div> -->
   <TestPage></TestPage>
 </main>
 

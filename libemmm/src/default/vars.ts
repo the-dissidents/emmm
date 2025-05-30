@@ -1,4 +1,5 @@
 import { ModifierSlotType, SystemModifierDefinition } from "../interface";
+import { OverwriteSpecialVariableMessage } from "../messages";
 import { checkArguments, onlyPermitPlaintextParagraph } from "../modifier-helper";
 
 function createWrapper(name: string, varname?: string) {
@@ -8,10 +9,14 @@ function createWrapper(name: string, varname?: string) {
         afterProcessExpansion(node, cxt) {
             let msgs = checkArguments(node, 0);
             if (msgs) return msgs;
-            let result = onlyPermitPlaintextParagraph(node);
+            const result = onlyPermitPlaintextParagraph(node);
             if (typeof result !== 'string') return result;
+
+            const previous = cxt.variables.get(varname);
+            if (previous)
+                msgs = [new OverwriteSpecialVariableMessage(node.head, varname, previous)];
             cxt.variables.set(varname, result);
-            return [];
+            return msgs ?? [];
         },
     });
 }

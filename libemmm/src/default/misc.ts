@@ -27,8 +27,33 @@ const linkInline = new InlineModifierDefinition<string>(
         },
     });
 
+const styleBlock = new BlockModifierDefinition<string>(
+    'style', ModifierSlotType.Normal,
+    {
+        prepareExpand(node) {
+            let msgs = checkArguments(node, 1);
+            if (msgs) return msgs;
+            node.state = node.arguments[0].expansion!;
+            return [];
+        },
+    });
 
-const imageBlock = new BlockModifierDefinition<URL>(
+const breakBlock = new BlockModifierDefinition<string>(
+    'break', ModifierSlotType.None);
+
+const linkBlock = new BlockModifierDefinition<string>(
+    'link', ModifierSlotType.Normal,
+    {
+        roleHint: 'link',
+        prepareExpand(node) {
+            let msgs = checkArguments(node, 1);
+            if (msgs) return msgs;
+            node.state = node.arguments[0].expansion!;
+            return [];
+        },
+    });
+
+const imageBlock = new BlockModifierDefinition<string>(
     'image', ModifierSlotType.Normal,
     {
         roleHint: 'link',
@@ -40,15 +65,14 @@ const imageBlock = new BlockModifierDefinition<URL>(
             msgs = onlyPermitSimpleParagraphs(node);
             if (msgs) return msgs;
             // TODO: not very good!
-            let url = URL.parse(node.arguments.map((x) => x.expansion!).join(':'));
-            if (url) node.state = url;
+            node.state = node.arguments.map((x) => x.expansion!).join(':');
             return [];
         },
     });
 
 export const MiscInlines = [rubyInline, linkInline];
 
-export const MiscBlocks = [imageBlock];
+export const MiscBlocks = [styleBlock, breakBlock, linkBlock, imageBlock];
 
 export const MiscInlineRenderersHTML = [
     [rubyInline, (node, cxt) => {
@@ -64,6 +88,19 @@ export const MiscInlineRenderersHTML = [
 ];
 
 export const MiscBlockRenderersHTML = [
+    [styleBlock, (node, cxt) => {
+        if (node.state === undefined)
+            return cxt.state.invalidBlock(node, 'bad format');
+        return `<div class="${node.state}" style="display:contents">${cxt.state.render(node.content, cxt)}</div>`;
+    }] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
+    [breakBlock, () => {
+        return `<hr>`;
+    }] satisfies BlockRendererDefiniton<HTMLRenderType>,
+    [linkBlock, (node, cxt) => {
+        if (node.state === undefined)
+            return cxt.state.invalidBlock(node, 'bad format');
+        return `<a href="${encodeURI(node.state)}">${cxt.state.render(node.content, cxt)}</a>`;
+    }] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
     [imageBlock, (node, cxt) => {
         let transformed: string | undefined;
         if (node.state === undefined)
@@ -71,16 +108,16 @@ export const MiscBlockRenderersHTML = [
         try {
             transformed = cxt.config.options.transformAsset(node.state);
         } catch {
-            return cxt.state.invalidBlock(node, 'bad format');
+            return cxt.state.invalidBlock(node, 'unable to transform asset');
         }
         const img = transformed 
-            ? `<img src="${transformed}" data-original-src="${node.state.href}"/>`
-            : `<img src="${node.state.href}"/>`;
+            ? `<img src="${transformed}" data-original-src="${node.state}"/>`
+            : `<img src="${node.state}"/>`;
         const para = node.content.length == 0 
             ? '' 
             : '\n<figcaption>'
                 + cxt.state.render((node.content[0] as ParagraphNode).content, cxt)
                 + '</figcaption>';
         return `<figure>${img}${para}</figure>`;
-    }] satisfies BlockRendererDefiniton<HTMLRenderType, URL>
-]
+    }] satisfies BlockRendererDefiniton<HTMLRenderType, string>
+];

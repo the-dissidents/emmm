@@ -46,6 +46,18 @@ describe('argument parsing', () => {
             ]
         } ]);
     });
+    test('multiple lines', () => {
+        let doc = parseWithoutStrip(`[.normal 123\n456\n\n\n78900:\nab\n\ncdef\n:zzzz]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([ {
+            type: NodeType.BlockModifier, mod: {name: 'normal'},
+            arguments: [
+                { content: [{content: "123\n456\n\n\n78900"}] },
+                { content: [{content: "\nab\n\ncdef\n"}] },
+                { content: [{content: "zzzz"}] }
+            ]
+        } ]);
+    });
     test('escaped', () => {
         let doc = parseWithoutStrip(String.raw`[/print \]]`);
         expect.soft(doc.messages).toMatchObject([]);

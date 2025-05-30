@@ -151,13 +151,23 @@ class ModifierBase<TNode, TEntity> {
     }
 
     roleHint?: string;
+    /**
+     * If true, any modifier encountered in the content of it will *not* be expanded, *unless* that modifier is `alwaysTryExpand`.
+     */
     delayContentExpansion = false;
+    /**
+     * If true, such a modifier will always be expanded whenever it is encountered, *even if* contained in a modifier with `delayContentExpansion`.
+     */
     alwaysTryExpand = false;
 
+    /** Called before the modifier's content is parsed. */
     beforeParseContent?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
+    /** Called after the modifier's content is parsed. */
     afterParseContent?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
-
+    
+    /** Called before reparsing of the expansion. */
     beforeProcessExpansion?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
+    /** Called before reparsing of the expansion. */
     afterProcessExpansion?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
 
     prepareExpand?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];

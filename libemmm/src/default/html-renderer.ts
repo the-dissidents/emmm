@@ -14,7 +14,7 @@ export type HTMLRendererOptions = {
     headerPlugins: HTMLComponentPlugin[];
     footerPlugins: HTMLComponentPlugin[];
     // postprocessPlugins: HTMLPostprocessPlugin[];
-    transformAsset: (url: URL) => string | undefined;
+    transformAsset: (id: string) => string | undefined;
     // transformLink?: (url: URL) => string;
 }
 

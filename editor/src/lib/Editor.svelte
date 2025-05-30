@@ -1,77 +1,95 @@
-<script lang="ts">
-  import { onMount } from "svelte";
-  import { EditorView } from "@codemirror/view";
-  import { createEditorState, emmmContextProvider, emmmDocument, emmmSourceDescriptorProvider, type ContextProvider, type DescriptorProvider, type EmmmParseData } from "./EditorTheme";
-
-  interface Props {
-    hin?: EditorHandleIn,
-    hout?: EditorHandleOut,
-    initialText?: string;
+<script lang='ts' module>
+  interface EditorContext {
+    extensions: Extension,
   }
 
-  export interface EditorHandleIn {
-    onTextChange?(text: string): void;
-    onParse?(data: EmmmParseData, src: string): void;
+  const key = Symbol('EditorContext');
+  export function setEditorContext(ctx: EditorContext) {
+    setContext(key, ctx);
+  }
+  function getEditorContext(): EditorContext | undefined {
+    return getContext(key);
+  }
+</script>
+
+<script lang="ts">
+  import { getContext, onMount, setContext } from "svelte";
+  import { drawSelection, EditorView, highlightWhitespace, keymap, lineNumbers } from "@codemirror/view";
+  import { defaultKeymap, history, indentWithTab } from "@codemirror/commands";
+  import { EditorState, type Extension } from "@codemirror/state";
+  import { closeBrackets } from "@codemirror/autocomplete";
+  import { hook } from "./details/Hook.svelte";
+
+  interface Props {
+    /**
+     * Fires when the text is edited. Changing `text` by code will not trigger this event.
+     */
+    onChange?(text: string): void;
     onCursorPositionChanged?(pos: number, l: number, c: number): void;
     onFocus?(): void;
     onBlur?(): void;
-    onTextChange?(text: string): void;
-    provideContext?: ContextProvider;
-    provideDescriptor?: DescriptorProvider;
+    /**
+     * Changing this will reset cursor positions etc.
+     */
+    text?: string,
+    hout?: EditorHandleOut
   }
-
+  
   export interface EditorHandleOut {
     focus?(): void;
-    setText?(text: string): void;
     getCursorPosition?(): [pos: number, l: number, c: number];
   }
 
   let {
-    hin = {},
+    onChange: onTextChange, onCursorPositionChanged, onFocus, onBlur,
+    text = $bindable(''),
     hout = $bindable({}),
-    initialText = "",
   }: Props = $props();
 
   let editorContainer: HTMLDivElement;
   let view: EditorView;
+  let shouldChange = true;
 
   const exts = [
     EditorView.updateListener.of((update) => {
       if (update.startState.selection.main.head != update.state.selection.main.head
-       && hin.onCursorPositionChanged) 
+       && onCursorPositionChanged) 
       {
         const pos = update.state.selection.main.head;
         const line = update.state.doc.lineAt(pos);
-        hin.onCursorPositionChanged(pos, line.number, pos - line.from);
+        onCursorPositionChanged(pos, line.number, pos - line.from);
       }
       if (update.focusChanged) {
-        if (update.view.hasFocus) {
-          hin.onFocus?.();
-        } else {
-          hin.onBlur?.();
-        }
+        update.view.hasFocus ? onFocus?.() : onBlur?.();
       }
-      const prev = update.startState.field(emmmDocument);
-      const doc = update.state.field(emmmDocument);
-      if (/*prev !== doc &&*/ doc)
-        hin.onParse?.(doc, update.view.state.doc.toString());
-
-      if (update.docChanged)
-        hin.onTextChange?.(update.view.state.doc.toString());
+      if (update.docChanged) {
+        shouldChange = false;
+        text = update.view.state.doc.toString();
+        onTextChange?.(text);
+      }
     }),
-    emmmContextProvider.of(() => (hin.provideContext?.() ?? undefined)),
-    emmmSourceDescriptorProvider.of(() => (hin.provideDescriptor?.() ?? undefined))
   ];
 
   onMount(() => {
     view = new EditorView({
       parent: editorContainer,
-      state: createEditorState(initialText, exts),
+      state: EditorState.create({
+        doc: text,
+        extensions: [
+            keymap.of([...defaultKeymap, indentWithTab]),
+            history(),
+            EditorView.lineWrapping,
+            EditorState.tabSize.of(4),
+            lineNumbers(),
+            drawSelection(),
+            closeBrackets(),
+            highlightWhitespace(),
+            getEditorContext()?.extensions ?? [],
+            exts
+        ],
+      })
     });
     hout = {
-      setText(text) {
-          // TODO: implement
-      },
       focus() {
           view.focus();
       },
@@ -81,6 +99,16 @@
         return [pos, line.number, pos - line.from];
       },
     };
+    hook(() => text, (x) => {
+      if (!shouldChange) {
+        shouldChange = true;
+        return;
+      }
+      view.dispatch({changes: [{
+        from: 0, to: view.state.doc.length,
+        insert: x
+      }]});
+    });
   });
 </script>
 

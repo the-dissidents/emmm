@@ -2,7 +2,6 @@ import { get, writable } from "svelte/store"
 import type { EmmmParseData } from "./EditorTheme";
 import { getCssVariablesFromColors, type ArticleColors } from "./ColorTheme";
 import Color from "colorjs.io";
-import testStyles from './typesetting.css?raw';
 
 import * as emmm from '@the_dissidents/libemmm';
 import { convertFileSrc } from "@tauri-apps/api/core";
@@ -29,6 +28,8 @@ export const Interface = $state({
     get status() { return status; },
     get parseData() { return parseData; },
 
+    stylesheet: '',
+
     frame: undefined as HTMLIFrameElement | undefined,
     renderedHTML: '',
     colors: {
@@ -46,12 +47,13 @@ export const Interface = $state({
         if (!pd || !this.frame) return;
         let renderConfig = emmm.RenderConfiguration.from(emmm.HTMLRenderConfiguration);
         renderConfig.options.transformAsset = (url) => {
-            if (url.protocol != 'file:') return undefined;
-            return convertFileSrc(url.pathname);
+            // FIXME: shaky
+            if (!url.startsWith('file:')) return undefined;
+            return convertFileSrc(url.substring(5));
         };
         let state = new emmm.HTMLRenderState();
         state.cssVariables = getCssVariablesFromColors(this.colors, 'srgb');
-        state.stylesheet = testStyles;
+        state.stylesheet = this.stylesheet;
         this.renderedHTML = renderConfig.render(pd.data, state);
         if (objUrl) URL.revokeObjectURL(objUrl);
         objUrl = URL.createObjectURL(new Blob([this.renderedHTML]));

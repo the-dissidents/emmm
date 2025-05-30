@@ -77,10 +77,10 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
                 case emmm.NodeType.SystemModifier:
                 case emmm.NodeType.InlineModifier:
                 case emmm.NodeType.BlockModifier:
-                    let {number: l1} = lineAt(node.head.end);
-                    let {number: l2} = lineAt(node.location.actualEnd ?? node.location.end);
+                    const {number: l1} = lineAt(node.head.end);
+                    const {number: l2} = lineAt(node.location.actualEnd ?? node.location.end);
                     if (node.content.length > 0) {
-                        let {number, from} = lineAt(node.content[0].location.start);
+                        const {number, from} = lineAt(node.content[0].location.start);
                         if (number == l1 && node.type === emmm.NodeType.BlockModifier) {
                             // do hanging indentation
                             let hang = node.content[0].location.start - from;
@@ -452,23 +452,3 @@ export let DefaultTheme = EditorView.baseTheme({
         transform: 'translate(50%, -6px)',
     },
 });
-
-export function createEditorState(text: Text | string, exts: Extension[]) {
-    return EditorState.create({
-        doc: text,
-        extensions: [
-            keymap.of([...defaultKeymap, indentWithTab]),
-            history(),
-            DefaultTheme,
-            EditorView.lineWrapping,
-            EditorState.tabSize.of(4),
-            WrapIndent,
-            EmmmLanguageSupport,
-            lineNumbers(),
-            drawSelection(),
-            closeBrackets(),
-            highlightWhitespace(),
-            exts
-        ],
-    });
-}

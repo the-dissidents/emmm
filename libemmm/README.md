@@ -1,6 +1,6 @@
 # libemmm
 
-This package contains the parser and language server for the `emmm` markup language. Will include renderers in the future.
+This package contains the parser and language server for the `emmm` markup language.
 
 ```sh
 npm install @the_dissidents/libemmm
@@ -164,7 +164,7 @@ A colon before the first argument states explicitly the beginning of that argume
 [**-define-inline** *name*:*args...*]  
 [**-define-inline** *name*:*args...*:(*slot*)]  
 
-> Define a new modifier. The first argument is the name. If more than one argument exist, and the last is enclosed in `()`, it is taken as the **slot name** (more on that later). The rest in the middle are names for the arguments.
+> Define a new modifier. The first argument is the name. If one or more arguments exist, and the last is enclosed in `()`, it is taken as the **slot name** (more on that later). The rest in the middle are names for the arguments.
 > 
 > Take content as the definition of the new modifier.
 
@@ -261,6 +261,8 @@ For strange edge cases of the basic syntax and the built-in configuration, see t
 
 ## Diagnostic Messages
 
+> Note: 'suggestions' are currently not being implemented
+
 |Code|Error|Suggestions|
 |---:|-----|-|
 |  1 | Syntax error: expecting <...>
@@ -285,3 +287,4 @@ For strange edge cases of the basic syntax and the built-in configuration, see t
 |  4 | Modifier already defined, overwriting
 |  5 | Undefined variable, will expand to empty string
 |  6 | Using this module will overwrite: <...>
+|  7 | <...> is already defined (as <...>), will be overwritten

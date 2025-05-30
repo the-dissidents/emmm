@@ -244,3 +244,13 @@ export class OverwriteDefinitionsMessage implements Message {
     readonly severity = MessageSeverity.Warning;
     get info(): string { return `using this module will overwrite: ${this.what}` }
 }
+
+export class OverwriteSpecialVariableMessage implements Message {
+    constructor(
+        public readonly location: LocationRange,
+        private varname: string,
+        private previous: string) {}
+    readonly code = 6;
+    readonly severity = MessageSeverity.Warning;
+    get info(): string { return `${this.varname} is already defined (as "${this.previous}"), will be overwritten` }
+}

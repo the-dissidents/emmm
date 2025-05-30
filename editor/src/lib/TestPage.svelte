@@ -8,14 +8,20 @@
   import TabView from './ui/TabView.svelte';
   import TabPage from './ui/TabPage.svelte';
 
-  import testString from './testsource.txt?raw';
-  import testLib from './testlib.txt?raw';
   import type { EmmmParseData } from './EditorTheme';
   import Colorpicker from './ui/Colorpicker.svelte';
   import { deriveColorsFrom } from './ColorTheme';
   import ListView, { type ListColumn, type ListViewHandleOut } from './ui/ListView.svelte';
   import { SvelteMap } from 'svelte/reactivity';
-    import { Interface } from './Interface.svelte';
+  import { Interface } from './Interface.svelte';
+  import { Settings } from './Settings';
+
+  import testStyles from './typesetting.css?raw';
+  import testString from './testsource.txt?raw';
+  import testLib from './testlib.txt?raw';
+  
+  import { onMount } from 'svelte';
+  import EmmmContext from './EmmmContext.svelte';
 
   let outputAST = $state('');
   let left = $state<HTMLElement>(), 
@@ -29,6 +35,9 @@
   let posStatus = $state('line ?, col ?');
   let sourceHandle = $state<EditorHandleOut>({}),
       libraryHandle = $state<EditorHandleOut>({});
+  
+  let source = $state(''),
+      library = $state('');
 
   let config: emmm.Configuration;
   {
@@ -100,6 +109,14 @@
   }
 
   doDeriveColors();
+
+  onMount(() => {
+    Settings.onInitialized(() => {
+      Interface.stylesheet = Settings.get('tempStylesheet') || testStyles;
+      library = Settings.get('tempLibrary') || testLib;
+      source = Settings.get('tempSource') || testString;
+    });
+  })
 </script>
 
 <div class="vlayout fill">
@@ -146,25 +163,33 @@
 <div class="pane flexgrow" bind:this={middle}>
   <TabView>
     <TabPage name="Source" 
-      onActivate={() => sourceHandle?.focus?.()}>
-      <Editor hin={{
-          onFocus: () => updateCursorPosition(sourceHandle),
-          onCursorPositionChanged,
-          onParse, 
-          provideDescriptor: () => ({name: '<Source>'}),
-          provideContext: getContext
-        }} bind:hout={sourceHandle}
-        initialText={testString}/>
+        onActivate={() => sourceHandle?.focus?.()}>
+      <EmmmContext {onParse} 
+          provideDescriptor={() => ({name: '<Source>'})}
+          provideContext={getContext}>
+        <Editor bind:text={source}
+          onFocus={() => updateCursorPosition(sourceHandle)}
+          {onCursorPositionChanged}
+          bind:hout={sourceHandle} />
+      </EmmmContext>
     </TabPage>
     <TabPage name="Library"
-      onActivate={() => libraryHandle?.focus?.()}>
-      <Editor hin={{
-          onFocus: () => updateCursorPosition(libraryHandle),
-          onCursorPositionChanged,
-          onParse: onParseLibrary,
-          provideDescriptor: () => ({name: '<Library>'})
-        }} bind:hout={libraryHandle}
-        initialText={testLib} />
+        onActivate={() => libraryHandle?.focus?.()}>
+      <EmmmContext onParse={onParseLibrary}
+          provideDescriptor={() => ({name: '<Source>'})}>
+        <Editor bind:text={library}
+          onFocus={() => updateCursorPosition(libraryHandle)}
+          {onCursorPositionChanged}
+          bind:hout={libraryHandle} />
+      </EmmmContext>
+    </TabPage>
+    <TabPage name="CSS">
+      <Editor bind:text={Interface.stylesheet}
+        onFocus={() => updateCursorPosition(libraryHandle)}
+        {onCursorPositionChanged}
+        onChange={() => {
+          Interface.render();
+        }}/>
     </TabPage>
   </TabView>
 </div>
@@ -218,6 +243,15 @@
     <span>
       {parsedStatus}
     </span>
+    <hr/>
+    <button onclick={() => {
+      Settings.set('tempSource', source);
+      Settings.set('tempLibrary', library);
+      Settings.set('tempStylesheet', Interface.stylesheet);
+      status.set('saved');
+    }}>
+      save
+    </button>
   </div>
 </div>
 
@@ -268,17 +302,19 @@
 
   .status button {
     appearance: none;
-    font-size: 13.6px;
+    font-size: 100%;
+    font-family: inherit;
+    /* font-size: 13.6px; */
     display: inline-block;
     background-color: transparent;
     border: none;
     border-radius: 0;
     box-shadow: none;
     margin: 0;
-    padding: 0 5px;
+    /* padding: 0 5px; */
 
     &:hover {
-      background-color: color-mix(in lab, lightpink, pink 30%);
+      background-color: color-mix(in srgb, lightpink, white 40%);
     }
   }
 
