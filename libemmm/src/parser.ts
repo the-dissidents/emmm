@@ -385,12 +385,22 @@ class Parser {
         while (!this.scanner.isEOF()) {
             if (this.scanner.accept('\n')) {
                 let white = "\n";
-                let char: string | null = "";
+                let char: string | null;
                 while ((char = this.scanner.acceptWhitespaceChar()) !== null)
                     white += char;
                     
-                if  ((grouped && this.scanner.accept(GROUP_END)) 
-                 || (!grouped && this.scanner.accept('\n'))) break;
+                if (grouped && this.scanner.accept(GROUP_END)) {
+                    if (!this.scanner.isEOF()) {
+                        this.SHOULD_BE_A_NEWLINE();
+                        this.WARN_IF_MORE_NEWLINES_THAN(1);
+                    }
+                    break;
+                }
+                if  (!grouped && this.scanner.accept('\n')) {
+                    if (!this.scanner.isEOF())
+                        this.WARN_IF_MORE_NEWLINES_THAN(0);
+                    break;
+                }
 
                 if (this.scanner.isEOF()) {
                     if (grouped) this.emit.message(
@@ -423,6 +433,10 @@ class Parser {
             this.WARN_IF_MORE_NEWLINES_THAN(1);
             while (!this.scanner.isEOF()) {
                 if (this.scanner.accept(GROUP_END)) {
+                    if (!this.scanner.isEOF()) {
+                        this.SHOULD_BE_A_NEWLINE();
+                        this.WARN_IF_MORE_NEWLINES_THAN(1);
+                    }
                     this.groupDepth--;
                     return;
                 }

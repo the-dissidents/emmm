@@ -135,7 +135,7 @@ describe('basic syntax', () => {
     });
     test('preformatted groups', () => {
         let doc = parse(`[.pre]:--\n\n\n--:`);
-        expect.soft(doc.messages).toHaveLength(0);
+        expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ 
             {
                 type: NodeType.BlockModifier, mod: {name: 'pre'},
@@ -364,6 +364,14 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 1 }
         ]);
+        doc = parse(`:--\nabc\n--:\n\n\nhaha`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Warning, code: 1 }
+        ]);
+        doc = parse(`[.pre]:--\nabc\n--:\n\n\nhaha`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Warning, code: 1 }
+        ]);
     });
     test('warnings - should be newlines', () => {
         let doc = parse(`:--abc\n--:`);
@@ -382,6 +390,24 @@ describe('basic syntax', () => {
                 type: NodeType.BlockModifier, mod: {name: 'pre'},
                 content: [{ type: NodeType.Preformatted, content: {text: 'abc'} }]
             },
+        ]);doc = parse(`:--\nabc\n--:haha`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Warning, code: 3 }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'haha' }] }
+        ]);
+        doc = parse(`[.pre]:--\nabc\n--:haha`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Warning, code: 3 }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([
+            {
+                type: NodeType.BlockModifier, mod: {name: 'pre'},
+                content: [{ type: NodeType.Preformatted, content: {text: 'abc'} }]
+            },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'haha' }] }
         ]);
     });
 });

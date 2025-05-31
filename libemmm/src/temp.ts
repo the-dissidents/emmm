@@ -60,7 +60,7 @@ Third
 Text
 `;
 
-text1 = `[.heading 1] Head\n\n[.implicit-heading 6]\n\nBody\n[.heading 6] Head\n\nBody\n\n[.implicit-heading 1]`;
+text1 = `[.code]:--\nabc\n\n\ndef\n--:haha`;
 
 // text1 = `[.pre]abc
 

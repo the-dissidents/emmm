@@ -152,7 +152,7 @@ class ModifierBase<TNode, TEntity> {
 
     roleHint?: string;
     /**
-     * If true, any modifier encountered in the content of it will *not* be expanded, *unless* that modifier is `alwaysTryExpand`.
+     * If true, any modifier encountered inside it will *not* be expanded *during parse-content*, *unless* that modifier is `alwaysTryExpand`.
      */
     delayContentExpansion = false;
     /**
@@ -160,17 +160,29 @@ class ModifierBase<TNode, TEntity> {
      */
     alwaysTryExpand = false;
 
-    /** Called before the modifier's content is parsed. */
+    /** Called before the modifier's content is parsed. 
+     * @param immediate False when the node is inside a `delayContentExpansion` modifier, but it is `alwaysTryExpand`; otherwise true.
+    */
     beforeParseContent?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
-    /** Called after the modifier's content is parsed. */
+    /** Called after the modifier's content is parsed. 
+     * @param immediate False when the node is inside a `delayContentExpansion` modifier, but it is `alwaysTryExpand`; otherwise true.
+    */
     afterParseContent?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
     
-    /** Called before reparsing of the expansion. */
+    /** Called before reparsing of the expansion. 
+     * @param immediate False when the node is inside a `delayContentExpansion` modifier, but it is `alwaysTryExpand`; otherwise true.*/
     beforeProcessExpansion?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
-    /** Called before reparsing of the expansion. */
+    /** Called before reparsing of the expansion. 
+     * @param immediate False when the node is inside a `delayContentExpansion` modifier, but it is `alwaysTryExpand`; otherwise true.*/
     afterProcessExpansion?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
 
+    /**
+     * @param immediate False when the node is inside a `delayContentExpansion` modifier, but it is `alwaysTryExpand`; otherwise true.
+     */
     prepareExpand?: (node: TNode, cxt: ParseContext, immediate: boolean) => Message[];
+    /**
+     * @param immediate False when the node is inside a `delayContentExpansion` modifier, but it is `alwaysTryExpand`; otherwise true.
+     */
     expand?: (node: TNode, cxt: ParseContext, immediate: boolean) => TEntity[] | undefined;
 }
 

@@ -48,7 +48,7 @@ const headingBlock = new BlockModifierDefinition<HeadingData>(
     {
         delayContentExpansion: true,
         roleHint: 'heading',
-        beforeParseContent(node, cxt) {
+        prepareExpand(node, cxt) {
             let msgs = checkArguments(node, 0, 1);
             if (msgs) return msgs;
             msgs = onlyPermitSingleBlock(node);
@@ -74,7 +74,7 @@ const implicitHeadingBlock = new BlockModifierDefinition<HeadingData>(
     'implicit-heading', ModifierSlotType.None,
     {
         roleHint: 'heading',
-        beforeParseContent(node, cxt) {
+        prepareExpand(node, cxt) {
             let msgs = checkArguments(node, 0, 1);
             if (msgs) return msgs;
 
@@ -100,7 +100,7 @@ const numberedHeadingBlock = new BlockModifierDefinition<HeadingData>(
     {
         delayContentExpansion: true,
         roleHint: 'heading',
-        beforeParseContent(node, cxt) {
+        prepareExpand(node, cxt) {
             let msgs = checkArguments(node, 1);
             if (msgs) return msgs;
             msgs = onlyPermitSingleBlock(node);
