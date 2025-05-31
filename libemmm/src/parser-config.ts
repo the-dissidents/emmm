@@ -1,4 +1,4 @@
-import { RootNode, Message, BlockModifierDefinition, InlineModifierDefinition, SystemModifierDefinition, ArgumentInterpolatorDefinition, BlockShorthand, InlineShorthand } from "./interface";
+import { RootNode, Message, BlockModifierDefinition, InlineModifierDefinition, SystemModifierDefinition, ArgumentInterpolatorDefinition, BlockShorthand, InlineShorthand, BlockEntity, InlineEntity, ArgumentEntity } from "./interface";
 import { assert, cloneNode, ReadonlyNameManager, NameManager, stripNode } from "./util";
 
 export interface ParseContextStoreDefinitions { }
@@ -10,7 +10,7 @@ export class ParseContext {
 
     constructor(
         public config: Configuration,
-        public variables = new Map<string, string>) {
+        public variables = new Map<string, string>()) {
         config.initializers.forEach((x) => x(this));
     }
 
@@ -41,6 +41,46 @@ export class Document {
             stripNode(cloneNode(this.root, {withState: true}))[0] as RootNode,
             this.context, this.messages);
         return doc;
+    }
+
+    /**
+     * Performs a depth-first walk of the node tree.
+     */
+    walk(callback: (node: BlockEntity | InlineEntity | ArgumentEntity) => 'skip' | 'break' | 'continue') {
+        let nodes: (BlockEntity | InlineEntity | ArgumentEntity)[] = this.root.content;
+        let node;
+        while (node = nodes.shift()) {
+            const result = callback(node);
+            if (result == 'break') break;
+            if (result == 'skip') continue;
+
+            if ('arguments' in node)
+                nodes.push(...node.arguments.flatMap((x) => x.content));
+            if ('content' in node && Array.isArray(node.content))
+                nodes.push(...node.content);
+        }
+    }
+
+    /**
+     * Gets all nodes that covers the given position, from outermost to innermost (essentially a path).
+     */
+    resolvePosition(pos: number): (BlockEntity | InlineEntity | ArgumentEntity)[] {
+        const result: (BlockEntity | InlineEntity | ArgumentEntity)[] = [];
+        let nodes: (BlockEntity | InlineEntity | ArgumentEntity)[] = this.root.content;
+        let node;
+        while (node = nodes.shift()) {
+            if (node.location.start <= pos 
+            && (node.location.actualEnd ?? node.location.end) >= pos)
+            {
+                result.push(node);
+                nodes = [];
+                if ('arguments' in node)
+                    nodes.push(...node.arguments.flatMap((x) => x.content));
+                if ('content' in node && Array.isArray(node.content))
+                    nodes.push(...node.content);
+            }
+        }
+        return result;
     }
 }
 

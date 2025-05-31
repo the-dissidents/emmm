@@ -60,7 +60,7 @@ export class UnknownModifierMessage implements Message {
         private what: string) {}
     readonly code = 2;
     readonly severity =  MessageSeverity.Error;
-    get info() { return `unknown modifier '${this.what}'; did you forget to escape it?`; };
+    get info() { return `unknown modifier '${this.what}'`; };
     // get fixes(): readonly FixSuggestion[] {
     //     let [start, end] = [this.start, this.end];
     //     return [{
