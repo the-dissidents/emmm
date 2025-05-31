@@ -31,6 +31,62 @@ describe('inline shorthands', () => {
             { type: NodeType.Paragraph, content: [] }
         ]);
     });
+    test('slots', () => {
+        let doc = parse(`[-inline-shorthand p:():p]([/slot])\n\np123p`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '(' },
+                { type: NodeType.Text, content: '123' },
+                { type: NodeType.Text, content: ')' }
+            ] }
+        ]);
+        doc = parse(`[-inline-shorthand P:():p]([/slot])\n\n[-inline-shorthand Q:():q]{[/slot]}\n\nP1P2Q3qp4p`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '(' },
+                { type: NodeType.Text, content: '1' },
+                { type: NodeType.Text, content: '(' },
+                { type: NodeType.Text, content: '2' },
+                { type: NodeType.Text, content: '{' },
+                { type: NodeType.Text, content: '3' },
+                { type: NodeType.Text, content: '}' },
+                { type: NodeType.Text, content: ')' },
+                { type: NodeType.Text, content: '4' },
+                { type: NodeType.Text, content: ')' }
+            ] }
+        ]);
+    });
+    test('arguments: simple scope', () => {
+        let doc = parse(`[-inline-shorthand p:x:p][/print $(x)]\n\n[-inline-shorthand q:y:q][/print $(y)]\n\np1pq2q`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '1' },
+                { type: NodeType.Text, content: '2' }
+            ] }
+        ]);
+        doc = parse(`[-inline-shorthand p:x:p][/print $(x)]\n\n[-inline-shorthand q][/print $(x)]\n\np1pq`);
+        expect.soft(doc.messages).toMatchObject([{ code: 5 }]);
+    });
+    test('arguments: complex scope', () => {
+        let doc = parse(`[-inline-shorthand p:x:p:():p][/print $(x)][/slot]\n\n[-inline-shorthand q][/print $(x)]\n\np1pqp`);
+        expect.soft(doc.messages).toMatchObject([{ code: 5 }]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '1' }
+            ] }
+        ]);
+        doc = parse(`[-inline-shorthand p:x:p:():p][/print $(x)][/slot]\n\n[-inline-shorthand q:x:q][/print $(x)]\n\np1pq2qp`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '1' },
+                { type: NodeType.Text, content: '2' }
+            ] }
+        ]);
+    });
     test('arguments: reference (interp)', () => {
         let doc = parse(`[-inline-shorthand p:x:p][/print $(x)]\n\np1p`);
         expect.soft(doc.messages).toMatchObject([]);

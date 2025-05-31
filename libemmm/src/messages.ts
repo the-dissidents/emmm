@@ -211,10 +211,10 @@ export class NewBlockShouldBeOnNewlineMessage extends AddThingMessage {
     }
 }
 
-export class ContentShouldBeOnNewlineMessage extends AddThingMessage {
+export class ShouldBeOnNewlineMessage extends AddThingMessage {
     constructor(location: LocationRange) {
         super(3, MessageSeverity.Warning, location, 
-            'the content should begin in a new line to avoid confusion');
+            'the following should begin in a new line to avoid confusion');
     }
 }
 

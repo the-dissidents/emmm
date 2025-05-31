@@ -60,10 +60,9 @@ Third
 Text
 `;
 
-text1 = `[.code]:--\nabc\n\n\ndef\n--:haha`;
+text1 = `haha [.normal] hoho`;
 
 // text1 = `[.pre]abc
-
 
 // def`;
 
@@ -71,7 +70,13 @@ debug.level = DebugLevel.Trace;
 let context = new ParseContext(TestConfig);
 
 export let doc = Parser.parse(new SimpleScanner(text1), context);
-console.log(debugPrint.document(doc, text1));
+
+console.log('-----');
+console.log(debugPrint.document(doc));
+
+console.log('-----');
+doc = doc.toStripped();
+console.log(debugPrint.document(doc));
 
 // console.log('-----');
 // let doc = Parser.parse(new SimpleScanner(text1, {name: '<lib>'}), context);
@@ -83,6 +88,7 @@ console.log(debugPrint.document(doc, text1));
 // doc = doc.toStripped();
 // console.log(debugPrint.document(doc, text2))
 
+console.log('-----');
 let renderConfig = HTMLRenderConfiguration;
 let html = renderConfig.render(doc, new HTMLRenderState());
 console.log(html);

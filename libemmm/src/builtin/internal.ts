@@ -107,18 +107,20 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
             mod: mod as any, args: node.state.args, 
             slotContent: node.content as any 
         });
-        debug.trace(`pushed ${NodeType[type]} slot data for`, name,
-            signature.slotName == '' ? '(unnamed)' : `= ${signature.slotName}`);
+        debug.trace(`pushed ${NodeType[type]} slot data for`, name);
+        debug.trace(`... slotName:`, 
+            signature.slotName === '' ? '<unnamed>' 
+            : signature.slotName === undefined ? '<no slot>'
+            : `'${signature.slotName}'`);
+        debug.trace(`... args:`, '{' + [...node.state.args].map(([a, b]) => `${a} => ${b}`).join(', ') + '}');
         return [];
     };
     mod.afterProcessExpansion = (node: ModifierNode<State>, cxt: ParseContext) => {
-        if (!node.state?.ok || signature.slotName === undefined) return [];
+        if (!node.state?.ok) return [];
         const store = cxt.get(builtins)!;
         const data = isInline ? store.inlineInstantiationData : store.blockInstantiationData;
-        const pop = data.pop();
-        assert(pop !== undefined);
-        debug.trace(`popped ${NodeType[type]} slot data for`, name,
-            signature.slotName == '' ? '(unnamed)' : `= ${signature.slotName}`);
+        data.pop();
+        debug.trace(`popped ${NodeType[type]} slot data for`, name);
         return [];
     };
     return mod;

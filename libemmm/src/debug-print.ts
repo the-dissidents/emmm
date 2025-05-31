@@ -1,7 +1,6 @@
 import { debug } from "./debug";
-import { ArgumentEntity, NodeType, ModifierArgument, DocumentNode, Message, MessageSeverity, BlockModifierDefinition, BlockShorthand, InlineModifierDefinition, InlineShorthand, ModifierSlotType, BlockEntity, InlineEntity, LocationRange, SourceDescriptor } from "./interface";
+import { ArgumentEntity, NodeType, ModifierArgument, Message, MessageSeverity, BlockModifierDefinition, BlockShorthand, InlineModifierDefinition, InlineShorthand, ModifierSlotType, BlockEntity, InlineEntity, LocationRange } from "./interface";
 import { Document } from "./parser-config";
-import { linePositions } from "./util";
 
 export const debugPrint = {
     blockModifier: (x: BlockModifierDefinition<any>) => 
@@ -26,9 +25,8 @@ export const debugPrint = {
     node: (...nodes: (BlockEntity | InlineEntity)[]) => 
         nodes.map((x) => debugPrintNode(x)).join('\n'),
 
-    message: (m: Message, source?: string, descriptor?: SourceDescriptor) => 
-        debugPrintMsg(m, descriptor, source),
-
+    message: debugPrintMsg,
+    range: debugPrintRange,
     document: debugDumpDocument
 }
 
@@ -88,38 +86,49 @@ function debugPrintNode(node: BlockEntity | InlineEntity, prefix = '') {
     return result;
 }
 
-function debugPrintMsg(m: Message, descriptor?: SourceDescriptor, source?: string) {
-    let pos = (pos: number) => `@${pos}`;
-    if (source) {
-        const lines = linePositions(source);
-        pos = (pos: number) => {
-            let line = -1, linepos = 0;
-            for (let i = 1; i < lines.length; i++) {
-                if (lines[i] > pos) {
-                    line = i;
-                    linepos = lines[i - 1];
-                    break;
-                }
-            }
-            return `l${line}c${pos - linepos + 1}`;
+function debugPrintRange(loc: LocationRange, context = 1) {
+    const isSingleCharacter = loc.start == loc.end;
+    let [sr, sc] = loc.source.getRowCol(loc.start);
+    let [er, ec] = loc.source.getRowCol(loc.actualEnd ?? loc.end);
+    const rowWidth = Math.max((sr+1).toString().length, (er+1).toString().length);
+
+    const startLine = Math.max(0, sr - context);
+    const endLine = Math.min(loc.source.nLines - 1, er + context);
+    let lines: string[] = [];
+    for (let i = startLine; i <= endLine; i++) {
+        const line = loc.source.getLine(i)!;
+        lines.push((i+1).toString().padStart(rowWidth) + ' | ' + line);
+        if (i >= sr && i <= er) {
+            const startPos = i == sr ? sc : 0;
+            const endPos = i == er ? ec : line.length;
+            lines.push(
+                  ' '.repeat(rowWidth) + ' | ' 
+                + ' '.repeat(startPos)
+                + (isSingleCharacter ? '^' : '~'.repeat(endPos - startPos + 1)));
         }
     }
+    return lines.join('\n');
+}
 
-    let loc: LocationRange | undefined = m.location;
-    let result = `at ${pos(loc.start)}-${pos(loc.end)}: ${MessageSeverity[m.severity]}[${m.code}]: ${m.info}`;
-    if (descriptor && m.location.source !== descriptor) {
-        result += `\nwarning: source descriptor mismatch: ${m.location.source.name}`
+function debugPrintMsg(m: Message) {
+    const poss = (loc: LocationRange) => {
+        const [r1, c1] = loc.source.getRowCol(loc.start);
+        if (loc.start == loc.end) return `l${r1+1}c${c1+1}`;
+        const [r2, c2] = loc.source.getRowCol(loc.end);
+        return `l${r1+1}c${c1+1}-l${r2+1}c${c2+1}`;
     }
+    let loc: LocationRange | undefined = m.location;
+    let result = `at ${poss(loc)}: ${MessageSeverity[m.severity]}[${m.code}]: ${m.info}`;
     while (loc = loc.original) {
         let d = loc.source !== m.location.source ? `(in ${loc.source.name}) ` : '';
-        result += `\n---> original at: ${d}${pos(loc.start)}-${pos(loc.end)}`;
+        result += `\n---> original at: ${d}${poss(loc)}`;
     }
     return result;
 }
 
-function debugDumpDocument(doc: Document, source: string): string {
+function debugDumpDocument(doc: Document): string {
     let root = debugPrint.node(...doc.root.content);
-    let msgs = doc.messages.map((x) => debugPrintMsg(x, doc.root.source, source)).join('\n');
+    let msgs = doc.messages.map((x) => debugPrintMsg(x)).join('\n');
     if (msgs.length > 0) msgs += '\n';
     return `Document: ${doc.root.source.name}\n${msgs}${root}`;
 }

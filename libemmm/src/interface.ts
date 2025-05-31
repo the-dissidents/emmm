@@ -1,4 +1,5 @@
 import { ParseContext } from "./parser-config";
+import { Source } from "./source";
 
 export enum MessageSeverity {
     Info,
@@ -13,14 +14,9 @@ export type Message = {
     readonly code: number
 }
 
-export type SourceDescriptor = {
-    // FIXME: include source information so that messages can be printed correctly!
-    name: string
-}
-
 export type LocationRange = {
     original?: LocationRange
-    source: SourceDescriptor,
+    source: Source,
     start: number,
     end: number,
 
@@ -104,7 +100,7 @@ export type InlineModifierNode<TState> = {
 export type RootNode = {
     type: NodeType.Root
     content: BlockEntity[],
-    source: SourceDescriptor
+    source: Source
 }
 
 export type ModifierNode<T = any> = 

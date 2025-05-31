@@ -160,7 +160,7 @@ describe('basic syntax', () => {
         ]);
     });
     test('empty block modifier', () => {
-        let doc = parse(`[.normal;]abc`);
+        let doc = parse(`[.normal;]\nabc`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
@@ -169,7 +169,7 @@ describe('basic syntax', () => {
             },
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
         ]);
-        doc = parse(`[.marker]abc`);
+        doc = parse(`[.marker]\nabc`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
@@ -343,12 +343,8 @@ describe('basic syntax', () => {
             }
         ]);
     });
-    test('warnings - extra newlines', () => {
-        let doc = parse(`aaa\nbbb\n\n\nccc\n\nddd`);
-        expect.soft(doc.messages).toMatchObject([
-            { severity: MessageSeverity.Warning, code: 1 }
-        ]);
-        doc = parse(`[.normal]\n\nabc`);
+    test('warnings - extra newlines: modifiers', () => {
+        let doc = parse(`[.normal]\n\nabc`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 1 }
         ]);
@@ -364,7 +360,19 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 1 }
         ]);
-        doc = parse(`:--\nabc\n--:\n\n\nhaha`);
+        doc = parse(`[.marker]\n\n\ndef`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Warning, code: 1 }
+        ]);
+    });
+    test('warnings - extra newlines: paragraphs', () => {
+        let doc = parse(`aaa\nbbb\n\n\nccc\n\nddd`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Warning, code: 1 }
+        ]);
+    });
+    test('warnings - extra newlines: groups', () => {
+        let doc = parse(`:--\nabc\n--:\n\n\nhaha`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 1 }
         ]);
@@ -373,7 +381,7 @@ describe('basic syntax', () => {
             { severity: MessageSeverity.Warning, code: 1 }
         ]);
     });
-    test('warnings - should be newlines', () => {
+    test('warnings - should be newlines: groups', () => {
         let doc = parse(`:--abc\n--:`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 3 }
@@ -407,6 +415,47 @@ describe('basic syntax', () => {
                 type: NodeType.BlockModifier, mod: {name: 'pre'},
                 content: [{ type: NodeType.Preformatted, content: {text: 'abc'} }]
             },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'haha' }] }
+        ]);
+    });
+    test('warnings - should be newlines: block modifiers', () => {
+        let doc = parse(`haha [.normal] hoho`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Warning, code: 3 }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'haha' }] },
+            {
+                type: NodeType.BlockModifier, mod: {name: 'normal'},
+                content: [{ 
+                    type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'hoho' }] 
+                }]
+            }
+        ]);
+    });
+    test('warnings - should be newlines: markers', () => {
+        let doc = parse(`[.marker][.marker]`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Warning, code: 3 }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.BlockModifier, mod: {name: 'marker'} },
+            { type: NodeType.BlockModifier, mod: {name: 'marker'} }
+        ]);
+        doc = parse(`[.marker]   [.marker]`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Warning, code: 3 }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.BlockModifier, mod: {name: 'marker'} },
+            { type: NodeType.BlockModifier, mod: {name: 'marker'} }
+        ]);
+        doc = parse(`[.marker] haha`);
+        expect.soft(doc.messages).toMatchObject([
+            { severity: MessageSeverity.Warning, code: 3 }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.BlockModifier, mod: {name: 'marker'} },
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'haha' }] }
         ]);
     });

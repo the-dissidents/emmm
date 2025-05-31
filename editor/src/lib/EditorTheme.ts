@@ -260,7 +260,7 @@ export const EmmmLanguageSupport: Extension = [
                     [emmm.MessageSeverity.Warning]: 'warning',
                     [emmm.MessageSeverity.Error]: 'error'
                 } as const)[msg.severity],
-                message: emmm.debugPrint.message(msg, doc.source)
+                message: emmm.debugPrint.message(msg)
             });
         }
         return msgs;
@@ -452,4 +452,12 @@ export let DefaultTheme = EditorView.baseTheme({
         boxShadow: '-1px 0.5px 0 white, 0 -0.5px 0 white inset',
         transform: 'translate(50%, -6px)',
     },
+    ".cm-tooltip": {
+        border: 'none',
+        boxShadow: '3px 2px 5px 0px rgba(0,0,0,0.5)',
+        borderRadius: '4px',
+        backgroundColor: 'white',
+        overflow: 'hidden',
+        fontSize: '85%'
+    }
 });

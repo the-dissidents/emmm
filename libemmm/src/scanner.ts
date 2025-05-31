@@ -1,11 +1,15 @@
-import { SourceDescriptor } from "./interface";
+import { Source, SourceDescriptor, StringSource } from "./source";
 import { assert } from "./util";
 
 export class SimpleScanner implements Scanner {
+    public readonly source: Source;
     private pos = 0;
     constructor(
         private src: string,
-        public readonly source: SourceDescriptor = {name: '<input>'}) {}
+        sourceDesc: SourceDescriptor = {name: '<input>'})
+    {
+        this.source = new StringSource(sourceDesc, src);
+    }
 
     position(): number {
         return this.pos;
@@ -47,7 +51,7 @@ export class SimpleScanner implements Scanner {
 // The scanner of any implementation should be capable of handling UTF-8 
 // strings at least as well as Typescript.
 export interface Scanner {
-    readonly source: SourceDescriptor;
+    readonly source: Source;
 
     position(): number;
     isEOF(): boolean;

@@ -74,19 +74,10 @@ export function has(v: number, f: number): boolean {
     return (v & f) === f;
 }
 
-export function linePositions(src: string): number[] {
-    let result = [0];
-    [...src].forEach((x, i) => {
-        if (x == '\n') result.push(i+1);
-    });
-    result.push(Infinity);
-    return result;
-}
-
 export type CloneNodeOptions = {
     newLocation?: LocationRange,
     withState?: boolean
-}
+};
 
 const cloneArgument = (arg: ModifierArgument, options: CloneNodeOptions): ModifierArgument => ({
     location: clonePosition(arg.location, options),

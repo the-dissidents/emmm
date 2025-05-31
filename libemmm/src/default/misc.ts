@@ -91,7 +91,7 @@ export const MiscBlockRenderersHTML = [
     [styleBlock, (node, cxt) => {
         if (node.state === undefined)
             return cxt.state.invalidBlock(node, 'bad format');
-        return `<div class="${node.state}" style="display:contents">${cxt.state.render(node.content, cxt)}</div>`;
+        return `<div class="emmmstyle-${node.state}" style="display:contents">${cxt.state.render(node.content, cxt)}</div>`;
     }] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
     [breakBlock, () => {
         return `<hr>`;

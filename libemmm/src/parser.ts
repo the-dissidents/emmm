@@ -1,7 +1,7 @@
 import { debug } from "./debug";
 import { debugPrint } from "./debug-print";
 import { BlockEntity, BlockModifierDefinition, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierSlotType, ParagraphNode, LocationRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
-import { ContentShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
+import { ShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
 import { ParseContext, Document } from "./parser-config";
 import { Scanner } from "./scanner";
 import { _Def, _Node, _Shorthand } from "./typing-helper";
@@ -277,7 +277,7 @@ class Parser {
     private SHOULD_BE_A_NEWLINE() {
         this.WHITESPACES();
         if (!this.scanner.accept('\n')) this.emit.message(
-            new ContentShouldBeOnNewlineMessage(this.#loc()));
+            new ShouldBeOnNewlineMessage(this.#loc()));
     }
 
     // TODO: this is awkward and doesn't emit messages in the most appropriate way
@@ -520,6 +520,10 @@ class Parser {
 
         let ok = true;
         if (isMarker) {
+            if (!this.scanner.isEOF() && type == NodeType.BlockModifier) {
+                this.SHOULD_BE_A_NEWLINE();
+                this.WARN_IF_MORE_NEWLINES_THAN(1);
+            }
             if (type === NodeType.InlineModifier) this.emit.addInlineNode(node as InlineEntity);
             else this.emit.addBlockNode(node as BlockEntity);
         } else if (type == NodeType.InlineModifier) {
@@ -542,7 +546,7 @@ class Parser {
             if (!pre && node.content.length > 0) {
                 this.#trimNode(node)
             }
-        } else {
+        } else /* block or system */ {
             this.emit.startBlock(node as any);
             this.WARN_IF_MORE_NEWLINES_THAN(1);
             if (!this.scanner.isEOF()) {
@@ -570,6 +574,10 @@ class Parser {
             return this.MODIFIER(NodeType.InlineModifier);
         if (this.scanner.peek(MODIFIER_SYSTEM_OPEN))
             return false;
+        if (this.scanner.peek(MODIFIER_BLOCK_OPEN)) {
+            this.SHOULD_BE_A_NEWLINE();
+            return false;
+        }
 
         const short = this.cxt.config.inlineShorthands.find((x) => this.scanner.accept(x.name));
         if (short) return this.SHORTHAND(NodeType.InlineModifier, short);

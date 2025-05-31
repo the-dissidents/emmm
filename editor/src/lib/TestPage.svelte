@@ -69,8 +69,7 @@
   function onParse(doc: EmmmParseData, source: string) {
     parsedStatus = `parsed in ${doc.time.toFixed(0)}ms`;
     Interface.parseData.set(doc);
-    outputAST = emmm.debugPrint.document(
-      strip ? doc.data.toStripped() : doc.data, source);
+    outputAST = emmm.debugPrint.document(strip ? doc.data.toStripped() : doc.data);
     Interface.render();
   }
 
@@ -79,26 +78,31 @@
     ['type', {name: 'T', type: 'text', vAlign: 'top', width: '5%'}],
     ['code', {name: '#', type: 'text', vAlign: 'top', width: '5%'}],
     ['line', {name: 'line', type: 'text', vAlign: 'top', width: '5%'}],
-    ['col', {name: 'column', type: 'text', vAlign: 'top', width: '5%'}],
+    ['column', {name: 'column', type: 'text', vAlign: 'top', width: '5%'}],
+    ['length', {name: 'length', type: 'text', vAlign: 'top', width: '5%'}],
     ['msg', {name: 'message', type: 'text'}]
   ]);
   let problemListHandleOut: ListViewHandleOut | undefined = $state();
 
   Interface.parseData.subscribe((pd) => {
-    problemListHandleOut?.reset(pd!.data.messages.map((x) => ({
-      cols: {
-        file: {type: 'text', content: x.location.source.name},
-        type: {type: 'text', content: {
-          [emmm.MessageSeverity.Warning]: '⚠️',
-          [emmm.MessageSeverity.Error]: '❌',
-          [emmm.MessageSeverity.Info]: 'ℹ️'
-        }[x.severity]},
-        code: {type: 'text', content: `${x.code}`},
-        line: {type: 'text', content: `${x.location.start}`},
-        col: {type: 'text', content: `${x.location.end}`},
-        msg: {type: 'text', content: x.info},
+    problemListHandleOut?.reset(pd!.data.messages.map((x) => {
+      const source = x.location.source;
+      return {
+        cols: {
+          file: {type: 'text', content: x.location.source.name},
+          type: {type: 'text', content: {
+            [emmm.MessageSeverity.Warning]: '⚠️',
+            [emmm.MessageSeverity.Error]: '❌',
+            [emmm.MessageSeverity.Info]: 'ℹ️'
+          }[x.severity]},
+          code: {type: 'text', content: `${x.code}`},
+          line: {type: 'text', content: `${source.getRowCol(x.location.start)[0] + 1}`},
+          column: {type: 'text', content: `${source.getRowCol(x.location.start)[1] + 1}`},
+          length: {type: 'text', content: `${(x.location.actualEnd ?? x.location.end) - x.location.start + 1}`},
+          msg: {type: 'text', content: x.info},
+        }
       }
-    })));
+    }));
   });
 
   let autoColor = $state(true);

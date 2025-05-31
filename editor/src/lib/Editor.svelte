@@ -15,7 +15,7 @@
 <script lang="ts">
   import { getContext, onMount, setContext } from "svelte";
   import { drawSelection, EditorView, highlightWhitespace, keymap, lineNumbers } from "@codemirror/view";
-  import { defaultKeymap, history, indentWithTab } from "@codemirror/commands";
+  import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
   import { EditorState, type Extension } from "@codemirror/state";
   import { closeBrackets } from "@codemirror/autocomplete";
   import { hook } from "./details/Hook.svelte";
@@ -76,8 +76,8 @@
       state: EditorState.create({
         doc: text,
         extensions: [
-            keymap.of([...defaultKeymap, indentWithTab]),
             history(),
+            keymap.of([...defaultKeymap, indentWithTab, ...historyKeymap]),
             EditorView.lineWrapping,
             EditorState.tabSize.of(4),
             lineNumbers(),
