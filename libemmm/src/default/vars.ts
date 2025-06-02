@@ -1,3 +1,4 @@
+import { debug } from "../debug";
 import { ModifierSlotType, SystemModifierDefinition } from "../interface";
 import { OverwriteSpecialVariableMessage } from "../messages";
 import { checkArguments, onlyPermitPlaintextParagraph } from "../modifier-helper";
@@ -16,6 +17,7 @@ function createWrapper(name: string, varname?: string) {
             if (previous)
                 msgs = [new OverwriteSpecialVariableMessage(node.head, varname, previous)];
             cxt.variables.set(varname, result);
+            debug.trace(varname, '->', result);
             return msgs ?? [];
         },
     });

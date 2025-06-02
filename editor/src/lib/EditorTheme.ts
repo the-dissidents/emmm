@@ -80,7 +80,7 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
                     const {number: l2} = lineAt(node.location.actualEnd ?? node.location.end);
                     if (node.content.length > 0) {
                         const {number, from} = lineAt(node.content[0].location.start);
-                        if (number == l1 && node.type === emmm.NodeType.BlockModifier) {
+                        if (number == l1 && node.type !== emmm.NodeType.InlineModifier) {
                             // do hanging indentation
                             let hang = node.content[0].location.start - from;
                             if (l2 > number) for (let i = number + 1; i <= l2; i++)
@@ -430,7 +430,8 @@ export let DefaultTheme = EditorView.baseTheme({
     },
 
     ".em-pre": {
-        fontFamily: 'Courier'
+        fontFamily: 'Courier',
+        wordBreak: 'break-all'
     },
     ".em-args": {
         color: 'dimgray'

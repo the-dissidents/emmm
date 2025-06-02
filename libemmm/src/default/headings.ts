@@ -46,7 +46,6 @@ function currentExplicitHeadingLevel(cxt: ParseContext) {
 const headingBlock = new BlockModifierDefinition<HeadingData>(
     'heading', ModifierSlotType.Normal,
     {
-        delayContentExpansion: true,
         roleHint: 'heading',
         prepareExpand(node, cxt) {
             let msgs = checkArguments(node, 0, 1);
@@ -98,7 +97,6 @@ const implicitHeadingBlock = new BlockModifierDefinition<HeadingData>(
 const numberedHeadingBlock = new BlockModifierDefinition<HeadingData>(
     'numbered-heading', ModifierSlotType.Normal,
     {
-        delayContentExpansion: true,
         roleHint: 'heading',
         prepareExpand(node, cxt) {
             let msgs = checkArguments(node, 1);

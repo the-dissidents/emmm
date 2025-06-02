@@ -51,27 +51,33 @@ export function onlyPermitPlaintextParagraph(
         return result;
     }
 
+    function checkContent(ents: BlockEntity[]) {
+        if (ents.length == 0) return '';
+        else if (ents.length > 1) {
+            let last = ents.at(-1)!.location;
+            return [new MultipleBlocksNotPermittedMessage({
+                source: last.source, 
+                start: ents[1].location.start, 
+                end: last.actualEnd ?? last.end
+            })];
+        } 
+        return check(ents[0]);
+    }
+
     function check(ent: BlockEntity): Message[] | string {
         if (ent.type == NodeType.BlockModifier) {
             if (!ent.expansion) return [new EntityNotAllowedMessage(
                 ent.location, 'it does not expand to plain text')];
-            if (ent.expansion.length == 0) return '';
-            else if (ent.expansion.length > 1) {
-                let last = ent.expansion.at(-1)!.location;
-                return [new MultipleBlocksNotPermittedMessage({
-                    source: last.source, 
-                    start: ent.expansion[1].location.start, 
-                    end: last.actualEnd ?? last.end
-                })];
-            } 
-            return check(ent.expansion[0]);
+            return checkContent(ent.expansion);
+        } else if (ent.type == NodeType.Preformatted) {
+            return ent.content.text;
         } else if (ent.type !== NodeType.Paragraph) {
             return [new OnlySimpleParagraphsPermittedMessage(ent.location)];
         }
         return checkInline(ent.content);
     }
     
-    return check(node);
+    return checkContent(node.content);
 }
 
 export function onlyPermitSimpleParagraphs(

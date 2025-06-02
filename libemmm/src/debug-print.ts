@@ -128,7 +128,8 @@ function debugPrintMsg(m: Message) {
 
 function debugDumpDocument(doc: Document): string {
     let root = debugPrint.node(...doc.root.content);
-    let msgs = doc.messages.map((x) => debugPrintMsg(x)).join('\n');
+    let msgs = doc.messages.map((x) => 
+        debugPrintRange(x.location) + '\n' + debugPrintMsg(x)).join('\n');
     if (msgs.length > 0) msgs += '\n';
     return `Document: ${doc.root.source.name}\n${msgs}${root}`;
 }

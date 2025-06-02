@@ -148,11 +148,15 @@ class ModifierBase<TNode, TEntity> {
 
     roleHint?: string;
     /**
-     * If true, any modifier encountered inside it will *not* be expanded *during parse-content*, *unless* that modifier is `alwaysTryExpand`.
+     * If true, any modifier encountered inside it will *not* be expanded *during parse-content*, 
+     * *unless* that modifier is `alwaysTryExpand`. In the vast majority of cases, you shouldn't 
+     * be using this.
      */
     delayContentExpansion = false;
     /**
-     * If true, such a modifier will always be expanded whenever it is encountered, *even if* contained in a modifier with `delayContentExpansion`.
+     * If true, such a modifier will always be expanded whenever it is encountered, *even if* 
+     * contained in a modifier with `delayContentExpansion`. In the vast majority of cases, 
+     * you shouldn't be using this.
      */
     alwaysTryExpand = false;
 

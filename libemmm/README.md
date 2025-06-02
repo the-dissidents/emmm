@@ -83,9 +83,9 @@ You can also use the brackets without a modifier. However, this has little effec
 Suppose the modifier `[.pre]` accepts a preformatted block:
 
 ```
-[.pre] Preformatted content, suitable for code and ASCII art. Always treated as plain text, even if I write [.foo] or [/foo] or \[.
+[.pre] This is preformatted content, suitable for code and ASCII art. Always treated as plain text, even if I write [.foo] or [/foo] or \[.
 
-However, like in a normal paragraph, a blank line creates a new block so this is no longer in the pre. Use brackets:
+However, like in a normal paragraph, a blank line creates a new block so this is no longer in the pre. Use brackets if you don't want that:
 
 [.pre]
 :--
@@ -104,7 +104,7 @@ Use a `;` before `]` to signify empty content. Modifiers that don't accept conte
 [.pre;]
 ```
 
-In normal paragraphs, use a slash `\` to **escape** the character immediately after it, so that it will not be interpreted as a special character (e.g. the beginning of a modifier).
+In normal paragraphs, you can use a backslash `\` to **escape** a character immediately after it, so that it will not be interpreted as a special character (e.g. the beginning of a modifier).
 
 **Inline modifiers** are similar to block modifiers, but occur in paragraphs. They are written as `[/baa]` or `[/baa args]`. If accepting content, use `[;]` to mark the end of their scope.
 
@@ -159,10 +159,10 @@ A colon before the first argument states explicitly the beginning of that argume
 
 ### System modifiers
 
-[**-define-block** *name*:*args...*]  
-[**-define-block** *name*:*args...*:(*slot*)]  
-[**-define-inline** *name*:*args...*]  
-[**-define-inline** *name*:*args...*:(*slot*)]  
+[**-define-block** *name*:*args...*] *content*  
+[**-define-block** *name*:*args...*:(*slot*)] *content*  
+[**-define-inline** *name*:*args...*] *content*  
+[**-define-inline** *name*:*args...*:(*slot*)] *content*  
 
 > Define a new modifier. The first argument is the name. If one or more arguments exist, and the last is enclosed in `()`, it is taken as the **slot name** (more on that later). The rest in the middle are names for the arguments.
 > 
@@ -174,15 +174,15 @@ A colon before the first argument states explicitly the beginning of that argume
 > 
 > You can't reassign arguments, only variables. Since arguments always take precedence over variables, "reassigning" them has no effect inside a definition and can only confuse the rest of the code.
 
-[**-define-block-prefix** *prefix*]  
-[**-define-block-prefix** *prefix*:(*slot*)]
+[**-define-block-prefix** *prefix*] *content*  
+[**-define-block-prefix** *prefix*:(*slot*)] *content*
 
 > Not implemented yet
 
-[**-define-inline-shorthand** *prefix*]  
-[**-define-inline-shorthand** *prefix*:(*slot*):*postfix*]  
-[**-define-inline-shorthand** *prefix*:*arg1*:*mid1*:*arg2*:*mid2*...]  
-[**-define-inline-shorthand** *prefix*:*arg1*:*mid1*:*arg2*:*mid2*...:(*slot*):*postfix*]  
+[**-define-inline-shorthand** *prefix*] *content*  
+[**-define-inline-shorthand** *prefix*:(*slot*):*postfix*] *content*  
+[**-define-inline-shorthand** *prefix*:*arg1*:*mid1*:*arg2*:*mid2*...] *content*  
+[**-define-inline-shorthand** *prefix*:*arg1*:*mid1*:*arg2*:*mid2*...:(*slot*):*postfix*] *content*  
 
 > Defines an inline shorthand. A shorthand notation consists of a prefix, zero or more pairs of argument and middle part, and optionally a slot and a postfix. You must specify a slot name if you want to use one, although you can specify an empty one using `()`. You may also specify an *empty* last argument, i.e. a `:` before the `]` that ends the modifier head, to make the postfix stand out better.
 > ```
@@ -222,13 +222,21 @@ A colon before the first argument states explicitly the beginning of that argume
 > ```
 > Note the first, unnamed `.slot` refers to the slot of `q`.
 
-[**.module** *module-name*]
+[**.module** *module-name*] *content*
 
 > Causes the definitions in the content to become part of a **module**. They don't take effect outside the `[.module]` modifier *unless* activated by a `[.use]` or `[-use]` modifier.
 
-[**.use** *module-name*]
+[**.use** *module-name*] *content*
 
 > Activates the definitions in a module for the content *within this modifier*. Use `[-use]` to activate for the whole document instead.
+
+[**.ifdef** *id*] *content*
+
+> Expands to the content if the variable or argument *id* is defined, or nothing if it's not.
+
+[**.ifndef** *id*] *content*
+
+> Expands to the content if the variable or argument *id* is undefined, or nothing if it's defined.
 
 ### Inline modifiers
 
@@ -244,6 +252,11 @@ A colon before the first argument states explicitly the beginning of that argume
 [**/print** *argument...*]
 
 > Expands to the value of the arguments, separated by nothing, as plain text.
+
+[**/ifdef** *id*] *content* [;]  
+[**/ifndef** *id*] *content* [;]
+
+> See the similarly named block modifiers.
 
 ### Interpolators
 

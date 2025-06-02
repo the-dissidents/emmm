@@ -60,7 +60,8 @@ Third
 Text
 `;
 
-text1 = `haha [.normal] hoho`;
+text1 = `[-block-shorthand pp:()][.heading][.slot]
+pp[/print 123]`;
 
 // text1 = `[.pre]abc
 

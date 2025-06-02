@@ -380,6 +380,7 @@ class Parser {
         if (grouped) this.SHOULD_BE_A_NEWLINE();
         const posContentStart = this.scanner.position();
         let posContentEnd = this.scanner.position();
+        let paragraphEnd: number | undefined = undefined;
 
         let string = '';
         while (!this.scanner.isEOF()) {
@@ -390,6 +391,7 @@ class Parser {
                     white += char;
                     
                 if (grouped && this.scanner.accept(GROUP_END)) {
+                    paragraphEnd = this.scanner.position();
                     if (!this.scanner.isEOF()) {
                         this.SHOULD_BE_A_NEWLINE();
                         this.WARN_IF_MORE_NEWLINES_THAN(1);
@@ -397,6 +399,7 @@ class Parser {
                     break;
                 }
                 if  (!grouped && this.scanner.accept('\n')) {
+                    paragraphEnd = this.scanner.position() - 1;
                     if (!this.scanner.isEOF())
                         this.WARN_IF_MORE_NEWLINES_THAN(0);
                     break;
@@ -415,7 +418,7 @@ class Parser {
         }
         const node: PreNode = {
             type: NodeType.Preformatted, 
-            location: this.#locFrom(posStart),
+            location: this.#locFrom(posStart, paragraphEnd ?? posContentEnd),
             content: {
                 start: posContentStart,
                 end: posContentEnd,

@@ -1,5 +1,5 @@
 import { debug } from "../debug";
-import { InlineModifierDefinition, ModifierSlotType, ArgumentInterpolatorDefinition, SystemModifierDefinition, NodeType } from "../interface";
+import { InlineModifierDefinition, ModifierSlotType, ArgumentInterpolatorDefinition, SystemModifierDefinition, NodeType, BlockModifierDefinition } from "../interface";
 import { InvalidArgumentMessage, UndefinedVariableMessage } from "../messages";
 import { builtins } from "./internal";
 import { checkArguments } from "../modifier-helper";
@@ -30,6 +30,49 @@ function resolveId(id: string, cxt: ParseContext): string | undefined {
         value = cxt.variables.get(id);
     return value;
 }
+
+let ifdefBlock = (name: string, x: boolean) =>
+    new BlockModifierDefinition<boolean>
+    (name, ModifierSlotType.Normal,
+{
+    prepareExpand(node, cxt) {
+        const check = checkArguments(node, 1);
+        if (check) return check;
+        const arg = node.arguments[0];
+        const id = arg.expansion!;
+        if (id == '') return [new InvalidArgumentMessage(arg.location)];
+        const value = resolveId(id, cxt);
+        node.state = value !== undefined;
+        return [];
+    },
+    expand(node) {
+        return (node.state == x) ? node.content : [];
+    }
+});
+
+let ifdefInline = (name: string, x: boolean) =>
+    new InlineModifierDefinition<boolean>
+    (name, ModifierSlotType.Normal,
+{
+    prepareExpand(node, cxt) {
+        const check = checkArguments(node, 1);
+        if (check) return check;
+        const arg = node.arguments[0];
+        const id = arg.expansion!;
+        if (id == '') return [new InvalidArgumentMessage(arg.location)];
+        const value = resolveId(id, cxt);
+        node.state = value !== undefined;
+        return [];
+    },
+    expand(node) {
+        return (node.state == x) ? node.content : [];
+    }
+});
+
+export const IfdefBlockMod = ifdefBlock('ifdef', true);
+export const IfndefBlockMod = ifdefBlock('ifndef', false);
+export const IfdefInlineMod = ifdefInline('ifdef', true);
+export const IfndefInlineMod = ifdefInline('ifndef', false);
 
 export const GetVarInlineMod = 
     new InlineModifierDefinition<{ value: string; }>('$', ModifierSlotType.None, 
