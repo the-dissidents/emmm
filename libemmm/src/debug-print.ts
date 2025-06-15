@@ -96,7 +96,7 @@ function debugPrintRange(loc: LocationRange, context = 1) {
     const endLine = Math.min(loc.source.nLines - 1, er + context);
     let lines: string[] = [];
     for (let i = startLine; i <= endLine; i++) {
-        const line = loc.source.getLine(i)!;
+        const line = loc.source.getRow(i)!;
         lines.push((i+1).toString().padStart(rowWidth) + ' | ' + line);
         if (i >= sr && i <= er) {
             const startPos = i == sr ? sc : 0;

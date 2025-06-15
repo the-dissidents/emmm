@@ -11,6 +11,14 @@ const epitaphBlock = new BlockModifierDefinition(
     'epitaph', ModifierSlotType.Normal,
     { roleHint: 'quote' });
 
+const calloutBlock = new BlockModifierDefinition(
+    'callout', ModifierSlotType.Normal,
+    { roleHint: 'quote' });
+
+const detailBlock = new BlockModifierDefinition(
+    'detail', ModifierSlotType.Normal,
+    { roleHint: 'quote' });
+
 const attributionBlock = new BlockModifierDefinition<boolean>(
     'by', ModifierSlotType.Normal,
     {
@@ -25,7 +33,7 @@ const attributionBlock = new BlockModifierDefinition<boolean>(
         },
     });
 
-export const QuoteBlocks = [quoteBlock, epitaphBlock, attributionBlock];
+export const QuoteBlocks = [quoteBlock, epitaphBlock, calloutBlock, detailBlock, attributionBlock];
 
 export const QuoteBlockRenderersHTML = [
     [quoteBlock, (node, cxt) => {
@@ -33,6 +41,12 @@ export const QuoteBlockRenderersHTML = [
     }] satisfies BlockRendererDefiniton<HTMLRenderType>,
     [epitaphBlock, (node, cxt) => {
         return `<blockquote class='epitaph'>${cxt.state.render(node.content, cxt)}</blockquote>`;
+    }] satisfies BlockRendererDefiniton<HTMLRenderType>,
+    [detailBlock, (node, cxt) => {
+        return `<div class='detail'>${cxt.state.render(node.content, cxt)}</div>`;
+    }] satisfies BlockRendererDefiniton<HTMLRenderType>,
+    [calloutBlock, (node, cxt) => {
+        return `<aside>${cxt.state.render(node.content, cxt)}</aside>`;
     }] satisfies BlockRendererDefiniton<HTMLRenderType>,
     [attributionBlock, (node, cxt) => {
         if (!node.state)

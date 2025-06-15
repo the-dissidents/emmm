@@ -177,3 +177,9 @@ describe('[-define-block]', () => {
         ]);
     });
 });
+
+describe('reparse limit', () => {
+    test('by circle reference', () => {
+        
+    })
+});

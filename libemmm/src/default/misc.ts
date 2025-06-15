@@ -102,9 +102,9 @@ export const MiscBlockRenderersHTML = [
         return `<a href="${encodeURI(node.state)}">${cxt.state.render(node.content, cxt)}</a>`;
     }] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
     [imageBlock, (node, cxt) => {
-        let transformed: string | undefined;
         if (node.state === undefined)
             return cxt.state.invalidBlock(node, 'bad format');
+        let transformed: string | undefined;
         try {
             transformed = cxt.config.options.transformAsset(node.state);
         } catch {

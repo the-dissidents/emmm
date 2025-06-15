@@ -5,6 +5,7 @@ import Color from "colorjs.io";
 
 import * as emmm from '@the_dissidents/libemmm';
 import { convertFileSrc } from "@tauri-apps/api/core";
+import { CustomHTMLRenderer } from "./custom/Custom";
 
 export class EventHost<T extends unknown[] = []> {
     #listeners = new Set<(...args: [...T]) => void>;
@@ -45,7 +46,7 @@ export const Interface = $state({
     render() {
         const pd = get(parseData);
         if (!pd || !this.frame) return;
-        let renderConfig = emmm.RenderConfiguration.from(emmm.HTMLRenderConfiguration);
+        let renderConfig = emmm.RenderConfiguration.from(CustomHTMLRenderer);
         renderConfig.options.transformAsset = (url) => {
             // FIXME: shaky
             if (!url.startsWith('file:')) return undefined;

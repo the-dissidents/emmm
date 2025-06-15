@@ -22,6 +22,7 @@
   
   import { onMount } from 'svelte';
   import EmmmContext from './EmmmContext.svelte';
+    import { CustomConfig } from './custom/Custom';
 
   let outputAST = $state('');
   let left = $state<HTMLElement>(), 
@@ -45,7 +46,7 @@
     let lib = emmm.parse(
       new emmm.SimpleScanner(testLib), 
       new emmm.ParseContext(
-        emmm.Configuration.from(emmm.DefaultConfiguration)));
+        emmm.Configuration.from(CustomConfig)));
     config = lib.context.config;
   }
 

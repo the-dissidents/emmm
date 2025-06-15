@@ -109,6 +109,11 @@ describe('argument parsing', () => {
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
+        doc = parse(`[-var x:y][-var xy:123][/print $(x$(y))]`);
+        expect.soft(doc.messages).toMatchObject([{ code: 5 }]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [] }
+        ]);
     });
     test('complex argument interpolation (modifier)', () => {
         let doc = parse(`[-define-block a:x:y][-define-block $(y):z][/$x][/$y][/$z]\n\n[.a b:c;]\n[.c 1;]`);

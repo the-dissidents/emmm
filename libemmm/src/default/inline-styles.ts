@@ -18,7 +18,11 @@ const commentaryInline = new InlineModifierDefinition(
     'commentary', ModifierSlotType.Normal,
     { roleHint: 'commentary' });
 
-export const InlineStyles = [emphasisInline, keywordInline, highlightInline, commentaryInline];
+const sequenceInline = new InlineModifierDefinition(
+    'seq', ModifierSlotType.Normal,
+    { roleHint: 'commentary' });
+
+export const InlineStyles = [emphasisInline, keywordInline, highlightInline, commentaryInline, sequenceInline];
 
 export const InlineStyleRenderersHTML = [
     [emphasisInline, (node, cxt) => {
@@ -32,5 +36,8 @@ export const InlineStyleRenderersHTML = [
     }] satisfies InlineRendererDefiniton<HTMLRenderType>,
     [commentaryInline, (node, cxt) => {
         return `<span class='commentary'>${cxt.state.render(node.content, cxt)}</span>`;
+    }] satisfies InlineRendererDefiniton<HTMLRenderType>,
+    [sequenceInline, (node, cxt) => {
+        return `<span class='seq'>${cxt.state.render(node.content, cxt)}</span>`;
     }] satisfies InlineRendererDefiniton<HTMLRenderType>
 ];

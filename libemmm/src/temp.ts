@@ -60,8 +60,7 @@ Third
 Text
 `;
 
-text1 = `[-block-shorthand pp:()][.heading][.slot]
-pp[/print 123]`;
+text1 = `[-define-block a][.b;]\n[-define-block b][.a;]\n[.a;]`;
 
 // text1 = `[.pre]abc
 

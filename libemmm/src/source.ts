@@ -11,13 +11,13 @@ export interface Source extends SourceDescriptor {
      */
     getRowCol(loc: number): [row: number, col: number];
     /**
-     * Returns the position of the start of line `n` (zero-based). If `n` is zero, returns zero. If the source contains less than `n` lines, returns `Infinity`.
+     * Returns the position of the start of row `n` (zero-based). If `n` is zero, returns zero. If the source contains less than `n` rows, returns `Infinity`.
      */
-    getLineStart(n: number): number;
+    getRowStart(n: number): number;
     /**
-     * Returns the content line `n`. If the source contains less than `n` lines, returns `Infinity`.
+     * Returns the content of the row `n` (zero-based). If the source contains less than `n` rows, returns `undefined`.
      */
-    getLine(n: number): string | undefined;
+    getRow(n: number): string | undefined;
 }
 
 export class StringSource implements Source {
@@ -47,18 +47,16 @@ export class StringSource implements Source {
         return [line, pos - linepos];
     }
 
-    getLineStart(n: number): number {
+    getRowStart(n: number): number {
         assert(n >= 0);
         if (n >= this.lineMap.length) return Infinity;
         return this.lineMap[n];
     }
 
-    getLine(n: number): string | undefined {
-        const start = this.getLineStart(n);
-        const end = this.getLineStart(n + 1);
+    getRow(n: number): string | undefined {
+        const start = this.getRowStart(n);
+        const end = this.getRowStart(n + 1);
         if (start === Infinity) return undefined;
         return this.src.substring(start, end - 1);
-    }
-
-    
+    }    
 }

@@ -1,6 +1,9 @@
 import { coverageConfigDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
+  esbuild: {
+    legalComments: 'inline'
+  },
   test: {
     coverage: {
         provider: 'istanbul',

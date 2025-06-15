@@ -7,6 +7,7 @@ export * from './parser';
 export * from './parser-config';
 export * from './renderer';
 export * as messages from './messages';
+export * as helper from './modifier-helper';
 export * from './builtin/builtin';
 export * from './default/default';
 export * from './default/html-renderer';

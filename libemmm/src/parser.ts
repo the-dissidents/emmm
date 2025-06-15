@@ -128,7 +128,10 @@ class Parser {
         };
     }
 
-    #defs<Type extends NodeType.BlockModifier | NodeType.SystemModifier | NodeType.InlineModifier>(type: Type): NameManager<_Def<Type, any>> {
+    /* istanbul ignore next -- @preserve */
+    #defs<
+        Type extends NodeType.BlockModifier | NodeType.SystemModifier | NodeType.InlineModifier
+    >(type: Type): NameManager<_Def<Type, any>> {
         switch (type) {
             case NodeType.SystemModifier: return this.cxt.config.systemModifiers as any;
             case NodeType.InlineModifier: return this.cxt.config.inlineModifiers as any;

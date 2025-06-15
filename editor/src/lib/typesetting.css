@@ -70,7 +70,7 @@ section.notes {
     line-height: 1.7;
 }
 section.notes section.note {
-	display: flex;
+    display: flex;
 }
 section.notes .note-name a::before {
     content: '[';
@@ -96,11 +96,12 @@ p.attribution {
 }
 
 :is(h1,h2,h3,h4,h5,h6) {
-    margin-block: 3em 3em;
+    margin-block: 2em 2em;
 }
 h1 {
     font-size: 150%;
     font-weight: bold;
+    margin-block: 3em 3em;
 }
 h2 {
     font-size: 115%;
@@ -115,6 +116,48 @@ h3 {
 }
 :is(h1,h2,h3,h4,h5,h6) + :is(h1,h2,h3,h4,h5,h6) {
     margin-block-start: 0;
+}
+
+.implicit:is(h1,h2,h3,h4,h5,h6) {
+    text-align: center;
+}
+
+.implicit:is(h1,h2,h3,h4,h5,h6)::before {
+    content: '• • •';
+}
+
+.emmmstyle-header h1 {
+  margin-top: 0;
+  margin-bottom: 0;
+  &:not(:has(+ .emmmstyle-subtitle)) {
+    margin-bottom: 1em;
+  }
+}
+
+.emmmstyle-header .emmmstyle-subtitle h1 {
+  font-size: 130%;
+    margin-bottom: 1em;
+}
+
+/* blocks */
+
+.detail {
+    font-size: 13px;
+    text-align: start;
+    line-height: 1.7;
+}
+
+aside {
+    text-align: end;
+}
+
+.emmmstyle-ttr {
+    font-size: 11px;
+    line-height: 1.8;
+}
+
+.emmmstyle-ttr + hr {
+    margin-top: 0;
 }
 
 /* inline formattings */
@@ -134,6 +177,9 @@ span.commentary {
 mark {
     background-color: var(--highlight-color);
     color: var(--text-color); 
+}
+.seq {
+    word-break: break-all;
 }
 
 /* misc */
@@ -164,4 +210,96 @@ figure figcaption {
     font-size: 85%;
     color: var(--commentary-color); 
     letter-spacing: 0.5px;
+}
+
+.gallery figure {
+    position: relative;
+}
+
+.gallery figure > img {
+    display: block;
+    height: auto;
+}
+
+.emmmstyle-gallery figure > figcaption {
+    position: absolute;
+    left: 0; bottom: 0;
+    vertical-align: bottom;
+    display: inline-block;
+    box-sizing: border-box;
+    padding: 0 10px;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.65);
+    color: white;
+    text-align: justify;
+}
+
+.emmmstyle-center {
+    text-align: center;
+}
+
+/* ratings */
+
+.ratings {
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: Arial, '黑体-简';
+}
+
+.ratings thead tr.title th {
+  line-height: 350%;
+  font-size: 150%;
+}
+
+.ratings thead tr.info th {
+  line-height: 300%;
+  font-size: 90%;
+  font-weight: normal;
+}
+
+.ratings :is(th, td) {
+  border: 3px solid;
+  border-color: var(--text-color);
+}
+
+.ratings tbody th {
+  line-height: 250%;
+  padding: 5px;
+}
+
+.ratings tbody td {
+  white-space: pre-wrap;
+  line-height: 90%;
+  font-size: 120%;
+  padding: 15px;
+  /*color: var(--commentary-color);*/
+}
+
+.ratings tfoot td {
+  line-height: 250%;
+  padding: 5px;
+}
+
+.ratings tfoot span {
+  font-size: 120%;
+  padding: 3px;
+}
+
+.ratings .stars-0::before {
+  content: '×';
+}
+.ratings .stars-1::before {
+  content: '⭑';
+}
+.ratings .stars-2::before {
+  content: '⭑⭑';
+}
+.ratings .stars-3::before {
+  content: '⭑\A⭑⭑';
+}
+.ratings .stars-4::before {
+  content: '⭑⭑\A⭑⭑';
 }

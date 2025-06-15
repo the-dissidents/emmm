@@ -3,6 +3,7 @@ import { linter, type Diagnostic } from "@codemirror/lint";
 import { Facet, RangeSet, RangeSetBuilder, StateField, type Extension } from "@codemirror/state";
 import { Decoration, EditorView, gutter, GutterMarker, ViewPlugin, ViewUpdate, type DecorationSet } from "@codemirror/view";
 import * as emmm from '@the_dissidents/libemmm';
+import { CustomConfig } from "./custom/Custom";
 
 enum FoldUnit {
     Begin, End, Vertical, Top, Bottom, Space, BottomJoin, TopJoin
@@ -102,7 +103,7 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
 
         emmm.setDebugLevel(emmm.DebugLevel.Warning);
         const context = state.facet(emmmContextProvider)() 
-            ?? new emmm.ParseContext(emmm.Configuration.from(emmm.DefaultConfiguration));
+            ?? new emmm.ParseContext(emmm.Configuration.from(CustomConfig));
         const start = performance.now();
         const text = state.doc.toString();
         const scanner = new emmm.SimpleScanner(text, state.facet(emmmSourceDescriptorProvider));
