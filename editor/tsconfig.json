@@ -9,7 +9,7 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "moduleResolution": "bundler",
+    "module": "ESNext",
     "jsx": "react-jsx",
     "jsxImportSource": "minimal-jsx-runtime",
     "types": ["vite/client", ]

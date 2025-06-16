@@ -57,11 +57,7 @@ export const Interface = $state({
         state.cssVariables = getCssVariablesFromColors(this.colors, 'srgb');
         state.stylesheet = this.stylesheet;
         this.renderedDocument = renderConfig.render(pd.data, state);
-        assert(this.frame.contentDocument !== null);
-        const imported = this.frame.contentDocument.importNode(
-            this.renderedDocument.documentElement);
-        this.frame.contentDocument.replaceChild(
-            imported, this.frame.contentDocument.documentElement);
+        this.frame.srcdoc = this.renderedDocument.documentElement.outerHTML;
         // FIXME: this does not work
         this.frame.contentWindow!.document.addEventListener(
             'DOMContentLoaded', () => {

@@ -100,8 +100,7 @@ export const MiscBlockRenderersHTML = [
                 {cxt.state.render(node.content, cxt)}
               </div>
     ] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
-    [breakBlock, () => <hr/>
-    ] satisfies BlockRendererDefiniton<HTMLRenderType>,
+    [breakBlock, () => <hr/>] satisfies BlockRendererDefiniton<HTMLRenderType>,
     [linkBlock, (node, cxt) => 
         node.state === undefined
             ? cxt.state.invalidBlock(node, 'bad format')

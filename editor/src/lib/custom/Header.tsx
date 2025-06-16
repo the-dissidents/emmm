@@ -65,12 +65,12 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, HeaderData> = [
         let content1: Node[] = [];
         if (node.state.originalTitle)
             content1.push(<p>
-                <span class='key'>原标题：</span>,
+                <span class='key'>原标题：</span>
                 <span class='originalTitle'>{node.state.originalTitle}</span>
             </p>);
         if (node.state.originalUrl)
             content1.push(<p>
-                <span class='key'>原文链接：</span>,
+                <span class='key'>原文链接：</span>
                 <span class='originalUrl'>{node.state.originalUrl}</span>
             </p>);
 

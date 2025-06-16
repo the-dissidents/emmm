@@ -221,7 +221,7 @@
       </div>
     </TabPage>
     <TabPage name="HTML">
-      <textarea class="fill">{Interface.renderedHTML}</textarea>
+      <textarea class="fill">{Interface.renderedDocument?.documentElement.outerHTML}</textarea>
     </TabPage>
   </TabView>
 </div>

@@ -1,4 +1,11 @@
-/// <reference types="./jsx-runtime.d.ts" />
+export namespace JSX {
+    // The return type of our JSX factory function
+    export type Element = HTMLElement | DocumentFragment;
+
+    export interface IntrinsicElements {
+        [elemName: string]: any;
+    }
+}
 
 export class InvalidJSXError extends Error {
     constructor(msg: string, public readonly object: any) {
@@ -48,13 +55,17 @@ export const jsxs = jsx;
 export const jsxDEV = jsx;
 
 function appendChildren(parent: HTMLElement | DocumentFragment, children: any[]) {
-    children.flat().forEach(child => {
+    children.flat(Infinity).forEach(child => {
         if (child instanceof Node) {
             parent.appendChild(child);
-        } else if (typeof child == 'string') {
-            parent.appendChild(new Text(child));
+        } else if (typeof child != 'function' 
+                && typeof child != 'object' 
+                && typeof child != 'object'
+        ) {
+            parent.appendChild(new Text(String(child)));
         } else {
-            throw new InvalidJSXError(`invalid children in JSX`, child);
+            // throw new InvalidJSXError(`invalid children in JSX`, child);
+            console.error(`invalid children in JSX`, child);
         }
     });
 }
