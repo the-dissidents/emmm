@@ -101,12 +101,14 @@ export const MiscBlockRenderersHTML = [
               </div>
     ] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
     [breakBlock, () => <hr/>] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [linkBlock, (node, cxt) => 
-        node.state === undefined
-            ? cxt.state.invalidBlock(node, 'bad format')
-            : <a href={encodeURI(node.state)}>
-                {cxt.state.render(node.content, cxt)}
-              </a>
+    [linkBlock, (node, cxt) => {
+        if (node.state === undefined)
+            return cxt.state.invalidBlock(node, 'bad format');
+        const content = cxt.state.render(node.content, cxt);
+        return <a href={encodeURI(node.state)}>
+            {content.childElementCount > 0 ? content : node.state}
+        </a>;
+    }
     ] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
     [imageBlock, (node, cxt) => {
         if (node.state === undefined)

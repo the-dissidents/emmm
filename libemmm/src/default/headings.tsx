@@ -146,7 +146,7 @@ export const HeadingBlockRenderersHTML = [
             const tag = 'h' + node.state.level;
             const para = node.content[0] as ParagraphNode;
             const element = document.createElement(tag);
-            element.appendChild(<span class='heading-number'>${node.state.name}</span>);
+            element.appendChild(<span class='heading-number'>{node.state.name}</span>);
             element.appendChild(cxt.state.render(para.content, cxt));
             return element;
         }

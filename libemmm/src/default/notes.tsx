@@ -122,7 +122,7 @@ export const NoteInlineRenderersHTML = [
         return <sup class='note' id={`notemarker-id-${note}`}>
                  {note < 0
                     ? `Not found: ${node.state}`
-                    : <a href={`#note-id-${note}`}>${node.state}</a>}
+                    : <a href={`#note-id-${note}`}>{node.state}</a>}
                </sup>;
     }] satisfies InlineRendererDefiniton<HTMLRenderType, string>
 ];
@@ -141,7 +141,7 @@ export const NotesFooterPlugin: HTMLComponentPlugin = (cxt) => {
                     <div class='note-content'>
                         {cxt.state.render(x.content, cxt)}
                     </div>
-                </section>).join('\n')}
+                </section>)}
         </section>
     ];
 }

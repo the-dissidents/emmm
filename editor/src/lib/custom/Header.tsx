@@ -89,7 +89,6 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, HeaderData> = [
         while (fieldsLeft.length > 0) {
             const field = fieldsLeft.shift()!;
             const entry = array.find(([_, fields]) => fields.includes(field));
-            console.log(field, entry);
             if (!entry) continue;
             const node = 
                 <p>

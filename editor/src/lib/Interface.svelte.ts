@@ -57,6 +57,8 @@ export const Interface = $state({
         state.cssVariables = getCssVariablesFromColors(this.colors, 'srgb');
         state.stylesheet = this.stylesheet;
         this.renderedDocument = renderConfig.render(pd.data, state);
+        const sx = this.frame.contentWindow!.scrollX;
+        const sy = this.frame.contentWindow!.scrollY;
         this.frame.srcdoc = this.renderedDocument.documentElement.outerHTML;
         // FIXME: this does not work
         this.frame.contentWindow!.document.addEventListener(
@@ -68,6 +70,7 @@ export const Interface = $state({
         this.frame.addEventListener(
             'load', () => {
                 // console.log('window load');
+                this.frame!.contentWindow!.scrollTo(sx, sy);
                 this.onFrameLoaded.dispatch();
             }, { once: true });
     }

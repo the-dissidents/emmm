@@ -1,5 +1,5 @@
 <script lang="ts">
-  import TestPane from './TestPane.svelte';
+  import WeixinToolbox from './WeixinToolbox.svelte';
 
   import * as emmm from '@the_dissidents/libemmm';
 
@@ -22,7 +22,8 @@
   
   import { onMount } from 'svelte';
   import EmmmContext from './EmmmContext.svelte';
-    import { CustomConfig } from './custom/Custom';
+  import { CustomConfig } from './custom/Custom';
+    import SearchToolbox from './SearchToolbox.svelte';
 
   let outputAST = $state('');
   let left = $state<HTMLElement>(), 
@@ -133,7 +134,7 @@
 <div class="pane" style="width: 300px;" bind:this={left}>
   <TabView>
     <TabPage name='Weixin'>
-      <TestPane></TestPane>
+      <WeixinToolbox />
     </TabPage>
     <TabPage name="Options">
       <h5>Theme color</h5>
@@ -156,6 +157,9 @@
       <h5>Highlight color</h5>
       <Colorpicker bind:color={Interface.colors.highlight} mode='hsl'
         onChange={doDeriveColors} />
+    </TabPage>
+    <TabPage name='Search'>
+      <SearchToolbox />
     </TabPage>
   </TabView>
 </div>

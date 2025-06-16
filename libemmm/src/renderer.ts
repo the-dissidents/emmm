@@ -100,7 +100,6 @@ export class RenderConfiguration<Type extends AnyRendererType>
         let results = doc.toStripped()
             .root.content
             .map((x) => cxt.renderEntity(x))
-            // not exactly sure why 'as' is needed here
             .filter((x) => (x !== undefined)) as getReturn<Type>[];
         return this.postprocessor(results, cxt);
     }

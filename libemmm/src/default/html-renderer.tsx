@@ -123,7 +123,7 @@ const htmlConfig =
 htmlConfig.paragraphRenderer = (node, cxt) => 
     <p>{node.content
             .map((x) => cxt.renderEntity(x))
-            .filter((x) => x !== undefined).join('')}
+            .filter((x) => x !== undefined)}
     </p>;
 
 htmlConfig.textRenderer = (node, cxt) => {
