@@ -31,15 +31,15 @@ const subItemBlock = new BlockModifierDefinition(
 export const BulletBlocks = [bulletItemBlock, orderedListItemBlock, subItemBlock];
 
 export const BulletBlockRenderersHTML = [
-    [bulletItemBlock, (node, cxt) => {
-        return `<li>${cxt.state.render(node.content, cxt)}</li>`
-    }] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [subItemBlock, (node, cxt) => {
-        return `<div class='subitem'>${cxt.state.render(node.content, cxt)}</div>`;
-    }] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [orderedListItemBlock, (node, cxt) => {
-        if (node.state === undefined)
-            return cxt.state.invalidBlock(node, 'bad format');
-        return `<li value='${node.state}'>${cxt.state.render(node.content, cxt)}</li>`;
-    }] satisfies BlockRendererDefiniton<HTMLRenderType, number>
+    [bulletItemBlock, (node, cxt) => 
+        <li>{cxt.state.render(node.content, cxt)}</li>
+    ] satisfies BlockRendererDefiniton<HTMLRenderType>,
+    [subItemBlock, (node, cxt) => 
+        <div class='subitem'>{cxt.state.render(node.content, cxt)}</div>
+    ] satisfies BlockRendererDefiniton<HTMLRenderType>,
+    [orderedListItemBlock, (node, cxt) => 
+        node.state === undefined
+            ? cxt.state.invalidBlock(node, 'bad format')
+            : <li value={node.state}>{cxt.state.render(node.content, cxt)}</li>
+    ] satisfies BlockRendererDefiniton<HTMLRenderType, number>
 ];

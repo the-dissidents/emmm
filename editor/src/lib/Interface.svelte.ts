@@ -6,6 +6,7 @@ import Color from "colorjs.io";
 import * as emmm from '@the_dissidents/libemmm';
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { CustomHTMLRenderer } from "./custom/Custom";
+import { assert } from "./Debug";
 
 export class EventHost<T extends unknown[] = []> {
     #listeners = new Set<(...args: [...T]) => void>;
@@ -32,7 +33,7 @@ export const Interface = $state({
     stylesheet: '',
 
     frame: undefined as HTMLIFrameElement | undefined,
-    renderedHTML: '',
+    renderedDocument: null as Document | null,
     colors: {
         theme: new Color('pink'),
         text: new Color('black'),
@@ -55,10 +56,12 @@ export const Interface = $state({
         let state = new emmm.HTMLRenderState();
         state.cssVariables = getCssVariablesFromColors(this.colors, 'srgb');
         state.stylesheet = this.stylesheet;
-        this.renderedHTML = renderConfig.render(pd.data, state);
-        if (objUrl) URL.revokeObjectURL(objUrl);
-        objUrl = URL.createObjectURL(new Blob([this.renderedHTML], { type: "text/html" }));
-        this.frame.src = objUrl;
+        this.renderedDocument = renderConfig.render(pd.data, state);
+        assert(this.frame.contentDocument !== null);
+        const imported = this.frame.contentDocument.importNode(
+            this.renderedDocument.documentElement);
+        this.frame.contentDocument.replaceChild(
+            imported, this.frame.contentDocument.documentElement);
         // FIXME: this does not work
         this.frame.contentWindow!.document.addEventListener(
             'DOMContentLoaded', () => {

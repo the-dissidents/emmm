@@ -119,22 +119,29 @@ export const NoteInlineRenderersHTML = [
         // find node definition
         const defs = cxt.parseContext.get(notes)!.definitions;
         const note = defs.findIndex((x) => /*x.position >= node.start &&*/ x.name == node.state);
-        if (note < 0)
-            return `<sup class='note invalid'>Not found: ${node.state}</sup>`;
-        return `<sup class='note' id='notemarker-id-${note}'><a href='#note-id-${note}'>${node.state}</a></sup>`;
+        return <sup class='note' id={`notemarker-id-${note}`}>
+                 {note < 0
+                    ? `Not found: ${node.state}`
+                    : <a href={`#note-id-${note}`}>${node.state}</a>}
+               </sup>;
     }] satisfies InlineRendererDefiniton<HTMLRenderType, string>
 ];
 
 export const NotesFooterPlugin: HTMLComponentPlugin = (cxt) => {
-    let defs = cxt.parseContext.get(notes)!.definitions;
+    const defs = cxt.parseContext.get(notes)!.definitions;
     if (defs.length == 0) return undefined;
-    return `<hr/>
-<section class='notes'>
-${defs.map((x, i) => 
-`<section class='note' id='note-id-${i}'>
-<div class='note-name'><p><a href='#notemarker-id-${i}'>${x.name}</a></p></div>
-<div class='note-content'>${
-    cxt.state.render(x.content, cxt)
-}</div></section>`).join('\n')}
-</section>`;
+    return [
+        <hr/>,
+        <section class='notes'>
+            {defs.map((x, i) => 
+                <section class='note' id={`note-id-${i}`}>
+                    <div class='note-name'>
+                        <p><a href={`#notemarker-id-${i}`}>{x.name}</a></p>
+                    </div>
+                    <div class='note-content'>
+                        {cxt.state.render(x.content, cxt)}
+                    </div>
+                </section>).join('\n')}
+        </section>
+    ];
 }

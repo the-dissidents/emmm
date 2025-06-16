@@ -25,19 +25,19 @@ const sequenceInline = new InlineModifierDefinition(
 export const InlineStyles = [emphasisInline, keywordInline, highlightInline, commentaryInline, sequenceInline];
 
 export const InlineStyleRenderersHTML = [
-    [emphasisInline, (node, cxt) => {
-        return `<em>${cxt.state.render(node.content, cxt)}</em>`
-    }] satisfies InlineRendererDefiniton<HTMLRenderType>,
-    [keywordInline, (node, cxt) => {
-        return `<b>${cxt.state.render(node.content, cxt)}</b>`;
-    }] satisfies InlineRendererDefiniton<HTMLRenderType>,
-    [highlightInline, (node, cxt) => {
-        return `<mark>${cxt.state.render(node.content, cxt)}</mark>`;
-    }] satisfies InlineRendererDefiniton<HTMLRenderType>,
-    [commentaryInline, (node, cxt) => {
-        return `<span class='commentary'>${cxt.state.render(node.content, cxt)}</span>`;
-    }] satisfies InlineRendererDefiniton<HTMLRenderType>,
-    [sequenceInline, (node, cxt) => {
-        return `<span class='seq'>${cxt.state.render(node.content, cxt)}</span>`;
-    }] satisfies InlineRendererDefiniton<HTMLRenderType>
+    [emphasisInline, (node, cxt) => 
+        <em>{cxt.state.render(node.content, cxt)}</em>
+    ] satisfies InlineRendererDefiniton<HTMLRenderType>,
+    [keywordInline, (node, cxt) => 
+        <b>{cxt.state.render(node.content, cxt)}</b>
+    ] satisfies InlineRendererDefiniton<HTMLRenderType>,
+    [highlightInline, (node, cxt) => 
+        <mark>{cxt.state.render(node.content, cxt)}</mark>
+    ] satisfies InlineRendererDefiniton<HTMLRenderType>,
+    [commentaryInline, (node, cxt) => 
+        <span class='commentary'>{cxt.state.render(node.content, cxt)}</span>
+    ] satisfies InlineRendererDefiniton<HTMLRenderType>,
+    [sequenceInline, (node, cxt) => 
+        <span class='seq'>{cxt.state.render(node.content, cxt)}</span>
+    ] satisfies InlineRendererDefiniton<HTMLRenderType>
 ];

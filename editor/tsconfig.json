@@ -10,6 +10,8 @@
     "sourceMap": true,
     "strict": true,
     "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "jsxImportSource": "minimal-jsx-runtime",
     "types": ["vite/client", ]
   }
   // Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias

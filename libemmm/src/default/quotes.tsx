@@ -36,22 +36,22 @@ const attributionBlock = new BlockModifierDefinition<boolean>(
 export const QuoteBlocks = [quoteBlock, epitaphBlock, calloutBlock, detailBlock, attributionBlock];
 
 export const QuoteBlockRenderersHTML = [
-    [quoteBlock, (node, cxt) => {
-        return `<blockquote>${cxt.state.render(node.content, cxt)}</blockquote>`
-    }] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [epitaphBlock, (node, cxt) => {
-        return `<blockquote class='epitaph'>${cxt.state.render(node.content, cxt)}</blockquote>`;
-    }] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [detailBlock, (node, cxt) => {
-        return `<div class='detail'>${cxt.state.render(node.content, cxt)}</div>`;
-    }] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [calloutBlock, (node, cxt) => {
-        return `<aside>${cxt.state.render(node.content, cxt)}</aside>`;
-    }] satisfies BlockRendererDefiniton<HTMLRenderType>,
+    [quoteBlock, (node, cxt) => 
+        <blockquote>{cxt.state.render(node.content, cxt)}</blockquote>
+    ] satisfies BlockRendererDefiniton<HTMLRenderType>,
+    [epitaphBlock, (node, cxt) => 
+        <blockquote class='epitaph'>{cxt.state.render(node.content, cxt)}</blockquote>
+    ] satisfies BlockRendererDefiniton<HTMLRenderType>,
+    [detailBlock, (node, cxt) => 
+        <div class='detail'>{cxt.state.render(node.content, cxt)}</div>
+    ] satisfies BlockRendererDefiniton<HTMLRenderType>,
+    [calloutBlock, (node, cxt) => 
+        <aside>{cxt.state.render(node.content, cxt)}</aside>
+    ] satisfies BlockRendererDefiniton<HTMLRenderType>,
     [attributionBlock, (node, cxt) => {
         if (!node.state)
             return cxt.state.invalidBlock(node, 'bad format');
         let para = node.content[0] as ParagraphNode;
-        return `<p class='attribution'>${cxt.state.render(para.content, cxt)}</p>`;
+        return <p class='attribution'>{cxt.state.render(para.content, cxt)}</p>;
     }] satisfies BlockRendererDefiniton<HTMLRenderType, boolean>
 ];

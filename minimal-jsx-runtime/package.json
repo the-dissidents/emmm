@@ -1,0 +1,16 @@
+{
+  "name": "minimal-jsx-runtime",
+  "version": "0.0.1",
+  "main": "./src/jsx-runtime.ts",
+  "types": "./src/jsx-runtime.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "files": ["."],
+  "exports": {
+    "./jsx-runtime": "./jsx-runtime.js"
+  }
+}

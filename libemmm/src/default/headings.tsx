@@ -123,25 +123,32 @@ export const HeadingBlocks = [headingBlock, implicitHeadingBlock, numberedHeadin
 export const HeadingBlockRenderersHTML = [
     [headingBlock, (node, cxt) => {
         if (node.state !== undefined) {
-            let tag = 'h' + node.state.level;
-            let para = node.content[0] as ParagraphNode;
-            return `<${tag}>${cxt.state.render(para.content, cxt)}</${tag}>`;
+            const tag = 'h' + node.state.level;
+            const para = node.content[0] as ParagraphNode;
+            const element = document.createElement(tag);
+            element.appendChild(cxt.state.render(para.content, cxt));
+            return element;
         }
         return cxt.state.invalidBlock(node, 'Bad format');
     }] satisfies BlockRendererDefiniton<HTMLRenderType, HeadingData>,
     [implicitHeadingBlock, (node, cxt) => {
         if (node.state !== undefined) {
-            let tag = 'h' + node.state.level;
-            return `<${tag} class='implicit'></${tag}>`;
+            const tag = 'h' + node.state.level;
+            const element = document.createElement(tag);
+            element.className = 'implicit';
+            return element;
         }
         return cxt.state.invalidBlock(node, 'Bad format');
     }] satisfies BlockRendererDefiniton<HTMLRenderType, HeadingData>,
 
     [numberedHeadingBlock, (node, cxt) => {
         if (node.state !== undefined) {
-            let tag = 'h' + node.state.level;
-            let para = node.content[0] as ParagraphNode;
-            return `<${tag}><span class='heading-number'>${node.state.name}</span>${cxt.state.render(para.content, cxt)}</${tag}>`;
+            const tag = 'h' + node.state.level;
+            const para = node.content[0] as ParagraphNode;
+            const element = document.createElement(tag);
+            element.appendChild(<span class='heading-number'>${node.state.name}</span>);
+            element.appendChild(cxt.state.render(para.content, cxt));
+            return element;
         }
         return cxt.state.invalidBlock(node, 'Bad format');
     }] satisfies BlockRendererDefiniton<HTMLRenderType, HeadingData>,

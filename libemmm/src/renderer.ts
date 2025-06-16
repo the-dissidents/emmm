@@ -2,17 +2,19 @@ import { debug } from "./debug";
 import { BlockEntity, InlineEntity, NodeType, ParagraphNode, TextNode, PreNode, EscapedNode, BlockModifierNode, InlineModifierNode, BlockModifierDefinition, InlineModifierDefinition } from "./interface";
 import { Document, ParseContext } from "./parser-config";
 
-export type RendererType<TState, TReturn, TOptions = undefined> = {
+export type RendererType<TState, TReturn, TDocument, TOptions = undefined> = {
     state: TState;
     return: TReturn;
+    document: TDocument;
     options: TOptions;
 };
 
-type AnyRendererType = RendererType<any, any, any>;
+type AnyRendererType = RendererType<any, any, any, any>;
 
-type getState<Type> = Type extends RendererType<infer T, any, any> ? T : never;
-type getReturn<Type> = Type extends RendererType<any, infer T, any> ? T : never;
-type getOptions<Type> = Type extends RendererType<any, any, infer T> ? T : never;
+type getState<Type> = Type extends RendererType<infer T, any, any, any> ? T : never;
+type getReturn<Type> = Type extends RendererType<any, infer T, any, any> ? T : never;
+type getDocument<Type> = Type extends RendererType<any, any, infer T, any> ? T : never;
+type getOptions<Type> = Type extends RendererType<any, any, any, infer T> ? T : never;
 
 export type NodeRenderer<Type extends AnyRendererType, TNode> = (node: TNode, cxt: RenderContext<Type>) => getReturn<Type>;
 
@@ -62,9 +64,9 @@ export interface ReadonlyRenderConfiguration<Type extends AnyRendererType> {
     readonly inlineRenderers: ReadonlyMap<
         InlineModifierDefinition<any>, NodeRenderer<Type, InlineModifierNode<any>>>;
 
-    readonly postprocessor: (results: getReturn<Type>[], cxt: RenderContext<Type>) => getReturn<Type>;
+    readonly postprocessor: (results: getReturn<Type>[], cxt: RenderContext<Type>) => getDocument<Type>;
 
-    render(doc: Document, state: getState<Type>): getReturn<Type>;
+    render(doc: Document, state: getState<Type>): getDocument<Type>;
 }
 
 export type BlockRendererDefiniton<Type extends AnyRendererType, ModState = any> = NodeRendererDefinition<Type, BlockModifierNode<ModState>, BlockModifierDefinition<ModState>>;
@@ -89,9 +91,11 @@ export class RenderConfiguration<Type extends AnyRendererType>
 
     constructor(
         public options: getOptions<Type>,
-        public postprocessor: (results: getReturn<Type>[], cxt: RenderContext<Type>) => getReturn<Type>) { }
+        public postprocessor: 
+            (results: getReturn<Type>[], cxt: RenderContext<Type>) => getDocument<Type>
+    ) { }
 
-    render(doc: Document, state: getState<Type>): getReturn<Type> {
+    render(doc: Document, state: getState<Type>): getDocument<Type> {
         let cxt = new RenderContext(this, doc.context, state);
         let results = doc.toStripped()
             .root.content

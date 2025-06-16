@@ -11,11 +11,11 @@ export const CodeInline = new InlineModifierDefinition(
     { roleHint: 'code' });
 
 export const CodeBlockRendererHTML = 
-    [CodeBlock, (node, cxt) => {
-        return `<pre><code>${cxt.state.render(node.content, cxt)}</code></pre>`
-    }] satisfies BlockRendererDefiniton<HTMLRenderType>;
+    [CodeBlock, (node, cxt) => 
+        <pre><code>{cxt.state.render(node.content, cxt)}</code></pre>
+    ] satisfies BlockRendererDefiniton<HTMLRenderType>;
 
 export const CodeInlineRendererHTML = 
-    [CodeInline, (node, cxt) => {
-        return `<span><code>${cxt.state.render(node.content, cxt)}</code></span>`
-    }] satisfies InlineRendererDefiniton<HTMLRenderType>;
+    [CodeInline, (node, cxt) => 
+        <span><code>{cxt.state.render(node.content, cxt)}</code></span>
+    ] satisfies InlineRendererDefiniton<HTMLRenderType>;

@@ -42,44 +42,57 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, RatingTableData> = [
         if (!node.state)
             return cxt.state.invalidBlock(node, 'bad format');
         const { title, ratings } = node.state;
-        let result = `
-<table class='ratings'>
-<thead>
-<tr class='title'><th colspan=${TABLE_COLUMNS}>${cxt.state.escape(title)}</th></tr>
-<tr class='info'><th colspan=${TABLE_COLUMNS}>*本评分表为0－4星制，×代表0星。</th></tr>
-</thead>
-<tbody>\n`;
+        const head = 
+            <thead>
+                <tr class='title'><th colspan={TABLE_COLUMNS}>{title}</th></tr>
+                <tr class='info'><th colspan={TABLE_COLUMNS}>*本评分表为0－4星制，×代表0星。</th></tr>
+            </thead>;
+        
         const author = cxt.parseContext.variables.get('AUTHOR');
         let authorRating: [string, number] | undefined;
         if (author && ratings.has(author)) {
             authorRating = [author, ratings.get(author)!];
             ratings.delete(author);
         }
+
         const sorted = [...ratings].sort((a, b) => a[0].localeCompare(b[0]));
         if (authorRating)
             sorted.splice(0, 0, authorRating);
+
         const grouped: [string, string][][] = [];
         sorted.forEach(([name, rating], i) => {
             if (i % TABLE_COLUMNS == 0)
                 grouped.push([]);
             grouped.at(-1)!.push([name, `stars-${rating}`]);
         });
+
+        let bodyContent: Node[] = [];
         for (const values of grouped) {
             if (values.length < 4) {
                 for (let i = values.length; i < 4; i++)
                     values.push(['', 'empty']);
             }
-            result += `<tr>\n` + values
-                .map((x) => `<th>${cxt.state.escape(x[0])}</th>\n`).join('') + `</tr>\n`;
-            result += `<tr>\n` + values
-                .map((x) => `<td class='${x[1]}'></td>\n`).join('') + `</tr>\n`;
+            bodyContent.push(
+                <tr>{values.map((x) => <th>{x[0]}</th>)}</tr>,
+                <tr>{values.map((x) => <td class={x[1]}></td>)}</tr>
+            );
         }
-        result += `</tbody>\n`;
         const avg = sorted.map((x) => x[1]).reduce((a, b) => a + b / sorted.length, 0);
         const stddev = Math.sqrt(sorted
             .map((x) => x[1])
             .reduce((a, b) => a + (b - avg) * (b - avg) / sorted.length, 0));
-        result += `<tfoot><tr>\n<td colspan=${TABLE_COLUMNS}><span class='count'>${sorted.length}</span>人评分｜均分<span class='avg'>${avg.toFixed(2)}</span>｜标准差<span class='stddev'>${stddev.toFixed(2)}</span></td>\n</tr></tfoot>\n</table>\n`;
-        return result;
+        return <table class='ratings'>
+            {head}
+            <tbody>{bodyContent}</tbody>
+            <tfoot>
+                <tr><td colspan={TABLE_COLUMNS}>
+                    <span class='count'>{sorted.length}</span>
+                    人评分｜均分
+                    <span class='avg'>{avg.toFixed(2)}</span>
+                    ｜标准差
+                    <span class='stddev'>{stddev.toFixed(2)}</span>
+                </td></tr>
+            </tfoot>
+        </table>;
     }
 ];

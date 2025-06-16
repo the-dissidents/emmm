@@ -75,32 +75,40 @@ export const MiscInlines = [rubyInline, linkInline];
 export const MiscBlocks = [styleBlock, breakBlock, linkBlock, imageBlock];
 
 export const MiscInlineRenderersHTML = [
-    [rubyInline, (node, cxt) => {
-        if (node.state === undefined)
-            return cxt.state.invalidInline(node, 'bad format');
-        return `<ruby>${cxt.state.render(node.content, cxt)}<rt>${node.state}</rt></ruby>`
-    }] satisfies InlineRendererDefiniton<HTMLRenderType, string>,
-    [linkInline, (node, cxt) => {
-        if (node.state === undefined)
-            return cxt.state.invalidInline(node, 'bad format');
-        return `<a href="${encodeURI(node.state)}">${cxt.state.render(node.content, cxt)}</a>`;
-    }] satisfies InlineRendererDefiniton<HTMLRenderType, string>,
+    [rubyInline, (node, cxt) => 
+        node.state === undefined
+            ? cxt.state.invalidInline(node, 'bad format')
+            : <ruby>
+                {cxt.state.render(node.content, cxt)}
+                <rt>{node.state}</rt>
+              </ruby>
+    ] satisfies InlineRendererDefiniton<HTMLRenderType, string>,
+    [linkInline, (node, cxt) =>
+        node.state === undefined
+            ? cxt.state.invalidInline(node, 'bad format')
+            : <a href={encodeURI(node.state)}>
+                {cxt.state.render(node.content, cxt)}
+              </a>
+    ] satisfies InlineRendererDefiniton<HTMLRenderType, string>,
 ];
 
 export const MiscBlockRenderersHTML = [
-    [styleBlock, (node, cxt) => {
-        if (node.state === undefined)
-            return cxt.state.invalidBlock(node, 'bad format');
-        return `<div class="emmmstyle-${node.state}" style="display:contents">${cxt.state.render(node.content, cxt)}</div>`;
-    }] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
-    [breakBlock, () => {
-        return `<hr>`;
-    }] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [linkBlock, (node, cxt) => {
-        if (node.state === undefined)
-            return cxt.state.invalidBlock(node, 'bad format');
-        return `<a href="${encodeURI(node.state)}">${cxt.state.render(node.content, cxt)}</a>`;
-    }] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
+    [styleBlock, (node, cxt) =>
+        node.state === undefined
+            ? cxt.state.invalidBlock(node, 'bad format')
+            : <div class={`emmmstyle-${node.state}`} style="display:contents">
+                {cxt.state.render(node.content, cxt)}
+              </div>
+    ] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
+    [breakBlock, () => <hr/>
+    ] satisfies BlockRendererDefiniton<HTMLRenderType>,
+    [linkBlock, (node, cxt) => 
+        node.state === undefined
+            ? cxt.state.invalidBlock(node, 'bad format')
+            : <a href={encodeURI(node.state)}>
+                {cxt.state.render(node.content, cxt)}
+              </a>
+    ] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
     [imageBlock, (node, cxt) => {
         if (node.state === undefined)
             return cxt.state.invalidBlock(node, 'bad format');
@@ -110,14 +118,15 @@ export const MiscBlockRenderersHTML = [
         } catch {
             return cxt.state.invalidBlock(node, 'unable to transform asset');
         }
-        const img = transformed 
-            ? `<img src="${transformed}" data-original-src="${node.state}"/>`
-            : `<img src="${node.state}"/>`;
-        const para = node.content.length == 0 
-            ? '' 
-            : '\n<figcaption>'
-                + cxt.state.render((node.content[0] as ParagraphNode).content, cxt)
-                + '</figcaption>';
-        return `<figure>${img}${para}</figure>`;
+        return <figure>
+                 {transformed 
+                    ? <img src={transformed} data-original-src={node.state} />
+                    : <img src={node.state} />}
+                 {node.content.length > 0
+                    ? <figcaption>
+                        {cxt.state.render((node.content[0] as ParagraphNode).content, cxt)}
+                      </figcaption>
+                    : []}
+               </figure>;
     }] satisfies BlockRendererDefiniton<HTMLRenderType, string>
 ];

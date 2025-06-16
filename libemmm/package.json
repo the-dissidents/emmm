@@ -9,11 +9,12 @@
     "test": "vitest",
     "build": "tsup"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "author": "the_dissidents",
   "license": "GPL-2.0-only",
+  "dependencies": {
+    "minimal-jsx-runtime": "file:../minimal-jsx-runtime"
+  },
   "devDependencies": {
     "@vitest/coverage-istanbul": "^2.1.8",
     "tsup": "^8.3.5",
