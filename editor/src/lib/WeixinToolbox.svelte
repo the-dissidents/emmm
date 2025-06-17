@@ -203,7 +203,7 @@
         <td>public ip</td>
         <td class='hlayout'>
             <input type="text" class="flexgrow" bind:value={publicIP} />
-            <button onclick={async () => publicIP = await getIP(GetIPMethod.ipChaxun)}>get</button>
+            <button onclick={async () => publicIP = await getIP(GetIPMethod.ipinfo)}>get</button>
         </td>
     </tr>
     <tr>

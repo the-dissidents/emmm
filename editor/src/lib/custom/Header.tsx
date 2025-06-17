@@ -27,6 +27,10 @@ export const headerBlock = new emmm.BlockModifierDefinition<HeaderData>(
     },
 });
 
+export const endBlock = new emmm.BlockModifierDefinition<HeaderData>(
+    'the-end', emmm.ModifierSlotType.Normal,
+{});
+
 type HeaderData = {
     imageUrl?: string,
     title?: string,
@@ -35,6 +39,19 @@ type HeaderData = {
     originalUrl?: string,
     fields: Map<string, string>
 };
+
+function countWords(doc: emmm.Document) {
+    let count = 0;
+    const regex = /[\u4E00-\u9FFF]|(\b\w+\b)/g;
+    doc.walk((node) => {
+        if (node.type == emmm.NodeType.SystemModifier)
+            return 'skip';
+        if (node.type == emmm.NodeType.Text)
+            count += [...node.content.matchAll(regex)].length;
+        return 'continue';
+    });
+    return count;
+}
 
 export const headerRenderer: 
 emmm.BlockRendererDefiniton<emmm.HTMLRenderType, HeaderData> = [
@@ -102,6 +119,8 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, HeaderData> = [
                 fieldsLeft = fieldsLeft.filter((x) => !entry[1].includes(x));
             }
         }
+
+        const wc = countWords(cxt.parsedDocument);
         fragment.append(
             ...content1.length > 0 
                 ? [<div class='detail'>{content1}</div>] 
@@ -111,11 +130,21 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, HeaderData> = [
                 {content3}
             </div>,
             <aside class='ttr'><p>
-                全文约<b>4600</b>字<br/>
-                阅读需要<b>12</b>分钟
+                全文约<b>{Math.round(wc / 10) * 10}</b>字<br/>
+                阅读需要<b>{(wc / 400).toFixed(0)}</b>分钟
             </p></aside>,
             <hr/>
         );
         return <header>{fragment}</header>;
     }
-]
+];
+
+
+export const endRenderer: 
+emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
+    endBlock,
+    (node, cxt) => [
+        <aside class='the-end'>{cxt.state.render(node.content, cxt)}</aside>,
+        <hr/>
+    ]
+];

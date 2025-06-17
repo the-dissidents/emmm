@@ -40,9 +40,9 @@
     },
     "http:default",
     {
-      "identifier": "http:allow-fetch",
+      "identifier": "http:default",
       "allow": [
-        { "url": "https://2025.ipchaxun.com/" },
+        { "url": "https://ipinfo.io/" },
         { "url": "https://api.ipify.org/" },
         { "url": "https://api.weixin.qq.com/" }
       ]

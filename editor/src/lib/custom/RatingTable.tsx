@@ -48,7 +48,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, RatingTableData> = [
                 <tr class='info'><th colspan={TABLE_COLUMNS}>*本评分表为0－4星制，×代表0星。</th></tr>
             </thead>;
         
-        const author = cxt.parseContext.variables.get('AUTHOR');
+        const author = cxt.parsedDocument.context.variables.get('AUTHOR');
         let authorRating: [string, number] | undefined;
         if (author && ratings.has(author)) {
             authorRating = [author, ratings.get(author)!];

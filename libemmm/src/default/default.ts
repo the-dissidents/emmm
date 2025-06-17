@@ -1,7 +1,7 @@
 import { BuiltinConfiguration } from "../builtin/builtin";
 import { BulletBlocks } from "./bullets";
 import { HeadingBlocks, initHeadings } from "./headings";
-import { initNotes, NoteBlocks, NoteInlines } from "./notes";
+import { initNotes, NoteBlocks, NoteInlines, NoteSystems } from "./notes";
 import { CodeBlock, CodeInline } from "./code";
 import { QuoteBlocks } from "./quotes";
 import { InlineStyles } from "./inline-styles";
@@ -26,7 +26,8 @@ config.inlineModifiers.add(
     ...NoteInlines
 );
 config.systemModifiers.add(
-    ...VarWrappers
+    ...VarWrappers,
+    ...NoteSystems,
 )
 
 export const DefaultConfiguration: ReadonlyConfiguration = Object.freeze(config);

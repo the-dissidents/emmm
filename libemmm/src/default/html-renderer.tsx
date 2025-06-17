@@ -6,16 +6,15 @@ import { CodeBlockRendererHTML, CodeInlineRendererHTML } from "./code";
 import { HeadingBlockRenderersHTML } from "./headings";
 import { InlineStyleRenderersHTML } from "./inline-styles";
 import { MiscBlockRenderersHTML, MiscInlineRenderersHTML } from "./misc";
-import { NoteInlineRenderersHTML, NotesFooterPlugin } from "./notes";
+import { NoteBlockRenderersHTML, NoteInlineRenderersHTML, NotesFooterPlugin } from "./notes";
 import { QuoteBlockRenderersHTML } from "./quotes";
 
 export type HTMLRendererOptions = {
     headPlugins: HTMLComponentPlugin[];
     headerPlugins: HTMLComponentPlugin[];
     footerPlugins: HTMLComponentPlugin[];
-    // postprocessPlugins: HTMLPostprocessPlugin[];
+    postprocessPlugins: HTMLPostprocessPlugin[];
     transformAsset: (id: string) => string | undefined;
-    // transformLink?: (url: URL) => string;
 }
 
 export type HTMLRenderType = {
@@ -38,17 +37,6 @@ export class HTMLRenderState {
     title: string = '';
     stylesheet = ''; // FIXME: very unsafe!
     cssVariables = new Map<string, string>;
-
-    // // https://stackoverflow.com/questions/7381974
-    // escape(content: string) {
-    //     return content
-    //         .replaceAll("&", "&amp;")
-    //         .replaceAll("<", "&lt;")
-    //         .replaceAll(">", "&gt;")
-    //         .replaceAll('"', "&quot;")
-    //         .replaceAll("'", "&#39;")
-    //         .replaceAll('\n', '<br/>');
-    // }
 
     invalidBlock(node: BlockEntity, msg: string) {
         let name = NodeType[node.type];
@@ -88,7 +76,8 @@ const htmlConfig =
     headPlugins: [],
     headerPlugins: [],
     footerPlugins: [NotesFooterPlugin],
-    transformAsset: (x) => undefined,
+    postprocessPlugins: [],
+    transformAsset: () => undefined,
     // postprocessPlugins: [],
 },
 (results, cxt) => {
@@ -117,6 +106,9 @@ const htmlConfig =
         </section>
         </section>
     );
+    for (const p of cxt.config.options.postprocessPlugins) {
+        p(cxt, doc);
+    }
     return doc;
 });
 
@@ -152,7 +144,7 @@ htmlConfig.addBlockRenderer(
     CodeBlockRendererHTML,
     ...QuoteBlockRenderersHTML,
     ...MiscBlockRenderersHTML,
-    // TODO: notes
+    ...NoteBlockRenderersHTML
 );
 
 htmlConfig.addInlineRenderer(

@@ -16,9 +16,11 @@ type getReturn<Type> = Type extends RendererType<any, infer T, any, any> ? T : n
 type getDocument<Type> = Type extends RendererType<any, any, infer T, any> ? T : never;
 type getOptions<Type> = Type extends RendererType<any, any, any, infer T> ? T : never;
 
-export type NodeRenderer<Type extends AnyRendererType, TNode> = (node: TNode, cxt: RenderContext<Type>) => getReturn<Type>;
+export type NodeRenderer<Type extends AnyRendererType, TNode> = 
+    (node: TNode, cxt: RenderContext<Type>) => getReturn<Type>;
 
-export type NodeRendererDefinition<Type extends AnyRendererType, TNode, TDef> = [def: TDef, renderer: NodeRenderer<Type, TNode>];
+export type NodeRendererDefinition<Type extends AnyRendererType, TNode, TDef> = 
+    [def: TDef, renderer: NodeRenderer<Type, TNode>];
 
 export class RenderContext<Type extends AnyRendererType> {
     renderEntity(node: BlockEntity | InlineEntity): getReturn<Type> | undefined {
@@ -46,7 +48,7 @@ export class RenderContext<Type extends AnyRendererType> {
 
     constructor(
         public readonly config: RenderConfiguration<Type>,
-        public readonly parseContext: ParseContext,
+        public readonly parsedDocument: Document,
         public state: getState<Type>) { }
 }
 
@@ -96,7 +98,7 @@ export class RenderConfiguration<Type extends AnyRendererType>
     ) { }
 
     render(doc: Document, state: getState<Type>): getDocument<Type> {
-        let cxt = new RenderContext(this, doc.context, state);
+        let cxt = new RenderContext(this, doc, state);
         let results = doc.toStripped()
             .root.content
             .map((x) => cxt.renderEntity(x))

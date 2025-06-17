@@ -1,5 +1,5 @@
 import { assert } from "./Debug";
-import { fetch } from '@tauri-apps/plugin-http';
+// import { fetch } from '@tauri-apps/plugin-http';
 import imageCompression from 'browser-image-compression';
 import { readFile } from "@tauri-apps/plugin-fs";
 import mime from 'mime/lite';
@@ -14,18 +14,19 @@ export class RequestFailedError extends Error {
 }
 
 export enum GetIPMethod {
-    ipChaxun,
+    ipinfo,
     ipify
 }
 
 export async function getIP(method: GetIPMethod) {
     let r: Response, ip: string;
     switch (method) {
-        case GetIPMethod.ipChaxun:
-            r = await fetch('https://2025.ipchaxun.com/', 
+        case GetIPMethod.ipinfo:
+            r = await fetch('https://ipinfo.io/json', 
                 { signal: AbortSignal.timeout(2000) });
             if (!r.ok) throw new Error();
             ip = (await r.json()).ip;
+            console.log(ip);
             break;
         case GetIPMethod.ipify:
             r = await fetch('https://api.ipify.org/?format=json', 
