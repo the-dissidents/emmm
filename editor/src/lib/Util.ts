@@ -1,5 +1,5 @@
 import { assert } from "./Debug";
-// import { fetch } from '@tauri-apps/plugin-http';
+import { fetch } from '@tauri-apps/plugin-http';
 import imageCompression from 'browser-image-compression';
 import { readFile } from "@tauri-apps/plugin-fs";
 import mime from 'mime/lite';
@@ -60,6 +60,25 @@ export function cssPath(el: Element) {
         el = el.parentElement;
     }
     return path.join(' > ');
+}
+
+export function parseCssString(cssString: string): string {
+    if (!cssString || cssString.length < 2) return "";
+    const quote = cssString[0];
+    if ((quote !== '"' && quote !== "'") || cssString[cssString.length - 1] !== quote) {
+        throw new Error("Invalid CSS string: missing quotes");
+    }
+    let raw = cssString.slice(1, -1).replace(/\\\r\n|\\\n|\\\r/g, '');
+    return raw.replace(/\\([0-9a-fA-F]{1,6}[ \t\n\r\f]?|["'\\])/g, 
+        (_match: string, esc: string): string => {
+            if (/^[0-9a-fA-F]/.test(esc)) {
+                // Remove optional whitespace after hex
+                let hex = esc.trim();
+                let codepoint = parseInt(hex, 16);
+                return String.fromCodePoint(codepoint);
+            }
+            return esc;
+        });
 }
 
 export async function readUrl(url: URL) {

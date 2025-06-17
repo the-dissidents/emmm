@@ -59,14 +59,15 @@
     import { onMount, tick } from "svelte";
     import type { SvelteMap } from "svelte/reactivity";
     import Resizer from "./Resizer.svelte";
+    import type { SvelteHTMLElements } from "svelte/elements";
 
-    interface Props {
+    type Props = {
         header: SvelteMap<string, ListColumn>,
         hin?: ListViewHandleIn,
         hout?: ListViewHandleOut
-    };
+    } & SvelteHTMLElements['div'];
 
-    let { header, hin = {}, hout = $bindable() }: Props = $props();
+    let { header, hin = {}, hout = $bindable(), ...rest }: Props = $props();
     let items: ListItem[] = $state([]),
         loadState: 'hasMore' | 'done' | 'error' = $state('hasMore'),
         loadingLine: HTMLElement | undefined = $state(),
@@ -89,9 +90,10 @@
             let result = await hin.provideMoreItems();
             items.push(...result.items);
             loadState = result.more ? 'hasMore' : 'done';
-        } catch (e) {
+        } catch (e: any) {
             loadState = 'error';
-            throw e;
+            console.warn(e.stack);
+            throw new Error('error when fetching items', {cause: e});
         } finally {
             working = false;
         }
@@ -125,7 +127,7 @@
 
 </script>
 
-<div class="list-container">
+<div class="list-container" {...rest}>
 <table>
 <thead>
     <tr>
@@ -158,7 +160,7 @@
                     <span title={cell.alt} style={cell.style}>{cell.content}</span>
                 {:else if cell.type == 'image'}
                     <img alt={cell.alt} src={cell.url}
-                        style="height: {cell.height ?? 'auto'}; {cell.style}" />
+                        style="max-height: {cell.height ?? 'auto'}; max-width: 100%; {cell.style}" />
                 {:else if cell.type == 'button'}
                     <button style={cell.style}
                         onclick={() => cell.onClick?.(cell)}>{cell.text}</button>
@@ -184,7 +186,7 @@
     .list-container {
         box-sizing: border-box;
         width: 100%;
-        height: 100%;
+        /* height: 100%; */
         overflow: scroll;
         /* margin: 2px 0px; */
         border-radius: 3px;

@@ -10,6 +10,7 @@ let configData = {
     weixinAppId: '',
     weixinAppSecret: '',
     weixinSmallImageCache: [] as [string, string][],
+    weixinAssetCache: [] as [string, string][],
 
     tempSource: '',
     tempLibrary: '',

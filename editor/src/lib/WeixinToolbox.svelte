@@ -4,23 +4,44 @@
     import { SvelteMap } from 'svelte/reactivity';
     import { Weixin } from './Weixin';
     import { Interface } from './Interface.svelte';
-    import { cssPath, getIP, GetIPMethod, loadImage } from './Util';
+    import { cssPath, getIP, GetIPMethod, loadImage, parseCssString } from './Util';
     import { RustAPI } from "./RustAPI";
     import { path } from "@tauri-apps/api";
     import { tempDir } from "@tauri-apps/api/path";
+    import { convertFileSrc } from "@tauri-apps/api/core";
 
     let publicIP = $state('');
     let appid = Weixin.appid;
     let secret = Weixin.secret;
     let stableToken = Weixin.stableToken;
 
-    const listHeader = new SvelteMap<string, ListColumn>([
+    const imgListHeader = new SvelteMap<string, ListColumn>([
         ['refresh', {name: '', type: 'button', width: '15%'}],
         ['status', {name: '', type: 'text', width: '10%'}],
         ['name', {name: 'name', type: 'text', 
             contentStyle: 'text-overflow: ellipsis; white-space: nowrap; overflow: hidden;'}],
     ]);
-    let listHandleOut: ListViewHandleOut | undefined = $state();
+    let imgListHandleOut: ListViewHandleOut | undefined = $state();
+
+    const articleListHeader = new SvelteMap<string, ListColumn>([
+        ['action', {name: '', type: 'button', width: '15%'}],
+        ['type', {name: '', type: 'text', width: '10%'}],
+        ['author', {name: 'author', type: 'text', width: '15%'}],
+        ['title', {name: 'title', type: 'text', 
+            contentStyle: 'text-overflow: ellipsis; white-space: nowrap; overflow: hidden;'}],
+    ]);
+    let articleListHandleOut: ListViewHandleOut | undefined = $state();
+    let articleListHandleIn: ListViewHandleIn = $state({});
+
+    const permimgListHeader = new SvelteMap<string, ListColumn>([
+        ['test', {name: '', type: 'button', width: '15%'}],
+        ['refresh', {name: '', type: 'button', width: '15%'}],
+        ['img', {name: '', type: 'image', width: '25%'}],
+        ['name', {name: 'name', type: 'text', 
+            contentStyle: 'text-overflow: ellipsis; white-space: nowrap; overflow: hidden;'}],
+    ]);
+    let permimgListHandleOut: ListViewHandleOut | undefined = $state();
+    let permimgListHandleIn: ListViewHandleIn = $state({});
 
     type ImgStatus = 'ok' | 'notUploaded' | 'error' | 'pending';
     type Img = {
@@ -110,10 +131,10 @@
             } satisfies ListCell;
             return {cols: { refresh: img.refresh, status: img.status, name }};
         });
-        listHandleOut!.reset(items);
+        imgListHandleOut!.reset(items);
     });
 
-    async function copyForWeixin() {
+    async function renderWeixin() {
         let doc = Interface.frame?.contentDocument;
         let win = Interface.frame?.contentWindow;
         if (!doc || !win) throw new Error('iframe not loaded');
@@ -131,8 +152,7 @@
                     .getComputedStyle(elem, c)
                     .getPropertyValue('content');
                 if (content && content !== 'none' && content !== "normal") {
-                    content = content.replace(/^["'](.*)["']$/, "$1");
-                    s.set(path, content);
+                    s.set(path, parseCssString(content));
                 }
             }
         });
@@ -146,19 +166,25 @@
             // inline all ::before and ::after
             let before = befores.get(path);
             let after = afters.get(path);
-            if (before) elem.insertBefore(copy.createTextNode(before), elem.firstChild);
-            if (after) elem.appendChild(copy.createTextNode(after));
+            if (before) elem.insertBefore(new Text(before), elem.firstChild);
+            if (after) elem.appendChild(new Text(after));
 
             // remove outlinks
             if (elem.tagName == 'A') {
-                console.log(elem);
-                (elem as HTMLAnchorElement).href = '';
-                // TODO: detect mp.weixin.qq.com?
+                // console.log(elem);
+                const anchor = elem as HTMLAnchorElement;
+                try {
+                    const url = new URL(anchor.href);
+                    if (url.host != 'mp.weixin.qq.com')
+                        (elem as HTMLAnchorElement).href = '';
+                } catch (_) {
+                    (elem as HTMLAnchorElement).href = '';
+                }
             }
 
             // subtitle images URLs to uploaded versions
             else if (elem.tagName == 'IMG') {
-                console.log(elem);
+                // console.log(elem);
                 const img = elem as HTMLImageElement;
                 const url = new URL(img.dataset.originalSrc ?? img.src);
                 const cached = imgCache.get(url.href);
@@ -178,6 +204,7 @@
         } else {
             Interface.status.set(`successfully copied for Weixin`);
         }
+        return { result: processed, notCached };
     }
 
     async function test() {
@@ -192,6 +219,81 @@
         } catch (e) {
             Interface.status.set(`error: ${e}`);
         }
+    }
+
+    async function fetchArticles() {
+        articleListHandleIn.provideMoreItems = async () => {
+            if (!$stableToken)
+                return { items: [], more: false };
+            const listItems = articleListHandleOut!.getItems();
+            const { total: _, drafts } = await Weixin.getDrafts(listItems.length);
+            const items: ListItem[] = [];
+            for (const draft of drafts) {
+                draft.articles.map((article, i) => items.push({
+                    cols: {
+                        action: { type: 'button', text: 'write', 
+                            onClick: async () => {
+                                Weixin.writeDraftArticle(draft.id, i, {
+                                    ...article,
+                                    content: (await renderWeixin()).result
+                                });
+                                Interface.status.set(`Updated ${draft.id}`);
+                            }
+                        },
+                        type: { type: 'text', content: article.articleType },
+                        author: { type: 'text', 
+                            content: article.articleType == 'news' ? article.author : ''
+                        },
+                        title: { type: 'text', content: article.title },
+                    }
+                }));
+            }
+                
+            return { items, more: items.length > 0 };
+        };
+        articleListHandleOut?.reset();
+    }
+
+    async function fetchPermimgs() {
+        permimgListHandleIn.provideMoreItems = async () => {
+            if (!$stableToken)
+                return { items: [], more: false };
+            const listItems = permimgListHandleOut!.getItems();
+            const { total: _, assets } = await Weixin.getAssets('image', listItems.length);
+            console.log(assets);
+            const items: ListItem[] = [];
+            for (const x of assets) {
+                let path: string | undefined;
+                try {
+                    path = await Weixin.downloadAsset(x.id, x.name);
+                } catch (_) {
+                    console.warn('unable to download:', x.name, x.id);
+                }
+                console.log('got:', path);
+                items.push({ cols: {
+                    test: { type: 'button', text: 'insert', 
+                        onClick: () => {
+                            // TODO
+                        }
+                    },
+                    refresh: { type: 'button', text: 'refresh', 
+                        onClick: async () => {
+                            await Weixin.downloadAsset(x.id, x.name, true);
+                            permimgListHandleOut?.reset();
+                        } 
+                    },
+                    img: path ? { 
+                        type: 'image', 
+                        url: convertFileSrc(path),
+                        height: '50px', 
+                    } : undefined,
+                    name: { type: 'text', content: x.name },
+                } });
+            };
+            console.log(items);
+            return { items, more: items.length > 0 };
+        };
+        permimgListHandleOut?.reset();
     }
 </script>
 
@@ -231,12 +333,43 @@
 </tbody></table>
 
 <h5>Publish</h5>
-<button onclick={() => copyForWeixin()}>copy rendered result for Weixin</button>
+<button onclick={async () => {
+    const {result, notCached} = await renderWeixin();
+    await navigator.clipboard.write([new ClipboardItem({'text/html': result})]);
+    if (notCached > 0) {
+        Interface.status.set(`warning: ${notCached} local image[s] not uploaded`);
+    } else {
+        Interface.status.set(`successfully copied for Weixin`);
+    }
+}}>copy rendered result for Weixin</button>
+<button onclick={async () => {
+    const {result, notCached} = await renderWeixin();
+    await navigator.clipboard.writeText(result);
+    if (notCached > 0) {
+        Interface.status.set(`warning: ${notCached} local image[s] not uploaded`);
+    } else {
+        Interface.status.set(`successfully copied HTML as text`);
+    }
+}}>copy rendered result as text</button>
 <button onclick={() => test()}>test</button>
 
 <h5>Images</h5>
 <button onclick={() => uploadAll()}>upload images</button>
-<ListView header={listHeader} bind:hout={listHandleOut}>
+<ListView header={imgListHeader} bind:hout={imgListHandleOut} style="min-height: 300px">
+</ListView>
+
+<h5>Other articles</h5>
+<button onclick={() => fetchArticles()}>fetch</button>
+<ListView header={articleListHeader} 
+    hin={articleListHandleIn} 
+    bind:hout={articleListHandleOut} style="min-height: 300px">
+</ListView>
+
+<h5>Permanent images</h5>
+<button onclick={() => fetchPermimgs()}>fetch</button>
+<ListView header={permimgListHeader} 
+    hin={permimgListHandleIn} 
+    bind:hout={permimgListHandleOut} style="min-height: 300px">
 </ListView>
 
 </div>
