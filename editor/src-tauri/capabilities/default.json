@@ -46,6 +46,9 @@
         { "url": "https://api.ipify.org/" },
         { "url": "https://api.weixin.qq.com/" }
       ]
-    }
+    },
+    "clipboard-manager:allow-write-html",
+    "clipboard-manager:allow-write-text",
+    "clipboard-manager:allow-write-image"
   ]
 }

@@ -6,6 +6,11 @@ type BackendEvent = {
         msg: string
     }
 } | {
+    event: 'inlined'
+    data: {
+        result: string
+    }
+} | {
     event: 'done',
     data: {}
 }

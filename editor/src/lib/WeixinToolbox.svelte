@@ -4,11 +4,13 @@
     import { SvelteMap } from 'svelte/reactivity';
     import { Weixin } from './Weixin';
     import { Interface } from './Interface.svelte';
-    import { cssPath, getIP, GetIPMethod, loadImage, parseCssString } from './Util';
+    import { cssPath, getIP, GetIPMethod, loadImage, parseCssString, replaceTagName } from './Util';
     import { RustAPI } from "./RustAPI";
     import { path } from "@tauri-apps/api";
     import { tempDir } from "@tauri-apps/api/path";
     import { convertFileSrc } from "@tauri-apps/api/core";
+    import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
+    import { inlineCss } from "@the_dissidents/dom-css-inliner";
 
     let publicIP = $state('');
     let appid = Weixin.appid;
@@ -134,6 +136,23 @@
         imgListHandleOut!.reset(items);
     });
 
+    const CONVERT_TO_SECTION = new Set([
+        'address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'fieldset', 
+        'figcaption', 'figure', 'footer', 'form', 'header', 
+        'li', 'main', 'nav', 'ol', 'pre', 'ul'
+    ]);
+
+    const CONVERT_TO_SPAN = new Set([
+        'abbr', 'acronym', 'b', 'bdo', 'big', 'cite', 'code', 'dfn', 'em', 'i', 
+        'kbd', 'output', 'q', 'samp', 'small', 'strong', 'sub', 'sup', 'time', 'tt', 'var'
+    ]);
+
+    const PRESERVE = new Set([
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
+        'table', 'thead', 'tbody', 'tfoot', 'th', 'td', 'tr',
+        'p', 'span', 'section', 'img', 'a', 'hr', 'br'
+    ]);
+    
     async function renderWeixin() {
         let doc = Interface.frame?.contentDocument;
         let win = Interface.frame?.contentWindow;
@@ -160,10 +179,9 @@
         let copy = doc.cloneNode(true) as Document;
         let imgCache = Weixin.smallImageCache;
         let notCached = 0;
-        copy.querySelectorAll('*').forEach((elem) => {
-            const path = cssPath(elem);
-
+        copy.body.querySelectorAll('*').forEach((elem) => {
             // inline all ::before and ::after
+            const path = cssPath(elem);
             let before = befores.get(path);
             let after = afters.get(path);
             if (before) elem.insertBefore(new Text(before), elem.firstChild);
@@ -197,14 +215,21 @@
             }
         });
 
-        let processed = copy.documentElement.outerHTML;
-        await navigator.clipboard.write([new ClipboardItem({'text/html': processed})]);
-        if (notCached > 0) {
-            Interface.status.set(`warning: ${notCached} local image[s] not uploaded`);
-        } else {
-            Interface.status.set(`successfully copied for Weixin`);
-        }
-        return { result: processed, notCached };
+        inlineCss(copy, { removeStyleTags: true });
+
+        copy.body.querySelectorAll('*').forEach((elem) => {
+            elem.removeAttribute('class');
+            if (CONVERT_TO_SECTION.has(elem.tagName.toLowerCase())) {
+                replaceTagName(elem, 'section', copy);
+            }
+            else if (CONVERT_TO_SPAN.has(elem.tagName.toLowerCase())) {
+                replaceTagName(elem, 'span', copy);
+            }
+            else if (!PRESERVE.has(elem.tagName.toLowerCase())) {
+                console.warn('unhandled element type:', elem.tagName);
+            }
+        });
+        return { result: copy.body.innerHTML, notCached };
     }
 
     async function test() {
@@ -335,7 +360,8 @@
 <h5>Publish</h5>
 <button onclick={async () => {
     const {result, notCached} = await renderWeixin();
-    await navigator.clipboard.write([new ClipboardItem({'text/html': result})]);
+    await clipboard.writeHtml(result);
+    // await navigator.clipboard.write([new ClipboardItem({'text/html': result})]);
     if (notCached > 0) {
         Interface.status.set(`warning: ${notCached} local image[s] not uploaded`);
     } else {
@@ -344,7 +370,7 @@
 }}>copy rendered result for Weixin</button>
 <button onclick={async () => {
     const {result, notCached} = await renderWeixin();
-    await navigator.clipboard.writeText(result);
+    await clipboard.writeText(result);
     if (notCached > 0) {
         Interface.status.set(`warning: ${notCached} local image[s] not uploaded`);
     } else {

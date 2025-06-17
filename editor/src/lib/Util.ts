@@ -40,7 +40,7 @@ export async function getIP(method: GetIPMethod) {
 }
 
 export function cssPath(el: Element) {
-    const path = [];
+    const path: string[] = [];
     while (true) {
         let selector = el.nodeName.toLowerCase();
         if (el.id) {
@@ -60,6 +60,22 @@ export function cssPath(el: Element) {
         el = el.parentElement;
     }
     return path.join(' > ');
+}
+
+export function replaceTagName(elem: Element, name: string, doc: Document) {
+    try {
+        let newElem = doc.createElement(name);
+        while (elem.firstChild) {
+            newElem.appendChild(elem.firstChild); 
+        }
+        for (let i = elem.attributes.length - 1; i >= 0; --i) {
+            newElem.attributes.setNamedItem(elem.attributes[i].cloneNode() as Attr);
+        }
+        assert(elem.parentNode !== null);
+        elem.parentNode?.replaceChild(newElem, elem);
+    } catch (e) {
+        console.error('replaceTagName:', elem.tagName, '->', name, e);
+    }
 }
 
 export function parseCssString(cssString: string): string {
