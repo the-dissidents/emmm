@@ -7,10 +7,7 @@ const configPath = 'config.json';
 
 let settingsInitialized = false;
 let configData = {
-    weixinAppId: '',
-    weixinAppSecret: '',
-    weixinSmallImageCache: [] as [string, string][],
-    weixinAssetCache: [] as [string, string][],
+    weixinAccounts: [] as string[],
 
     tempSource: '',
     tempLibrary: '',
@@ -48,8 +45,9 @@ export const Settings = {
         try {
             if (!await fs.exists(configPath, {baseDir: BaseDirectory.AppConfig}))
                 console.log('no config file found')
-            else configData = JSON.parse(await fs.readTextFile(
-                configPath, {baseDir: BaseDirectory.AppConfig}));
+            else Object.assign(configData,
+                JSON.parse(await fs.readTextFile(
+                    configPath, {baseDir: BaseDirectory.AppConfig})));
         } catch (e) {
             console.error('error reading config file:', e);
         } finally {

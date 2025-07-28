@@ -11,11 +11,33 @@
     import { convertFileSrc } from "@tauri-apps/api/core";
     import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
     import { inlineCss } from "@the_dissidents/dom-css-inliner";
+    import { get, type Readable, type Writable } from "svelte/store";
+    import { onMount } from "svelte";
+    import { Settings } from "./Settings";
+
+    let wx = $state<Weixin>();
 
     let publicIP = $state('');
-    let appid = Weixin.appid;
-    let secret = Weixin.secret;
-    let stableToken = Weixin.stableToken;
+    let appid = $state<string>('');
+    let secret = $state<string>('');
+    let stableToken: Readable<string>;
+    
+    Settings.onInitialized(async () => {
+        wx = await Weixin.getAccount('default');
+        console.log('loaded', wx);
+        appid = get(wx.appid);
+        secret = get(wx.secret);
+        stableToken = wx.stableToken;
+    });
+
+    function updateWx() {
+        wx!.appid.set(appid);
+        wx!.secret.set(secret);
+        wx!.save();
+    }
+
+    onMount(async () => {
+    });
 
     const imgListHeader = new SvelteMap<string, ListColumn>([
         ['refresh', {name: '', type: 'button', width: '15%'}],
@@ -60,7 +82,7 @@
             const file = await loadImage(img.url, /* maxSizeMB: */ 1);
             console.log(file);
             Interface.status.set(`uploading: ${img.url.href}`);
-            await Weixin.uploadSmallImage(file, img.url.href, true);
+            await wx!.uploadSmallImage(file, img.url.href, true);
             updateImg(img);
             Interface.status.set(`done`);
         } catch (e) {
@@ -82,7 +104,7 @@
 
     function updateImg(img: Img) {
         img.mode = 'pending';
-        if (Weixin.smallImageCache.has(img.url.href)) {
+        if (wx!.smallImageCache.has(img.url.href)) {
             img.mode = 'ok';
             img.status.content = '🟢';
             img.status.alt = 'already uploaded';
@@ -144,13 +166,13 @@
 
     const CONVERT_TO_SPAN = new Set([
         'abbr', 'acronym', 'b', 'bdo', 'big', 'cite', 'code', 'dfn', 'em', 'i', 
-        'kbd', 'output', 'q', 'samp', 'small', 'strong', 'sub', 'sup', 'time', 'tt', 'var'
+        'kbd', 'output', 'q', 'samp', 'small', 'strong', 'time', 'tt', 'var'
     ]);
 
     const PRESERVE = new Set([
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
         'table', 'thead', 'tbody', 'tfoot', 'th', 'td', 'tr',
-        'p', 'span', 'section', 'img', 'a', 'hr', 'br'
+        'p', 'span', 'section', 'img', 'a', 'hr', 'br', 'sub', 'sup', 
     ]);
     
     async function renderWeixin() {
@@ -177,7 +199,7 @@
         });
 
         let copy = doc.cloneNode(true) as Document;
-        let imgCache = Weixin.smallImageCache;
+        let imgCache = wx!.smallImageCache;
         let notCached = 0;
         copy.body.querySelectorAll('*').forEach((elem) => {
             // inline all ::before and ::after
@@ -251,18 +273,14 @@
             if (!$stableToken)
                 return { items: [], more: false };
             const listItems = articleListHandleOut!.getItems();
-            const { total: _, drafts } = await Weixin.getDrafts(listItems.length);
+            const { total: _, items: pubs } = await wx!.gePublications(listItems.length);
             const items: ListItem[] = [];
-            for (const draft of drafts) {
-                draft.articles.map((article, i) => items.push({
+            for (const pub of pubs) {
+                pub.articles.map((article, i) => items.push({
                     cols: {
-                        action: { type: 'button', text: 'write', 
+                        action: { type: 'button', text: 'insert', 
                             onClick: async () => {
-                                Weixin.writeDraftArticle(draft.id, i, {
-                                    ...article,
-                                    content: (await renderWeixin()).result
-                                });
-                                Interface.status.set(`Updated ${draft.id}`);
+                                console.log(article.title, article.coverUrl, article.url);
                             }
                         },
                         type: { type: 'text', content: article.articleType },
@@ -284,13 +302,13 @@
             if (!$stableToken)
                 return { items: [], more: false };
             const listItems = permimgListHandleOut!.getItems();
-            const { total: _, assets } = await Weixin.getAssets('image', listItems.length);
+            const { total: _, assets } = await wx!.getAssets('image', listItems.length);
             console.log(assets);
             const items: ListItem[] = [];
             for (const x of assets) {
                 let path: string | undefined;
                 try {
-                    path = await Weixin.downloadAsset(x.id, x.name);
+                    path = await wx!.downloadAsset(x.id, x.name);
                 } catch (_) {
                     console.warn('unable to download:', x.name, x.id);
                 }
@@ -303,7 +321,7 @@
                     },
                     refresh: { type: 'button', text: 'refresh', 
                         onClick: async () => {
-                            await Weixin.downloadAsset(x.id, x.name, true);
+                            await wx!.downloadAsset(x.id, x.name, true);
                             permimgListHandleOut?.reset();
                         } 
                     },
@@ -336,15 +354,15 @@
     <tr>
         <td>appid</td>
         <td class='hlayout'>
-            <input type="text" class="flexgrow" value={$appid}
-                oninput={(x) => $appid = x.currentTarget.value} />
+            <input type="text" class="flexgrow" bind:value={appid}
+                oninput={() => updateWx()} />
         </td>
     </tr>
     <tr>
         <td>secret</td>
         <td class='hlayout'>
-            <input type="text" class="flexgrow" bind:value={$secret}
-                oninput={(x) => $secret = x.currentTarget.value} />
+            <input type="text" class="flexgrow" bind:value={secret}
+                oninput={() => updateWx()} />
         </td>
     </tr>
     <tr>
@@ -352,7 +370,7 @@
         <td>
             <input type="text" style="width: 100%" disabled value={$stableToken} /><br/>
             <button style="width: 100%" 
-                onclick={() => Weixin.fetchToken()}>retrieve token</button>
+                onclick={() => wx!.fetchToken()}>retrieve token</button>
         </td>
     </tr>
 </tbody></table>
