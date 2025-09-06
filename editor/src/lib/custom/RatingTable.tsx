@@ -42,11 +42,12 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, RatingTableData> = [
         if (!node.state)
             return cxt.state.invalidBlock(node, 'bad format');
         const { title, ratings } = node.state;
-        const head = 
-            <thead>
+        const head = title
+          ? <thead>
                 <tr class='title'><th colspan={TABLE_COLUMNS}>{title}</th></tr>
                 <tr class='info'><th colspan={TABLE_COLUMNS}>*本评分表为0－4星制，×代表0星。</th></tr>
-            </thead>;
+            </thead>
+          : [];
         
         const author = cxt.parsedDocument.context.variables.get('AUTHOR');
         let authorRating: [string, number] | undefined;
@@ -86,6 +87,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, RatingTableData> = [
             <tbody>{bodyContent}</tbody>
             <tfoot>
                 <tr><td colspan={TABLE_COLUMNS}>
+                    &nbsp;
                     <span class='count'>{sorted.length}</span>
                     人评分｜均分
                     <span class='avg'>{avg.toFixed(2)}</span>

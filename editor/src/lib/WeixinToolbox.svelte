@@ -11,6 +11,8 @@
     import { convertFileSrc } from "@tauri-apps/api/core";
     import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
     import { inlineCss } from "@the_dissidents/dom-css-inliner";
+    import * as emmm from '@the_dissidents/libemmm';
+    import { renderText } from "./custom/Custom";
 
     let publicIP = $state('');
     let appid = Weixin.appid;
@@ -59,6 +61,8 @@
         try {
             const file = await loadImage(img.url, /* maxSizeMB: */ 1);
             console.log(file);
+            if (!img.url.href.endsWith('png'))
+                img.url.href += '.png';
             Interface.status.set(`uploading: ${img.url.href}`);
             await Weixin.uploadSmallImage(file, img.url.href, true);
             updateImg(img);
@@ -82,7 +86,8 @@
 
     function updateImg(img: Img) {
         img.mode = 'pending';
-        if (Weixin.smallImageCache.has(img.url.href)) {
+        const realhref = img.url.href.endsWith('png') ? img.url.href : img.url.href + '.png';
+        if (Weixin.smallImageCache.has(realhref)) {
             img.mode = 'ok';
             img.status.content = '🟢';
             img.status.alt = 'already uploaded';
@@ -144,19 +149,21 @@
 
     const CONVERT_TO_SPAN = new Set([
         'abbr', 'acronym', 'b', 'bdo', 'big', 'cite', 'code', 'dfn', 'em', 'i', 
-        'kbd', 'output', 'q', 'samp', 'small', 'strong', 'sub', 'sup', 'time', 'tt', 'var'
+        'kbd', 'output', 'q', 'samp', 'small', 'strong',  'time', 'tt', 'var'
     ]);
 
     const PRESERVE = new Set([
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
         'table', 'thead', 'tbody', 'tfoot', 'th', 'td', 'tr',
-        'p', 'span', 'section', 'img', 'a', 'hr', 'br'
+        'p', 'span', 'section', 'img', 'a', 'hr', 'br', 'sub', 'sup',
     ]);
     
     async function renderWeixin() {
         let doc = Interface.frame?.contentDocument;
         let win = Interface.frame?.contentWindow;
         if (!doc || !win) throw new Error('iframe not loaded');
+
+        const render = emmm.RenderConfiguration.from(emmm.HTMLRenderConfiguration);
         
         let befores = new Map<string, string>();
         let afters = new Map<string, string>();
@@ -184,8 +191,16 @@
             const path = cssPath(elem);
             let before = befores.get(path);
             let after = afters.get(path);
-            if (before) elem.insertBefore(new Text(before), elem.firstChild);
-            if (after) elem.appendChild(new Text(after));
+            if (before) {
+                let f = new DocumentFragment();
+                f.append(...renderText(before));
+                elem.insertBefore(f, elem.firstChild);
+            }
+            if (after) {
+                let f = new DocumentFragment();
+                f.append(...renderText(after));
+                elem.appendChild(f);
+            }
 
             // remove outlinks
             if (elem.tagName == 'A') {
@@ -205,7 +220,9 @@
                 // console.log(elem);
                 const img = elem as HTMLImageElement;
                 const url = new URL(img.dataset.originalSrc ?? img.src);
-                const cached = imgCache.get(url.href);
+                
+                const realhref = url.href + (url.href.endsWith('png') ? '' : '.png');
+                const cached = imgCache.get(realhref);
                 if (cached) {
                     img.src = cached;
                     img.dataset.originalSrc = undefined;

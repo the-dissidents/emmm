@@ -115,6 +115,6 @@ export async function loadImage(url: URL, maxSizeMB?: number, maxWidth = 1920) {
     // TODO: use a Rust implementation
     return maxSizeMB ? await imageCompression(file, { 
         maxSizeMB, maxWidthOrHeight: maxWidth,
-        useWebWorker: true
+        useWebWorker: true, fileType: 'image/png'
     }) : file;
 }

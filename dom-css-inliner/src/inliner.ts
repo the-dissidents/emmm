@@ -43,7 +43,7 @@ export function inlineCss(doc: Document, options: InlineCssOptions = {}) {
                 
                 const existing = finalStyles.get(propName);
                 if (!existing || priority === 'important' || existing.priority !== 'important') {
-                        finalStyles.set(propName, { value, priority });
+                    finalStyles.set(propName, { value, priority });
                 }
             });
         });

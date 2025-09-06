@@ -1,6 +1,6 @@
 {
   "name": "@the_dissidents/libemmm",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "parser and language server for the emmm markup language",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -9,7 +9,9 @@
     "test": "vitest",
     "build": "tsup"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "author": "the_dissidents",
   "license": "GPL-2.0-only",
   "dependencies": {

@@ -124,18 +124,26 @@ htmlConfig.textRenderer = (node, cxt) => {
             return new Text(node.content.text);
         case NodeType.Text:
         case NodeType.Escaped:
-            return new Text(node.content);
+            const split = node.content.split('\n');
+            const result = [];
+            for (let i = 0; i < split.length; i++) {
+                result.push(new Text(split[i]));
+                if (i < split.length - 1)
+                    result.push(<br/>);
+            }
+            console.log(result);
+            return result;
         default:
             return debug.never(node);
     }
 }
 
 htmlConfig.undefinedBlockRenderer = (node, cxt) => {
-    return cxt.state.invalidBlock(node, `No renderer defined for ${node.mod.name}`);
+    return cxt.state.invalidBlock(node, `No renderer defined! for ${node.mod.name}`);
 }
 
 htmlConfig.undefinedInlineRenderer = (node, cxt) => {
-    return cxt.state.invalidInline(node, `No renderer defined for ${node.mod.name}`);
+    return cxt.state.invalidInline(node, `No renderer defined! for ${node.mod.name}`);
 }
 
 htmlConfig.addBlockRenderer(

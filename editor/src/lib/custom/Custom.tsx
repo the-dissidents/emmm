@@ -9,6 +9,34 @@ custom.blockModifiers.add(ratingTableBlock, headerBlock, endBlock);
 const render = emmm.RenderConfiguration.from(emmm.HTMLRenderConfiguration);
 render.addBlockRenderer(ratingTableRenderer, headerRenderer, endRenderer);
 
+export function renderText(text: string) {
+    let result: Node[] = [];
+    let previous = '', previousWidth: number | undefined;
+    function submit() {
+        if (previous.length > 0) {
+            result.push(previousWidth == 2 
+                ? <span class='wide'>{previous}</span>
+                : new Text(previous));
+            previous = '';
+        }
+    }
+    for (const ch of text) {
+        if (ch == '\n') {
+            submit();
+            result.push(<br/>);
+            continue;
+        }
+        const w = wcwidth(ch);
+        if (w != previousWidth) {
+            submit();
+            previousWidth = w;
+        }
+        previous += ch;
+    }
+    submit();
+    return result;
+}
+
 render.textRenderer = (node, cxt) => {
     switch (node.type) {
         case emmm.NodeType.Preformatted:
@@ -25,6 +53,11 @@ render.textRenderer = (node, cxt) => {
                 }
             }
             for (const ch of node.content) {
+                if (ch == '\n') {
+                    submit();
+                    result.push(<br/>);
+                    continue;
+                }
                 const w = wcwidth(ch);
                 if (w != previousWidth) {
                     submit();

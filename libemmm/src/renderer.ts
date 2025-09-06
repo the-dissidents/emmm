@@ -30,6 +30,7 @@ export class RenderContext<Type extends AnyRendererType> {
             case NodeType.Preformatted:
             case NodeType.Text:
             case NodeType.Escaped:
+                // console.log(this.config.textRenderer);
                 return this.config.textRenderer?.(node, this);
             case NodeType.InlineModifier:
                 let ir = this.config.inlineRenderers.get(node.mod);
