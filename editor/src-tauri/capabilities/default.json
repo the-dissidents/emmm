@@ -10,6 +10,7 @@
     "core:window:allow-scale-factor",
     "core:window:allow-inner-size",
     "core:window:allow-set-size",
+    "core:window:allow-destroy",
     "opener:default",
     "fs:default",
     "fs:allow-appconfig-read-recursive",

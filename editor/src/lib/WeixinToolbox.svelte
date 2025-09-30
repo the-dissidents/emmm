@@ -1,6 +1,6 @@
 <script lang="ts">
     import { assert } from "./Debug";
-    import ListView, { type GrowResult, type ListButtonCell, type ListCell, type ListColumn, type ListItem, type ListViewHandleIn, type ListViewHandleOut } from './ui/ListView.svelte';
+    import ListView, { type ListButtonCell, type ListCell, type ListColumn, type ListItem, type ListViewHandleIn, type ListViewHandleOut } from './ui/ListView.svelte';
     import { SvelteMap } from 'svelte/reactivity';
     import { Weixin } from './Weixin';
     import { Interface } from './Interface.svelte';

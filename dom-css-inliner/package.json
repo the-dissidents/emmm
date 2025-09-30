@@ -2,9 +2,9 @@
   "name": "@the_dissidents/dom-css-inliner",
   "version": "0.1.0",
   "description": "A CSS inliner using vanilla DOM and CSSOM APIs",
-  "main": "./dist/inliner.js",
-  "module": "./dist/inliner.js",
-  "types": "./dist/inliner.d.ts",
+  "main": "./dist/src/inliner.js",
+  "module": "./dist/src/inliner.js",
+  "types": "./dist/src/inliner.d.ts",
   "scripts": {
     "build": "rm -rf dist/ && tsc",
     "test": "uvu -r tsm tests"
@@ -19,8 +19,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/inliner.js",
-      "require": "./dist/inliner.js"
+      "import": "./dist/src/inliner.js",
+      "require": "./dist/src/inliner.js"
     }
   }
 }
