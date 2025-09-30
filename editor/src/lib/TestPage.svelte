@@ -2,6 +2,8 @@
   import WeixinToolbox from './WeixinToolbox.svelte';
 
   import * as emmm from '@the_dissidents/libemmm';
+  import { css } from '@codemirror/lang-css';
+  import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 
   import Editor, { type EditorHandleOut } from './Editor.svelte';
   import Resizer from './ui/Resizer.svelte';
@@ -22,8 +24,9 @@
   
   import { onMount } from 'svelte';
   import EmmmContext from './EmmmContext.svelte';
+  import GenericContext from './GenericContext.svelte';
   import { CustomConfig } from './custom/Custom';
-    import SearchToolbox from './SearchToolbox.svelte';
+  import SearchToolbox from './SearchToolbox.svelte';
 
   let outputAST = $state('');
   let left = $state<HTMLElement>(), 
@@ -193,12 +196,18 @@
       </EmmmContext>
     </TabPage>
     <TabPage name="CSS">
-      <Editor bind:text={Interface.stylesheet}
-        onFocus={() => updateCursorPosition(libraryHandle)}
-        {onCursorPositionChanged}
-        onChange={() => {
-          Interface.render();
-        }}/>
+      <GenericContext extension={[
+        syntaxHighlighting(defaultHighlightStyle),
+        bracketMatching(),
+        css()
+      ]}>
+        <Editor bind:text={Interface.stylesheet}
+          onFocus={() => updateCursorPosition(libraryHandle)}
+          {onCursorPositionChanged}
+          onChange={() => {
+            Interface.render();
+          }}/>
+      </GenericContext>
     </TabPage>
   </TabView>
 </div>
