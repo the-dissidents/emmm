@@ -131,7 +131,6 @@ htmlConfig.textRenderer = (node, cxt) => {
                 if (i < split.length - 1)
                     result.push(<br/>);
             }
-            console.log(result);
             return result;
         default:
             return debug.never(node);

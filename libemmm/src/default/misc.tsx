@@ -27,6 +27,9 @@ const linkInline = new InlineModifierDefinition<string>(
         },
     });
 
+const tabInline = new InlineModifierDefinition<string>(
+    'tab', ModifierSlotType.None);
+
 const styleBlock = new BlockModifierDefinition<string>(
     'style', ModifierSlotType.Normal,
     {
@@ -70,7 +73,7 @@ const imageBlock = new BlockModifierDefinition<string>(
         },
     });
 
-export const MiscInlines = [rubyInline, linkInline];
+export const MiscInlines = [rubyInline, linkInline, tabInline];
 
 export const MiscBlocks = [styleBlock, breakBlock, linkBlock, imageBlock];
 
@@ -90,6 +93,7 @@ export const MiscInlineRenderersHTML = [
                 {cxt.state.render(node.content, cxt)}
               </a>
     ] satisfies InlineRendererDefiniton<HTMLRenderType, string>,
+    [tabInline, () => new Text('\t')] satisfies InlineRendererDefiniton<HTMLRenderType>,
 ];
 
 export const MiscBlockRenderersHTML = [

@@ -139,7 +139,7 @@
     <TabPage name="Options">
       <h5>Theme color</h5>
       <Colorpicker bind:color={Interface.colors.theme} mode='hsl'
-        onChange={doDeriveColors} />
+        onchange={doDeriveColors} />
       <hr/>
       <label><input type="checkbox"
           bind:checked={autoColor} onchange={doDeriveColors} />
@@ -147,16 +147,16 @@
       </label>
       <h5>Text color</h5>
       <Colorpicker bind:color={Interface.colors.text} mode='hsl'
-        onChange={doDeriveColors} />
+        onchange={doDeriveColors} />
       <h5>Commentary color</h5>
       <Colorpicker bind:color={Interface.colors.commentary} mode='hsl'
-        onChange={doDeriveColors} />
+        onchange={doDeriveColors} />
       <h5>Link color</h5>
       <Colorpicker bind:color={Interface.colors.link} mode='hsl'
-        onChange={doDeriveColors} />
+        onchange={doDeriveColors} />
       <h5>Highlight color</h5>
       <Colorpicker bind:color={Interface.colors.highlight} mode='hsl'
-        onChange={doDeriveColors} />
+        onchange={doDeriveColors} />
     </TabPage>
     <TabPage name='Search'>
       <SearchToolbox />
