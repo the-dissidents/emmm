@@ -1,6 +1,6 @@
 import { debug } from "./debug";
 import { ModifierNode, Message, BlockModifierNode, NodeType, BlockEntity, SystemModifierNode, InlineEntity, ModifierSlotType, SystemModifierDefinition } from "./interface";
-import { ArgumentCountMismatchMessage, CannotExpandArgumentMessage, EntityNotAllowedMessage, MultipleBlocksNotPermittedMessage, OnlySimpleParagraphsPermittedMessage, OverwriteSpecialVariableMessage } from "./messages";
+import { ArgumentCountMismatchMessage, CannotExpandArgumentMessage, ContentExpectedMessage, EntityNotAllowedMessage, MultipleBlocksNotPermittedMessage, OnlySimpleParagraphsPermittedMessage, OverwriteSpecialVariableMessage } from "./messages";
 import { ParseContext } from "./parser-config";
 
 /**
@@ -111,7 +111,7 @@ export function onlyPermitSimpleParagraphs(
         }
         return null;
     }
-    return check(node.content);
+    return check(node.expansion ?? node.content);
 }
 
 /**
@@ -119,11 +119,12 @@ export function onlyPermitSimpleParagraphs(
  * @returns `null` if OK, otherwise an array of error messages.
  */
 export function onlyPermitSingleBlock(
-    node: BlockModifierNode<any> | SystemModifierNode<any>): Message[] | null 
-{
+    node: BlockModifierNode<any> | SystemModifierNode<any>,
+    opt?: { optional?: boolean }
+): Message[] | null {
     function check(nodes: BlockEntity[]): Message[] | null {
         if (nodes.length > 1) {
-            let last = nodes.at(-1)!.location;
+            const last = nodes.at(-1)!.location;
             return [new MultipleBlocksNotPermittedMessage({
                 source: last.source, 
                 start: nodes[1].location.start, 
@@ -134,10 +135,12 @@ export function onlyPermitSingleBlock(
                 && nodes[0].expansion !== undefined)
         {
             return check(nodes[0].expansion);
+        } else if (nodes.length == 0 && !opt?.optional) {
+            return [new ContentExpectedMessage(node.location)];
         }
         return null;
     }
-    return check(node.content);
+    return check(node.expansion ?? node.content);
 }
 
 export function createWrapperModifier(name: string,

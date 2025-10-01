@@ -194,6 +194,13 @@ export class OnlySimpleParagraphsPermittedMessage implements Message {
     get info(): string { return `Only simple paragraphs are permitted here` }
 }
 
+export class ContentExpectedMessage implements Message {
+    constructor(
+        public readonly location: LocationRange) {}
+    readonly code = 15;
+    readonly severity = MessageSeverity.Error;
+    get info(): string { return `Content expected` }
+}
 
 // warnings
 

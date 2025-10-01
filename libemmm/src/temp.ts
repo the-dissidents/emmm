@@ -7,6 +7,10 @@ import { HTMLRenderConfiguration, HTMLRenderState } from "./default/html-rendere
 import { Configuration, ParseContext } from "./parser-config";
 import { BlockModifierDefinition, ModifierSlotType } from "./interface";
 
+import { GlobalRegistrator } from '@happy-dom/global-registrator';
+
+GlobalRegistrator.register();
+
 const TestConfig = Configuration.from(DefaultConfiguration);
 TestConfig.blockModifiers.add(
     new BlockModifierDefinition('normal', ModifierSlotType.Normal),
@@ -60,7 +64,12 @@ Third
 Text
 `;
 
-text1 = `[-define-block a][.b;]\n[-define-block b][.a;]\n[.a;]`;
+text1 = `
+[-define-block z][.heading 1][.slot]
+
+[.z]`;
+
+// text1 = `[.heading 1]`;
 
 // text1 = `[.pre]abc
 
@@ -90,5 +99,5 @@ console.log(debugPrint.document(doc));
 
 console.log('-----');
 let renderConfig = HTMLRenderConfiguration;
-let html = renderConfig.render(doc, new HTMLRenderState());
+let html = renderConfig.render(doc, new HTMLRenderState()).documentElement.outerHTML;
 console.log(html);

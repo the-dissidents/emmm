@@ -26,6 +26,6 @@ config.inlineModifiers.add(
 );
 config.systemModifiers.add(
     ...NoteSystems,
-)
+);
 
 export const DefaultConfiguration: ReadonlyConfiguration = Object.freeze(config);

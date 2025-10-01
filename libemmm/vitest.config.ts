@@ -5,6 +5,7 @@ export default defineConfig({
     legalComments: 'inline'
   },
   test: {
+    environment: 'happy-dom',
     coverage: {
         provider: 'istanbul',
         exclude: [

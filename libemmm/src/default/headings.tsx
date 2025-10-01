@@ -101,7 +101,7 @@ const numberedHeadingBlock = new BlockModifierDefinition<HeadingData>(
         prepareExpand(node, cxt) {
             let msgs = checkArguments(node, 1);
             if (msgs) return msgs;
-            msgs = onlyPermitSingleBlock(node);
+            msgs = onlyPermitSingleBlock(node, {optional: true});
             if (msgs) return msgs;
             msgs = onlyPermitSimpleParagraphs(node);
             if (msgs) return msgs;

@@ -63,7 +63,7 @@ const imageBlock = new BlockModifierDefinition<string>(
         prepareExpand(node) {
             let msgs = checkArguments(node, 1, 2);
             if (msgs) return msgs;
-            msgs = onlyPermitSingleBlock(node);
+            msgs = onlyPermitSingleBlock(node, {optional: true});
             if (msgs) return msgs;
             msgs = onlyPermitSimpleParagraphs(node);
             if (msgs) return msgs;

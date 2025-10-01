@@ -252,7 +252,11 @@ class Parser {
         if (node.mod.beforeProcessExpansion)
             this.emit.message(...node.mod.beforeProcessExpansion(node as any, this.cxt, immediate));
 
+        debug.trace('reparsing expansion of:', node.mod.name);
+
         let ok = this.#reparse(expansion, depth);
+
+        debug.trace('done reparsing expansion of:', node.mod.name);
 
         if (node.mod.afterProcessExpansion)
             this.emit.message(...node.mod.afterProcessExpansion(node as any, this.cxt, immediate));

@@ -248,7 +248,8 @@
             }} />
         </div>
         <NumberInput bind:value={value0} width="10ch"
-          min="0" max={modes[mode].bounds[0]} step="0.001" />
+          min="0" max={modes[mode].bounds[0]} step="0.001"
+          oninput={() => updateFromValues()} />
       </div>
 
       <div class="value-group">
@@ -269,7 +270,8 @@
             }} />
         </div>
         <NumberInput bind:value={value1} width="10ch"
-          min="0" max={modes[mode].bounds[1]} step="0.001" />
+          min="0" max={modes[mode].bounds[1]} step="0.001"
+          oninput={() => updateFromValues()} />
       </div>
 
       <div class="value-group">
@@ -290,7 +292,8 @@
             }} />
         </div>
         <NumberInput bind:value={value2} width="10ch"
-          min="0" max={modes[mode].bounds[2]} step="0.001" />
+          min="0" max={modes[mode].bounds[2]} step="0.001"
+          oninput={() => updateFromValues()} />
       </div>
 
       <div class="value-group">
@@ -310,7 +313,8 @@
             />
         </div>
         <NumberInput bind:value={alpha} width="10ch"
-          min="0" max="1" step="0.001" />
+          min="0" max="1" step="0.001"
+          oninput={() => updateFromValues()} />
       </div>
     </div>
   </div>
