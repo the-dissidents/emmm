@@ -7,10 +7,11 @@ type ParseContextStoreEntry<S extends ParseContextStoreKey> = ParseContextStoreD
 
 export class ParseContext {
     private data: ParseContextStoreDefinitions = {};
-
+    
     constructor(
         public config: Configuration,
-        public variables = new Map<string, string>()) {
+        public variables = new Map<string, string>()
+    ) {
         config.initializers.forEach((x) => x(this));
     }
 
@@ -46,7 +47,10 @@ export class Document {
     /**
      * Performs a depth-first walk of the node tree.
      */
-    walk(callback: (node: BlockEntity | InlineEntity | ArgumentEntity) => 'skip' | 'break' | 'continue') {
+    walk(
+        callback: (node: BlockEntity | InlineEntity | ArgumentEntity) => 
+            'skip' | 'break' | 'continue'
+    ) {
         let nodes: (BlockEntity | InlineEntity | ArgumentEntity)[] = this.root.content;
         let node;
         while (node = nodes.shift()) {
@@ -84,6 +88,11 @@ export class Document {
     }
 }
 
+export type KernelConfiguration = {
+    collapseWhitespaces: boolean;
+    reparseDepthLimit: number;
+};
+
 export interface ReadonlyConfiguration {
     readonly initializers: readonly ((cxt: ParseContext) => void)[];
     readonly blockModifiers: ReadonlyNameManager<BlockModifierDefinition<any>>;
@@ -93,7 +102,7 @@ export interface ReadonlyConfiguration {
 
     readonly blockShorthands: ReadonlyNameManager<BlockShorthand<any>>;
     readonly inlineShorthands: ReadonlyNameManager<InlineShorthand<any>>;
-    readonly reparseDepthLimit: number;
+    readonly kernel: KernelConfiguration;
 }
 
 export class Configuration implements ReadonlyConfiguration {
@@ -105,12 +114,15 @@ export class Configuration implements ReadonlyConfiguration {
 
     blockShorthands = new NameManager<BlockShorthand<any>>;
     inlineShorthands = new NameManager<InlineShorthand<any>>;
-    reparseDepthLimit = 10;
+    kernel: KernelConfiguration = {
+        collapseWhitespaces: false,
+        reparseDepthLimit: 10
+    };
 
     static from(from: ReadonlyConfiguration) {
         let config = new Configuration();
         config.initializers = [...from.initializers];
-        config.reparseDepthLimit = from.reparseDepthLimit;
+        config.kernel = structuredClone(from.kernel);
         config.blockModifiers = new NameManager(from.blockModifiers);
         config.inlineModifiers = new NameManager(from.inlineModifiers);
         config.systemModifiers = new NameManager(from.systemModifiers);

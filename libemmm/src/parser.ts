@@ -141,7 +141,8 @@ class Parser {
     }
 
     #reparse(nodes: (BlockEntity | InlineEntity)[], depth: number): boolean {
-        if (depth > this.cxt.config.reparseDepthLimit) return false;
+        if (depth > this.cxt.config.kernel.reparseDepthLimit)
+            return false;
         let ok = true;
         for (const node of nodes) {
             switch (node.type) {
@@ -256,7 +257,7 @@ class Parser {
         if (node.mod.afterProcessExpansion)
             this.emit.message(...node.mod.afterProcessExpansion(node as any, this.cxt, immediate));
         if (!ok && depth == 0) {
-            const limit = this.cxt.config.reparseDepthLimit;
+            const limit = this.cxt.config.kernel.reparseDepthLimit;
             this.emit.message(
                 new ReachedRecursionLimitMessage(node.location, limit, node.mod.name));
         }
@@ -600,6 +601,13 @@ class Parser {
                 location: this.#locFrom(start - 1)
             };
             this.emit.addInlineNode(node);
+            return true;
+        }
+        if (this.cxt.config.kernel.collapseWhitespaces
+         && this.scanner.acceptWhitespaceChar() !== null)
+        {
+            this.WHITESPACES();
+            this.emit.addString(' ');
             return true;
         }
         return this.PREFORMATTED_INLINE_ENTITY();

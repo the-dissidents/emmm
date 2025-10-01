@@ -1,5 +1,5 @@
 import { debug } from "./debug";
-import { DocumentNode, LocationRange, ModifierArgument, NodeType } from "./interface";
+import { DocumentNode, LocationRange, ModifierArgument, NodeType, RootNode } from "./interface";
 
 // TODO: use a prefix tree to find names?
 export class NameManager<T extends {name: string}> {
@@ -80,16 +80,16 @@ export type CloneNodeOptions = {
 };
 
 const cloneArgument = (arg: ModifierArgument, options: CloneNodeOptions): ModifierArgument => ({
-    location: clonePosition(arg.location, options),
+    location: cloneLocation(arg.location, options),
     content: arg.content.map((ent) => {
         switch (ent.type) {
             case NodeType.Text:
             case NodeType.Escaped:
-                return structuredClone(ent);
+                return cloneNode(ent, options);
             case NodeType.Interpolation:
                 return {
                     type: ent.type,
-                    location: clonePosition(arg.location, options),
+                    location: cloneLocation(arg.location, options),
                     definition: ent.definition,
                     argument: cloneArgument(ent.argument, options),
                     expansion: ent.expansion
@@ -100,7 +100,7 @@ const cloneArgument = (arg: ModifierArgument, options: CloneNodeOptions): Modifi
     })
 });
 
-function clonePosition(pos: LocationRange, options: CloneNodeOptions): LocationRange {
+function cloneLocation(pos: LocationRange, options: CloneNodeOptions): LocationRange {
     let base = options.newLocation ?? pos;
     return {
         start: base.start,
@@ -111,38 +111,47 @@ function clonePosition(pos: LocationRange, options: CloneNodeOptions): LocationR
     };
 }
 
-export function cloneNode(node: DocumentNode, options: CloneNodeOptions = {}): DocumentNode 
+export function cloneNode<T extends DocumentNode>(node: T, options: CloneNodeOptions = {}): T 
 {
     switch (node.type) {
         case NodeType.BlockModifier:
         case NodeType.InlineModifier:
         case NodeType.SystemModifier:
             return {
-                location: clonePosition(node.location, options),
-                type: node.type as any,
+                location: cloneLocation(node.location, options),
+                type: node.type,
                 mod: node.mod,
                 state: options.withState ? node.state : undefined,
-                head: structuredClone(node.head),
+                head: cloneLocation(node.head, options), // TODO: options or {}?
                 arguments: node.arguments.map((x) => cloneArgument(x, options)),
-                content: node.content.map((x) => cloneNode(x, options) as any),
-                expansion: node.expansion ? cloneNodes(node.expansion, options) as any : undefined
-            };
+                content: node.content.map((x) => cloneNode(x, options)),
+                expansion: node.expansion ? cloneNodes(node.expansion, options) : undefined
+            } as T;
         case NodeType.Root:
             return {
-                type: node.type as any,
+                type: node.type,
                 source: node.source,
-                content: node.content.map((x) => cloneNode(x, options) as any)
-            }
+                content: node.content.map((x) => cloneNode(x, options))
+            } as T;
         case NodeType.Paragraph:
             return {
-                type: node.type as any,
-                location: clonePosition(node.location, options),
-                content: node.content.map((x) => cloneNode(x, options) as any)
-            }
+                type: node.type,
+                location: cloneLocation(node.location, options),
+                content: node.content.map((x) => cloneNode(x, options))
+            } as T;
         case NodeType.Preformatted:
+            return {
+                type: node.type,
+                location: cloneLocation(node.location, options),
+                content: {...node.content}
+            } as T;
         case NodeType.Text:
         case NodeType.Escaped:
-            return structuredClone(node);
+            return {
+                type: node.type,
+                location: cloneLocation(node.location, options),
+                content: node.content
+            } as T;
         default:
             return debug.never(node);
     }

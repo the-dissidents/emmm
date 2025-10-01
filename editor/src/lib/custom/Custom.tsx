@@ -4,6 +4,7 @@ import { basicFieldSystems, endBlock, endRenderer, headerBlock, headerRenderer, 
 import wcwidth from 'wcwidth';
 
 const custom = emmm.Configuration.from(emmm.DefaultConfiguration);
+custom.kernel.collapseWhitespaces = true;
 custom.initializers.push(initHeader);
 custom.systemModifiers.add(infoFieldSystem, ...basicFieldSystems);
 custom.blockModifiers.add(ratingTableBlock, headerBlock, endBlock);
