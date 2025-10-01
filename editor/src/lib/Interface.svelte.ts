@@ -1,12 +1,11 @@
 import { get, writable } from "svelte/store"
-import type { EmmmParseData } from "./EditorTheme";
 import { getCssVariablesFromColors, type ArticleColors } from "./ColorTheme";
 import Color from "colorjs.io";
 
 import * as emmm from '@the_dissidents/libemmm';
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { CustomHTMLRenderer } from "./custom/Custom";
-import { assert } from "./Debug";
+import type { EmmmParseData } from "./editor/ParseData";
 
 export class EventHost<T extends unknown[] = []> {
     #listeners = new Set<(...args: [...T]) => void>;

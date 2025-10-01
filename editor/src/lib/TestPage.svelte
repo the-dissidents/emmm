@@ -10,7 +10,6 @@
   import TabView from './ui/TabView.svelte';
   import TabPage from './ui/TabPage.svelte';
 
-  import type { EmmmParseData } from './EditorTheme';
   import Colorpicker from './ui/Colorpicker.svelte';
   import { deriveColorsFrom } from './ColorTheme';
   import ListView, { type ListColumn, type ListViewHandleOut } from './ui/ListView.svelte';
@@ -27,6 +26,7 @@
   import GenericContext from './GenericContext.svelte';
   import { CustomConfig } from './custom/Custom';
   import SearchToolbox from './SearchToolbox.svelte';
+    import type { EmmmParseData } from './editor/ParseData';
 
   let outputAST = $state('');
   let left = $state<HTMLElement>(), 
@@ -72,7 +72,7 @@
   }
 
   function onParse(doc: EmmmParseData, source: string) {
-    parsedStatus = `parsed in ${doc.time.toFixed(0)}ms`;
+    parsedStatus = `parsed in ${doc.parseTime.toFixed(0)}ms`;
     Interface.parseData.set(doc);
     outputAST = emmm.debugPrint.document(strip ? doc.data.toStripped() : doc.data);
     Interface.render();

@@ -1,8 +1,9 @@
 <script lang="ts">
   import { EditorView } from "@codemirror/view";
   import { setEditorContext } from "./Editor.svelte";
-  import { DefaultTheme, emmmContextProvider, emmmDocument, EmmmLanguageSupport, emmmSourceDescriptorProvider, WrapIndent, type ContextProvider, type DescriptorProvider, type EmmmParseData } from "./EditorTheme";
-    import type { Snippet } from "svelte";
+  import type { Snippet } from "svelte";
+  import { emmmDocument, type ContextProvider, type DescriptorProvider, type EmmmParseData } from "./editor/ParseData";
+  import { emmmLanguageSupport } from "./editor/LanguageSupport";
 
   interface Props {
     provideContext?: ContextProvider;
@@ -15,11 +16,7 @@
 
   setEditorContext({
     extensions: [
-      DefaultTheme,
-      WrapIndent,
-      EmmmLanguageSupport,
-      emmmContextProvider.of(() => (provideContext?.() ?? undefined)),
-      emmmSourceDescriptorProvider.of(() => (provideDescriptor?.() ?? undefined)),
+      emmmLanguageSupport(provideContext, provideDescriptor),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
           const doc = update.state.field(emmmDocument);
