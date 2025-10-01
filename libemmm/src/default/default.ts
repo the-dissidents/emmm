@@ -7,7 +7,6 @@ import { QuoteBlocks } from "./quotes";
 import { InlineStyles } from "./inline-styles";
 import { MiscBlocks, MiscInlines } from "./misc";
 import { Configuration, ReadonlyConfiguration } from "../parser-config";
-import { VarWrappers } from "./vars";
 
 let config = Configuration.from(BuiltinConfiguration);
 config.initializers.push(initNotes, initHeadings);
@@ -26,7 +25,6 @@ config.inlineModifiers.add(
     ...NoteInlines
 );
 config.systemModifiers.add(
-    ...VarWrappers,
     ...NoteSystems,
 )
 

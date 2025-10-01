@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Extension } from "@codemirror/state";
-    import { onMount, type Snippet } from "svelte";
+    import { type Snippet } from "svelte";
     import { setEditorContext } from "./Editor.svelte";
 
     interface Props {

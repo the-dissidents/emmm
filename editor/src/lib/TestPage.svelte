@@ -94,7 +94,7 @@
       const source = x.location.source;
       return {
         cols: {
-          file: {type: 'text', content: x.location.source.name},
+          file: {type: 'text', content: source.name},
           type: {type: 'text', content: {
             [emmm.MessageSeverity.Warning]: '⚠️',
             [emmm.MessageSeverity.Error]: '❌',

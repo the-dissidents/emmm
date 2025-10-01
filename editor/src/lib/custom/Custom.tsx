@@ -1,9 +1,11 @@
 import * as emmm from '@the_dissidents/libemmm';
 import { ratingTableBlock, ratingTableRenderer } from './RatingTable';
-import { endBlock, endRenderer, headerBlock, headerRenderer } from './Header';
+import { basicFieldSystems, endBlock, endRenderer, headerBlock, headerRenderer, infoFieldSystem, initHeader } from './Header';
 import wcwidth from 'wcwidth';
 
 const custom = emmm.Configuration.from(emmm.DefaultConfiguration);
+custom.initializers.push(initHeader);
+custom.systemModifiers.add(infoFieldSystem, ...basicFieldSystems);
 custom.blockModifiers.add(ratingTableBlock, headerBlock, endBlock);
 
 const render = emmm.RenderConfiguration.from(emmm.HTMLRenderConfiguration);

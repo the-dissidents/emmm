@@ -1,7 +1,12 @@
 import { debug } from "./debug";
-import { ModifierNode, Message, BlockModifierNode, NodeType, BlockEntity, SystemModifierNode, InlineEntity } from "./interface";
-import { ArgumentCountMismatchMessage, CannotExpandArgumentMessage, EntityNotAllowedMessage, MultipleBlocksNotPermittedMessage, OnlySimpleParagraphsPermittedMessage } from "./messages";
+import { ModifierNode, Message, BlockModifierNode, NodeType, BlockEntity, SystemModifierNode, InlineEntity, ModifierSlotType, SystemModifierDefinition } from "./interface";
+import { ArgumentCountMismatchMessage, CannotExpandArgumentMessage, EntityNotAllowedMessage, MultipleBlocksNotPermittedMessage, OnlySimpleParagraphsPermittedMessage, OverwriteSpecialVariableMessage } from "./messages";
+import { ParseContext } from "./parser-config";
 
+/**
+ * Helper function to validate a modifier's argument count.
+ * @returns `null` if OK, otherwise an array of error messages.
+ */
 export function checkArgumentLength(node: ModifierNode, min?: number, max = min): Message[] | null {
     if ((min !== undefined && node.arguments.length < min)
      || (max !== undefined && node.arguments.length > max)) 
@@ -15,6 +20,10 @@ export function checkArgumentLength(node: ModifierNode, min?: number, max = min)
     return null;
 }
 
+/**
+ * Helper function to validate a modifier's arguments. It also checks that all arguments can be successfully expanded.
+ * @returns `null` if OK, otherwise an array of error messages.
+ */
 export function checkArguments(node: ModifierNode, min?: number, max = min): Message[] | null {
     const arg = node.arguments.find((x) => x.expansion === undefined);
     if (arg !== undefined) {
@@ -24,6 +33,10 @@ export function checkArguments(node: ModifierNode, min?: number, max = min): Mes
     return checkArgumentLength(node, min, max);
 }
 
+/**
+ * Helper function to ensure that a modifier only accepts plaintext paragraphs as content.
+ * @returns The content as a string if OK, otherwise an array of error messages.
+ */
 export function onlyPermitPlaintextParagraph(
     node: BlockModifierNode<any> | SystemModifierNode<any>): Message[] | string
 {
@@ -80,6 +93,10 @@ export function onlyPermitPlaintextParagraph(
     return checkContent(node.content);
 }
 
+/**
+ * Helper function to ensure that a modifier does not accept any block modifiers inside its content.
+ * @returns `null` if OK, otherwise an array of error messages.
+ */
 export function onlyPermitSimpleParagraphs(
     node: BlockModifierNode<any> | SystemModifierNode<any>): Message[] | null 
 {
@@ -97,6 +114,10 @@ export function onlyPermitSimpleParagraphs(
     return check(node.content);
 }
 
+/**
+ * Helper function to ensure that a modifier only accepts one block as its content.
+ * @returns `null` if OK, otherwise an array of error messages.
+ */
 export function onlyPermitSingleBlock(
     node: BlockModifierNode<any> | SystemModifierNode<any>): Message[] | null 
 {
@@ -117,4 +138,25 @@ export function onlyPermitSingleBlock(
         return null;
     }
     return check(node.content);
+}
+
+export function createWrapperModifier(name: string,
+        get: (cxt: ParseContext) => string | undefined,
+        set: (cxt: ParseContext, value: string) => string,
+        slotType = ModifierSlotType.Normal) {
+    return new SystemModifierDefinition<void>(name, slotType, {
+        delayContentExpansion: true,
+        afterProcessExpansion(node, cxt) {
+            let msgs = checkArguments(node, 0);
+            if (msgs) return msgs;
+            const result = onlyPermitPlaintextParagraph(node);
+            if (typeof result !== 'string') return result;
+
+            const previous = get(cxt);
+            if (previous !== undefined)
+                msgs = [new OverwriteSpecialVariableMessage(node.head, name, previous)];
+            set(cxt, result);
+            return msgs ?? [];
+        },
+    });
 }
