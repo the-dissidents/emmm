@@ -1,7 +1,6 @@
 import { RangeSetBuilder } from "@codemirror/state";
 import { Decoration, EditorView, ViewPlugin, ViewUpdate, type DecorationSet } from "@codemirror/view";
 import { emmmStructure } from "./Structure";
-import { emmmDocument } from "./ParseData";
 
 export const emmmWrapIndent = ViewPlugin.fromClass(class {
     decorations: DecorationSet;

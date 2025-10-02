@@ -14,7 +14,8 @@
       {
         "title": "kfgui",
         "width": 1400,
-        "height": 900
+        "height": 900,
+        "titleBarStyle": "Overlay"
       }
     ],
     "security": {

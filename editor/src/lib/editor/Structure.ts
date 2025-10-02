@@ -1,4 +1,4 @@
-import { Facet, StateField, type Text } from "@codemirror/state";
+import { Facet, type Text } from "@codemirror/state";
 import * as emmm from '@the_dissidents/libemmm';
 import { emmmDocument } from "./ParseData";
 
@@ -31,17 +31,17 @@ class Structure {
     }
 
     #reformatFolds(
-        line: LineStructure, newLen: number, 
+        line: LineStructure, newWidth: number, 
         uend: FoldUnit, uline: FoldUnit, urepl: FoldUnit
     ) {
-        const oldLen = line.folds.length;
-        for (let i = 0; i < oldLen; i++) {
+        const oldWidth = line.folds.length;
+        for (let i = 0; i < oldWidth; i++) {
             if (line.folds[i] == FoldUnit.Space) line.folds[i] = uline;
             else if (line.folds[i] == FoldUnit.Begin || line.folds[i] == FoldUnit.End)
                 line.folds[i] = urepl;
         }
-        for (let j = oldLen; j <= newLen; j++) {
-            if (j == newLen) line.folds.push(uend);
+        for (let j = oldWidth; j <= newWidth; j++) {
+            if (j == newWidth) line.folds.push(uend);
             else line.folds.push(uline);
         }
     }
@@ -52,7 +52,7 @@ class Structure {
         if (from == to) return 0;
         if (content.length == 0) return 0;
 
-        let width = Math.max(...content.map((x) => this.#makeFold(x)));
+        const width = Math.max(...content.map((x) => this.#makeFold(x)));
 
         this.#reformatFolds(this.lines[from], width, 
             FoldUnit.Begin, FoldUnit.Top, FoldUnit.TopJoin);

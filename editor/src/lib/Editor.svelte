@@ -14,9 +14,9 @@
 
 <script lang="ts">
   import { getContext, onMount, setContext } from "svelte";
-  import { drawSelection, dropCursor, EditorView, highlightActiveLine, highlightActiveLineGutter, highlightWhitespace, keymap, lineNumbers } from "@codemirror/view";
+  import { drawSelection, dropCursor, EditorView, highlightActiveLine, highlightSpecialChars, highlightWhitespace, keymap, lineNumbers } from "@codemirror/view";
   import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
-  import { EditorState, type Extension } from "@codemirror/state";
+  import { EditorState, Prec, type Extension } from "@codemirror/state";
   import { closeBrackets } from "@codemirror/autocomplete";
   import { hook } from "./details/Hook.svelte";
 
@@ -79,6 +79,7 @@
         doc: text,
         extensions: [
             lineNumbers(),
+            highlightSpecialChars(),
             // highlightActiveLineGutter(),
             history(),
             drawSelection(),
@@ -89,6 +90,7 @@
             // highlightSelectionMatches(),
             EditorView.lineWrapping,
             EditorState.tabSize.of(4),
+            EditorState.allowMultipleSelections.of(true),
             keymap.of([...defaultKeymap, indentWithTab, ...historyKeymap]),
             context?.extensions ?? [],
             exts

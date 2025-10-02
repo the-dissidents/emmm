@@ -22,11 +22,8 @@ export const emmmTheme = [
             // avoid messing up wrap indent above
             padding: '0 15px 0 0',
         },
-        ".cm-cursor": {
+        ".cm-cursor, .cm-dropCursor": {
             borderLeftWidth: '1.5px'
-        },
-        "&.cm-focused .cm-cursor": {
-            borderLeftColor: "black"
         },
         "&.cm-focused .cm-selectionBackground, ::selection": {
             backgroundColor: "#074"

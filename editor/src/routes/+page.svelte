@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Settings } from '$lib/Settings';
-    import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
+  import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
   import TestPage from '../lib/TestPage.svelte';
 
   const currentWindow = getCurrentWindow();
@@ -19,10 +19,31 @@
   });
 </script>
 
+
 <main class="container vlayout fill">
-  <!-- <div>
-    Menu bar
-  </div> -->
-  <TestPage></TestPage>
+  <div id="titlebar" data-tauri-drag-region>
+  </div>
+  <div class="page vlayout flexgrow">
+    <TestPage></TestPage>
+  </div>
 </main>
 
+<style>
+  #titlebar {
+    min-height: 30px;
+    padding: 0;
+    width: 100%;
+  }
+
+  .container {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    max-height: 100vh;
+    box-sizing: border-box;
+  }
+
+  .page {
+    padding: 0 10px 10px 10px;
+  }
+</style>

@@ -54,19 +54,6 @@ label:has(input[type='checkbox'].button) {
     }
 }
 
-.container {
-    margin: 0;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    /* justify-content: center; */
-    /* text-align: center; */
-    height: 100vh;
-    /* min-height: 100vh; */
-    max-height: 100vh;
-    box-sizing: border-box;
-}
-
 .scrollable {
     overflow: auto;
 }
