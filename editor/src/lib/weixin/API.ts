@@ -1,8 +1,8 @@
 import { get, readonly, writable, type Readable } from "svelte/store";
-import { Settings } from "./Settings";
+import { Settings } from "../Settings";
 import { fetch } from '@tauri-apps/plugin-http';
-import { RequestFailedError } from "./Util";
-import { assert } from "./Debug";
+import { RequestFailedError } from "../Util";
+import { assert } from "../Debug";
 import { BaseDirectory, writeFile } from "@tauri-apps/plugin-fs";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 
