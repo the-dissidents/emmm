@@ -2,6 +2,7 @@ import { acceptCompletion, autocompletion, closeCompletion, moveCompletionSelect
 import * as emmm from "@the_dissidents/libemmm";
 import { emmmDocument } from "./ParseData";
 import { keymap } from "@codemirror/view";
+import { Prec } from "@codemirror/state";
 
 const autocompleteSource: CompletionSource = (ctx) => {
     const doc = ctx.state.field(emmmDocument);
@@ -58,7 +59,7 @@ export const emmmAutocompletion = [
         override: [autocompleteSource],
         defaultKeymap: false
     }),
-    keymap.of([
+    Prec.high(keymap.of([
         {key: "Ctrl-Space", run: startCompletion},
         // {mac: "Alt-`", run: startCompletion},
         // {mac: "Alt-i", run: startCompletion},
@@ -66,5 +67,5 @@ export const emmmAutocompletion = [
         {key: "ArrowDown", run: moveCompletionSelection(true)},
         {key: "ArrowUp", run: moveCompletionSelection(false)},
         {key: "Tab", run: acceptCompletion}
-    ])
+    ]))
 ];

@@ -11,13 +11,12 @@ const GROUP_BEGIN = ':--';
 const GROUP_END = '--:';
 
 const MODIFIER_BLOCK_OPEN = '[.';
+const MODIFIER_INLINE_OPEN = '[/';
+const MODIFIER_SYSTEM_OPEN = '[-';
+
 const MODIFIER_CLOSE_SIGN = ']';
 const MODIFIER_END_SIGN = ';';
-
-const MODIFIER_INLINE_OPEN = '[/';
 const MODIFIER_INLINE_END_TAG = '[;]';
-
-const MODIFIER_SYSTEM_OPEN = '[-';
 
 const UnknownModifier = {
     [NodeType.BlockModifier]: new BlockModifierDefinition('UNKNOWN', ModifierSlotType.Normal),
