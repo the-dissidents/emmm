@@ -4,7 +4,6 @@ import * as emmm from "@the_dissidents/libemmm";
 
 export type EmmmParseData = {
     data: emmm.Document,
-    source: string,
     parseTime: number
 };
 
@@ -24,16 +23,14 @@ export const emmmSourceDescriptorProvider =
 export const emmmDocument = StateField.define<EmmmParseData | undefined>({
     create(state) {
         emmm.setDebugLevel(emmm.DebugLevel.Warning);
+        const start = performance.now();
         const context = state.facet(emmmContextProvider)() 
             ?? new emmm.ParseContext(emmm.Configuration.from(CustomConfig));
-        const start = performance.now();
-        const text = state.doc.toString();
-        const scanner = new emmm.SimpleScanner(text, state.facet(emmmSourceDescriptorProvider));
-        const result = emmm.parse(scanner, context);
+        const scanner = new emmm.SimpleScanner(state.doc.toString(), state.facet(emmmSourceDescriptorProvider));
+        const result = context.parse(scanner);
 
         return {
             data: result,
-            source: text,
             parseTime: performance.now() - start
         };
     },

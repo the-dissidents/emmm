@@ -1,4 +1,6 @@
 import { RootNode, Message, BlockModifierDefinition, InlineModifierDefinition, SystemModifierDefinition, ArgumentInterpolatorDefinition, BlockShorthand, InlineShorthand, BlockEntity, InlineEntity, ArgumentEntity } from "./interface";
+import { Parser } from "./parser";
+import { Scanner } from "./scanner";
 import { assert, cloneNode, ReadonlyNameManager, NameManager, stripNode } from "./util";
 
 export interface ParseContextStoreDefinitions { }
@@ -9,7 +11,7 @@ export class ParseContext {
     private data: ParseContextStoreDefinitions = {};
     
     constructor(
-        public config: Configuration,
+        public readonly config: Configuration,
         public variables = new Map<string, string>()
     ) {
         config.initializers.forEach((x) => x(this));
@@ -28,6 +30,10 @@ export class ParseContext {
     get<S extends ParseContextStoreKey>(key: S): ParseContextStoreEntry<S> {
         assert(key in this.data);
         return this.data[key];
+    }
+
+    parse(scanner: Scanner) {
+        return new Parser(scanner, this).parse();
     }
 }
 

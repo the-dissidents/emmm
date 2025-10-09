@@ -1,5 +1,4 @@
 import { SimpleScanner } from "./scanner";
-import * as Parser from "./parser";
 import { debug, DebugLevel } from "./debug";
 import { debugPrint } from "./debug-print";
 import { DefaultConfiguration } from "./default/default";
@@ -77,8 +76,7 @@ text1 = `
 
 debug.level = DebugLevel.Trace;
 let context = new ParseContext(TestConfig);
-
-export let doc = Parser.parse(new SimpleScanner(text1), context);
+let doc = context.parse(new SimpleScanner(text1));
 
 console.log('-----');
 console.log(debugPrint.document(doc));

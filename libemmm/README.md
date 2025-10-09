@@ -10,23 +10,26 @@ npm install @the_dissidents/libemmm
 
 `emmm` is an extensible language. The parser by itself only handles the basic syntax; it accepts a `Configuration` object that defines most of the features.
 
+To parse a source, create a `ParseContext` object from a `Configuration`; the context object holds the parser state, and you can use the same context to parse multiple sources to make definitions persist across them.
+
 ```typescript
 import * as emmm from '@the_dissidents/libemmm';
+
 let config = new emmm.Configuration(emmm.BuiltinConfiguration);
-// add definitions to config here
+// optionally, add definitions to config here
+
+let context = new ParseContext(config);
 ```
 
-The parser reads from a very simple scanner interface that only goes forward, without backtracking. Usually you can use the default implementation. The parser returns a `Document` object.
+The parser reads from a very simple scanner interface that only goes forward, without backtracking. Usually you can use the default implementation. Parsing yields a `Document` object.
 
 ```typescript
 let scanner = new emmm.SimpleScanner(source);
-let doc = emmm.parse(scanner, config);
-```
+let doc = context.parse(scanner);
 
-- `doc.root` is the AST root node.
-- `doc.context` is a `ParseContext` object containing the state of the language that the extensions need to know, such as variables and modifier definitions. This is its state at the end of the parse.
-- `doc.messages` is the array of diagnostic messages.
-- You may want to call `doc.debugPrint(source)` to get a pretty-printed debug string of the AST.
+// `doc.root` is the AST root node
+// `doc.messages` is an array of diagnostic messages
+```
 
 ## A Semi-Technical Reference to `emmm` Syntax
 

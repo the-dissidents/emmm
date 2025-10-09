@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { BuiltinConfiguration } from "../src/builtin/builtin";
 import { SimpleScanner } from "../src/scanner";
-import * as Parser from "../src/parser";
 import { BlockModifierDefinition, InlineModifierDefinition, MessageSeverity, ModifierSlotType, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
 import { Configuration, ParseContext } from "../src/parser-config";
@@ -17,7 +16,7 @@ TestConfig.inlineModifiers.add(
 
 function parse(src: string) {
     const config = Configuration.from(TestConfig);
-    let doc = Parser.parse(new SimpleScanner(src), new ParseContext(config)).toStripped();
+    let doc = new ParseContext(config).parse(new SimpleScanner(src), ).toStripped();
     return doc;
 }
 debug.level = DebugLevel.Warning;

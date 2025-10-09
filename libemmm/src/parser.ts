@@ -99,7 +99,7 @@ class EmitEnvironment {
     }
 }
 
-class Parser {
+export class Parser {
     private emit: EmitEnvironment;
     private delayDepth = 0;
     private groupDepth = 0;
@@ -742,6 +742,7 @@ class Parser {
     }
 }
 
+/** @deprecated */
 export function parse(scanner: Scanner, cxt: ParseContext) {
     return new Parser(scanner, cxt).parse();
 }
