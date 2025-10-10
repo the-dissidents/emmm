@@ -144,10 +144,13 @@ export const HeadingBlockRenderersHTML = [
     [numberedHeadingBlock, (node, cxt) => {
         if (node.state !== undefined) {
             const tag = 'h' + node.state.level;
-            const para = node.content[0] as ParagraphNode;
             const element = document.createElement(tag);
+            element.className = 'numbered-heading';
             element.appendChild(<span class='heading-number'>{node.state.name}</span>);
-            element.appendChild(cxt.state.render(para.content, cxt));
+            if (node.content.length > 0) {
+                const para = node.content[0] as ParagraphNode;
+                element.appendChild(<span class='heading-content'>{cxt.state.render(para.content, cxt)}</span>);
+            }
             return element;
         }
         return cxt.state.invalidBlock(node, 'Bad format');
