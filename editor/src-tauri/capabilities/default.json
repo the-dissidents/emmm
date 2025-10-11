@@ -44,13 +44,20 @@
     {
       "identifier": "http:default",
       "allow": [
-        { "url": "https://ipinfo.io/" },
-        { "url": "https://api.ipify.org/" },
-        { "url": "https://api.weixin.qq.com/" }
+        {
+          "url": "https://ipinfo.io/"
+        },
+        {
+          "url": "https://api.ipify.org/"
+        },
+        {
+          "url": "https://api.weixin.qq.com/"
+        }
       ]
     },
     "clipboard-manager:allow-write-html",
     "clipboard-manager:allow-write-text",
-    "clipboard-manager:allow-write-image"
+    "clipboard-manager:allow-write-image",
+    "dialog:default"
   ]
 }

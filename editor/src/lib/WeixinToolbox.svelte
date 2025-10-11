@@ -11,6 +11,7 @@
     import { convertFileSrc } from "@tauri-apps/api/core";
     import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
     import { postprocess } from "./weixin/Postprocess";
+    import * as dialog from '@tauri-apps/plugin-dialog';
 
     let publicIP = $state('');
     let appid = Weixin.appid;
@@ -143,9 +144,9 @@
         Interface.status.set(`compressing with RustAPI`);
         try {
             const out = await path.join(await tempDir(), 'out.jpg');
-            await RustAPI.compressImage(
-                '/Users/emf/Downloads/ZzArt-337773807-34.png', 
-                out, 1024*1024);
+            const file = await dialog.open();
+            if (!file) return;
+            await RustAPI.compressImage(file, out, 1024*1024);
             Interface.status.set(`compressed to ${out}`);
             console.log(out);
         } catch (e) {
