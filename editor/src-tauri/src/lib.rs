@@ -89,9 +89,13 @@ fn try_compress_size(img: &DynamicImage, scaling: f64) -> Result<Vec<u8>, String
 
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)]
-fn compress_image(channel: Channel<BackendEvent>, path: String, out: String, max_size: usize) {
+async fn compress_image(
+    channel: Channel<BackendEvent>, 
+    path: String, out: String, max_size: usize
+) -> Result<(), ()> {
     log::info!("compress_image start");
-    match (|| -> Result<(), String> {
+    let result = 
+    tokio::task::spawn_blocking(move || -> Result<(), String> {
         let original = fs::read(path.clone()).map_err(|e| format!("fs::read: {e}"))?;
         let original_size = original.len();
 
@@ -141,13 +145,23 @@ fn compress_image(channel: Channel<BackendEvent>, path: String, out: String, max
         fs::write(out, result)
             .map_err(|e| format!("fs::write: {e}"))?;
         Ok(())
-    })() {
-        Ok(()) => {
+    }).await;
+    
+    match result {
+        Ok(Ok(())) => {
             log::info!("compress_image done");
             send(&channel, BackendEvent::Done);
         }
+        Ok(Err(e)) => {
+            send(&channel, BackendEvent::Failed { 
+                msg: format!("compress_image task: {e}") 
+            });
+        }
         Err(e) => {
-            send(&channel, BackendEvent::Failed { msg: e });
+            send(&channel, BackendEvent::Failed { 
+                msg: format!("tokio::task::spawn_blocking: {e}") 
+            });
         }
     }
+    Ok(())
 }

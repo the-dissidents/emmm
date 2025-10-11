@@ -33,4 +33,5 @@ tauri-plugin-log = "2.7.0"
 time = "0.3.44"
 tauri-plugin-dialog = "2"
 fast_image_resize = { version = "5.1.4", features = ["image"] }
+tokio = "1.47.1"
 
