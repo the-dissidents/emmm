@@ -2,3 +2,4 @@
 .vite/
 .aider*
 .vs/
+node_modules/
