@@ -1,8 +1,10 @@
 import { assert } from "./Debug";
 import { fetch } from '@tauri-apps/plugin-http';
-import imageCompression from 'browser-image-compression';
 import { readFile } from "@tauri-apps/plugin-fs";
 import mime from 'mime/lite';
+import { RustAPI } from "./RustAPI";
+import { path } from "@tauri-apps/api";
+import * as fs from "@tauri-apps/plugin-fs";
 
 export class RequestFailedError extends Error {
     status: number;
@@ -109,12 +111,27 @@ export async function readUrl(url: URL) {
     return await r.blob();
 }
 
-export async function loadImage(url: URL, maxSizeMB?: number, maxWidth = 1920) {
+export async function loadImage(url: URL, maxSizeMB?: number) {
     let file = new File([await readUrl(url)], url.href, 
         { type: mime.getType(url.href) ?? undefined });
-    // TODO: use a Rust implementation
-    return maxSizeMB ? await imageCompression(file, { 
-        maxSizeMB, maxWidthOrHeight: maxWidth,
-        useWebWorker: true, fileType: 'image/png'
-    }) : file;
+
+    if (!maxSizeMB || 
+        ((file.type == 'image/png' || file.type == 'image/jpeg') 
+            && file.size < maxSizeMB * 1024 * 1024))
+    {
+        return file;
+    }
+    
+    let filepath: string;
+    if (url.protocol !== 'file:') {
+        // save to local
+        filepath = await path.join(
+            await path.tempDir(), 
+            crypto.randomUUID() + await path.extname(url.pathname));
+        await fs.writeFile(filepath, file.stream());
+    } else {
+        filepath = url.pathname;
+    }
+
+    return RustAPI.compressImage(filepath, maxSizeMB * 1024 * 1024);
 }

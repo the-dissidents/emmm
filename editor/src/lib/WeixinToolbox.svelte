@@ -12,6 +12,7 @@
     import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
     import { postprocess } from "./weixin/Postprocess";
     import * as dialog from '@tauri-apps/plugin-dialog';
+    import { writeFile } from "@tauri-apps/plugin-fs";
 
     let publicIP = $state('');
     let appid = Weixin.appid;
@@ -146,7 +147,8 @@
             const out = await path.join(await tempDir(), 'out.jpg');
             const file = await dialog.open();
             if (!file) return;
-            await RustAPI.compressImage(file, out, 1024*1024);
+            const data = await RustAPI.compressImage(file, 1024*1024);
+            writeFile(out, data.stream());
             Interface.status.set(`compressed to ${out}`);
             console.log(out);
         } catch (e) {

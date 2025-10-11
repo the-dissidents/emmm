@@ -61,16 +61,13 @@ importers:
         version: 2.5.0
       '@the_dissidents/dom-css-inliner':
         specifier: file:../dom-css-inliner/
-        version: link:../dom-css-inliner
+        version: file:dom-css-inliner
       '@the_dissidents/libemmm':
         specifier: file:../libemmm/
-        version: link:../libemmm
+        version: file:libemmm
       '@types/wcwidth':
         specifier: ^1.0.2
         version: 1.0.2
-      browser-image-compression:
-        specifier: ^2.0.2
-        version: 2.0.2
       colorjs.io:
         specifier: ^0.5.2
         version: 0.5.2
@@ -79,7 +76,7 @@ importers:
         version: 4.1.0
       minimal-jsx-runtime:
         specifier: file:../minimal-jsx-runtime/
-        version: link:../minimal-jsx-runtime
+        version: file:minimal-jsx-runtime
       wcwidth:
         specifier: ^1.0.1
         version: 1.0.1
@@ -818,6 +815,12 @@ packages:
   '@tauri-apps/plugin-opener@2.5.0':
     resolution: {integrity: sha512-B0LShOYae4CZjN8leiNDbnfjSrTwoZakqKaWpfoH6nXiJwt6Rgj6RnVIffG3DoJiKsffRhMkjmBV9VeilSb4TA==}
 
+  '@the_dissidents/dom-css-inliner@file:dom-css-inliner':
+    resolution: {directory: dom-css-inliner, type: directory}
+
+  '@the_dissidents/libemmm@file:libemmm':
+    resolution: {directory: libemmm, type: directory}
+
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
 
@@ -908,9 +911,6 @@ packages:
 
   brace-expansion@2.0.1:
     resolution: {integrity: sha512-XnAIvQ8eM+kC6aULx6wuQiwVsnzsi9d3WxzV3FpWTGA19F621kwdbsAcFKXgKUHZWsy+mY6iL1sHTxWEFCytDA==}
-
-  browser-image-compression@2.0.2:
-    resolution: {integrity: sha512-pBLlQyUf6yB8SmmngrcOw3EoS4RpQ1BcylI3T9Yqn7+4nrQTXJD4sJDe5ODnJdrvNMaio5OicFo75rDyJD2Ucw==}
 
   browserslist@4.25.0:
     resolution: {integrity: sha512-PJ8gYKeS5e/whHBh8xrwYK+dAvEj7JXtz6uTucnMRB8OiGTsKccFekoRrjajPBHV8oOY+2tI4uxeceSimKwMFA==}
@@ -1342,6 +1342,9 @@ packages:
     engines: {node: '>=16'}
     hasBin: true
 
+  minimal-jsx-runtime@file:minimal-jsx-runtime:
+    resolution: {directory: minimal-jsx-runtime, type: directory}
+
   minimatch@9.0.5:
     resolution: {integrity: sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow==}
     engines: {node: '>=16 || 14 >=14.17'}
@@ -1665,9 +1668,6 @@ packages:
     resolution: {integrity: sha512-+g8ENReyr8YsOc6fv/NVJs2vFdHBnBNdfE49rshrTzDWOlUx4Gq7KOS2GD8eqhy2j+Ejq29+SbKH8yjkAqXqoA==}
     engines: {node: '>=8'}
     hasBin: true
-
-  uzip@0.20201231.0:
-    resolution: {integrity: sha512-OZeJfZP+R0z9D6TmBgLq2LHzSSptGMGDGigGiEe0pr8UBe/7fdflgHlHBNDASTXB5jnFuxHpNaJywSg8YFeGng==}
 
   vite-node@2.1.9:
     resolution: {integrity: sha512-AM9aQ/IPrW/6ENLQg3AGY4K1N2TGZdR5e4gu/MmmR2xR3Ll1+dib+nook92g4TV3PXVyeyxdWwtaCAiUL0hMxA==}
@@ -2374,6 +2374,12 @@ snapshots:
     dependencies:
       '@tauri-apps/api': 2.8.0
 
+  '@the_dissidents/dom-css-inliner@file:dom-css-inliner': {}
+
+  '@the_dissidents/libemmm@file:libemmm':
+    dependencies:
+      minimal-jsx-runtime: file:minimal-jsx-runtime
+
   '@types/cookie@0.6.0': {}
 
   '@types/estree@1.0.7': {}
@@ -2467,10 +2473,6 @@ snapshots:
   brace-expansion@2.0.1:
     dependencies:
       balanced-match: 1.0.2
-
-  browser-image-compression@2.0.2:
-    dependencies:
-      uzip: 0.20201231.0
 
   browserslist@4.25.0:
     dependencies:
@@ -2859,6 +2861,8 @@ snapshots:
 
   mime@4.1.0: {}
 
+  minimal-jsx-runtime@file:minimal-jsx-runtime: {}
+
   minimatch@9.0.5:
     dependencies:
       brace-expansion: 2.0.1
@@ -3172,8 +3176,6 @@ snapshots:
       diff: 5.2.0
       kleur: 4.1.5
       sade: 1.8.1
-
-  uzip@0.20201231.0: {}
 
   vite-node@2.1.9(@types/node@20.19.19):
     dependencies:

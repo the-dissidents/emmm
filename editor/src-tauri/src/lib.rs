@@ -4,7 +4,7 @@ use fast_image_resize::{images::Image, IntoImageView, Resizer};
 use image::{codecs::jpeg::JpegEncoder, DynamicImage, ImageReader};
 use num_traits::ToPrimitive;
 use serde::Serialize;
-use tauri::ipc::Channel;
+use tauri::ipc::{Response};
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
@@ -17,9 +17,9 @@ pub enum BackendEvent {
     Failed { msg: String },
 }
 
-fn send(channel: &Channel<BackendEvent>, what: BackendEvent) {
-    channel.send(what).expect("Error sending event");
-}
+// fn send(channel: &Channel<BackendEvent>, what: BackendEvent) {
+//     channel.send(what).expect("Error sending event");
+// }
 
 #[allow(clippy::missing_panics_doc)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -87,19 +87,23 @@ fn try_compress_size(img: &DynamicImage, scaling: f64) -> Result<Vec<u8>, String
     }
 }
 
+/// format:
+/// {
+///     `mime_type`: len([u32]) content(string);
+///     `data`: len([u32]) content(string);
+/// }
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)]
 async fn compress_image(
-    channel: Channel<BackendEvent>, 
-    path: String, out: String, max_size: usize
-) -> Result<(), ()> {
+    path: String, max_size: usize
+) -> Result<Response, String> {
     log::info!("compress_image start");
     let result = 
-    tokio::task::spawn_blocking(move || -> Result<(), String> {
-        let original = fs::read(path.clone()).map_err(|e| format!("fs::read: {e}"))?;
-        let original_size = original.len();
-
-        let reader = ImageReader::new(Cursor::new(original))
+    tokio::task::spawn_blocking(move || -> Result<Vec<u8>, String> {
+        let original = 
+            fs::read(path.clone()).map_err(|e| format!("fs::read: {e}"))?;
+        let reader = 
+            ImageReader::new(Cursor::new(original.as_slice()))
             .with_guessed_format()
             .map_err(|e| format!("with_guessed_format: {e}"))?;
         let format = reader
@@ -109,17 +113,14 @@ async fn compress_image(
 
         log::info!("compress_image decoded image");
 
-        if format.to_mime_type() == "image/jpeg" {
-            if original_size < max_size {
-                // just copy to out
-                fs::copy(path, out).map_err(|e| format!("fs::write: {e}"))?;
-                return Ok(());
+        if format.to_mime_type() != "image/jpeg" {
+            if original.len() < max_size {
+                return Ok(original);
             }
-        } else {
+
             let result = try_compress_size(&img, 1.0)?;
             if result.len() < max_size {
-                fs::write(out, result).map_err(|e| format!("fs::write: {e}"))?;
-                return Ok(());
+                return Ok(result);
             }
         }
 
@@ -142,26 +143,19 @@ async fn compress_image(
         }
         let result = last_ok
             .ok_or("Unable to compress within size limit".to_owned())?;
-        fs::write(out, result)
-            .map_err(|e| format!("fs::write: {e}"))?;
-        Ok(())
+        Ok(result)
     }).await;
     
     match result {
-        Ok(Ok(())) => {
+        Ok(Ok(data)) => {
             log::info!("compress_image done");
-            send(&channel, BackendEvent::Done);
+            Ok(Response::new(data))
         }
         Ok(Err(e)) => {
-            send(&channel, BackendEvent::Failed { 
-                msg: format!("compress_image task: {e}") 
-            });
+            Err(format!("compress_image task: {e}"))
         }
         Err(e) => {
-            send(&channel, BackendEvent::Failed { 
-                msg: format!("tokio::task::spawn_blocking: {e}") 
-            });
+            Err(format!("tokio::task::spawn_blocking: {e}"))
         }
     }
-    Ok(())
 }
