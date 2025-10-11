@@ -145,7 +145,7 @@
             const out = await path.join(await tempDir(), 'out.jpg');
             await RustAPI.compressImage(
                 '/Users/emf/Downloads/ZzArt-337773807-34.png', 
-                out, 1024*1024, 1080);
+                out, 1024*1024);
             Interface.status.set(`compressed to ${out}`);
             console.log(out);
         } catch (e) {

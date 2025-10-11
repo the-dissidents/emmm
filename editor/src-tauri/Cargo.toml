@@ -27,4 +27,8 @@ tauri-plugin-fs = "2"
 tauri-plugin-http = "2"
 image = "0.25.5"
 tauri-plugin-clipboard-manager = "2.2.3"
+num-traits = "0.2.19"
+log = "0.4.28"
+tauri-plugin-log = "2.7.0"
+time = "0.3.44"
 

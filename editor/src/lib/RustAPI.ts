@@ -49,14 +49,14 @@ function createChannel(handler: {[key in BackendEventKey]?: BackendEventHandler<
 }
 
 export const RustAPI = {
-    async compressImage(path: string, out: string, maxSize: number, width: number) {
+    async compressImage(path: string, out: string, maxSize: number) {
         await new Promise<void>((resolve, reject) => {
             let channel = createChannel({
                 done: () => {
                     resolve();
                 }
             });
-            invoke('compress_image', {channel, path, out, maxSize, width});
+            invoke('compress_image', {channel, path, out, maxSize});
         });
     }
 }
