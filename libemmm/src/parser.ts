@@ -309,10 +309,17 @@ export class Parser {
             this.BLOCK_ENTITY();
             this.WHITESPACES_OR_NEWLINES();
         }
+
+        this.scanner.inspectors().forEach(
+            (x) => x.callback(this.cxt, this.scanner.position()));
     }
 
     private BLOCK_ENTITY() {
         assert(!this.scanner.isEOF());
+
+        this.scanner.inspectors().forEach(
+            (x) => x.callback(this.cxt, this.scanner.position()));
+
         if (this.scanner.peek(MODIFIER_BLOCK_OPEN)) {
             this.MODIFIER(NodeType.BlockModifier);
             return;
@@ -327,6 +334,9 @@ export class Parser {
 
         // simple paragraph(s)
         this.MAYBE_GROUPED_PARAGRAPH();
+
+        this.scanner.inspectors().forEach(
+            (x) => x.callback(this.cxt, this.scanner.position()));
     }
 
     private MODIFIER

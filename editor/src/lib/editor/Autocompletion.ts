@@ -10,15 +10,20 @@ const autocompleteSource: CompletionSource = (ctx) => {
         console.log('autocompletion: no doc');
         return null;
     }
-    let node = doc.data.resolvePosition(ctx.pos).at(-1);
-    if (!node) return null;
 
-    // FIXME: should show what is available at the cursor position. We could do this by inserting a 'probe' node (yet to be implemented) at that position
+    const inspector = doc.inspector ?? {
+        position: -1,
+        config: doc.data.context.config,
+        variables: doc.data.context.variables
+    };
+
+    const node = doc.data.resolvePosition(ctx.pos).at(-1);
+    if (!node) return null;
 
     if ((node.type == emmm.NodeType.InlineModifier && node.mod.name == '$')
      || (node.type == emmm.NodeType.Interpolation && node.definition.name == '$('))
     {
-        const vars = [...doc.data.context.variables.keys()];
+        const vars = [...inspector.variables.keys()];
         const from = node.type == emmm.NodeType.InlineModifier 
             ? node.head.start + 3
             : node.location.start + 2;
@@ -38,13 +43,13 @@ const autocompleteSource: CompletionSource = (ctx) => {
     {
         let completions: Completion[] = [];
         if (node.type == emmm.NodeType.SystemModifier)
-            completions = doc.data.context.config.systemModifiers.toArray().map((x) => 
+            completions = inspector.config.systemModifiers.toArray().map((x) => 
                 ({ label: x.name, type: 'keyword' }));
         if (node.type == emmm.NodeType.BlockModifier)
-            completions = doc.data.context.config.blockModifiers.toArray().map((x) => 
+            completions = inspector.config.blockModifiers.toArray().map((x) => 
                 ({ label: x.name, type: 'function' }));
         if (node.type == emmm.NodeType.InlineModifier)
-            completions = doc.data.context.config.inlineModifiers.toArray().map((x) => 
+            completions = inspector.config.inlineModifiers.toArray().map((x) => 
                 ({ label: x.name, type: 'function' }));
         return {
             from: node.head.start + 2,

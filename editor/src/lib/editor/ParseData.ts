@@ -2,8 +2,15 @@ import { CustomConfig } from "$lib/custom/Custom";
 import { Facet, StateField } from "@codemirror/state";
 import * as emmm from "@the_dissidents/libemmm";
 
+export type EmmmInspectorData = {
+    readonly position: number,
+    readonly config: emmm.ReadonlyConfiguration,
+    readonly variables: ReadonlyMap<string, string>
+};
+
 export type EmmmParseData = {
     data: emmm.Document,
+    inspector: EmmmInspectorData | null,
     parseTime: number
 };
 
@@ -26,12 +33,27 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
         const start = performance.now();
         const context = state.facet(emmmContextProvider)() 
             ?? new emmm.ParseContext(emmm.Configuration.from(CustomConfig));
-        const scanner = new emmm.SimpleScanner(state.doc.toString(), state.facet(emmmSourceDescriptorProvider));
+
+        let inspector: EmmmInspectorData | null = null;
+        const scanner = new emmm.SimpleScanner(
+            state.doc.toString(), 
+            state.facet(emmmSourceDescriptorProvider),
+            [{
+                position: state.selection.main.head,
+                callback(cxt, position) {
+                    inspector = {
+                        position,
+                        config: emmm.Configuration.from(cxt.config),
+                        variables: new Map(cxt.variables)
+                    };
+                },
+            }]);
         const result = context.parse(scanner);
 
         return {
             data: result,
-            parseTime: performance.now() - start
+            parseTime: performance.now() - start,
+            inspector
         };
     },
     update(value, transaction) {
