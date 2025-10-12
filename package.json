@@ -7,9 +7,9 @@
         "preinstall": "npx only-allow pnpm",
         "format": "prettier --write --cache .",
         "lint": "oxlint .",
-        "dev:pkgs": "pnpm -r --sort --filter='./packages/*' dev",
+        "dev:pkgs": "pnpm -r --sort --parallel --filter='./packages/*' dev",
+        "dev": "pnpm run dev:pkgs & pnpm --filter='kfgui' tauri dev",
         "build:pkgs": "pnpm -r --filter='./packages/*' build",
-        "dev": "pnpm run build:pkgs & pnpm --filter='kfgui' tauri dev",
         "build": "pnpm run build:pkgs && pnpm --filter='kfgui' tauri build",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
