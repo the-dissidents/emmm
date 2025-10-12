@@ -1,21 +1,22 @@
 {
-  "name": "@the_dissidents/emmm-monorepo",
-  "private": true,
-  "type": "module",
-  "description": "monorepo setup for emmm, a better markup language when it comes to typesetting articles.",
-  "scripts": {
-    "preinstall": "npx only-allow pnpm",
-    "format": "prettier --write --cache .",
-    "lint": "oxlint .",
-    "build:pkgs": "pnpm -r --filter='./packages/*' build",
-    "dev": "pnpm run build:pkgs && pnpm --filter='kfgui' tauri dev",
-    "build": "pnpm run build:pkgs && pnpm --filter='kfgui' tauri build",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "packageManager": "pnpm@10.17.1",
-  "devDependencies": {
-    "oxlint": "^1.22.0",
-    "prettier": "^3.6.2",
-    "prettier-plugin-svelte": "^3.4.0"
-  }
+    "name": "@the_dissidents/emmm-monorepo",
+    "private": true,
+    "type": "module",
+    "description": "monorepo setup for emmm, a better markup language when it comes to typesetting articles.",
+    "scripts": {
+        "preinstall": "npx only-allow pnpm",
+        "format": "prettier --write --cache .",
+        "lint": "oxlint .",
+        "dev:pkgs": "pnpm -r --sort --filter='./packages/*' dev",
+        "build:pkgs": "pnpm -r --filter='./packages/*' build",
+        "dev": "pnpm run build:pkgs & pnpm --filter='kfgui' tauri dev",
+        "build": "pnpm run build:pkgs && pnpm --filter='kfgui' tauri build",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "packageManager": "pnpm@10.17.1",
+    "devDependencies": {
+        "eslint": "^9.37.0",
+        "prettier": "^3.6.2",
+        "prettier-plugin-svelte": "^3.4.0"
+    }
 }
