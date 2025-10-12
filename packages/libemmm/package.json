@@ -15,7 +15,7 @@
   "author": "the_dissidents",
   "license": "GPL-2.0-only",
   "dependencies": {
-    "minimal-jsx-runtime": "file:../minimal-jsx-runtime/"
+    "minimal-jsx-runtime": "workspace:*"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^19.0.2",

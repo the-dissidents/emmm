@@ -26,12 +26,12 @@
     "@tauri-apps/plugin-fs": "^2.2.0",
     "@tauri-apps/plugin-http": "^2.3.0",
     "@tauri-apps/plugin-opener": "^2",
-    "@the_dissidents/dom-css-inliner": "file:../dom-css-inliner/",
-    "@the_dissidents/libemmm": "file:../libemmm/",
+    "@the_dissidents/dom-css-inliner": "workspace:*",
+    "@the_dissidents/libemmm": "workspace:*",
     "@types/wcwidth": "^1.0.2",
     "colorjs.io": "^0.5.2",
     "mime": "^4.0.6",
-    "minimal-jsx-runtime": "file:../minimal-jsx-runtime/",
+    "minimal-jsx-runtime": "workspace:*",
     "wcwidth": "^1.0.1"
   },
   "devDependencies": {

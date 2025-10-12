@@ -1,0 +1,36 @@
+{
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "none",
+  "printWidth": 100,
+  "plugins": [
+    "prettier-plugin-svelte"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "*.json5"
+      ],
+      "options": {
+        "singleQuote": false,
+        "quoteProps": "preserve"
+      }
+    },
+    {
+      "files": [
+        "*.yml"
+      ],
+      "options": {
+        "singleQuote": false
+      }
+    },
+    {
+      "files": [
+        "*.svelte"
+      ],
+      "options": {
+        "bracketSameLine": false
+      }
+    }
+  ]
+}
