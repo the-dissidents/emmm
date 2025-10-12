@@ -1,35 +1,37 @@
 {
   "name": "minimal-jsx-runtime",
   "version": "0.0.1",
-  "main": "./dist/jsx-runtime.js",
-  "module": "./dist/jsx-runtime.js",
-  "types": "./dist/jsx-runtime.d.ts",
+  "description": "A private little wrapper for using JSX the above projects",
+  "author": "the_dissidents",
+  "license": "GPL-2.0-only",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "files": [
     "dist"
   ],
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/jsx-runtime.js",
-      "require": "./dist/jsx-runtime.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
     },
     "./jsx-runtime": {
-      "import": "./dist/jsx-runtime.js",
-      "require": "./dist/jsx-runtime.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
     },
     "./jsx-dev-runtime": {
-      "import": "./dist/jsx-runtime.js",
-      "require": "./dist/jsx-runtime.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
     }
   },
   "devDependencies": {
+    "tsdown": "^0.15.6",
     "typescript": "^5.8.3"
   }
 }

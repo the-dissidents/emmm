@@ -1,19 +1,23 @@
 {
   "name": "@the_dissidents/libemmm",
   "version": "0.0.8",
-  "description": "parser and language server for the emmm markup language",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "description": "Parser and language server for the emmm markup language",
+  "author": "the_dissidents",
+  "license": "GPL-2.0-only",
   "scripts": {
     "test": "vitest",
-    "build": "tsup"
+    "build": "tsdown"
   },
   "files": [
     "dist"
   ],
-  "author": "the_dissidents",
-  "license": "GPL-2.0-only",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "dependencies": {
     "minimal-jsx-runtime": "workspace:*"
   },
@@ -21,7 +25,7 @@
     "@happy-dom/global-registrator": "^19.0.2",
     "@vitest/coverage-istanbul": "^2.1.8",
     "happy-dom": "^19.0.2",
-    "tsup": "^8.3.5",
+    "tsdown": "^0.15.6",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8"
   }

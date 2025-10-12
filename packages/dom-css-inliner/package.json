@@ -2,25 +2,25 @@
   "name": "@the_dissidents/dom-css-inliner",
   "version": "0.1.0",
   "description": "A CSS inliner using vanilla DOM and CSSOM APIs",
-  "main": "./dist/src/inliner.js",
-  "module": "./dist/src/inliner.js",
-  "types": "./dist/src/inliner.d.ts",
+  "author": "the_dissidents",
+  "license": "GPL-2.0-only",
   "scripts": {
-    "build": "rm -rf dist/ && tsc",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
     "test": "uvu -r tsm tests"
   },
-  "author": "the-dissidents",
-  "license": "ISC",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "devDependencies": {
+    "tsdown": "^0.15.6",
     "tsm": "^2.3.0",
     "typescript": "^5.8.3",
     "uvu": "^0.5.6"
-  },
-  "type": "module",
-  "exports": {
-    ".": {
-      "import": "./dist/src/inliner.js",
-      "require": "./dist/src/inliner.js"
-    }
   }
 }
