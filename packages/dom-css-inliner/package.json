@@ -1,0 +1,26 @@
+{
+  "name": "@the_dissidents/dom-css-inliner",
+  "version": "0.1.0",
+  "description": "A CSS inliner using vanilla DOM and CSSOM APIs",
+  "author": "the_dissidents",
+  "license": "GPL-2.0-only",
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "uvu -r tsm tests"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "devDependencies": {
+    "tsdown": "^0.15.6",
+    "tsm": "^2.3.0",
+    "typescript": "^5.8.3",
+    "uvu": "^0.5.6"
+  }
+}
