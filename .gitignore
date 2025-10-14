@@ -1,5 +1,6 @@
-.DS_Store
-.vite/
 .aider*
+.DS_Store
+.eslintcache
+.vite/
 .vs/
 node_modules/
