@@ -157,9 +157,9 @@ export function cloneNode<T extends DocumentNode>(node: T, options: CloneNodeOpt
     }
 }
 
-export function cloneNodes(
-    nodes: readonly DocumentNode[], options: CloneNodeOptions = {}
-): DocumentNode[] {
+export function cloneNodes<T extends DocumentNode>(
+    nodes: readonly T[], options: CloneNodeOptions = {}
+): T[] {
     return nodes.map((x) => cloneNode(x, options));
 }
 

@@ -6,12 +6,12 @@ const header = Symbol();
 declare module '@the_dissidents/libemmm' {
     export interface ParseContextStoreDefinitions {
         [header]?: {
-            imageUrl?: string,
-            title?: string,
-            subtitle?: string,
-            originalTitle?: string,
+            title?: emmm.ParagraphNode,
+            subtitle?: emmm.ParagraphNode,
+            originalTitle?: emmm.ParagraphNode,
             originalUrl?: string,
-            fields: [string, string][]
+            imageUrl?: string,
+            fields: [string, emmm.ParagraphNode][]
         };
     }
 }
@@ -23,19 +23,19 @@ export function initHeader(cxt: emmm.ParseContext) {
 }
 
 export const basicFieldSystems = [
-    emmm.helper.createWrapperModifier('title',
+    emmm.helper.createParagraphWrapper('title',
         (c) => c.get(header)!.title, 
         (c, v) => c.get(header)!.title = v),
-    emmm.helper.createWrapperModifier('subtitle',
+    emmm.helper.createParagraphWrapper('subtitle',
         (c) => c.get(header)!.subtitle, 
         (c, v) => c.get(header)!.subtitle = v),
-    emmm.helper.createWrapperModifier('orig-title',
+    emmm.helper.createParagraphWrapper('orig-title',
         (c) => c.get(header)!.originalTitle, 
         (c, v) => c.get(header)!.originalTitle = v),
-    emmm.helper.createWrapperModifier('orig-url',
+    emmm.helper.createPlaintextWrapper('orig-url',
         (c) => c.get(header)!.originalUrl, 
         (c, v) => c.get(header)!.originalUrl = v, emmm.ModifierSlotType.Preformatted),
-    emmm.helper.createWrapperModifier('cover-img',
+    emmm.helper.createPlaintextWrapper('cover-img',
         (c) => c.get(header)!.imageUrl, 
         (c, v) => c.get(header)!.imageUrl = v, emmm.ModifierSlotType.Preformatted)
 ];
@@ -43,12 +43,14 @@ export const basicFieldSystems = [
 export const infoFieldSystem = new emmm.SystemModifierDefinition(
     'info-field', emmm.ModifierSlotType.Normal,
 {
-    delayContentExpansion: true,
+    // delayContentExpansion: true,
     afterProcessExpansion(node, cxt) {
         let msgs = emmm.helper.checkArguments(node, 1, 1);
         if (msgs) return msgs;
-        const result = emmm.helper.onlyPermitPlaintextParagraph(node);
-        if (typeof result !== 'string') return result;
+        msgs = emmm.helper.onlyPermitSingleBlock(node);
+        if (msgs) return msgs;
+        msgs = emmm.helper.onlyPermitSimpleParagraphs(node);
+        if (msgs) return msgs;
 
         const key = node.arguments[0].expansion!.trim();
         const data = cxt.get(header)!;
@@ -56,10 +58,13 @@ export const infoFieldSystem = new emmm.SystemModifierDefinition(
         if (previous >= 0) {
             console.log(node.head);
             msgs = [new emmm.messages.OverwriteSpecialVariableMessage(
-                node.head, key, data.fields[previous][1])];
+                node.head, key, "<...>")];
             data.fields.splice(previous, 1);
         }
-        data.fields.push([key, result.trim()]);
+        const content = emmm.cloneNode(node.content[0]);
+        const stripped = emmm.stripNode(content)[0] as emmm.ParagraphNode;
+        // console.log(emmm.debugPrint.node(content));
+        data.fields.push([key, stripped]);
         return msgs ?? [];
     },
 });
@@ -105,18 +110,18 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
             fragment.appendChild(<figure>{content}</figure>);
         }
         if (data.title)
-            fragment.appendChild(<h1>{data.title}</h1>);
+            fragment.appendChild(<h1>{cxt.state.render(data.title.content, cxt)}</h1>);
         else
             fragment.appendChild(cxt.state.invalidBlock(node, 'no title'));
             
         if (data.subtitle)
-            fragment.appendChild(<h1 class='subtitle'>{data.subtitle}</h1>)
+            fragment.appendChild(<h1 class='subtitle'>{cxt.state.render(data.subtitle.content, cxt)}</h1>)
 
         let content1: Node[] = [];
         if (data.originalTitle)
             content1.push(<p>
                 <span class='key'>原标题：</span>
-                <span class='originalTitle'>{data.originalTitle}</span>
+                <span class='originalTitle'>{cxt.state.render(data.originalTitle.content, cxt)}</span>
             </p>);
         if (data.originalUrl)
             content1.push(<p>
@@ -124,15 +129,15 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
                 <span class='originalUrl'>{data.originalUrl}</span>
             </p>);
 
-        let userToField = new Map<string, string[]>();
-        for (const [field, name] of data!.fields) {
-            if (userToField.has(name))
-                userToField.get(name)!.push(field);
-            else
-                userToField.set(name, [field]);
+        let valueToField = new Map<emmm.ParagraphNode, string[]>();
+        for (const [field, value] of data!.fields) {
+            // if (valueToField.has(value))
+            //     valueToField.get(value)!.push(field);
+            // else
+            valueToField.set(value, [field]);
         }
 
-        const array = [...userToField.entries()];
+        const array = [...valueToField.entries()];
         let fieldsLeft = data!.fields.map((x) => x[0]);
         let content2: Node[] = [];
         let content3: Node[] = [];
@@ -143,7 +148,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
             const node = 
                 <p>
                     <span class='key'>{entry[1].join(' & ')} / </span>
-                    <span class='field'>{entry[0]}</span>
+                    <span class='field'>{cxt.state.render(entry[0].content, cxt)}</span>
                 </p>;
             if (entry[1].length == 1) {
                 content2.push(node);

@@ -1,7 +1,8 @@
 import { debug } from "./debug";
-import { ModifierNode, Message, BlockModifierNode, NodeType, BlockEntity, SystemModifierNode, InlineEntity, ModifierSlotType, SystemModifierDefinition } from "./interface";
+import { ModifierNode, Message, BlockModifierNode, NodeType, BlockEntity, SystemModifierNode, InlineEntity, ModifierSlotType, SystemModifierDefinition, ParagraphNode } from "./interface";
 import { ArgumentCountMismatchMessage, CannotExpandArgumentMessage, ContentExpectedMessage, EntityNotAllowedMessage, MultipleBlocksNotPermittedMessage, OnlySimpleParagraphsPermittedMessage, OverwriteSpecialVariableMessage } from "./messages";
 import { ParseContext } from "./parser-config";
+import { cloneNode, stripNode } from "./util";
 
 /**
  * Helper function to validate a modifier's argument count.
@@ -143,7 +144,7 @@ export function onlyPermitSingleBlock(
     return check(node.expansion ?? node.content);
 }
 
-export function createWrapperModifier(name: string,
+export function createPlaintextWrapper(name: string,
         get: (cxt: ParseContext) => string | undefined,
         set: (cxt: ParseContext, value: string) => string,
         slotType = ModifierSlotType.Normal) {
@@ -159,6 +160,30 @@ export function createWrapperModifier(name: string,
             if (previous !== undefined)
                 msgs = [new OverwriteSpecialVariableMessage(node.head, name, previous)];
             set(cxt, result);
+            return msgs ?? [];
+        },
+    });
+}
+
+export function createParagraphWrapper(name: string,
+        get: (cxt: ParseContext) => ParagraphNode | undefined,
+        set: (cxt: ParseContext, value: ParagraphNode) => void,
+        slotType = ModifierSlotType.Normal) {
+    return new SystemModifierDefinition<void>(name, slotType, {
+        afterProcessExpansion(node, cxt) {
+            let msgs = checkArguments(node, 0);
+            if (msgs) return msgs;
+            msgs = onlyPermitSingleBlock(node);
+            if (msgs) return msgs;
+            msgs = onlyPermitSimpleParagraphs(node);
+            if (msgs) return msgs;
+
+            const previous = get(cxt);
+            if (previous !== undefined)
+                msgs = [new OverwriteSpecialVariableMessage(node.head, name, "<block>")];
+            const content = cloneNode(node.content[0]);
+            const stripped = stripNode(content)[0] as ParagraphNode;
+            set(cxt, stripped);
             return msgs ?? [];
         },
     });

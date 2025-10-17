@@ -1,4 +1,5 @@
 import { debug } from "../debug";
+import { debugPrint } from "../debug-print";
 import { BlockEntity, InlineEntity, NodeType } from "../interface";
 import { RenderContext, RenderConfiguration, ReadonlyRenderConfiguration } from "../renderer";
 import { BulletBlockRenderersHTML } from "./bullets";
@@ -46,6 +47,7 @@ export class HTMLRenderState {
         return <details class='invalid'>
                 <summary>Invalid {name}</summary>
                 <i>{msg}</i>
+                <pre>{debugPrint.node(node)}</pre>
                </details>;
     }
 
@@ -54,9 +56,15 @@ export class HTMLRenderState {
         if (node.type === NodeType.InlineModifier)
             name += ` (${node.mod.name})`;
         // TODO: include details
-        return <span class='invalid'>
-                Invalid {name}: <i>{msg}</i>
-               </span>;
+        return <details class='invalid'>
+                <summary>Invalid {name}</summary>
+                <i>{msg}</i>
+                <pre>{debugPrint.node(node)}</pre>
+               </details>;
+        // return <span class='invalid'>
+        //         Invalid {name}: <i>{msg}</i>
+        //         <pre>{debugPrint.node(node)}</pre>
+        //        </span>;
     }
 
     render(elems: (BlockEntity | InlineEntity)[], cxt: RenderContext<HTMLRenderType>) {

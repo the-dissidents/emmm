@@ -13,6 +13,7 @@ export * from './default/default';
 export * from './default/html-renderer';
 export { DebugLevel } from './debug';
 export { debugPrint } from './debug-print';
+export { cloneNode, cloneNodes, stripNode, type CloneNodeOptions } from './util';
 
 export const emmmVersion = '0.0.6';
 

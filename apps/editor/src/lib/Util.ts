@@ -122,15 +122,13 @@ export async function loadImage(url: URL, maxSizeMB?: number) {
         return file;
     }
     
-    let filepath: string;
+    let filepath = decodeURIComponent(url.pathname);
     if (url.protocol !== 'file:') {
         // save to local
         filepath = await path.join(
             await path.tempDir(), 
-            crypto.randomUUID() + await path.extname(url.pathname));
+            crypto.randomUUID() + await path.extname(filepath));
         await fs.writeFile(filepath, file.stream());
-    } else {
-        filepath = url.pathname;
     }
 
     return RustAPI.compressImage(filepath, maxSizeMB * 1024 * 1024);
