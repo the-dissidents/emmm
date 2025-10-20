@@ -6,7 +6,6 @@
     "scripts": {
         "preinstall": "npx only-allow pnpm",
         "format": "prettier --write --cache .",
-        "lint": "oxlint .",
         "dev:pkgs": "pnpm -r --sort --parallel --filter='./packages/*' dev",
         "dev": "pnpm run dev:pkgs & pnpm --filter='kfgui' tauri dev",
         "build:pkgs": "pnpm -r --filter='./packages/*' build",
@@ -14,9 +13,32 @@
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "packageManager": "pnpm@10.17.1",
+    "simple-git-hooks": {
+        "pre-commit": "pnpm exec lint-staged --concurrent false"
+    },
+    "lint-staged": {
+        "*": [
+            "prettier --write --cache --ignore-unknown"
+        ],
+        "{apps,packages}/*/{src,types}/**/*.{ts,svelte}": [
+            "eslint --cache --fix"
+        ],
+        "{apps,packages}/**/*.d.ts": [
+            "eslint --cache --fix"
+        ]
+    },
     "devDependencies": {
-        "eslint": "^9.37.0",
+        "@eslint/compat": "^1.4.0",
+        "@eslint/js": "^9.36.0",
+        "@types/node": "^22",
+        "eslint": "^9.36.0",
+        "eslint-plugin-svelte": "^3.12.4",
+        "globals": "^16.4.0",
+        "lint-staged": "^16.2.4",
         "prettier": "^3.6.2",
-        "prettier-plugin-svelte": "^3.4.0"
+        "prettier-plugin-svelte": "^3.4.0",
+        "simple-git-hooks": "^2.13.1",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.44.1"
     }
 }
