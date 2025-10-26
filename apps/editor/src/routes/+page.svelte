@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { Settings } from '$lib/Settings';
+  import { Settings } from '$lib/core';
   import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
-  import TestPage from '../lib/TestPage.svelte';
+  import TestPage from '$lib/TestPage.svelte';
 
   const currentWindow = getCurrentWindow();
 
   Settings.init().then(() => {
     currentWindow.setSize(new LogicalSize(
-      Settings.get('windowW'), 
+      Settings.get('windowW'),
       Settings.get('windowH')));
   });
 
