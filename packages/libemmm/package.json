@@ -24,10 +24,10 @@
     },
     "devDependencies": {
         "@happy-dom/global-registrator": "^19.0.2",
-        "@vitest/coverage-istanbul": "^2.1.8",
+        "@vitest/coverage-istanbul": "^2.1.9",
         "happy-dom": "^19.0.2",
-        "tsdown": "^0.15.6",
-        "typescript": "^5.7.3",
-        "vitest": "^2.1.8"
+        "tsdown": "^0.15.10",
+        "typescript": "^5.9.3",
+        "vitest": "^2.1.9"
     }
 }

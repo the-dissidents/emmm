@@ -21,7 +21,8 @@ class Structure {
 
     compute() {
         this.lines = [];
-        for (let i = 0; i < this.doc.lines; i++)
+        // add one extra line to avoid trouble in some edge cases
+        for (let i = 0; i <= this.doc.lines; i++)
             this.lines.push({
                 folds: [],
                 indentation: { hanging: 0, normal: 0 }
