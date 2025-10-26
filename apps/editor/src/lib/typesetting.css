@@ -8,11 +8,11 @@ body {
 section.article-container {
     display: inline-block;
     background-color: var(--theme-color);
-    color: var(--text-color); 
+    color: var(--text-color);
     justify-content: center;
     box-sizing: border-box;
     display: flex; flex-flow: row;
-    padding: 20px 25px; 
+    padding: 20px 25px;
 }
 section.article-body {
     width: 88%;
@@ -21,7 +21,7 @@ section.article-body {
     text-align: justify;
     font-size: 14px;
     line-height: 2;
-    letter-spacing: 2px; 
+    letter-spacing: 2px;
 }
 
 /* meta elements */
@@ -56,7 +56,7 @@ sup.note a::after {
     content: ']';
 }
 sup.note a {
-    color: var(--link-color); 
+    color: var(--link-color);
     text-decoration: none;
     margin-inline: 2px;
 }
@@ -65,7 +65,7 @@ sup.note.invalid {
 }
 
 section.notes {
-    color: var(--note-color); 
+    color: var(--note-color);
     font-size: 85%;
     line-height: 1.7;
 }
@@ -170,13 +170,13 @@ span code {
 }
 span.commentary {
     font-size: 85%;
-    color: var(--commentary-color); 
+    color: var(--commentary-color);
     letter-spacing: 0.5px;
     margin-inline: 2px;
 }
 mark {
     background-color: var(--highlight-color);
-    color: var(--text-color); 
+    color: var(--text-color);
 }
 .seq {
     word-break: break-all;
@@ -187,7 +187,7 @@ mark {
 hr {
     margin-block: 3em;
     height: 0px;
-    border-top: 1px dashed var(--separator-color); 
+    border-top: 1px dashed var(--separator-color);
     border-left: none;
     border-right: none;
     border-bottom: none;
@@ -208,7 +208,7 @@ figure img {
 figure figcaption {
     text-align: center;
     font-size: 85%;
-    color: var(--commentary-color); 
+    color: var(--commentary-color);
     letter-spacing: 0.5px;
 }
 

@@ -1,36 +1,36 @@
 <script lang="ts">
-  import WeixinToolbox from './WeixinToolbox.svelte';
+  import { WeixinToolbox } from '$lib/components';
 
   import * as emmm from '@the_dissidents/libemmm';
   import { css } from '@codemirror/lang-css';
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 
-  import Editor, { type EditorHandleOut } from './Editor.svelte';
+  import { Editor, type EditorHandleOut } from '$lib/components';
   import Resizer from './ui/Resizer.svelte';
   import TabView from './ui/TabView.svelte';
   import TabPage from './ui/TabPage.svelte';
 
-  import Colorpicker from './ui/Colorpicker.svelte';
-  import { deriveColorsFrom } from './ColorTheme';
-  import ListView, { type ListColumn, type ListViewHandleOut } from './ui/ListView.svelte';
+  import { ColorPicker } from '$lib/ui';
+  import { deriveColorsFrom } from '$lib/utils';
+  import { ListView, type ListColumn, type ListViewHandleOut } from '$lib/ui';
   import { SvelteMap } from 'svelte/reactivity';
-  import { Interface } from './Interface.svelte';
-  import { Settings } from './Settings';
+  import { Interface } from '$lib/core';
+  import { Settings } from '$lib/core';
 
   import testStyles from './typesetting.css?raw';
-  import testString from './testsource.txt?raw';
+  import testString from './testsource-1.txt?raw';
   import testLib from './testlib.txt?raw';
-  
+
   import { onMount } from 'svelte';
-  import EmmmContext from './EmmmContext.svelte';
-  import GenericContext from './GenericContext.svelte';
-  import { CustomConfig } from './custom/Custom';
-  import SearchToolbox from './SearchToolbox.svelte';
-    import type { EmmmParseData } from './editor/ParseData';
+  import { EmmmContext } from '$lib/contexts';
+  import { GenericContext } from '$lib/contexts';
+  import { CustomConfig } from '$lib/features/article';
+  import { SearchToolbox } from '$lib/components';
+  import type { EmmmParseData } from '$lib/features/editor';
 
   let outputAST = $state('');
-  let left = $state<HTMLElement>(), 
-      middle = $state<HTMLElement>(), 
+  let left = $state<HTMLElement>(),
+      middle = $state<HTMLElement>(),
       right = $state<HTMLElement>(),
       bottom = $state<HTMLElement>();
 
@@ -40,7 +40,7 @@
   let posStatus = $state('line ?, col ?');
   let sourceHandle = $state<EditorHandleOut>({}),
       libraryHandle = $state<EditorHandleOut>({});
-  
+
   let source = $state(''),
       library = $state('');
 
@@ -48,7 +48,7 @@
   {
     emmm.setDebugLevel(emmm.DebugLevel.Warning);
     let lib = emmm.parse(
-      new emmm.SimpleScanner(testLib), 
+      new emmm.SimpleScanner(testLib),
       new emmm.ParseContext(
         emmm.Configuration.from(CustomConfig)));
     config = lib.context.config;
@@ -141,7 +141,7 @@
     </TabPage>
     <TabPage name="Options">
       <h5>Theme color</h5>
-      <Colorpicker bind:color={Interface.colors.theme} mode='hsl'
+      <ColorPicker bind:color={Interface.colors.theme} mode='hsl'
         onchange={doDeriveColors} />
       <hr/>
       <label><input type="checkbox"
@@ -149,16 +149,16 @@
         automatically derive the rest
       </label>
       <h5>Text color</h5>
-      <Colorpicker bind:color={Interface.colors.text} mode='hsl'
+      <ColorPicker bind:color={Interface.colors.text} mode='hsl'
         onchange={doDeriveColors} />
       <h5>Commentary color</h5>
-      <Colorpicker bind:color={Interface.colors.commentary} mode='hsl'
+      <ColorPicker bind:color={Interface.colors.commentary} mode='hsl'
         onchange={doDeriveColors} />
       <h5>Link color</h5>
-      <Colorpicker bind:color={Interface.colors.link} mode='hsl'
+      <ColorPicker bind:color={Interface.colors.link} mode='hsl'
         onchange={doDeriveColors} />
       <h5>Highlight color</h5>
-      <Colorpicker bind:color={Interface.colors.highlight} mode='hsl'
+      <ColorPicker bind:color={Interface.colors.highlight} mode='hsl'
         onchange={doDeriveColors} />
     </TabPage>
     <TabPage name='Search'>
@@ -174,9 +174,9 @@
 <!-- source view -->
 <div class="pane flexgrow" bind:this={middle}>
   <TabView>
-    <TabPage name="Source" 
+    <TabPage name="Source"
         onActivate={() => sourceHandle?.focus?.()}>
-      <EmmmContext {onParse} 
+      <EmmmContext {onParse}
           provideDescriptor={() => ({name: '<Source>'})}
           provideContext={getContext}>
         <Editor bind:text={source}
@@ -220,7 +220,7 @@
 <div class="pane" bind:this={right} style="width: 500px;">
   <TabView>
     <TabPage name="Preview" active={true}>
-      <iframe bind:this={Interface.frame} title="preview" 
+      <iframe bind:this={Interface.frame} title="preview"
         sandbox="allow-same-origin">
       </iframe>
     </TabPage>

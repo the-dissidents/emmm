@@ -8,10 +8,10 @@
     stretch?: boolean
   };
 
-  let { 
-    first, second = null, 
-    vertical = false, reverse = false, 
-    minValue = 100, stretch = false 
+  let {
+    first, second = null,
+    vertical = false, reverse = false,
+    minValue = 100, stretch = false
   }: Props = $props();
 
   let cx = 0, cy = 0, orig = 0, orig2 = 0;
