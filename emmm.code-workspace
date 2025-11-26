@@ -4,5 +4,9 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"rust-analyzer.linkedProjects": [
+        	"apps/editor/src-tauri/Cargo.toml"
+		]
+	}
 }

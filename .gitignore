@@ -3,3 +3,4 @@
 .aider*
 .vs/
 node_modules/
+target/

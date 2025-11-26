@@ -1,16 +1,16 @@
 import * as emmm from '@the_dissidents/libemmm';
-import { ratingTableBlock, ratingTableRenderer } from './RatingTable';
+import { initRatings, overallTableBlock, overallTableRenderer, ratingTableBlock, ratingTableRenderer } from './RatingTable';
 import { basicFieldSystems, endBlock, endRenderer, headerBlock, headerRenderer, infoFieldSystem, initHeader } from './Header';
 import wcwidth from 'wcwidth';
 
 const custom = emmm.Configuration.from(emmm.DefaultConfiguration);
 custom.kernel.collapseWhitespaces = true;
-custom.initializers.push(initHeader);
+custom.initializers.push(initHeader, initRatings);
 custom.systemModifiers.add(infoFieldSystem, ...basicFieldSystems);
-custom.blockModifiers.add(ratingTableBlock, headerBlock, endBlock);
+custom.blockModifiers.add(ratingTableBlock, overallTableBlock, headerBlock, endBlock);
 
 const render = emmm.RenderConfiguration.from(emmm.HTMLRenderConfiguration);
-render.addBlockRenderer(ratingTableRenderer, headerRenderer, endRenderer);
+render.addBlockRenderer(ratingTableRenderer, overallTableRenderer, headerRenderer, endRenderer);
 
 export function renderText(text: string) {
     let result: Node[] = [];

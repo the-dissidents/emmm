@@ -87,15 +87,13 @@ fn try_compress_size(img: &DynamicImage, scaling: f64) -> Result<Vec<u8>, String
     }
 }
 
-/// format:
-/// {
-///     `mime_type`: len([u32]) content(string);
-///     `data`: len([u32]) content(string);
-/// }
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)]
 async fn compress_image(
-    path: String, max_size: usize
+    path: String, 
+    max_size: usize,
+    max_width: Option<usize>,
+    supported_types: Vec<String>
 ) -> Result<Response, String> {
     log::info!("compress_image start");
     let result = 

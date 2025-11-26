@@ -1,7 +1,7 @@
 import { debug } from "./debug";
 import { debugPrint } from "./debug-print";
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierSlotType, ParagraphNode, LocationRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
-import { ShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, UnknownModifierMessage, UnnecessaryNewlineMessage } from "./messages";
+import { BlockEntity, BlockModifierDefinition, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierSlotType, ParagraphNode, LocationRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType, DocumentNode } from "./interface";
+import { ShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, UnknownModifierMessage, UnnecessaryNewlineMessage, InternalErrorMessage } from "./messages";
 import { ParseContext, Document } from "./parser-config";
 import { Scanner } from "./scanner";
 import { _Def, _Node, _Shorthand } from "./typing-helper";
@@ -203,6 +203,33 @@ export class Parser {
             // if (!arg.expansion) debug.trace('expand arg failed');
         }
     }
+    
+    #tryAndMessage<Params extends any[]>(
+        node: ModifierNode, 
+        fn: ((...p: Params) => Message[]) | undefined, ...p: Params
+    ) {
+        if (!fn) return;
+
+        try {
+            this.emit.message(...fn.call(node.mod, ...p));
+        } catch (e) {
+            this.emit.message(new InternalErrorMessage(node.location, e));
+        }
+    }
+    
+    #try<Params extends any[], R>(
+        node: ModifierNode, 
+        fn: ((...p: Params) => R) | undefined, ...p: Params
+    ) {
+        if (!fn) return;
+
+        try {
+            return fn.call(node.mod, ...p);
+        } catch (e) {
+            this.emit.message(new InternalErrorMessage(node.location, e));
+            return undefined;
+        }
+    }
 
     #expand(node: ModifierNode, depth = 0) {
         if (node.expansion !== undefined) {
@@ -222,25 +249,25 @@ export class Parser {
         const immediate = this.delayDepth == 0;
         if (depth > 0) {
             // simulate initial parse for generated content
-            if (node.mod.beforeParseContent)
-                this.emit.message(...node.mod.beforeParseContent(node as any, this.cxt, immediate));
+            this.#tryAndMessage(node, node.mod.beforeParseContent, node as never, this.cxt, immediate);
+
             if (node.content.length > 0) {
                 if (node.mod.delayContentExpansion) this.delayDepth++;
                 this.#reparse(node.content, depth);
                 if (node.mod.delayContentExpansion) this.delayDepth--;
             }
-            if (node.mod.afterParseContent)
-                this.emit.message(...node.mod.afterParseContent(node as any, this.cxt, immediate));
+
+            this.#tryAndMessage(node, node.mod.afterParseContent, node as never, this.cxt, immediate);
         }
 
-        if (node.mod.prepareExpand)
-            this.emit.message(...node.mod.prepareExpand(node as any, this.cxt, immediate));
+        this.#tryAndMessage(node, node.mod.prepareExpand, node as never, this.cxt, immediate);
         if (node.mod.expand) {
-            node.expansion = node.mod.expand(node as any, this.cxt, immediate);
-            if (!node.expansion) {
-                // debug.trace('manually delaying expansion of', node.mod.name);
+            node.expansion = this.#try(node, 
+                node.mod.expand as never, node as never, this.cxt, immediate);
+
+            if (!node.expansion)
                 return true;
-            }
+            
             debug.trace(`${this.delayDepth > 0 ? 'early ' : ''}expanding:`, node.mod.name);
             if (node.expansion.length > 0)
                 debug.trace(() => '-->\n' + debugPrint.node(...node.expansion!));
@@ -248,17 +275,13 @@ export class Parser {
 
         const expansion = node.expansion ?? node.content;
         if (expansion.length == 0) return true;
-        if (node.mod.beforeProcessExpansion)
-            this.emit.message(...node.mod.beforeProcessExpansion(node as any, this.cxt, immediate));
+        this.#tryAndMessage(node, node.mod.beforeProcessExpansion, node as never, this.cxt, immediate);
 
         debug.trace('reparsing expansion of:', node.mod.name);
-
         let ok = this.#reparse(expansion, depth);
 
         debug.trace('done reparsing expansion of:', node.mod.name);
-
-        if (node.mod.afterProcessExpansion)
-            this.emit.message(...node.mod.afterProcessExpansion(node as any, this.cxt, immediate));
+        this.#tryAndMessage(node, node.mod.afterProcessExpansion, node as never, this.cxt, immediate);
         if (!ok && depth == 0) {
             const limit = this.cxt.config.kernel.reparseDepthLimit;
             this.emit.message(

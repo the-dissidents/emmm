@@ -202,6 +202,16 @@ export class ContentExpectedMessage implements Message {
     get info(): string { return `Content expected` }
 }
 
+export class InternalErrorMessage implements Message {
+    constructor(
+        public readonly location: LocationRange,
+        public readonly error: any) {}
+    readonly code = 16;
+    readonly severity = MessageSeverity.Error;
+    get info(): string { return `An internal error occurred when parsing: ${this.error}` }
+}
+
+
 // warnings
 
 export class UnnecessaryNewlineMessage extends RemoveThingMessage {
