@@ -13,7 +13,8 @@ export default defineConfig({
             'src/temp.ts', 
             'src/typing-helper.ts', 
             ...coverageConfigDefaults.exclude
-        ]
+        ],
+        enabled: true
     }
   }
 })

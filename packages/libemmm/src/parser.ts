@@ -276,15 +276,16 @@ export class Parser {
                 debug.trace(() => '-->\n' + debugPrint.node(...node.expansion!));
         }
 
-        const expansion = node.expansion ?? node.content;
-        if (expansion.length == 0) return true;
         this.#tryAndMessage(node, node.mod.beforeProcessExpansion, node as never, this.cxt, immediate);
 
         debug.trace('reparsing expansion of:', node.mod.name);
+        const expansion = node.expansion ?? node.content;
+        if (expansion.length == 0) return true;
         let ok = this.#reparse(expansion, depth);
 
         debug.trace('done reparsing expansion of:', node.mod.name);
         this.#tryAndMessage(node, node.mod.afterProcessExpansion, node as never, this.cxt, immediate);
+
         if (!ok && depth == 0) {
             const limit = this.cxt.config.kernel.reparseDepthLimit;
             this.emit.message(
@@ -759,27 +760,126 @@ export class Parser {
         }, ok];
     }
 
+    // returns isOk
+    private POSSIBLY_NAMED_ARGUMENT(
+        args: ModifierArguments
+    ): boolean {
+        let ok = true;
+        const close = [MODIFIER_END_SIGN, MODIFIER_CLOSE_SIGN];
+        let content: ArgumentEntity[] = [];
+        let posStart = this.scanner.position();
+        let posEnd = this.scanner.position();
+
+        let name: { type: 'possible' | 'ok', value: string } | undefined = {
+            type: 'possible', value: ''
+        };
+
+        const emitString = (s: string) => {
+            const last = content.at(-1);
+            if (last?.type == NodeType.Text) {
+                last.content += s;
+                last.location.end += s.length;
+            } else {
+                const end = this.scanner.position();
+                content.push({
+                    type: NodeType.Text, 
+                    location: this.#locFrom(end - s.length),
+                    content: s
+                });
+            }
+        };
+
+        while (true) {
+            if (this.scanner.accept(MODIFIER_ARGUMENT_SEPARATOR))
+                break;
+            if (close.find((x) => this.scanner.peek(x))
+             || this.scanner.isEOF())
+            {
+                ok = false;
+                break;
+            }
+
+            if (this.scanner.accept(ESCAPE_CHAR)) {
+                if (name?.type == 'possible') name = undefined;
+
+                // handle escaping
+                posEnd = this.scanner.position();
+                if (this.scanner.isEOF()) {
+                    emitString(ESCAPE_CHAR);
+                    ok = false;
+                    break;
+                }
+                content.push({
+                    type: NodeType.Escaped,
+                    content: this.scanner.acceptChar(),
+                    location: this.#locFrom(posEnd - 1)
+                } satisfies EscapedNode);
+                continue;
+            }
+
+            const beforeInterp = this.scanner.position();
+            const result = this.cxt.config.argumentInterpolators.find(
+                (x) => this.scanner.accept(x.name));
+            if (result !== undefined) {
+                if (name?.type == 'possible') name = undefined;
+
+                const [inner, ok2] = this.ARGUMENT_CONTENT(result.postfix);
+                posEnd = this.scanner.position();
+                content.push({
+                    type: NodeType.Interpolation,
+                    definition: result, argument: inner,
+                    location: this.#locFrom(beforeInterp)
+                });
+                if (!ok2) {
+                    this.emit.message(new ExpectedMessage(this.#loc(), result.postfix));
+                    ok = false;
+                    break;
+                }
+            } else {
+                const char = this.scanner.acceptChar();
+                posEnd = this.scanner.position();
+
+                if (name?.type == 'possible') {
+                    if (char == '=') {
+                        name.type = 'ok';
+                        content = [];
+                        continue; // consume '='
+                    }
+
+                    if (/[:/]/.test(char))
+                        name = undefined;
+                    else
+                        name.value += char;
+                }
+                emitString(char);
+            }
+        }
+        const arg: ModifierArgument = {
+            location: this.#locFrom(posStart, posEnd),
+            content
+        };
+        if (name?.type == 'ok')
+            args.named.set(name.value, arg);
+        else
+            args.positional.push(arg);
+        return ok;
+    }
+
     private ARGUMENTS(): ModifierArguments {
         // optionally accept separator before first argument
         const firstSeparator = this.scanner.accept(MODIFIER_ARGUMENT_SEPARATOR);
-        // don't eat whites if there is a first separator
+        // only eat whites if there isn't a first separator
         if (!firstSeparator) this.WHITESPACES_OR_NEWLINES();
 
         const args: ModifierArguments = {
             positional: [],
             named: new Map()
         };
-        let end = false;
-        while (!end) {
-            const [arg, ok] = this.ARGUMENT_CONTENT();
-            if (!ok) {
-                end = true;
-                // if we haven't parsed anything so far: if there is no first separator, there's no arguments; otherwise, there is a single empty argument
-                if (args.positional.length == 0 && arg.content.length == 0 && !firstSeparator)
-                    break;
-            }
-            args.positional.push(arg);
-        }
+
+        if (this.scanner.peek(MODIFIER_CLOSE_SIGN)
+         || this.scanner.peek(MODIFIER_END_SIGN)) return args;
+
+        while (this.POSSIBLY_NAMED_ARGUMENT(args)) {}
         return args;
     }
 }

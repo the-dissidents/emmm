@@ -68,9 +68,7 @@ text1 = `
 
 [.z]`;
 
-text1 = `[-define-block p|(0)][.slot 0]
-[.p][-define-block q][.slot 0]
-[.q]`;
+text1 = `[-define-inline p]abc\n\n[-define-inline p]def\n\n[/p;]`;
 
 // text1 = `[.heading 1]`;
 
