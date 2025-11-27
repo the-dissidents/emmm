@@ -79,6 +79,17 @@ describe('modules', () => {
             ] },
         ]);
     });
+    test('global use', () => {
+        let doc = parse(`[.module a]\n<<<\n[-define-inline p]123\n[-inline-shorthand q]456\n>>>\n\n[-use a]\n[/p;]\n\nq[/p;]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '456' },
+                { type: NodeType.Text, content: '123' }
+            ] },
+        ]);
+    });
     test('error: nested modules', () => {
         let doc = parse(`[.module a][.module b;]`);
         expect.soft(doc.messages).toMatchObject([

@@ -18,15 +18,23 @@ function parse(src: string) {
 
 debug.level = DebugLevel.Warning;
 
-describe('[-var] and [/$]', () => {
-    test('simple', () => {
+describe('modifiers', () => {
+    test('[-var] and [/$] -- simple', () => {
         let doc = parse(`[-var x|123][/$x]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
     });
-    test('warning - undefined reference', () => {
+    test('[.ifdef], [.ifndef]', () => {
+        let doc = parse(`[.ifdef x]123\n\n[.ifndef x]456\n\n[-var x|zzz]\n\n[.ifdef x]789\n\n[.ifndef x]abc`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '789' }] }
+        ]);
+    });
+    test('warning - undefined [/$] reference', () => {
         let doc = parse(`[/$x]`);
         expect.soft(doc.messages).toMatchObject([
             { code: 5, severity: MessageSeverity.Warning }

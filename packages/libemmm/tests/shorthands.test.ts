@@ -101,3 +101,33 @@ describe('inline shorthands', () => {
         ]);
     });
 });
+
+describe('block shorthands', () => {
+    test('simple', () => {
+        let doc = parse(`[-block-shorthand >|()][.normal][.slot]\n\n> 123`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.BlockModifier, content: [{
+                type: NodeType.Paragraph,
+                content: [{ type: NodeType.Text, content: '123' }]
+            }] }
+        ]);
+    });
+    test('slotless', () => {
+        let doc = parse(`[-block-shorthand >] 123\n\n>`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
+        ]);
+        doc = parse(`[-block-shorthand >;]\n\n>`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([]);
+    });
+    test('no content', () => {
+        let doc = parse(`[-block-shorthand >|()][.normal][.slot]\n\n>`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.BlockModifier, content: [] }
+        ]);
+    });
+});
