@@ -99,6 +99,14 @@ describe('[-define-block]', () => {
             ] }
         ]);
     });
+    test('arguments: named', () => {
+        let doc = parse(`[-define-block p|foo=mm][/$foo]\n\n[.p foo=1;]\n\n[.p;]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'mm' }] }
+        ]);
+    });
     test('arguments: shadows variable', () => {
         let doc = parse(`[-define-block p|x][/$x]\n\n[-var x=0][.p|1]`);
         expect.soft(doc.messages).toMatchObject([]);
@@ -175,10 +183,4 @@ describe('[-define-block]', () => {
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
         ]);
     });
-});
-
-describe('reparse limit', () => {
-    test('by circle reference', () => {
-        
-    })
 });

@@ -27,9 +27,11 @@ export function bindArgs<P extends string[], Opt extends string[] = [], N extend
         trim?: boolean
     }
 ): BindResult<P, Opt, N> {
-    const badargs = node.arguments.positional.filter((x) => x.expansion === undefined);
-    if (badargs.length > 0) return {
-        msgs: badargs.map((x) => new CannotExpandArgumentMessage(x.location)),
+    const badpos = node.arguments.positional.filter((x) => x.expansion === undefined);
+    const badnamed = [...node.arguments.named].filter((x) => x[1].expansion === undefined);
+    const bad = [...badpos, ...badnamed.map((x) => x[1])];
+    if (bad.length > 0) return {
+        msgs: bad.map((x) => new CannotExpandArgumentMessage(x.location)),
         args: undefined,
         nodes: undefined,
         rest: undefined,

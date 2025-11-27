@@ -4,21 +4,21 @@ import { SystemModifierDefinition, InlineEntity, ModifierSlotType, Message, Node
 import { NameAlreadyDefinedMessage, InvalidArgumentMessage, ArgumentCountMismatchMessage } from "../messages";
 import { bindArgs } from "../modifier-helper";
 import { assert } from "../util";
-import { builtins, customModifier, makeInlineDefinition, ModifierSignature } from "./internal";
+import { builtins, customModifier, makeInlineDefinition, CustomModifierSignature } from "./internal";
 
 type ShorthandState = {
     name: string;
     nameNode: ModifierArgument;
     parts: [string, string][];
     postfix: string | undefined;
-    signature: ModifierSignature;
+    signature: CustomModifierSignature;
     msgs: Message[];
 };
 
 function parseDefineArguments(
     type: NodeType.BlockModifier | NodeType.InlineModifier,
     node: SystemModifierNode<ShorthandState>,
-    stack: ModifierSignature[]
+    stack: CustomModifierSignature[]
 ) {
     let { msgs, args, nodes, rest, restNodes } = bindArgs(node, ['name'], { rest: true });
     if (msgs) return msgs;
@@ -76,8 +76,8 @@ function parseDefineArguments(
     } else if (i < rest!.length - 1)
         msgs.push(new ArgumentCountMismatchMessage(node.head));
 
-    let signature: ModifierSignature = 
-        { slotName, args: parts.map((x) => x[0]), preformatted: undefined };
+    let signature: CustomModifierSignature = 
+        { slotName, args: parts.map((x) => x[0]), namedArgs: {}, preformatted: undefined };
     node.state = { name, nameNode, signature, parts, postfix, msgs };
     stack.push(signature);
     return [];

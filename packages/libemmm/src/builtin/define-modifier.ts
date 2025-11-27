@@ -3,18 +3,18 @@ import { SystemModifierDefinition, ModifierSlotType, Message, NodeType, SystemMo
 import { InvalidArgumentMessage, NameAlreadyDefinedMessage } from "../messages";
 import { bindArgs } from "../modifier-helper";
 import { assert } from "../util";
-import { builtins, customModifier, makeInlineDefinition, ModifierSignature } from "./internal";
+import { builtins, customModifier, makeInlineDefinition, CustomModifierSignature } from "./internal";
 
 type ModifierState = {
     name: string;
     nameNode: ModifierArgument;
-    signature: ModifierSignature;
+    signature: CustomModifierSignature;
     msgs: Message[];
 };
 
 function parseDefineArguments(
     node: SystemModifierNode<ModifierState>,
-    stack: ModifierSignature[]
+    stack: CustomModifierSignature[]
 ) {
     let { msgs, args, nodes, rest } = bindArgs(node, ['name'], { rest: true });
     if (msgs) return msgs;
@@ -36,7 +36,12 @@ function parseDefineArguments(
             slotName = '';
     }
 
-    let signature: ModifierSignature = { slotName, args: rest!, preformatted: undefined };
+    let namedArgs = Object.fromEntries([...node.arguments.named]
+        .map((x) => [x[0], x[1].expansion!]));
+
+    let signature: CustomModifierSignature = { 
+        slotName, args: rest!, namedArgs, preformatted: undefined
+    };
     node.state = { name, nameNode, signature, msgs };
     stack.push(signature);
     return undefined;

@@ -224,6 +224,8 @@ After expanding, the new entities are reparsed as if they're part of the origina
 
 ### 5. Modifier arguments
 
+#### 5.0. Introduction
+
 The **arguments** for modifiers are basically `|`-delimited sequences. They are fundamentally simple strings and cannot contain modifiers.
 
 As in paragraphs, use `\` to escape characters in arguments.
@@ -245,6 +247,31 @@ A colon before the first argument states explicitly the beginning of that argume
 ```
 
 Although the parser doesn't do this, many modifiers' implementation internally trims whitespace around arguments in order to make the syntax more flexible.
+
+#### 5.1. Named arguments
+
+Arguments can be **named**. Named arguments are in the form `name=value`, where `name` is not allowed to contain `:`, `/`, `[`, `=`, whitespaces, escape sequences or interpolations.
+
+> This is experimental and subject to change. In particular, the non-allowed characters in names still feel arbitrary.
+
+Arguments containing `=` are only interpreted as named if the name is valid. Otherwise they're treated as normal arguments.
+
+```
+[.foo baa=www] One named argument "baa" with value www
+[.foo example.com/?query=123] No named arguments!
+```
+
+You can mix named and unnamed arguments. Internally, named arguments are unordered and they are accessed separately. For example, the following instances of `[.foo]` are equivalent:
+
+```
+[.foo unnamed1|unnamed2|baa=www|boo=qqq;]
+[.foo unnamed1|baa=www|unnamed2|boo=qqq;]
+[.foo boo=qqq|unnamed1|baa=www|unnamed2;]
+
+etc., etc.
+```
+
+*Un*named arguments are also called **positional arguments**.
 
 #### 5.1. Argument interpolations
 
@@ -268,13 +295,24 @@ Suppose the variables are "x" = "y", "y" = "1":
 [**-define-inline** *name* | *args...*] *content*  
 [**-define-inline** *name* | *args...* | (*slot*)] *content*  
 
-> Define a new modifier. The first argument is the name. If one or more arguments exist, and the last is enclosed in `()`, it is taken as the **slot name** (more on that later). The rest in the middle are names for the arguments.
-> 
-> Take content as the definition of the new modifier.
+> Define a new modifier, taking the content as the definition. The first argument is the name. If one or more arguments exist, and the last is enclosed in `()`, it is taken as the **slot name** (more on that later). The rest in the middle are names for the arguments.
+>
+> Currently, custom modifiers **always have a slot** even if you don't explicitly give a slot name. This is inconsistent with shorthands which can be slotless (see below). We're considering changing this.
+>
+> You can define named arguments for your modifier using, well, named arguments:
+>
+> ```
+> [-define-block foo|pos1|pos2|named=default]
+> ...
+> ```
+> Named arguments for custom modifiers are **always optional** and you must specify a default value.
 
-[**-var** *id* | *value*]
+[**-var** *id* | *value*]  
+[**-var** *id*=*value*]
 
 > Assigns `value` to a variable. 
+>
+> The two syntaxes are equivalent *except that* in the second one, you must obey the limitation for argument names. For example, you can't use interpolations.
 > 
 > You can't reassign arguments, only variables. Since arguments always take precedence over variables, "reassigning" them has no effect inside a definition and can only confuse the rest of the code.
 
@@ -296,7 +334,9 @@ Suppose the variables are "x" = "y", "y" = "1":
 > ```
 > This creates: `[!` argument|url `|` argument|text `]`
 > 
-> Note the first shorthand has a slot, while the second doesn't. This means you can't put formatted content as text in the second shorthand.
+> Note the second shorthand is **slotless**. This means you can't put formatted content as text in the second shorthand. This also applies to slotless block shorthands: they can't have any content.
+>
+> You **can't define** named arguments in shorthands.
 
 [**-use** *module-name*]
 

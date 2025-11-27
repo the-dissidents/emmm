@@ -5,7 +5,7 @@ import { bindArgs } from "../modifier-helper";
 import { ParseContext } from "../parser-config";
 import { _Def, _Ent, _InstData, _Node } from "../typing-helper";
 import { assert, cloneNodes, NameManager } from "../util";
-import { builtins, ModifierSignature } from "./internal";
+import { builtins, CustomModifierSignature } from "./internal";
 
 function slotModifier
     <T extends NodeType.InlineModifier | NodeType.BlockModifier>
@@ -28,7 +28,7 @@ function slotModifier
     mod.prepareExpand = (node: ModifierNode<TState>, cxt: ParseContext, immediate: boolean) => {
         if (node.state) return [];
 
-        function processSignature(s: ModifierSignature) {
+        function processSignature(s: CustomModifierSignature) {
             if (s.preformatted === undefined) {
                 s.preformatted = preformatted;
                 debug.trace('set preformatted to ', preformatted);

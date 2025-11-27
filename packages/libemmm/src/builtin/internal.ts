@@ -8,9 +8,10 @@ import { _Ent, _Def } from "../typing-helper";
 import { cloneNodes } from "../util";
 import { ConfigDefinitions } from "./module";
 
-export type ModifierSignature = {
+export type CustomModifierSignature = {
     readonly slotName: string | undefined;
     readonly args: readonly string[];
+    readonly namedArgs: Record<string, string>;
     preformatted: boolean | undefined;
 }
 
@@ -33,8 +34,8 @@ export const builtins = Symbol();
 declare module '../parser-config' {
     export interface ParseContextStoreDefinitions {
         [builtins]?: {
-            blockSlotDelayedStack: ModifierSignature[];
-            inlineSlotDelayedStack: ModifierSignature[];
+            blockSlotDelayedStack: CustomModifierSignature[];
+            inlineSlotDelayedStack: CustomModifierSignature[];
             blockInstantiationData: BlockInstantiationData[];
             inlineInstantiationData: InlineInstantiationData[];
             modules: Map<string, ConfigDefinitions>;
@@ -57,10 +58,10 @@ export function initParseContext(cxt: ParseContext) {
 }
 
 export function customModifier<T extends NodeType.InlineModifier | NodeType.BlockModifier>(
-    type: T, name: string, signature: ModifierSignature, content: _Ent<T>[])
+    type: T, name: string, signature: CustomModifierSignature, content: _Ent<T>[])
 {
     debug.info(`created custom ${NodeType[type]}:`, name);
-    debug.info('args:', signature.args, `with ${signature.slotName === undefined ? 'no slot' : signature.slotName == '' ? 'empty slot name' : 'slot name: ' + signature.slotName}`);
+    debug.info('args:', signature.args, 'named:', signature.namedArgs, `with ${signature.slotName === undefined ? 'no slot' : signature.slotName == '' ? 'empty slot name' : 'slot name: ' + signature.slotName}`);
     debug.trace(() => 'content is\n' + debugPrint.node(...content));
 
     type State = {
@@ -85,7 +86,7 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
 
     mod.delayContentExpansion = true;
     mod.prepareExpand = (node: ModifierNode<State>) => {
-        let { msgs, args } = bindArgs(node, signature.args);
+        let { msgs, args } = bindArgs(node, signature.args, { named: signature.namedArgs });
         if (msgs) return msgs;
         node.state = { 
             ok: true,

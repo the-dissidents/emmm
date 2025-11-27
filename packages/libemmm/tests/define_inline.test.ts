@@ -120,6 +120,16 @@ describe('[-define-inline]', () => {
             ] }
         ]);
     });
+    test('arguments: named', () => {
+        let doc = parse(`[-define-inline p|foo=mm][/$foo]\n\n[/p foo=1;][/p;]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [
+                { type: NodeType.Text, content: '1' },
+                { type: NodeType.Text, content: 'mm' }
+            ] },
+        ]);
+    });
     test('arguments: shadows variable', () => {
         let doc = parse(`[-define-inline p|x][/$x]\n\n[-var x=0][/p|1;]`);
         expect.soft(doc.messages).toMatchObject([]);

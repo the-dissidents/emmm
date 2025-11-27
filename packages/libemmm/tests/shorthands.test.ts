@@ -114,14 +114,17 @@ describe('block shorthands', () => {
         ]);
     });
     test('slotless', () => {
-        let doc = parse(`[-block-shorthand >] 123\n\n>`);
+        let doc = parse(`[-block-shorthand >] 123\n\n>\n456`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] }
         ]);
-        doc = parse(`[-block-shorthand >;]\n\n>`);
+        doc = parse(`[-block-shorthand >;]\n\n>\n123`);
         expect.soft(doc.messages).toMatchObject([]);
-        expect.soft(doc.root.content).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
+        ]);
     });
     test('no content', () => {
         let doc = parse(`[-block-shorthand >|()][.normal][.slot]\n\n>`);

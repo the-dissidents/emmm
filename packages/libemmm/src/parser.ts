@@ -847,7 +847,7 @@ export class Parser {
                         continue; // consume '='
                     }
 
-                    if (/[:/]/.test(char))
+                    if (/[:/\[\s]/.test(char))
                         name = undefined;
                     else
                         name.value += char;
