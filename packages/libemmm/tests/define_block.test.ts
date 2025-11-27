@@ -57,7 +57,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('slots: multiple instantiations', () => {
-        let doc = parse(`[-define-block p]\n:--\n[-var x:0][.slot]\n[-var x:1][.slot]\n--:\n[.p][/$x]`);
+        let doc = parse(`[-define-block p]\n<<<\n[-var x|0][.slot]\n[-var x|1][.slot]\n>>>\n[.p][/$x]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
@@ -65,7 +65,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('slots: reference in separate scopes', () => {
-        let doc = parse(`[-define-block p]\n:--\na\n[.slot]\n--:\n[-define-block q][.p]\n:--\nb\n[.slot]\n--:\n[.q]c`);
+        let doc = parse(`[-define-block p]\n<<<\na\n[.slot]\n>>>\n[-define-block q][.p]\n<<<\nb\n[.slot]\n>>>\n[.q]c`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'a' }] },
@@ -74,7 +74,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('slots: unnamed reference in nested scopes', () => {
-        let doc = parse(`[-define-block p]\n:--\n[.slot]\n[-define-block q]\n[.slot]\n--:\n[.p]abc\n[.q]def`);
+        let doc = parse(`[-define-block p]\n<<<\n[.slot]\n[-define-block q]\n[.slot]\n>>>\n[.p]abc\n[.q]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
@@ -82,7 +82,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('slots: named reference in nested scopes', () => {
-        let doc = parse(`[-define-block p:(0)]\n[-define-block q:(1)]\n:--\n[.slot 0]\n[.slot 1]\n--:\n[.p]abc\n[.q]def`);
+        let doc = parse(`[-define-block p|(0)]\n[-define-block q|(1)]\n<<<\n[.slot 0]\n[.slot 1]\n>>>\n[.p]abc\n[.q]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
@@ -90,7 +90,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('arguments: simple', () => {
-        let doc = parse(`[-define-block p:arg1:arg2][/$arg1][/$arg2]\n\n[.p:abc:def;]`);
+        let doc = parse(`[-define-block p|arg1|arg2][/$arg1][/$arg2]\n\n[.p|abc|def;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -100,14 +100,14 @@ describe('[-define-block]', () => {
         ]);
     });
     test('arguments: shadows variable', () => {
-        let doc = parse(`[-define-block p:x][/$x]\n\n[-var x:0][.p:1]`);
+        let doc = parse(`[-define-block p|x][/$x]\n\n[-var x|0][.p|1]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
                 { type: NodeType.Text, content: '1' }
             ] }
         ]);
-        doc = parse(`[-define-block p:x]\n:--\n[.slot]\n[/$x]\n--:\n[-var x:0][.p:1][/$x]`);
+        doc = parse(`[-define-block p|x]\n<<<\n[.slot]\n[/$x]\n>>>\n[-var x|0][.p|1][/$x]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
@@ -115,7 +115,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('arguments: no reference in user scope', () => {
-        let doc = parse(`[-define-block p:x]\n:--\n[.slot]\n[/$x]\n--:\n[.p:1][/$x]`);
+        let doc = parse(`[-define-block p|x]\n<<<\n[.slot]\n[/$x]\n>>>\n[.p|1][/$x]`);
         expect.soft(doc.messages).toMatchObject([
             { code: 5, severity: MessageSeverity.Warning }
         ]);
@@ -125,7 +125,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('arguments: expansion in separate scopes', () => {
-        let doc = parse(`[-define-block p:x][/$x]\n\n[-define-block q:x]\n:--\n[.p 0;]\n[/$x]\n--:\n[.q:1]`);
+        let doc = parse(`[-define-block p|x][/$x]\n\n[-define-block q|x]\n<<<\n[.p 0;]\n[/$x]\n>>>\n[.q|1]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
@@ -133,7 +133,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('arguments: expansion in nested scopes', () => {
-        let doc = parse(`[-define-block p:x][-define-block q:x][/$x]\n\n[.p:0;]\n[.q:1]`);
+        let doc = parse(`[-define-block p|x][-define-block q|x][/$x]\n\n[.p|0;]\n[.q|1]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
@@ -145,7 +145,7 @@ describe('[-define-block]', () => {
             { severity: MessageSeverity.Error, code: 6 }
         ]);
         expect.soft(doc.root.content).toMatchObject([]);
-        doc = parse(`[-define-block p:(0)][.slot 0]\n[.p][-define-block q][.slot 0]\n[.q]`);
+        doc = parse(`[-define-block p|(0)][.slot 0]\n[.p][-define-block q][.slot 0]\n[.q]`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Error, code: 6 }
         ]);

@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { Configuration, SimpleScanner, ParseContext, DebugLevel, DefaultConfiguration, Document, HTMLRenderConfiguration, HTMLRenderState, MessageSeverity, debugPrint } from "../../src";
+import { Configuration, SimpleScanner, ParseContext, DebugLevel, DefaultConfiguration, Document, HTMLRenderConfiguration, HTMLRenderState, MessageSeverity } from "../../src";
 import { debug } from "../../src/debug";
-import * as Parser from "../../src/parser";
 
 function parse(src: string) {
     const config = Configuration.from(DefaultConfiguration);
@@ -38,7 +37,7 @@ describe('default/headings', () => {
         expect.soft(render(doc)).includes(`<h2>aaa</h2><h2>bbb</h2>`);
     });
     test('explicit: inside definition', () => {
-        let doc = parse(`[-define-block z:a][.heading $(a)][.slot]\n\n[.z 2]abc`);
+        let doc = parse(`[-define-block z|a][.heading $(a)][.slot]\n\n[.z 2]abc`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(render(doc)).includes(`<h2>abc</h2>`);
         doc = parse(`[-define-block z][.heading][.slot]\n\n[.heading 4]abc\n[.z]def`);
@@ -51,7 +50,7 @@ describe('default/headings', () => {
         expect.soft(render(doc)).includes(`<h1>aaa</h1><h2>bbb</h2><h3 class="implicit"></h3>`);
     });
     test('implicit: inside definition', () => {
-        let doc = parse(`[-define-block z:a][.implicit-heading $(a)]\n\n[.z 2]`);
+        let doc = parse(`[-define-block z|a][.implicit-heading $(a)]\n\n[.z 2]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(render(doc)).includes(`<h2 class="implicit"></h2>`);
         doc = parse(`[-define-block z][.implicit-heading]\n\n[.heading 4]abc\n[.z]`);

@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { BuiltinConfiguration } from "../src/builtin/builtin";
 import { SimpleScanner } from "../src/scanner";
-import * as Parser from "../src/parser";
 import { BlockModifierDefinition, ModifierSlotType, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
 import { Configuration, ParseContext } from "../src/parser-config";
@@ -32,7 +31,7 @@ describe('inline shorthands', () => {
         ]);
     });
     test('slots', () => {
-        let doc = parse(`[-inline-shorthand p:():p]([/slot])\n\np123p`);
+        let doc = parse(`[-inline-shorthand p|()|p]([/slot])\n\np123p`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -41,7 +40,7 @@ describe('inline shorthands', () => {
                 { type: NodeType.Text, content: ')' }
             ] }
         ]);
-        doc = parse(`[-inline-shorthand P:():p]([/slot])\n\n[-inline-shorthand Q:():q]{[/slot]}\n\nP1P2Q3qp4p`);
+        doc = parse(`[-inline-shorthand P|()|p]([/slot])\n\n[-inline-shorthand Q|()|q]{[/slot]}\n\nP1P2Q3qp4p`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -59,7 +58,7 @@ describe('inline shorthands', () => {
         ]);
     });
     test('arguments: simple scope', () => {
-        let doc = parse(`[-inline-shorthand p:x:p][/print $(x)]\n\n[-inline-shorthand q:y:q][/print $(y)]\n\np1pq2q`);
+        let doc = parse(`[-inline-shorthand p|x|p][/print $(x)]\n\n[-inline-shorthand q|y|q][/print $(y)]\n\np1pq2q`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -67,18 +66,18 @@ describe('inline shorthands', () => {
                 { type: NodeType.Text, content: '2' }
             ] }
         ]);
-        doc = parse(`[-inline-shorthand p:x:p][/print $(x)]\n\n[-inline-shorthand q][/print $(x)]\n\np1pq`);
+        doc = parse(`[-inline-shorthand p|x|p][/print $(x)]\n\n[-inline-shorthand q][/print $(x)]\n\np1pq`);
         expect.soft(doc.messages).toMatchObject([{ code: 5 }]);
     });
     test('arguments: complex scope', () => {
-        let doc = parse(`[-inline-shorthand p:x:p:():p][/print $(x)][/slot]\n\n[-inline-shorthand q][/print $(x)]\n\np1pqp`);
+        let doc = parse(`[-inline-shorthand p|x|p|()|p][/print $(x)][/slot]\n\n[-inline-shorthand q][/print $(x)]\n\np1pqp`);
         expect.soft(doc.messages).toMatchObject([{ code: 5 }]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
                 { type: NodeType.Text, content: '1' }
             ] }
         ]);
-        doc = parse(`[-inline-shorthand p:x:p:():p][/print $(x)][/slot]\n\n[-inline-shorthand q:x:q][/print $(x)]\n\np1pq2qp`);
+        doc = parse(`[-inline-shorthand p|x|p|()|p][/print $(x)][/slot]\n\n[-inline-shorthand q|x|q][/print $(x)]\n\np1pq2qp`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -88,14 +87,14 @@ describe('inline shorthands', () => {
         ]);
     });
     test('arguments: reference (interp)', () => {
-        let doc = parse(`[-inline-shorthand p:x:p][/print $(x)]\n\np1p`);
+        let doc = parse(`[-inline-shorthand p|x|p][/print $(x)]\n\np1p`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
         ]);
     });
     test('arguments: reference (modifier)', () => {
-        let doc = parse(`[-inline-shorthand p:x:p][/$x]\n\np1p`);
+        let doc = parse(`[-inline-shorthand p|x|p][/$x]\n\np1p`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }

@@ -73,19 +73,19 @@ describe('basic syntax', () => {
         ]);
     });
     test('normal groups', () => {
-        let doc = parse(`:--\nabc\n\ndef\n--:`);
+        let doc = parse(`<<<\nabc\n\ndef\n>>>`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
         ]);
-        doc = parse(`:--\nabc\n\n:--\ndef\n--:\n--:`);
+        doc = parse(`<<<\nabc\n\n<<<\ndef\n>>>\n>>>`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
         ]);
-        doc = parse(`[.normal]:--\nabc\n\ndef\n--:`);
+        doc = parse(`[.normal]<<<\nabc\n\ndef\n>>>`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
@@ -96,7 +96,7 @@ describe('basic syntax', () => {
                 ]
             },
         ]);
-        doc = parse(`   [.normal]   \n   :--\n   abc   \n--:`);
+        doc = parse(`   [.normal]   \n   <<<\n   abc   \n>>>`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
@@ -133,7 +133,7 @@ describe('basic syntax', () => {
         ]);
     });
     test('preformatted groups', () => {
-        let doc = parse(`[.pre]:--\n\n\n--:`);
+        let doc = parse(`[.pre]<<<\n\n\n>>>`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ 
             {
@@ -141,7 +141,7 @@ describe('basic syntax', () => {
                 content: [{ type: NodeType.Preformatted, content: {text: '\n'} }]
             }
         ]);
-        doc = parse(`[.pre]:--\nabc\n\ndef\n--:`);
+        doc = parse(`[.pre]<<<\nabc\n\ndef\n>>>`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ 
             {
@@ -149,7 +149,7 @@ describe('basic syntax', () => {
                 content: [{ type: NodeType.Preformatted, content: {text: 'abc\n\ndef'} }]
             }
         ]);
-        doc = parse(`   [.pre]   \n   :--\n   abc\n--:`);
+        doc = parse(`   [.pre]   \n   <<<\n   abc\n>>>`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([ 
             {
@@ -371,24 +371,24 @@ describe('basic syntax', () => {
         ]);
     });
     test('warnings - extra newlines: groups', () => {
-        let doc = parse(`:--\nabc\n--:\n\n\nhaha`);
+        let doc = parse(`<<<\nabc\n>>>\n\n\nhaha`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 1 }
         ]);
-        doc = parse(`[.pre]:--\nabc\n--:\n\n\nhaha`);
+        doc = parse(`[.pre]<<<\nabc\n>>>\n\n\nhaha`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 1 }
         ]);
     });
     test('warnings - should be newlines: groups', () => {
-        let doc = parse(`:--abc\n--:`);
+        let doc = parse(`<<<abc\n>>>`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 3 }
         ]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] }
         ]);
-        doc = parse(`[.pre]:--abc\n--:`);
+        doc = parse(`[.pre]<<<abc\n>>>`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 3 }
         ]);
@@ -397,7 +397,7 @@ describe('basic syntax', () => {
                 type: NodeType.BlockModifier, mod: {name: 'pre'},
                 content: [{ type: NodeType.Preformatted, content: {text: 'abc'} }]
             },
-        ]);doc = parse(`:--\nabc\n--:haha`);
+        ]);doc = parse(`<<<\nabc\n>>>haha`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 3 }
         ]);
@@ -405,7 +405,7 @@ describe('basic syntax', () => {
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'haha' }] }
         ]);
-        doc = parse(`[.pre]:--\nabc\n--:haha`);
+        doc = parse(`[.pre]<<<\nabc\n>>>haha`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 3 }
         ]);

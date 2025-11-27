@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { BuiltinConfiguration } from "../src/builtin/builtin";
 import { SimpleScanner } from "../src/scanner";
-import * as Parser from "../src/parser";
 import { BlockModifierDefinition, MessageSeverity, ModifierSlotType, NodeType } from "../src/interface";
 import { debug, DebugLevel } from "../src/debug";
 import { Configuration, ParseContext } from "../src/parser-config";
@@ -29,7 +28,7 @@ describe('modules', () => {
         ]);
     });
     test('content scoping: modifiers', () => {
-        let doc = parse(`[.module test]:--\n[-define-inline p]123\n[-define-block q]456\n--:\n[/p;]\n[.q;]\n[.use test]:--\n[/p;]\n[.q;]\n--:\n[/p;]\n[.q;]`);
+        let doc = parse(`[.module test]<<<\n[-define-inline p]123\n[-define-block q]456\n>>>\n[/p;]\n[.q;]\n[.use test]<<<\n[/p;]\n[.q;]\n>>>\n[/p;]\n[.q;]`);
         expect.soft(doc.messages).toMatchObject([
             { code: 2, what: 'p' },
             { code: 2, what: 'q' },
@@ -46,7 +45,7 @@ describe('modules', () => {
         ]);
     });
     test('preserves outer definitions', () => {
-        let doc = parse(`[-define-inline p]123\n[-define-block q]456\n[-inline-shorthand r]789\n[.module test][-inline-shorthand s] abc\n\n[/p;]\n[.q;]\nrs\n[.use test]:--\n[/p;]\n[.q;]\nrs\n--:\n[/p;]\n[.q;]\nrs`);
+        let doc = parse(`[-define-inline p]123\n[-define-block q]456\n[-inline-shorthand r]789\n[.module test][-inline-shorthand s] abc\n\n[/p;]\n[.q;]\nrs\n[.use test]<<<\n[/p;]\n[.q;]\nrs\n>>>\n[/p;]\n[.q;]\nrs`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },

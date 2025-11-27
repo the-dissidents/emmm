@@ -26,7 +26,7 @@ debug.level = DebugLevel.Warning;
 
 describe('argument parsing', () => {
     test('[/print]', () => {
-        let doc = parse(`[/print 123:456]`);
+        let doc = parse(`[/print 123|456]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -35,7 +35,7 @@ describe('argument parsing', () => {
         ]);
     });
     test('simple', () => {
-        let doc = parseWithoutStrip(`[.normal 123:456]`);
+        let doc = parseWithoutStrip(`[.normal 123|456]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.BlockModifier, mod: {name: 'normal'},
@@ -46,7 +46,7 @@ describe('argument parsing', () => {
         } ]);
     });
     test('multiple lines', () => {
-        let doc = parseWithoutStrip(`[.normal 123\n456\n\n\n78900:\nab\n\ncdef\n:zzzz]`);
+        let doc = parseWithoutStrip(`[.normal 123\n456\n\n\n78900|\nab\n\ncdef\n|zzzz]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.BlockModifier, mod: {name: 'normal'},
@@ -96,26 +96,26 @@ describe('argument parsing', () => {
         } ]);
     });
     test('variable interpolation: expansion', () => {
-        let doc = parse(`[-var x:123][/print $(x)]`);
+        let doc = parse(`[-var x|123][/print $(x)]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
     });
     test('variable interpolation: nested', () => {
-        let doc = parse(`[-var x:y][-var xy:123][/print $(x$(x))]`);
+        let doc = parse(`[-var x|y][-var xy|123][/print $(x$(x))]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
-        doc = parse(`[-var x:y][-var xy:123][/print $(x$(y))]`);
+        doc = parse(`[-var x|y][-var xy|123][/print $(x$(y))]`);
         expect.soft(doc.messages).toMatchObject([{ code: 5 }]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [] }
         ]);
     });
     test('complex argument interpolation (modifier)', () => {
-        let doc = parse(`[-define-block a:x:y][-define-block $(y):z][/$x][/$y][/$z]\n\n[.a b:c;]\n[.c 1;]`);
+        let doc = parse(`[-define-block a|x|y][-define-block $(y)|z][/$x][/$y][/$z]\n\n[.a b|c;]\n[.c 1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -126,7 +126,7 @@ describe('argument parsing', () => {
         ]);
     });
     test('complex argument interpolation (interp)', () => {
-        let doc = parse(`[-define-block a:x:y][-define-block $(y):z][/print $(x)$(y)$(z)]\n\n[.a b:c;]\n[.c 1;]`);
+        let doc = parse(`[-define-block a|x|y][-define-block $(y)|z][/print $(x)$(y)$(z)]\n\n[.a b|c;]\n[.c 1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -138,7 +138,7 @@ describe('argument parsing', () => {
 
 describe('[-var] and [/$]', () => {
     test('simple', () => {
-        let doc = parse(`[-var x:123][/$x]`);
+        let doc = parse(`[-var x|123][/$x]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }

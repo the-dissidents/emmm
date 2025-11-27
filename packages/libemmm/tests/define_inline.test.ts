@@ -70,7 +70,7 @@ describe('[-define-inline]', () => {
         ]);
     });
     test('slots: multiple instantiations', () => {
-        let doc = parse(`[-define-inline p]\n:--\n[-var x:0][/slot][-var x:1][/slot]\n--:\n[/p][/$x][;]`);
+        let doc = parse(`[-define-inline p]\n<<<\n[-var x|0][/slot][-var x|1][/slot]\n>>>\n[/p][/$x][;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -91,7 +91,7 @@ describe('[-define-inline]', () => {
         ]);
     });
     test('slots: unnamed reference in nested scopes', () => {
-        let doc = parse(`[-define-inline p]\n:--\n[/slot][-define-inline q][/slot]\n--:\n[/p]abc[;][/q]def[;]`);
+        let doc = parse(`[-define-inline p]\n<<<\n[/slot][-define-inline q][/slot]\n>>>\n[/p]abc[;][/q]def[;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -101,7 +101,7 @@ describe('[-define-inline]', () => {
         ]);
     });
     test('slots: named reference in nested scopes', () => {
-        let doc = parse(`[-define-inline p:(0)]\n[-define-inline q:(1)]\n:--\n[/slot 0][/slot 1]\n--:\n[/p]abc[;][/q]def[;]`);
+        let doc = parse(`[-define-inline p|(0)]\n[-define-inline q|(1)]\n<<<\n[/slot 0][/slot 1]\n>>>\n[/p]abc[;][/q]def[;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -111,7 +111,7 @@ describe('[-define-inline]', () => {
         ]);
     });
     test('arguments: simple', () => {
-        let doc = parse(`[-define-inline p:arg1:arg2][/$arg1][/$arg2]\n\n[/p:abc:def;]`);
+        let doc = parse(`[-define-inline p|arg1|arg2][/$arg1][/$arg2]\n\n[/p|abc|def;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -121,14 +121,14 @@ describe('[-define-inline]', () => {
         ]);
     });
     test('arguments: shadows variable', () => {
-        let doc = parse(`[-define-inline p:x][/$x]\n\n[-var x:0][/p:1;]`);
+        let doc = parse(`[-define-inline p|x][/$x]\n\n[-var x|0][/p|1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
                 { type: NodeType.Text, content: '1' }
             ] }
         ]);
-        doc = parse(`[-define-inline p:x]\n:--\n[/slot][/$x]\n--:\n[-var x:0][/p:1][/$x][;]`);
+        doc = parse(`[-define-inline p|x]\n<<<\n[/slot][/$x]\n>>>\n[-var x|0][/p|1][/$x][;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -138,7 +138,7 @@ describe('[-define-inline]', () => {
         ]);
     });
     test('arguments: no reference in user scope (modifier)', () => {
-        let doc = parse(`[-define-inline p:x]\n:--\n[/slot][/$x]\n--:\n[/p:1][/$x][;]`);
+        let doc = parse(`[-define-inline p|x]\n<<<\n[/slot][/$x]\n>>>\n[/p|1][/$x][;]`);
         expect.soft(doc.messages).toMatchObject([
             { code: 5, severity: MessageSeverity.Warning }
         ]);
@@ -149,7 +149,7 @@ describe('[-define-inline]', () => {
         ]);
     });
     test('arguments: no reference in user scope (interp)', () => {
-        let doc = parse(`[-define-inline p:x]\n:--\n[/slot][/print $(x)]\n--:\n[/p:1][/print $(x)][;]`);
+        let doc = parse(`[-define-inline p|x]\n<<<\n[/slot][/print $(x)]\n>>>\n[/p|1][/print $(x)][;]`);
         expect.soft(doc.messages).toMatchObject([
             { code: 5, severity: MessageSeverity.Error }
         ]);
@@ -160,7 +160,7 @@ describe('[-define-inline]', () => {
         ]);
     });
     test('arguments: reference in separate scopes (modifier)', () => {
-        let doc = parse(`[-define-inline p:x][/$x]\n\n[-define-inline q:x][/p 0;][/$x]\n\n[/q:1;]`);
+        let doc = parse(`[-define-inline p|x][/$x]\n\n[-define-inline q|x][/p 0;][/$x]\n\n[/q|1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -170,7 +170,7 @@ describe('[-define-inline]', () => {
         ]);
     });
     test('arguments: reference in separate scopes (interp)', () => {
-        let doc = parse(`[-define-inline p:x][/print $(x)]\n\n[-define-inline q:x][/p 0;][/print $(x)]\n\n[/q:1;]`);
+        let doc = parse(`[-define-inline p|x][/print $(x)]\n\n[-define-inline q|x][/p 0;][/print $(x)]\n\n[/q|1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -180,14 +180,14 @@ describe('[-define-inline]', () => {
         ]);
     });
     test('arguments: reference in nested scopes (modifier)', () => {
-        let doc = parse(`[-define-inline p:x][-define-inline q:x][/$x]\n\n[/p:0;][/q:1;]`);
+        let doc = parse(`[-define-inline p|x][-define-inline q|x][/$x]\n\n[/p|0;][/q|1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
         ]);
     });
     test('arguments: reference in nested scopes (interp)', () => {
-        let doc = parse(`[-define-inline p:x][-define-inline q:x][/print $(x)]\n\n[/p:0;][/q:1;]`);
+        let doc = parse(`[-define-inline p|x][-define-inline q|x][/print $(x)]\n\n[/p|0;][/q|1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
@@ -250,7 +250,7 @@ describe('[-define-inline]', () => {
 
 describe('mixed block and inline definitions', () => {
     test('argument reference', () => {
-        let doc = parse(`[-define-block p:x]\n:--\n[/$x]\n[.slot]\n[/$x]\n--:\n[-define-inline q:x][/$x]\n\n[.p:0][/q:1;]`);
+        let doc = parse(`[-define-block p|x]\n<<<\n[/$x]\n[.slot]\n[/$x]\n>>>\n[-define-inline q|x][/$x]\n\n[.p|0][/q|1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },

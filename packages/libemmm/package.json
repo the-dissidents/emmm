@@ -5,7 +5,7 @@
     "author": "the_dissidents",
     "license": "GPL-2.0-only",
     "scripts": {
-        "test": "vitest",
+        "test": "pnpm vitest",
         "build": "tsdown",
         "dev": "tsdown --watch"
     },
