@@ -1,15 +1,36 @@
 import { RangeSet, RangeSetBuilder } from "@codemirror/state";
-import { Decoration, EditorView, ViewPlugin, ViewUpdate, type DecorationSet } from "@codemirror/view";
+import { Decoration, EditorView, ViewPlugin, ViewUpdate, WidgetType, type DecorationSet } from "@codemirror/view";
 import * as emmm from "@the_dissidents/libemmm";
 import { emmmDocument, type EmmmParseData } from "./ParseData";
 
+type Range = {
+    start: number,
+    end: number,
+    deco: Decoration
+};
+
+const WBR = new class WordBreakWidget extends WidgetType {
+    toDOM(): HTMLElement {
+        return document.createElement('wbr');
+    }
+};
+
 function highlightArgument(
     arg: emmm.ModifierArgument, base: string, 
-    builder: RangeSetBuilder<Decoration>
+    ranges: Range[]
 ) {
     function highlight(cls: string, start: number, end: number) {
-        builder.add(start, end, Decoration.mark({class: cls})); 
+        ranges.push({ start, end, deco: Decoration.mark({ class: cls }) }); 
     }
+
+    function wordBreak(at: number) {
+        ranges.push({ start: at, end: at, deco: Decoration.widget({
+            widget: WBR
+        })});
+    }
+    
+    wordBreak(arg.location.end);
+
     arg.content.forEach((x) => {
         switch (x.type) {
             case emmm.NodeType.Text:
@@ -24,7 +45,7 @@ function highlightArgument(
                     return highlight(base + ' em-interp', x.location.start, x.location.end);
                 else {
                     highlight(base + ' em-interp', x.location.start, p1);
-                    highlightArgument(x.argument, base, builder);
+                    highlightArgument(x.argument, base, ranges);
                     return highlight(base + ' em-interp', p2, x.location.end);
                 }
             default:
@@ -35,18 +56,18 @@ function highlightArgument(
 
 function highlightNode(
     node: emmm.DocumentNode, base: string, 
-    builder: RangeSetBuilder<Decoration>, source: emmm.SourceDescriptor
+    ranges: Range[], source: emmm.SourceDescriptor
 ) {
     if (node.type !== emmm.NodeType.Root 
      && node.location.source != source) return 0;
     
     function highlight(cls: string, start: number, end: number) {
-        builder.add(start, end, Decoration.mark({class: cls})); 
+        ranges.push({ start, end, deco: Decoration.mark({ class: cls }) }); 
     }
     switch (node.type) {
         case emmm.NodeType.Root:
         case emmm.NodeType.Paragraph:
-            node.content.forEach((x) => highlightNode(x, base, builder, source));
+            node.content.forEach((x) => highlightNode(x, base, ranges, source));
             return;
         case emmm.NodeType.Preformatted:
             return highlight(base + ' em-pre', node.location.start, node.location.end);
@@ -62,24 +83,18 @@ function highlightNode(
                 base += ' em-role-' + node.mod.roleHint;
             const cls = (node.type == emmm.NodeType.SystemModifier 
                 ? 'em-system' : 'em-modifier') + base;
-            if (node.arguments.length == 0) {
-                highlight(cls, node.head.start, node.head.end);
-            } else {
-                const p1 = node.arguments[0].location.start;
-                highlight(cls, node.head.start, p1);
-                for (let i = 0; i < node.arguments.length; i++) {
-                    highlightArgument(node.arguments[i], base, builder);
-                    const p2 = node.arguments.at(i+1)?.location.start ?? node.head.end;
-                    highlight(cls, node.arguments[i].location.end, p2);
-                }
-            }
+
+            highlight(cls, node.head.start, node.head.end);
+            node.arguments.positional.forEach((x) => highlightArgument(x, base, ranges));
+            node.arguments.named.forEach((x) => highlightArgument(x, base, ranges));
+
             if (node.type == emmm.NodeType.InlineModifier 
              && node.mod.slotType == emmm.ModifierSlotType.Preformatted)
             {
                 highlight(base + ' em-pre', 
                     node.head.end, node.location.actualEnd ?? node.location.end);
             } else {
-                node.content.forEach((x) => highlightNode(x, base, builder, source));
+                node.content.forEach((x) => highlightNode(x, base, ranges, source));
             }
             if (node.location.actualEnd)
                 highlight(cls, node.location.actualEnd, node.location.end);
@@ -93,8 +108,12 @@ export const emmmHighlighter = ViewPlugin.fromClass(class {
     decorations: DecorationSet = RangeSet.empty;
 
     make(doc: EmmmParseData) {
+        let ranges: Range[] = [];
+        highlightNode(doc.data.root, '', ranges, doc.data.root.source);
+
+        ranges.sort((a, b) => a.start - b.start);
         let builder = new RangeSetBuilder<Decoration>();
-        highlightNode(doc.data.root, '', builder, doc.data.root.source);
+        ranges.forEach((x) => builder.add(x.start, x.end, x.deco));
         this.decorations = builder.finish();
     }
 

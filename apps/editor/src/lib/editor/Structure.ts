@@ -11,6 +11,7 @@ export type LineStructure = {
     indentation: {hanging: number, normal: number}
 };
 
+const SINGLELINE_HANGING = 2;
 const HANGING_MAX_LANGTH = 6;
 
 class Structure {
@@ -90,20 +91,29 @@ class Structure {
             case emmm.NodeType.SystemModifier:
             case emmm.NodeType.InlineModifier:
             case emmm.NodeType.BlockModifier:
+                const {number: l0} = this.doc.lineAt(node.head.start);
                 const {number: l1} = this.doc.lineAt(node.head.end);
                 const {number: l2} = this.doc.lineAt(node.location.actualEnd ?? node.location.end);
+                
+                if (l1 > l0)
+                    for (let i = l0 + 1; i <= l1; i++)
+                        this.lines[i].indentation.normal = 
+                            Math.max(this.lines[i].indentation.normal, SINGLELINE_HANGING);
+                this.lines[l0].indentation.hanging = 
+                    Math.max(this.lines[l0].indentation.hanging, SINGLELINE_HANGING);
+
                 if (node.content.length > 0) {
                     const {number: line, from} = this.doc.lineAt(node.content[0].location.start);
                     if (line == l1 && node.type !== emmm.NodeType.InlineModifier) {
                         // do hanging indentation
                         let hang = Math.min(HANGING_MAX_LANGTH, 
                             node.content[0].location.start - from);
-                        if (l2 > line)
-                            for (let i = line + 1; i <= l2; i++)
+                        if (l2 > l1)
+                            for (let i = l1 + 1; i <= l2; i++)
                                 this.lines[i].indentation.normal = 
                                     Math.max(this.lines[i].indentation.normal, hang);
-                        this.lines[line].indentation.hanging = 
-                            Math.max(this.lines[line].indentation.hanging, hang);
+                        this.lines[l1].indentation.hanging = 
+                            Math.max(this.lines[l1].indentation.hanging, hang);
                     }
                 }
                 if (node.content.length == 1 

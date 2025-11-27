@@ -68,8 +68,8 @@ export function bindArgs<P extends string[], Opt extends string[] = [], N extend
 
     if (opts?.named) Object.entries(opts.named).forEach(([name, def]) => {
         nodes[name] = node.arguments.named.get(name);
-        args[name] = node.arguments.named.get(name) ?? def;
-        if (opts?.trim) args[name] = args[name]?.trim();
+        args[name] = node.arguments.named.get(name)?.expansion! ?? def;
+        if (opts?.trim && args[name]) args[name] = args[name].trim();
     });
 
     const restNodes = node.arguments.positional

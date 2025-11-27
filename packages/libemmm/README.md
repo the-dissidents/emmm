@@ -216,7 +216,7 @@ After expanding, the new entities are reparsed as if they're part of the origina
 > ```
 > [-define-inline foo]
 > :--
-> [-var xyz|123]
+> [-var xyz=123]
 > xyz is now 123
 > --:
 > ```

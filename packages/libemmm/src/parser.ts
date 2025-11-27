@@ -530,7 +530,7 @@ export class Parser {
         <Type extends NodeType.BlockModifier | NodeType.InlineModifier>
         (type: Type, d: _Shorthand<Type>): boolean 
     {
-        const posStart = this.scanner.position() - d.name.length;
+        const posStart = this.scanner.position();
         let args: ModifierArgument[] = [];
         for (const part of d.parts) {
             let [arg, ok] = this.ARGUMENT_CONTENT(part, ['\n\n']);
@@ -544,11 +544,12 @@ export class Parser {
         const headEnd = this.scanner.position();
         const node: ModifierNode = {
             type, mod: d.mod as any,
-            head: this.#locFrom(posStart, headEnd),
-            location: this.#locFrom(posStart, headEnd),
+            head: this.#locFrom(posStart - d.name.length, headEnd),
+            location: this.#locFrom(posStart - d.name.length, headEnd),
             arguments: {
                 positional: args,
-                named: new Map()
+                named: new Map(),
+                location: this.#locFrom(posStart, headEnd),
             },
             content: [],
             expansion: undefined
@@ -873,13 +874,16 @@ export class Parser {
 
         const args: ModifierArguments = {
             positional: [],
-            named: new Map()
+            named: new Map(),
+            location: this.#loc()
         };
 
         if (this.scanner.peek(MODIFIER_CLOSE_SIGN)
          || this.scanner.peek(MODIFIER_END_SIGN)) return args;
 
         while (this.POSSIBLY_NAMED_ARGUMENT(args)) {}
+
+        args.location.end = this.scanner.position();
         return args;
     }
 }

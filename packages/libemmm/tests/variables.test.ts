@@ -20,14 +20,28 @@ debug.level = DebugLevel.Warning;
 
 describe('modifiers', () => {
     test('[-var] and [/$] -- simple', () => {
+        let doc = parse(`[-var x=123][/$x]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
+        ]);
+    });
+    test('[-var] and [/$] -- alternative syntax', () => {
         let doc = parse(`[-var x|123][/$x]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
     });
+    test('[-var] and [/$] -- interpolated id', () => {
+        let doc = parse(`[-var x|123][-var z-$(x)|456][/$z-123]`);
+        expect.soft(doc.messages).toMatchObject([]);
+        expect.soft(doc.root.content).toMatchObject([
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] }
+        ]);
+    });
     test('[.ifdef], [.ifndef]', () => {
-        let doc = parse(`[.ifdef x]123\n\n[.ifndef x]456\n\n[-var x|zzz]\n\n[.ifdef x]789\n\n[.ifndef x]abc`);
+        let doc = parse(`[.ifdef x]123\n\n[.ifndef x]456\n\n[-var x=zzz]\n\n[.ifdef x]789\n\n[.ifndef x]abc`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] },
@@ -102,19 +116,19 @@ describe('interpolation', () => {
         } ]);
     });
     test('expansion', () => {
-        let doc = parse(`[-var x|123][/print $(x)]`);
+        let doc = parse(`[-var x=123][/print $(x)]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
     });
     test('nested', () => {
-        let doc = parse(`[-var x|y][-var xy|123][/print $(x$(x))]`);
+        let doc = parse(`[-var x=y][-var xy=123][/print $(x$(x))]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
-        doc = parse(`[-var x|y][-var xy|123][/print $(x$(y))]`);
+        doc = parse(`[-var x=y][-var xy=123][/print $(x$(y))]`);
         expect.soft(doc.messages).toMatchObject([{ code: 5 }]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [] }

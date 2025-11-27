@@ -33,13 +33,14 @@ export const ratingTableBlock = new emmm.BlockModifierDefinition<RatingTableData
 {
     prepareExpand(node, cxt) {
         let { msgs, args, rest, restNodes } = 
-            emmm.helper.bindArgs(node, ['key'], { rest: true, trim: true });
+            emmm.helper.bindArgs(node, ['key'], { named: { dir: '' }, rest: true, trim: true });
         if (msgs) return msgs;
         if (rest!.length % 2 !== 0)
             return [new emmm.messages.InvalidArgumentMessage(
                 restNodes!.at(-1)!.location, 'a rating should be paired with a name')];
 
-        const [title, author] = args!.key.split('@');
+        const title = args!.key;
+        const author = args!.dir;
         const map = new Map<string, number>();
         for (let i = 0; i < rest!.length; i += 2) {
             const ratingArg = restNodes![i+1];

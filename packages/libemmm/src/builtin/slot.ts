@@ -116,7 +116,8 @@ function slotModifier
                 head: node.head,
                 arguments: {
                     positional: [],
-                    named: new Map()
+                    named: new Map(),
+                    location: node.location
                 }, // TODO: enable injecting args
                 content: cloned as any
             };

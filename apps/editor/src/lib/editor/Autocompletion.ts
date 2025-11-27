@@ -39,7 +39,7 @@ const autocompleteSource: CompletionSource = (ctx) => {
       || node.type == emmm.NodeType.InlineModifier
       || node.type == emmm.NodeType.BlockModifier)
      && node.head.end >= ctx.pos
-     && (node.arguments.length == 0 || node.arguments[0].location.start > ctx.pos))
+     && (node.arguments.location.start > ctx.pos))
     {
         let completions: Completion[] = [];
         if (node.type == emmm.NodeType.SystemModifier)

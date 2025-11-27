@@ -70,7 +70,7 @@ describe('[-define-inline]', () => {
         ]);
     });
     test('slots: multiple instantiations', () => {
-        let doc = parse(`[-define-inline p]\n<<<\n[-var x|0][/slot][-var x|1][/slot]\n>>>\n[/p][/$x][;]`);
+        let doc = parse(`[-define-inline p]\n<<<\n[-var x=0][/slot][-var x=1][/slot]\n>>>\n[/p][/$x][;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -121,14 +121,14 @@ describe('[-define-inline]', () => {
         ]);
     });
     test('arguments: shadows variable', () => {
-        let doc = parse(`[-define-inline p|x][/$x]\n\n[-var x|0][/p|1;]`);
+        let doc = parse(`[-define-inline p|x][/$x]\n\n[-var x=0][/p|1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
                 { type: NodeType.Text, content: '1' }
             ] }
         ]);
-        doc = parse(`[-define-inline p|x]\n<<<\n[/slot][/$x]\n>>>\n[-var x|0][/p|1][/$x][;]`);
+        doc = parse(`[-define-inline p|x]\n<<<\n[/slot][/$x]\n>>>\n[-var x=0][/p|1][/$x][;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [

@@ -1,6 +1,6 @@
 import { debug } from "../debug";
 import { InlineModifierDefinition, ModifierSlotType, ArgumentInterpolatorDefinition, SystemModifierDefinition, NodeType, BlockModifierDefinition, ModifierNode } from "../interface";
-import { InvalidArgumentMessage, UndefinedVariableMessage } from "../messages";
+import { CannotExpandArgumentMessage, InvalidArgumentMessage, UndefinedVariableMessage } from "../messages";
 import { builtins } from "./internal";
 import { ParseContext } from "../parser-config";
 import { bindArgs } from "../modifier-helper";
@@ -114,12 +114,22 @@ export const VarMod = new SystemModifierDefinition<{
     id: string; value: string;
 }>('var', ModifierSlotType.None, {
     // .var id:value
-    prepareExpand(node, cxt) {
+    prepareExpand(node) {
+        if (node.arguments.named.size == 1 && node.arguments.positional.length == 0) {
+            const [id, arg] = [...node.arguments.named][0];
+            if (arg.expansion === undefined)
+                return [new CannotExpandArgumentMessage(arg.location)];
+
+            node.state = { id, value: arg.expansion };
+            return [];
+        }
+
         let { msgs, args, nodes } = bindArgs(node, ['id', 'value']);
         if (msgs) return msgs;
 
         if (!args!.id)
             return [new InvalidArgumentMessage(nodes!.id.location)];
+
         node.state = {
             id: args!.id,
             value: args!.value

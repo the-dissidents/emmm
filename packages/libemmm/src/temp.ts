@@ -18,26 +18,20 @@ TestConfig.blockModifiers.add(
 );
 
 let text1 = String.raw`
-[-var name:foobar]
-[-var version:0.1.0]
+[-var name=foobar]
+[-var version=0.1.0]
 
-[-inline-shorthand:»:():«]
+[-inline-shorthand|»|()|«]
 [/emphasis][/slot][;]
 
-[-block-shorthand:[\::id:\]:()]
+[-block-shorthand|[:|id|\]|()]
 [.note $(id)][.slot]
 
-[-block-shorthand #:()]
+[-block-shorthand #|()]
 [.heading 1][.slot]
 
 Version [/$version], created by [/$name]
 `;
-
-text1 = `
-[-define-block recommend:path:id]
-[.style gallery][.link $(path)][.image $(id)][.slot]
-
-[.recommend:path/to/article:imgid] title`;
 
 text1 = `
 [.heading 1] Chapter 1

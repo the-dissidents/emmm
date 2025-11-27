@@ -19,8 +19,27 @@ export const emmmTheme = [
             fontFamily: 'Roboto Mono, Menlo, Consolas, 等线, monospace',
         },
         ".cm-line": {
-            // avoid messing up wrap indent above
             padding: '0 15px 0 0',
+            paddingLeft: 'calc(var(--hanging) + var(--normal))',
+            textIndent: 'calc(var(--hanging) * -1)',
+            position: 'relative'
+        },
+        ".fu-indentation-container": {
+            display: 'contents'
+        },
+        ".fu-indentation": {
+            width: 'calc(var(--normal) - 2px)',
+            borderBottom: '2px dotted #CCC',
+            position: 'absolute',
+            left: '1px',
+            top: '0.5lh'
+        },
+        ".fu-hanging-visualizer": {
+            borderLeft: '4px solid #CCC',
+            position: 'absolute',
+            left: 'calc(var(--hanging) - 1ch - 4px)',
+            top: 'calc(1lh + 2px)',
+            bottom: '0',
         },
         ".cm-cursor, .cm-dropCursor": {
             borderLeftWidth: '1.5px'
@@ -137,6 +156,6 @@ export const emmmTheme = [
             backgroundColor: 'white',
             overflow: 'hidden',
             fontSize: '85%'
-        }
+        },
     })
 ];

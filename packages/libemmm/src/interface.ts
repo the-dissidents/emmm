@@ -67,6 +67,7 @@ export type EscapedNode = {
 export type ModifierArguments = {
     positional: ModifierArgument[],
     named: Map<string, ModifierArgument>,
+    location: LocationRange,
 }
 
 type ModifierNodeBase<TState> = {
