@@ -1,5 +1,5 @@
 import { debug } from "./debug";
-import { DocumentNode, LocationRange, ModifierArgument, NodeType, RootNode } from "./interface";
+import { DocumentNode, LocationRange, ModifierArgument, NodeType } from "./interface";
 
 // TODO: use a prefix tree to find names?
 export class NameManager<T extends {name: string}> {
@@ -123,7 +123,11 @@ export function cloneNode<T extends DocumentNode>(node: T, options: CloneNodeOpt
                 mod: node.mod,
                 state: options.withState ? node.state : undefined,
                 head: cloneLocation(node.head, options), // TODO: options or {}?
-                arguments: node.arguments.map((x) => cloneArgument(x, options)),
+                arguments: {
+                    positional: node.arguments.positional.map((x) => cloneArgument(x, options)),
+                    named: new Map([...node.arguments.named].map(
+                        ([x, y]) => [x, cloneArgument(y, options)])),
+                },
                 content: node.content.map((x) => cloneNode(x, options)),
                 expansion: node.expansion ? cloneNodes(node.expansion, options) : undefined
             } as T;
@@ -157,10 +161,10 @@ export function cloneNode<T extends DocumentNode>(node: T, options: CloneNodeOpt
     }
 }
 
-export function cloneNodes<T extends DocumentNode>(
-    nodes: readonly T[], options: CloneNodeOptions = {}
-): T[] {
-    return nodes.map((x) => cloneNode(x, options));
+export function cloneNodes<T extends readonly DocumentNode[]>(
+    nodes: T, options: CloneNodeOptions = {}
+): T {
+    return nodes.map((x) => cloneNode(x, options)) as unknown as T;
 }
 
 /** Warning: modifies the original nodes */

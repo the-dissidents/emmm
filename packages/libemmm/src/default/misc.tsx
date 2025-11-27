@@ -1,5 +1,5 @@
 import { ModifierSlotType, InlineModifierDefinition, BlockModifierDefinition, ParagraphNode } from "../interface";
-import { checkArguments, onlyPermitSimpleParagraphs, onlyPermitSingleBlock } from "../modifier-helper";
+import { bindArgs, onlyPermitSimpleParagraphs, onlyPermitSingleBlock } from "../modifier-helper";
 import { BlockRendererDefiniton, InlineRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
 
@@ -8,9 +8,9 @@ const rubyInline = new InlineModifierDefinition<string>(
     {
         roleHint: undefined,
         prepareExpand(node) {
-            let msgs = checkArguments(node, 1);
+            let { msgs, args } = bindArgs(node, ['text']);
             if (msgs) return msgs;
-            node.state = node.arguments[0].expansion!;
+            node.state = args!.text;
             return [];
         },
     });
@@ -20,9 +20,9 @@ const linkInline = new InlineModifierDefinition<string>(
     {
         roleHint: 'link',
         prepareExpand(node) {
-            let msgs = checkArguments(node, 1);
+            let { msgs, args } = bindArgs(node, ['url']);
             if (msgs) return msgs;
-            node.state = node.arguments[0].expansion!;
+            node.state = args!.url;
             return [];
         },
     });
@@ -34,9 +34,9 @@ const styleBlock = new BlockModifierDefinition<string>(
     'style', ModifierSlotType.Normal,
     {
         prepareExpand(node) {
-            let msgs = checkArguments(node, 1);
+            let { msgs, args } = bindArgs(node, ['style']);
             if (msgs) return msgs;
-            node.state = node.arguments[0].expansion!;
+            node.state = args!.style;
             return [];
         },
     });
@@ -49,9 +49,9 @@ const linkBlock = new BlockModifierDefinition<string>(
     {
         roleHint: 'link',
         prepareExpand(node) {
-            let msgs = checkArguments(node, 1);
+            let { msgs, args } = bindArgs(node, ['url']);
             if (msgs) return msgs;
-            node.state = node.arguments[0].expansion!;
+            node.state = args!.url;
             return [];
         },
     });
@@ -61,14 +61,13 @@ const imageBlock = new BlockModifierDefinition<string>(
     {
         roleHint: 'link',
         prepareExpand(node) {
-            let msgs = checkArguments(node, 1, 2);
+            let { msgs, args } = bindArgs(node, ['url']);
             if (msgs) return msgs;
             msgs = onlyPermitSingleBlock(node, {optional: true});
             if (msgs) return msgs;
             msgs = onlyPermitSimpleParagraphs(node);
             if (msgs) return msgs;
-            // TODO: not very good!
-            node.state = node.arguments.map((x) => x.expansion!).join(':');
+            node.state = args!.url;
             return [];
         },
     });

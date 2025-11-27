@@ -1,37 +1,84 @@
 import { debug } from "./debug";
-import { ModifierNode, Message, BlockModifierNode, NodeType, BlockEntity, SystemModifierNode, InlineEntity, ModifierSlotType, SystemModifierDefinition, ParagraphNode } from "./interface";
+import { ModifierNode, Message, BlockModifierNode, NodeType, BlockEntity, SystemModifierNode, InlineEntity, ModifierSlotType, SystemModifierDefinition, ParagraphNode, ModifierArgument } from "./interface";
 import { ArgumentCountMismatchMessage, CannotExpandArgumentMessage, ContentExpectedMessage, EntityNotAllowedMessage, MultipleBlocksNotPermittedMessage, OnlySimpleParagraphsPermittedMessage, OverwriteSpecialVariableMessage } from "./messages";
 import { ParseContext } from "./parser-config";
 import { cloneNode, stripNode } from "./util";
 
-/**
- * Helper function to validate a modifier's argument count.
- * @returns `null` if OK, otherwise an array of error messages.
- */
-export function checkArgumentLength(node: ModifierNode, min?: number, max = min): Message[] | null {
-    if ((min !== undefined && node.arguments.length < min)
-     || (max !== undefined && node.arguments.length > max)) 
-    {
-        return [new ArgumentCountMismatchMessage({
+type BindResult<P extends string[], Opt extends string[], N extends Record<string, string>> = {
+    msgs: Message[],
+    args: undefined,
+    nodes: undefined,
+    rest: undefined,
+    restNodes: undefined
+} | {
+    msgs: null,
+    args: {[key in P[number]]: string} & {[key in Opt[number]]?: string | undefined} & {[key in keyof N]: string},
+    nodes: {[key in P[number]]: ModifierArgument} & {[key in Opt[number]]: ModifierArgument | undefined} & {[key in keyof N]: ModifierArgument | undefined},
+    rest: string[],
+    restNodes: ModifierArgument[]
+};
+
+export function bindArgs<P extends string[], Opt extends string[] = [], N extends Record<string, string> = {}>(
+    node: ModifierNode, p: readonly [...P], 
+    opts?: { 
+        named?: N, 
+        optional?: readonly [...Opt], 
+        rest?: boolean, 
+        trim?: boolean
+    }
+): BindResult<P, Opt, N> {
+    const badargs = node.arguments.positional.filter((x) => x.expansion === undefined);
+    if (badargs.length > 0) return {
+        msgs: badargs.map((x) => new CannotExpandArgumentMessage(x.location)),
+        args: undefined,
+        nodes: undefined,
+        rest: undefined,
+        restNodes: undefined
+    };
+
+    const maxLength = 
+        opts?.rest ? Infinity : p.length + (opts?.optional?.length ?? 0);
+    if (node.arguments.positional.length < p.length
+     || node.arguments.positional.length > maxLength
+    ) return {
+        msgs: [new ArgumentCountMismatchMessage({
             source: node.location.source,
             start: node.head.start, 
             end: node.head.end
-        }, min, max)];
-    }
-    return null;
-}
+        }, p.length, maxLength)],
+        args: undefined,
+        nodes: undefined,
+        rest: undefined,
+        restNodes: undefined
+    };
 
-/**
- * Helper function to validate a modifier's arguments. It also checks that all arguments can be successfully expanded.
- * @returns `null` if OK, otherwise an array of error messages.
- */
-export function checkArguments(node: ModifierNode, min?: number, max = min): Message[] | null {
-    const arg = node.arguments.find((x) => x.expansion === undefined);
-    if (arg !== undefined) {
-        // debugger;
-        return [new CannotExpandArgumentMessage(arg.location)];
-    }
-    return checkArgumentLength(node, min, max);
+    const args: any = {};
+    const nodes: any = {};
+    p.forEach((name, i) => {
+        nodes[name] = node.arguments.positional[i];
+        args[name] = nodes[name].expansion!;
+        if (opts?.trim) args[name] = args[name].trim();
+    });
+
+    if (opts?.optional) opts.optional.forEach((name, i) => {
+        nodes[name] = node.arguments.positional[p.length + i];
+        args[name] = nodes[name]?.expansion!;
+        if (opts?.trim && args[name]) args[name] = args[name].trim();
+    });
+
+    if (opts?.named) Object.entries(opts.named).forEach(([name, def]) => {
+        nodes[name] = node.arguments.named.get(name);
+        args[name] = node.arguments.named.get(name) ?? def;
+        if (opts?.trim) args[name] = args[name]?.trim();
+    });
+
+    const restNodes = node.arguments.positional
+        .slice(p.length + (opts?.optional?.length ?? 0));
+
+    const rest = restNodes
+        .map((x) => opts?.trim ? x.expansion!.trim() : x.expansion!);
+
+    return { msgs: null, args, nodes, rest, restNodes };
 }
 
 /**
@@ -151,7 +198,7 @@ export function createPlaintextWrapper(name: string,
     return new SystemModifierDefinition<void>(name, slotType, {
         delayContentExpansion: true,
         afterProcessExpansion(node, cxt) {
-            let msgs = checkArguments(node, 0);
+            let { msgs } = bindArgs(node, []);
             if (msgs) return msgs;
             const result = onlyPermitPlaintextParagraph(node);
             if (typeof result !== 'string') return result;
@@ -171,7 +218,7 @@ export function createParagraphWrapper(name: string,
         slotType = ModifierSlotType.Normal) {
     return new SystemModifierDefinition<void>(name, slotType, {
         afterProcessExpansion(node, cxt) {
-            let msgs = checkArguments(node, 0);
+            let { msgs } = bindArgs(node, []);
             if (msgs) return msgs;
             msgs = onlyPermitSingleBlock(node);
             if (msgs) return msgs;

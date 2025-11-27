@@ -1,12 +1,13 @@
 import { debug } from "../debug";
-import { SystemModifierDefinition, ModifierSlotType, Message, NodeType, SystemModifierNode, InlineEntity } from "../interface";
+import { SystemModifierDefinition, ModifierSlotType, Message, NodeType, SystemModifierNode, InlineEntity, ModifierArgument } from "../interface";
 import { InvalidArgumentMessage, NameAlreadyDefinedMessage } from "../messages";
-import { checkArgumentLength } from "../modifier-helper";
+import { bindArgs } from "../modifier-helper";
 import { assert } from "../util";
 import { builtins, customModifier, makeInlineDefinition, ModifierSignature } from "./internal";
 
 type ModifierState = {
-    name?: string;
+    name: string;
+    nameNode: ModifierArgument;
     signature: ModifierSignature;
     msgs: Message[];
 };
@@ -15,35 +16,28 @@ function parseDefineArguments(
     node: SystemModifierNode<ModifierState>,
     stack: ModifierSignature[]
 ) {
-    const check = checkArgumentLength(node, 1, Infinity);
-    if (check) return check;
+    let { msgs, args, nodes, rest } = bindArgs(node, ['name'], { rest: true });
+    if (msgs) return msgs;
 
-    const msgs: Message[] = [];
-    const name = node.arguments[0];
-    const nameValue = name.expansion;
-    if (nameValue === '' || nameValue?.includes('\n')) return [
-        new InvalidArgumentMessage(name.location, nameValue)];
+    msgs = [];
+    const nameNode = nodes!.name;
+    const name = args!.name;
+    if (name === '' || name?.includes('\n')) return [
+        new InvalidArgumentMessage(nameNode.location, name)];
 
     let slotName = '';
-    if (node.arguments.length > 1) {
-        const last = node.arguments.at(-1)!;
-        if (last.expansion) {
-            const match = /^\((.*)\)$/.exec(last.expansion);
-            slotName = match ? match[1] : '';
-        } else msgs.push(
-            new InvalidArgumentMessage(last.location));
+    if (rest!.length > 0) {
+        const last = rest!.at(-1)!;
+        const match = /^\((.*)\)$/.exec(last);
+        if (match) {
+            slotName = match[1];
+            rest!.pop();
+        } else
+            slotName = '';
     }
 
-    const args = node.arguments.slice(1, (slotName !== '')
-        ? node.arguments.length - 1 : undefined).map((x) => 
-    {
-        if (!x.expansion) msgs.push(
-            new InvalidArgumentMessage(x.location));
-        return x.expansion ?? '';
-    });
-
-    let signature: ModifierSignature = { slotName, args, preformatted: undefined };
-    node.state = { name: nameValue, signature, msgs };
+    let signature: ModifierSignature = { slotName, args: rest!, preformatted: undefined };
+    node.state = { name, nameNode, signature, msgs };
     stack.push(signature);
     return undefined;
 }
@@ -54,10 +48,16 @@ export const DefineBlockMod = new SystemModifierDefinition
     // .define-block:name:args...[:(slot-id)]
     delayContentExpansion: true,
     alwaysTryExpand: true,
-    beforeParseContent(node, cxt) {
+    beforeParseContent(node, cxt, immediate) {
         const store = cxt.get(builtins)!;
         const check = parseDefineArguments(node, store.blockSlotDelayedStack);
-        if (check) return check;
+        if (check) {
+            if (immediate) return check;
+            else {
+                debug.trace('skipping incomplete definition');
+                return [];
+            }
+        }
         debug.trace('entering block definition:', node.state!.name);
         return [];
     },
@@ -71,12 +71,11 @@ export const DefineBlockMod = new SystemModifierDefinition
     },
     prepareExpand(node, cxt, immediate) {
         if (!immediate || !node.state) return [];
-        const arg = node.arguments[0];
         const msgs = node.state.msgs;
         if (!node.state.name) 
-            msgs.push(new InvalidArgumentMessage(arg.location));
+            msgs.push(new InvalidArgumentMessage(node.state.nameNode.location));
         else if (cxt.config.blockModifiers.has(node.state.name))
-            msgs.push(new NameAlreadyDefinedMessage(arg.location, node.state.name));
+            msgs.push(new NameAlreadyDefinedMessage(node.state.nameNode.location, node.state.name));
         return msgs;
     },
     expand(node, cxt, immediate) {
@@ -98,10 +97,16 @@ export const DefineInlineMod = new SystemModifierDefinition
     // .define-inline name:args...[:(slot-id)]
     delayContentExpansion: true,
     alwaysTryExpand: true,
-    beforeParseContent(node, cxt) {
+    beforeParseContent(node, cxt, immediate) {
         const store = cxt.get(builtins)!;
         const check = parseDefineArguments(node, store.inlineSlotDelayedStack);
-        if (check) return check;
+        if (check) {
+            if (immediate) return check;
+            else {
+                debug.trace('skipping incomplete definition');
+                return [];
+            }
+        }
         debug.trace('entering inline definition:', node.state!.name);
         return [];
     },
@@ -115,13 +120,13 @@ export const DefineInlineMod = new SystemModifierDefinition
     },
     prepareExpand(node, cxt, immediate) {
         if (!immediate || !node.state) return [];
-        const arg = node.arguments[0];
+
         if (!node.state.name) 
-            return [new InvalidArgumentMessage(arg.location)];
+            return [new InvalidArgumentMessage(node.state.nameNode.location)];
 
         const msgs = node.state.msgs;
         if (cxt.config.inlineModifiers.has(node.state.name))
-            msgs.push(new NameAlreadyDefinedMessage(arg.location, node.state.name));
+            msgs.push(new NameAlreadyDefinedMessage(node.state.nameNode.location, node.state.name));
         
         node.state.definition = makeInlineDefinition(node, msgs);
         return msgs;

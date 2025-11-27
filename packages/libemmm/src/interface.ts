@@ -64,35 +64,35 @@ export type EscapedNode = {
     content: string
 }
 
-export type SystemModifierNode<TState> = {
+export type ModifierArguments = {
+    positional: ModifierArgument[],
+    named: Map<string, ModifierArgument>,
+}
+
+type ModifierNodeBase<TState> = {
     location: LocationRange,
+    state?: TState,
+    head: LocationRange,
+    arguments: ModifierArguments
+}
+
+export type SystemModifierNode<TState> = ModifierNodeBase<TState> & {
     type: NodeType.SystemModifier,
     mod: SystemModifierDefinition<TState>,
-    state?: TState,
-    head: LocationRange,
-    arguments: ModifierArgument[],
     content: BlockEntity[],
-    expansion?: never[]
+    expansion?: never[],
 };
 
-export type BlockModifierNode<TState> = {
-    location: LocationRange,
+export type BlockModifierNode<TState> = ModifierNodeBase<TState> & {
     type: NodeType.BlockModifier,
     mod: BlockModifierDefinition<TState>,
-    state?: TState,
-    head: LocationRange,
-    arguments: ModifierArgument[],
     content: BlockEntity[],
     expansion?: BlockEntity[]
 };
 
-export type InlineModifierNode<TState> = {
-    location: LocationRange,
+export type InlineModifierNode<TState> = ModifierNodeBase<TState> & {
     type: NodeType.InlineModifier,
     mod: InlineModifierDefinition<TState>,
-    state?: TState,
-    head: LocationRange,
-    arguments: ModifierArgument[],
     content: InlineEntity[],
     expansion?: InlineEntity[]
 };

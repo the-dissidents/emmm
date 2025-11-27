@@ -68,6 +68,10 @@ text1 = `
 
 [.z]`;
 
+text1 = `[-define-block p|(0)][.slot 0]
+[.p][-define-block q][.slot 0]
+[.q]`;
+
 // text1 = `[.heading 1]`;
 
 // text1 = `[.pre]abc

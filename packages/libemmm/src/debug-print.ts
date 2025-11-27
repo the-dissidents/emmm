@@ -66,10 +66,13 @@ function debugPrintNode(node: BlockEntity | InlineEntity, prefix = '') {
         case NodeType.InlineModifier:
         case NodeType.BlockModifier:
         case NodeType.SystemModifier:
-            const args = node.arguments.map((x, i) => `\n${prefix}    (${i})@${x.location.start}-${x.location.end}=${debugPrint.argument(x)}`).join('');
+            const posargs = node.arguments.positional.map((x, i) => 
+                `\n${prefix}    (${i})@${x.location.start}-${x.location.end}=${debugPrint.argument(x)}`).join('');
+            const namedargs = [...node.arguments.named].map(([name, x], i) => 
+                `\n${prefix}    <${name}>@${x.location.start}-${x.location.end}=${debugPrint.argument(x)}`).join('');
             if (node.content.length > 0) {
-                result += ` id=${node.mod.name}${args}>\n` + debugPrintNodes(node.content, prefix) + `\n${prefix}</${NodeType[node.type]}@${node.location.end}>`;
-            } else result += `-${node.location.end} id=${node.mod.name}${args} />`;
+                result += ` id=${node.mod.name}${posargs}${namedargs}>\n` + debugPrintNodes(node.content, prefix) + `\n${prefix}</${NodeType[node.type]}@${node.location.end}>`;
+            } else result += `-${node.location.end} id=${node.mod.name}${posargs}${namedargs} />`;
             if (node.expansion) {
                 const content = debugPrintNodes(node.expansion, prefix);
                 if (content.length > 0)

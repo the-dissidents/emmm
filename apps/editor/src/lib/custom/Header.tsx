@@ -45,14 +45,14 @@ export const infoFieldSystem = new emmm.SystemModifierDefinition(
 {
     // delayContentExpansion: true,
     afterProcessExpansion(node, cxt) {
-        let msgs = emmm.helper.checkArguments(node, 1, 1);
+        let { msgs, args } = emmm.helper.bindArgs(node, ['key'], { trim: true });
         if (msgs) return msgs;
         msgs = emmm.helper.onlyPermitSingleBlock(node);
         if (msgs) return msgs;
         msgs = emmm.helper.onlyPermitSimpleParagraphs(node);
         if (msgs) return msgs;
 
-        const key = node.arguments[0].expansion!.trim();
+        const key = args!.key;
         const data = cxt.get(header)!;
         const previous = data.fields.findIndex(([a, _]) => a == key);
         if (previous >= 0) {
@@ -63,7 +63,6 @@ export const infoFieldSystem = new emmm.SystemModifierDefinition(
         }
         const content = emmm.cloneNode(node.content[0]);
         const stripped = emmm.stripNode(content)[0] as emmm.ParagraphNode;
-        // console.log(emmm.debugPrint.node(content));
         data.fields.push([key, stripped]);
         return msgs ?? [];
     },

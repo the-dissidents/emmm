@@ -1,10 +1,10 @@
 import { debug } from "../debug";
 import { BlockModifierDefinition, ModifierSlotType, InlineModifierDefinition, ModifierNode, NodeType } from "../interface";
 import { SlotUsedOutsideDefinitionMessage, InvalidArgumentMessage, EitherNormalOrPreMessage, UnknownModifierMessage } from "../messages";
-import { checkArguments } from "../modifier-helper";
+import { bindArgs } from "../modifier-helper";
 import { ParseContext } from "../parser-config";
 import { _Def, _Ent, _InstData, _Node } from "../typing-helper";
-import { cloneNodes, NameManager } from "../util";
+import { assert, cloneNodes, NameManager } from "../util";
 import { builtins, ModifierSignature } from "./internal";
 
 function slotModifier
@@ -40,64 +40,67 @@ function slotModifier
         
         // check args
         const check = inject 
-            ? checkArguments(node, 1, 2)
-            : checkArguments(node, 0, 1);
-        if (check) {
+            ? bindArgs(node, ['modname'], { optional: ['id'] })
+            : bindArgs(node, [], { optional: ['id'] });
+        if (check.msgs) {
             node.state = { ok: false };
-            return check;
+            return check.msgs;
         }
 
-        const msgs = (() => {
-            const store = cxt.get(builtins)!;
-            const data = isInline ? store.inlineInstantiationData : store.blockInstantiationData;
-            const stack = isInline ? store.inlineSlotDelayedStack : store.blockSlotDelayedStack;
-    
+        const store = cxt.get(builtins)!;
+        const data = isInline ? store.inlineInstantiationData : store.blockInstantiationData;
+        const stack = isInline ? store.inlineSlotDelayedStack : store.blockSlotDelayedStack;
+
+        let msgs = (() => {
             // check inside definition
             if (data.length == 0 && stack.length == 0) {
                 node.state = { ok: false };
                 return [new SlotUsedOutsideDefinitionMessage(node.location)];
             }
-    
+
             // find default
-            if (node.arguments.length == (inject ? 1 : 0)) {
+            const id = check.args.id;
+            if (!id) {
                 let signature = stack.at(-1);
                 if (signature) return processSignature(signature); // delay
                 node.state = { ok: true, data: data.at(-1) as any, index: data.length - 1 };
                 return;
             }
-    
+
             // find id
-            const id = node.arguments[0].expansion!;
             let signature = stack.find((x) => x.slotName == id);
             if (signature) return processSignature(signature); // delay
             for (let i = data.length - 1; i >= 0; i--) if (data[i].slotName === id) {
                 node.state = { ok: true, data: data[i] as any, index: i };
                 return;
             }
-    
+
             // not found
             if (immediate) {
                 node.state = { ok: false };
-                const arg = node.arguments[0];
-                return [new InvalidArgumentMessage(arg.location, id)];
+                return [new InvalidArgumentMessage(check.nodes.id!.location, id)];
             }
+            return [];
         })();
 
         if (inject) {
-            const arg = node.arguments.at(-1)!;
-            const modName = arg.expansion!;
+            // @ts-expect-error
+            const modname = check.args.modname;
+            // @ts-expect-error
+            const modnameNode = check.nodes.modname;
             const mod = ((isInline 
                 ? cxt.config.inlineModifiers 
-                : cxt.config.blockModifiers) as NameManager<_Def<T>>).get(modName);
+                : cxt.config.blockModifiers) as NameManager<_Def<T>>).get(modname);
             if (!mod) {
                 node.state = { ok: false };
-                return [new UnknownModifierMessage(arg.location, modName)];
+                return [new UnknownModifierMessage(modnameNode.location, modname)];
             }
+
             if (node.state?.ok)
                 node.state.injectMod = mod;
         }
 
-        if (msgs) return msgs;
+        if (msgs !== undefined) return msgs;
         return [];
     };
     mod.expand = (node: ModifierNode<TState>, cxt: ParseContext) => {
@@ -105,12 +108,16 @@ function slotModifier
         if (!node.state.ok) return [];
         let cloned = cloneNodes(node.state.data.slotContent) as _Ent<T>[];
         if (inject) {
-            const mod = node.state.injectMod! as any;
+            assert(node.state.injectMod !== undefined);
+            const mod = node.state.injectMod as any;
             const modNode: ModifierNode = {
                 type, mod,
                 location: node.location,
                 head: node.head,
-                arguments: [], // TODO: enable injecting args
+                arguments: {
+                    positional: [],
+                    named: new Map()
+                }, // TODO: enable injecting args
                 content: cloned as any
             };
             return [modNode];

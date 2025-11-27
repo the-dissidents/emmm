@@ -2,10 +2,10 @@ import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
 import { BlockEntity, InlineEntity, Message, SystemModifierNode, ModifierNode, BlockModifierDefinition, InlineModifierDefinition, ModifierSlotType, NodeType } from "../interface";
 import { EntityNotAllowedMessage } from "../messages";
-import { checkArguments } from "../modifier-helper";
+import { bindArgs } from "../modifier-helper";
 import { ParseContext } from "../parser-config";
 import { _Ent, _Def } from "../typing-helper";
-import { cloneNodes, assert } from "../util";
+import { cloneNodes } from "../util";
 import { ConfigDefinitions } from "./module";
 
 export type ModifierSignature = {
@@ -66,7 +66,7 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
     type State = {
         ok: boolean,
         args: Map<string, string>
-    }
+    };
 
     const flag = 
         signature.slotName === undefined ? ModifierSlotType.None : 
@@ -84,12 +84,12 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
         mod.roleHint = content[0].mod.roleHint;
 
     mod.delayContentExpansion = true;
-    mod.prepareExpand = (node: ModifierNode<State>, cxt: ParseContext) => {
-        let check = checkArguments(node, signature.args.length);
-        if (check) return check;
+    mod.prepareExpand = (node: ModifierNode<State>) => {
+        let { msgs, args } = bindArgs(node, signature.args);
+        if (msgs) return msgs;
         node.state = { 
             ok: true,
-            args: new Map(node.arguments.map((x, i) => [signature.args[i], x.expansion!]))
+            args: new Map(Object.entries(args!))
         } satisfies State;
         return [];
     };

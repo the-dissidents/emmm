@@ -1,8 +1,8 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { BlockModifierDefinition, BlockShorthand, InlineModifierDefinition, InlineShorthand, Message, ModifierSlotType, SystemModifierDefinition } from "../interface";
+import { BlockModifierDefinition, BlockShorthand, InlineModifierDefinition, InlineShorthand, ModifierSlotType, SystemModifierDefinition } from "../interface";
 import { CannotUseModuleInSelfMessage, InvalidArgumentMessage, NoNestedModuleMessage, OverwriteDefinitionsMessage } from "../messages";
-import { checkArguments } from "../modifier-helper";
+import { bindArgs } from "../modifier-helper";
 import { ParseContext } from "../parser-config";
 import { NameManager } from "../util";
 import { builtins } from "./internal";
@@ -90,17 +90,17 @@ export const ModuleMod =
         return []; // node.content;
     },
     beforeParseContent(node, cxt) {
-        const check = checkArguments(node, 1);
-        if (check) return check;
+        let { msgs, args } = bindArgs(node, ['name']);
+        if (msgs) return msgs;
+
         const data = cxt.get(builtins)!;
-        const name = node.arguments[0].expansion!;
+        const name = args!.name;
         const defs = getDefs(cxt);
 
-        if (data.insideModule !== undefined) {
+        if (data.insideModule !== undefined)
             return [new NoNestedModuleMessage(node.head)];
-        }
 
-        let msgs: Message[] = [];
+        msgs = [];
         node.state = { name, defs };
         data.insideModule = name;
         if (data.modules.has(name)) {
@@ -130,16 +130,16 @@ export const UseSystemMod =
     new SystemModifierDefinition<ConfigDefinitions>('use', ModifierSlotType.None, 
 {
     prepareExpand(node, cxt) {
-        const check = checkArguments(node, 1);
-        if (check) return check;
-        const data = cxt.get(builtins)!;
-        const name = node.arguments[0];
-        if (!data.modules.has(name.expansion!))
-            return [new InvalidArgumentMessage(name.location)];
-        if (data.insideModule === name.expansion!)
-            return [new CannotUseModuleInSelfMessage(name.location)];
+        let { msgs, args, nodes } = bindArgs(node, ['name']);
+        if (msgs) return msgs;
 
-        const [added, msg] = addDef(data.modules.get(name.expansion!)!, getDefs(cxt));
+        const data = cxt.get(builtins)!;
+        if (!data.modules.has(args!.name))
+            return [new InvalidArgumentMessage(nodes!.name.location)];
+        if (data.insideModule === args!.name)
+            return [new CannotUseModuleInSelfMessage(nodes!.name.location)];
+
+        const [added, msg] = addDef(data.modules.get(args!.name)!, getDefs(cxt));
         node.state = added;
 
         if (msg) 
@@ -159,17 +159,17 @@ export const UseBlockMod =
     }>('use', ModifierSlotType.Normal, 
 {
     beforeParseContent(node, cxt) {
-        const check = checkArguments(node, 1);
-        if (check) return check;
+        let { msgs, args, nodes } = bindArgs(node, ['name']);
+        if (msgs) return msgs;
+
         const data = cxt.get(builtins)!;
-        const name = node.arguments[0];
-        if (!data.modules.has(name.expansion!))
-            return [new InvalidArgumentMessage(name.location)];
-        if (data.insideModule === name.expansion!)
-            return [new CannotUseModuleInSelfMessage(name.location)];
+        if (!data.modules.has(args!.name))
+            return [new InvalidArgumentMessage(nodes!.name.location)];
+        if (data.insideModule === args!.name)
+            return [new CannotUseModuleInSelfMessage(nodes!.name.location)];
 
         const old = getDefs(cxt);
-        const [added, msg] = addDef(data.modules.get(name.expansion!)!, old);
+        const [added, msg] = addDef(data.modules.get(args!.name)!, old);
         applyDefs(cxt, added);
         node.state = { old };
 

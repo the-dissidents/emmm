@@ -161,7 +161,7 @@ The following example shows a shorthand with prefix `:: ` and a single interfix 
 It is equivalent to
 
 ```
-[.metadata:author] J. Mustermann
+[.metadata|author] J. Mustermann
 ```
 
 except that modifiers must have a name (here "metadata") but block shorthands have no names.
@@ -216,7 +216,7 @@ After expanding, the new entities are reparsed as if they're part of the origina
 > ```
 > [-define-inline foo]
 > :--
-> [-var xyz:123]
+> [-var xyz|123]
 > xyz is now 123
 > --:
 > ```
@@ -224,23 +224,23 @@ After expanding, the new entities are reparsed as if they're part of the origina
 
 ### 5. Modifier arguments
 
-The **arguments** for modifiers are basically `:`-delimited sequences. They are fundamentally simple strings and cannot contain modifiers.
+The **arguments** for modifiers are basically `|`-delimited sequences. They are fundamentally simple strings and cannot contain modifiers.
 
 As in paragraphs, use `\` to escape characters in arguments.
 
 ```
-[/baa anything can be arguments:they can even
+[/baa anything can be arguments|they can even
 span 
 many 
 
-lines (but there are no concept of paragraphs):note that colons (\:), semicolons (\;) and square brackets (\[\]) need escaping;]
+lines (but there are no concept of paragraphs)|note that pipes (\|), semicolons (\;) and square brackets (\[\]) need escaping;]
 ```
 
 A colon before the first argument states explicitly the beginning of that argument, so that any following whitespaces are not trimmed. In fact, it is not even required to have *any* whitespaces after the modifier name, and the built-in `[/$]` makes use of this (you can write `[/$myvar]` instead of `[/$ myvar]`). However, omitting the space in most other cases is, obviously, not recommended.
 
 ```
 [.foo   abc] Argument is "abc"
-[.foo:  abc] Argument is "  abc"
+[.foo|  abc] Argument is "  abc"
 [.fooabc]    Argument is "abc" (argh!)
 ```
 
@@ -263,38 +263,38 @@ Suppose the variables are "x" = "y", "y" = "1":
 
 ### System modifiers
 
-[**-define-block** *name*:*args...*] *content*  
-[**-define-block** *name*:*args...*:(*slot*)] *content*  
-[**-define-inline** *name*:*args...*] *content*  
-[**-define-inline** *name*:*args...*:(*slot*)] *content*  
+[**-define-block** *name* | *args...*] *content*  
+[**-define-block** *name* | *args...* | (*slot*)] *content*  
+[**-define-inline** *name* | *args...*] *content*  
+[**-define-inline** *name* | *args...* | (*slot*)] *content*  
 
 > Define a new modifier. The first argument is the name. If one or more arguments exist, and the last is enclosed in `()`, it is taken as the **slot name** (more on that later). The rest in the middle are names for the arguments.
 > 
 > Take content as the definition of the new modifier.
 
-[**-var** *id*:*value*]
+[**-var** *id* | *value*]
 
 > Assigns `value` to a variable. 
 > 
 > You can't reassign arguments, only variables. Since arguments always take precedence over variables, "reassigning" them has no effect inside a definition and can only confuse the rest of the code.
 
 [**-block-shorthand** *prefix*] *content*  
-[**-block-shorthand** *prefix*:(*slot*)] *content*
+[**-block-shorthand** *prefix* | (*slot*)] *content*
 
 [**-inline-shorthand** *prefix*] *content*  
-[**-inline-shorthand** *prefix*:(*slot*):*postfix*] *content*  
-[**-inline-shorthand** *prefix*:*arg1*:*mid1*:*arg2*:*mid2*...] *content*  
-[**-inline-shorthand** *prefix*:*arg1*:*mid1*:*arg2*:*mid2*...:(*slot*):*postfix*] *content*  
+[**-inline-shorthand** *prefix* | (*slot*) | *postfix*] *content*  
+[**-inline-shorthand** *prefix* | *arg1* | *mid1* | *arg2* | *mid2*...] *content*  
+[**-inline-shorthand** *prefix* | *arg1* | *mid1* | *arg2* | *mid2*...|(*slot*) | *postfix*] *content*  
 
-> Define shorthands. A shorthand notation consists of a prefix, zero or more pairs of argument and middle part, and optionally a slot and a postfix. You can specify a slot name if you want to use one, or just use `()`. You may also specify an *empty* last argument, i.e. a `:` before the `]` that ends the modifier head, to make the postfix stand out better.
+> Define shorthands. A shorthand notation consists of a prefix, zero or more pairs of argument and middle part, and optionally a slot and a postfix. You can specify a slot name if you want to use one, or just use `()`. You may also specify an *empty* last argument, i.e. a `|` before the `]` that ends the modifier head, to make the postfix stand out better.
 > ```
-> [-inline-shorthand:\[!:url:|:():\]:] content
+> [-inline-shorthand|\[!|url|\||()|\]:] content
 > ```
-> This creates: `[!` argument:url `|` slot `]`
+> This creates: `[!` argument|url `|` slot `]`
 > ```
-> [-inline-shorthand:\[!:url:|:text:\]:] content
+> [-inline-shorthand|\[!|url|\||text|\]:] content
 > ```
-> This creates: `[!` argument:url `|` argument:text `]`
+> This creates: `[!` argument|url `|` argument|text `]`
 > 
 > Note the first shorthand has a slot, while the second doesn't. This means you can't put formatted content as text in the second shorthand.
 
@@ -309,7 +309,7 @@ Suppose the variables are "x" = "y", "y" = "1":
 
 > Only used in block-level definitons. When the new modifier or shorthand is being used, expands to its content. You can use the slot name to specify *which* modifier's content you mean, in case of ambiguity. By default it refers to the nearest one.
 > ```
-> [-define-block p:(0)]
+> [-define-block p|(0)]
 > [-define-block q]
 > :--
 > [.slot]

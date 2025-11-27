@@ -1,6 +1,6 @@
 import { BlockModifierDefinition, ModifierSlotType } from "../interface";
 import { InvalidArgumentMessage } from "../messages";
-import { checkArguments } from "../modifier-helper";
+import { bindArgs } from "../modifier-helper";
 import { BlockRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
 
@@ -13,14 +13,13 @@ const orderedListItemBlock = new BlockModifierDefinition<number>(
     {
         roleHint: undefined,
         prepareExpand(node) {
-            let msgs = checkArguments(node, 0, 1);
+            let { msgs, args, nodes } = bindArgs(node, ['number']);
             if (msgs) return msgs;
-            let arg = node.arguments[0];
-            let num = Number.parseInt(arg.expansion!);
+            let num = Number.parseInt(args!.number);
             if (isNaN(num)) return [
-                new InvalidArgumentMessage(arg.location, 'should be a number')];
+                new InvalidArgumentMessage(nodes!.number.location, 'should be a number')];
             node.state = num;
-            return []
+            return [];
         },
     });
 

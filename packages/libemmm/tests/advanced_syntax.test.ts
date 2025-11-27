@@ -24,7 +24,7 @@ function parseWithoutStrip(src: string) {
 
 debug.level = DebugLevel.Warning;
 
-describe('argument parsing', () => {
+describe('positional arguments', () => {
     test('[/print]', () => {
         let doc = parse(`[/print 123|456]`);
         expect.soft(doc.messages).toMatchObject([]);
@@ -39,10 +39,12 @@ describe('argument parsing', () => {
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.BlockModifier, mod: {name: 'normal'},
-            arguments: [
-                { content: [{content: "123"}] },
-                { content: [{content: "456"}] }
-            ]
+            arguments: {
+                positional: [
+                    { content: [{content: "123"}] },
+                    { content: [{content: "456"}] }
+                ]
+            }
         } ]);
     });
     test('multiple lines', () => {
@@ -50,11 +52,13 @@ describe('argument parsing', () => {
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.BlockModifier, mod: {name: 'normal'},
-            arguments: [
-                { content: [{content: "123\n456\n\n\n78900"}] },
-                { content: [{content: "\nab\n\ncdef\n"}] },
-                { content: [{content: "zzzz"}] }
-            ]
+            arguments: {
+                positional: [
+                    { content: [{content: "123\n456\n\n\n78900"}] },
+                    { content: [{content: "\nab\n\ncdef\n"}] },
+                    { content: [{content: "zzzz"}] }
+                ]
+            }
         } ]);
     });
     test('escaped', () => {
@@ -64,7 +68,9 @@ describe('argument parsing', () => {
             type: NodeType.Paragraph,
             content: [{
                 type: NodeType.InlineModifier, mod: {name: 'print'},
-                arguments: [{ content: [{ type: NodeType.Escaped, content: "]" }] }],
+                arguments: {
+                    positional: [{ content: [{ type: NodeType.Escaped, content: "]" }] }]
+                },
                 expansion: [{ type: NodeType.Text, content: ']' }]
             }]
         } ]);
@@ -74,24 +80,28 @@ describe('argument parsing', () => {
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.BlockModifier, mod: {name: 'normal'},
-            arguments: [
-                { content: [{
-                    type: NodeType.Interpolation, 
-                    argument: { content: [{ type: NodeType.Text, content: 'x' }] }
-                }] }
-            ],
+            arguments: {
+                positional: [{ 
+                    content: [{
+                        type: NodeType.Interpolation, 
+                        argument: { content: [{ type: NodeType.Text, content: 'x' }] }
+                    }] 
+                }],
+            },
             content: []
         } ]);
         doc = parse(String.raw`[.normal $(\))]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.BlockModifier, mod: {name: 'normal'},
-            arguments: [
-                { content: [{
-                    type: NodeType.Interpolation, 
-                    argument: { content: [{ type: NodeType.Escaped, content: ")" }] }
-                }] }
-            ],
+            arguments: {
+                positional: [{
+                    content: [{
+                        type: NodeType.Interpolation, 
+                        argument: { content: [{ type: NodeType.Escaped, content: ")" }] }
+                    }]
+                }],
+            },
             content: []
         } ]);
     });

@@ -61,10 +61,6 @@ export class HTMLRenderState {
                 <i>{msg}</i>
                 <pre>{debugPrint.node(node)}</pre>
                </details>;
-        // return <span class='invalid'>
-        //         Invalid {name}: <i>{msg}</i>
-        //         <pre>{debugPrint.node(node)}</pre>
-        //        </span>;
     }
 
     render(elems: (BlockEntity | InlineEntity)[], cxt: RenderContext<HTMLRenderType>) {

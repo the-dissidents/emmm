@@ -32,24 +32,25 @@ export const ratingTableBlock = new emmm.BlockModifierDefinition<RatingTableData
     'ratings', emmm.ModifierSlotType.None,
 {
     prepareExpand(node, cxt) {
-        let msg = emmm.helper.checkArguments(node, 3, Infinity);
-        if (msg) return msg;
-        if ((node.arguments.length - 1) % 2 !== 0)
+        let { msgs, args, rest, restNodes } = 
+            emmm.helper.bindArgs(node, ['key'], { rest: true, trim: true });
+        if (msgs) return msgs;
+        if (rest!.length % 2 !== 0)
             return [new emmm.messages.InvalidArgumentMessage(
-                node.arguments.at(-1)!.location, 'a rating should be paired with a name')];
+                restNodes!.at(-1)!.location, 'a rating should be paired with a name')];
 
-        const [title, author] = node.arguments[0].expansion!.trim().split('@');
+        const [title, author] = args!.key.split('@');
         const map = new Map<string, number>();
-        for (let i = 1; i < node.arguments.length; i += 2) {
-            const ratingArg = node.arguments[i+1];
-            const rating = parseInt(ratingArg.expansion!.trim(), 10);
+        for (let i = 0; i < rest!.length; i += 2) {
+            const ratingArg = restNodes![i+1];
+            const rating = parseInt(rest![i+1], 10);
             if (isNaN(rating))
                 return [new emmm.messages.InvalidArgumentMessage(
                     ratingArg.location, 'a rating should be a number')];
             if (rating < 0 || rating > 4)
                 return [new emmm.messages.InvalidArgumentMessage(
                     ratingArg.location, 'a rating should be between 0 and 4 (inclusive)')];
-            map.set(node.arguments[i].expansion!.trim(), rating);
+            map.set(rest![i], rating);
         }
         const avg = [...map].map((x) => x[1]).reduce((a, b) => a + b / map.size, 0);
         const stddev = Math.sqrt([...map]
@@ -69,9 +70,9 @@ export const overallTableBlock = new emmm.BlockModifierDefinition<string>(
     'overall-ratings', emmm.ModifierSlotType.None,
 {
     prepareExpand(node) {
-        let msg = emmm.helper.checkArguments(node, 1, 1);
-        if (msg) return msg;
-        node.state = node.arguments[0]!.expansion!;
+        let { msgs, args } = emmm.helper.bindArgs(node, ['key']);
+        if (msgs) return msgs;
+        node.state = args!.key;
         return [];
     },
 });

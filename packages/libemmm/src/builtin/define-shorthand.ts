@@ -1,13 +1,14 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { SystemModifierDefinition, InlineEntity, ModifierSlotType, Message, NodeType, SystemModifierNode, InlineShorthand, BlockShorthand } from "../interface";
+import { SystemModifierDefinition, InlineEntity, ModifierSlotType, Message, NodeType, SystemModifierNode, InlineShorthand, BlockShorthand, ModifierArgument } from "../interface";
 import { NameAlreadyDefinedMessage, InvalidArgumentMessage, ArgumentCountMismatchMessage } from "../messages";
-import { checkArguments } from "../modifier-helper";
+import { bindArgs } from "../modifier-helper";
 import { assert } from "../util";
 import { builtins, customModifier, makeInlineDefinition, ModifierSignature } from "./internal";
 
 type ShorthandState = {
     name: string;
+    nameNode: ModifierArgument;
     parts: [string, string][];
     postfix: string | undefined;
     signature: ModifierSignature;
@@ -19,69 +20,65 @@ function parseDefineArguments(
     node: SystemModifierNode<ShorthandState>,
     stack: ModifierSignature[]
 ) {
-    const check = checkArguments(node, 1, Infinity);
-    if (check) return check;
+    let { msgs, args, nodes, rest, restNodes } = bindArgs(node, ['name'], { rest: true });
+    if (msgs) return msgs;
     
-    const msgs: Message[] = [];
-    const name = node.arguments[0];
-    const nameValue = name.expansion!;
-    if (nameValue === '' || nameValue?.includes('\n')) return [
-        new InvalidArgumentMessage(name.location, nameValue)];
+    msgs = [];
+    const nameNode = nodes!.name;
+    const name = args!.name;
+    if (name === '' || name?.includes('\n')) return [
+        new InvalidArgumentMessage(nameNode.location, name)];
 
     let slotName: string | undefined = undefined;
     let parts: [string, string][] = [];
     let postfix: string | undefined = undefined;
-    let i = 1;
-    while (i < node.arguments.length) {
-        const arg = node.arguments[i];
+    let i = 0;
+    while (i < rest!.length) {
+        const arg = restNodes![i];
         const match = /^\((.*)\)$/.exec(arg.expansion!);
         if (match) {
             slotName = match[1];
             i++;
             if (type == NodeType.InlineModifier) {
-                if (i < node.arguments.length) {
-                    if (node.arguments[i].expansion === '') {
+                if (i < rest!.length) {
+                    if (rest![i] === '') {
                         msgs.push(new InvalidArgumentMessage(
-                            node.arguments[i].location, 'postfix'));
+                            restNodes![i].location, 'postfix'));
                     } else {
-                        postfix = node.arguments[i].expansion!;
+                        postfix = rest![i];
                         i++;
                     }
                 } else msgs.push(
-                    new ArgumentCountMismatchMessage(node.location));
+                    new ArgumentCountMismatchMessage(node.head));
             }
             break;
         }
         
         i++;
-        if (i < node.arguments.length) {
+        if (i < rest!.length) {
             const id = arg.expansion!;
-            if (id === '') {
+            if (id === '')
                 return [new InvalidArgumentMessage(arg.location, 'id')];
-            }
-            const part = node.arguments[i].expansion!;
-            if (part === '') {
-                return [new InvalidArgumentMessage(
-                    node.arguments[i].location, 'part')];
-            }
+            const part = rest![i];
+            if (part === '')
+                return [new InvalidArgumentMessage(restNodes![i].location, 'part')];
             parts.push([id, part]);
             i++;
         } else {
-            msgs.push(new ArgumentCountMismatchMessage(node.location));
+            msgs.push(new ArgumentCountMismatchMessage(node.head));
             break;
         }
     }
     
-    if (i == node.arguments.length - 1) {
-        const last = node.arguments[i];
-        if (last.expansion !== '') msgs.push(
-            new InvalidArgumentMessage(last.location, '(must be empty)'));
-    } else if (i < node.arguments.length - 1)
-        msgs.push(new ArgumentCountMismatchMessage(node.location));
+    if (i == rest!.length - 1) {
+        if (rest![i] !== '') msgs.push(
+            new InvalidArgumentMessage(restNodes![i].location, '(must be empty)'));
+    } else if (i < rest!.length - 1)
+        msgs.push(new ArgumentCountMismatchMessage(node.head));
 
     let signature: ModifierSignature = 
         { slotName, args: parts.map((x) => x[0]), preformatted: undefined };
-    node.state = { name: nameValue, signature, parts, postfix, msgs };
+    node.state = { name, nameNode, signature, parts, postfix, msgs };
     stack.push(signature);
     return [];
 }
@@ -93,7 +90,9 @@ export const DefineBlockShorthandMod = new SystemModifierDefinition
     // -inline-shorthand prefix:arg1:part1:arg2:part2...:(slot):postfix:
     delayContentExpansion: true,
     alwaysTryExpand: true,
-    beforeParseContent(node, cxt) {
+    beforeParseContent(node, cxt, immediate) {
+        if (!immediate) return [];
+
         const store = cxt.get(builtins)!;
         const check = parseDefineArguments(NodeType.BlockModifier, 
             node, store.blockSlotDelayedStack);
@@ -111,12 +110,12 @@ export const DefineBlockShorthandMod = new SystemModifierDefinition
     },
     prepareExpand(node, cxt, immediate) {
         if (!immediate || !node.state) return [];
-        const arg = node.arguments[0];
-        if (!node.state) 
-            return [new InvalidArgumentMessage(arg.location)];
+        if (!node.state.name) 
+            return [new InvalidArgumentMessage(node.state.nameNode.location)];
+
         const msgs = node.state.msgs;
         if (cxt.config.blockShorthands.has(node.state.name))
-            msgs.push(new NameAlreadyDefinedMessage(arg.location, node.state.name));
+            msgs.push(new NameAlreadyDefinedMessage(node.state.nameNode.location, node.state.name));
         return msgs;
     },
     expand(node, cxt, immediate) {
@@ -145,7 +144,9 @@ export const DefineInlineShorthandMod = new SystemModifierDefinition
     // -inline-shorthand prefix:arg1:part1:arg2:part2...:(slot):postfix:
     delayContentExpansion: true,
     alwaysTryExpand: true,
-    beforeParseContent(node, cxt) {
+    beforeParseContent(node, cxt, immediate) {
+        if (!immediate) return [];
+
         const store = cxt.get(builtins)!;
         const check = parseDefineArguments(NodeType.InlineModifier, 
             node, store.inlineSlotDelayedStack);
@@ -163,12 +164,12 @@ export const DefineInlineShorthandMod = new SystemModifierDefinition
     },
     prepareExpand(node, cxt, immediate) {
         if (!immediate || !node.state) return [];
-        const arg = node.arguments[0];
-        if (!node.state) 
-            return [new InvalidArgumentMessage(arg.location)];
+        if (!node.state.name) 
+            return [new InvalidArgumentMessage(node.state.nameNode.location)];
+
         const msgs = node.state.msgs;
         if (cxt.config.inlineShorthands.has(node.state.name))
-            msgs.push(new NameAlreadyDefinedMessage(arg.location, node.state.name));
+            msgs.push(new NameAlreadyDefinedMessage(node.state.nameNode.location, node.state.name));
         node.state.definition = makeInlineDefinition(node, msgs);
         return msgs;
     },

@@ -64,8 +64,10 @@ export class Document {
             if (result == 'break') break;
             if (result == 'skip') continue;
 
-            if ('arguments' in node)
-                nodes.push(...node.arguments.flatMap((x) => x.content));
+            if ('arguments' in node) {
+                nodes.push(...node.arguments.positional.flatMap((x) => x.content));
+                nodes.push(...[...node.arguments.named].flatMap(([_name, x]) => x.content));
+            }
             if ('content' in node && Array.isArray(node.content))
                 nodes.push(...node.content);
         }
@@ -76,20 +78,15 @@ export class Document {
      */
     resolvePosition(pos: number): (BlockEntity | InlineEntity | ArgumentEntity)[] {
         const result: (BlockEntity | InlineEntity | ArgumentEntity)[] = [];
-        let nodes: (BlockEntity | InlineEntity | ArgumentEntity)[] = this.root.content;
-        let node;
-        while (node = nodes.shift()) {
+        this.walk((node) => {
             if (node.location.start <= pos 
             && (node.location.actualEnd ?? node.location.end) >= pos)
             {
                 result.push(node);
-                nodes = [];
-                if ('arguments' in node)
-                    nodes.push(...node.arguments.flatMap((x) => x.content));
-                if ('content' in node && Array.isArray(node.content))
-                    nodes.push(...node.content);
+                return 'continue';
             }
-        }
+            return 'skip';
+        });
         return result;
     }
 }

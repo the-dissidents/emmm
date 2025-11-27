@@ -1,6 +1,6 @@
 import { debug } from "./debug";
 import { debugPrint } from "./debug-print";
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierSlotType, ParagraphNode, LocationRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
+import { BlockEntity, BlockModifierDefinition, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierSlotType, ParagraphNode, LocationRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType, ModifierArguments } from "./interface";
 import { ShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, UnknownModifierMessage, UnnecessaryNewlineMessage, InternalErrorMessage } from "./messages";
 import { ParseContext, Document } from "./parser-config";
 import { Scanner } from "./scanner";
@@ -200,10 +200,11 @@ export class Parser {
     }
 
     #expandArguments(node: ModifierNode) {
-        for (const arg of node.arguments) {
+        for (const arg of node.arguments.positional)
             this.#expandArgument(arg);
-            // if (!arg.expansion) debug.trace('expand arg failed');
-        }
+
+        for (const [_name, arg] of node.arguments.named)
+            this.#expandArgument(arg);
     }
     
     #tryAndMessage<Params extends any[]>(
@@ -544,7 +545,10 @@ export class Parser {
             type, mod: d.mod as any,
             head: this.#locFrom(posStart, headEnd),
             location: this.#locFrom(posStart, headEnd),
-            arguments: args,
+            arguments: {
+                positional: args,
+                named: new Map()
+            },
             content: [],
             expansion: undefined
         };
@@ -755,24 +759,27 @@ export class Parser {
         }, ok];
     }
 
-    private ARGUMENTS(): ModifierArgument[] {
+    private ARGUMENTS(): ModifierArguments {
         // optionally accept separator before first argument
-        const firstSemicolon = this.scanner.accept(MODIFIER_ARGUMENT_SEPARATOR);
+        const firstSeparator = this.scanner.accept(MODIFIER_ARGUMENT_SEPARATOR);
         // don't eat whites if there is a first separator
-        if (!firstSemicolon) this.WHITESPACES_OR_NEWLINES();
+        if (!firstSeparator) this.WHITESPACES_OR_NEWLINES();
 
-        const list: ModifierArgument[] = [];
+        const args: ModifierArguments = {
+            positional: [],
+            named: new Map()
+        };
         let end = false;
         while (!end) {
             const [arg, ok] = this.ARGUMENT_CONTENT();
             if (!ok) {
                 end = true;
                 // if we haven't parsed anything so far: if there is no first separator, there's no arguments; otherwise, there is a single empty argument
-                if (list.length == 0 && arg.content.length == 0 && !firstSemicolon)
+                if (args.positional.length == 0 && arg.content.length == 0 && !firstSeparator)
                     break;
             }
-            list.push(arg);
+            args.positional.push(arg);
         }
-        return list;
+        return args;
     }
 }

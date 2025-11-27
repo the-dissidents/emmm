@@ -2,7 +2,7 @@ import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
 import { InlineModifierDefinition, ModifierSlotType, BlockModifierDefinition, BlockEntity, NodeType, LocationRange, SystemModifierDefinition } from "../interface";
 import { InvalidArgumentMessage } from "../messages";
-import { checkArguments } from "../modifier-helper";
+import { bindArgs } from "../modifier-helper";
 import { ParseContext } from "../parser-config";
 import { BlockRendererDefiniton, InlineRendererDefiniton, RenderContext } from "../renderer";
 import { stripNode } from "../util";
@@ -65,15 +65,13 @@ function getSystem(cxt: ParseContext, name?: string) {
 const notePositionSystem = new SystemModifierDefinition(
     'note-position', ModifierSlotType.None,
 {
-    prepareExpand(node, cxt, immediate) {
-        let msgs = checkArguments(node, 1, 2);
+    prepareExpand(node, cxt) {
+        let { msgs, args, nodes } = bindArgs(node, ['type'], { optional: ['name'], trim: true });
         if (msgs) return msgs;
-        const type = node.arguments[0].expansion!.trim();
-        if (type != 'global' && type != 'preserve')
-            return [new InvalidArgumentMessage(node.arguments[0].location,
+        if (args!.type != 'global' && args!.type != 'preserve')
+            return [new InvalidArgumentMessage(nodes!.type.location,
                 "should be `preserve` or `global`")];
-        const name = node.arguments.at(1)?.expansion!.trim();
-        getSystem(cxt, name).position = type;
+        getSystem(cxt, args!.name).position = args!.type;
         return [];
     },
 });
@@ -81,15 +79,13 @@ const notePositionSystem = new SystemModifierDefinition(
 const noteRenumberingSystem = new SystemModifierDefinition(
     'note-renumbering', ModifierSlotType.None,
 {
-    prepareExpand(node, cxt, immediate) {
-        let msgs = checkArguments(node, 1, 2);
+    prepareExpand(node, cxt) {
+        let { msgs, args, nodes } = bindArgs(node, ['type'], { optional: ['name'], trim: true });
         if (msgs) return msgs;
-        const type = node.arguments[0].expansion!.trim();
-        if (type != 'on' && type != 'off')
-            return [new InvalidArgumentMessage(node.arguments[0].location,
+        if (args!.type != 'on' && args!.type != 'off')
+            return [new InvalidArgumentMessage(nodes!.type.location,
                 "should be `preserve` or `global`")];
-        const name = node.arguments.at(1)?.expansion!.trim();
-        getSystem(cxt, name).autonumber = type == 'on';
+        getSystem(cxt, args!.name).autonumber = args!.type == 'on';
         return [];
     },
 });
@@ -99,9 +95,9 @@ const noteMarkerInline = new InlineModifierDefinition<string>(
 {
     roleHint: 'link',
     prepareExpand(node) {
-        let msgs = checkArguments(node, 1);
+        let { msgs, args } = bindArgs(node, ['index']);
         if (msgs) return msgs;
-        node.state = node.arguments[0].expansion!;
+        node.state = args?.index;
         return [];
     },
 });
@@ -111,9 +107,9 @@ const noteInline = new InlineModifierDefinition<string>(
 {
     roleHint: 'quote',
     prepareExpand(node) {
-        let msgs = checkArguments(node, 0, 1);
+        let { msgs, args } = bindArgs(node, [], { optional: ['index'] });
         if (msgs) return msgs;
-        node.state = node.arguments.at(0)?.expansion?.trim() ?? '';
+        node.state = args?.index ?? '';
         return [];
     },
     afterProcessExpansion(node, cxt) {
@@ -145,20 +141,19 @@ const noteBlock = new BlockModifierDefinition<NoteDefinition>(
 {
     roleHint: 'quote',
     prepareExpand(node, cxt) {
-        let msgs = checkArguments(node, 1, 2);
+        let { msgs, args } = bindArgs(node, ['name'], { optional: ['system'], trim: true });
         if (msgs) return msgs;
-        const name = node.arguments[0].expansion!.trim();
-        const system = node.arguments.at(1)?.expansion!.trim() ?? '';
 
         // TODO: check if this is sound in typing
         const content = stripNode(...node.content) as BlockEntity[];
-        debug.trace(`add note: system=<${''}> name=${node.state} @${node.location.start}`);
+        debug.trace(`add note: system=<${''}> name=${args!.name} @${node.location.start}`);
         debug.trace(`-->\n`, debugPrint.node(...content));
 
         const defs = cxt.get(notes)!;
         const entry: NoteDefinition = {
             id: defs.currentId,
-            system, name,
+            system: args!.system ?? '', 
+            name: args!.name,
             location: node.location,
             content: content
         };

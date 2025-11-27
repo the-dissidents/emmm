@@ -2,8 +2,8 @@ import { debug } from "../debug";
 import { InlineModifierDefinition, ModifierSlotType, ArgumentInterpolatorDefinition, SystemModifierDefinition, NodeType, BlockModifierDefinition, ModifierNode } from "../interface";
 import { InvalidArgumentMessage, UndefinedVariableMessage } from "../messages";
 import { builtins } from "./internal";
-import { checkArguments } from "../modifier-helper";
 import { ParseContext } from "../parser-config";
+import { bindArgs } from "../modifier-helper";
 
 function resolveId(id: string, cxt: ParseContext): string | undefined {
     const store = cxt.get(builtins)!;
@@ -33,12 +33,10 @@ function resolveId(id: string, cxt: ParseContext): string | undefined {
 
 let ifdefBody = (x: boolean) => ({
     prepareExpand(node: ModifierNode, cxt: ParseContext) {
-        const check = checkArguments(node, 1);
-        if (check) return check;
-        const arg = node.arguments[0];
-        const id = arg.expansion!;
-        if (id == '') return [new InvalidArgumentMessage(arg.location)];
-        const value = resolveId(id, cxt);
+        let { msgs, args, nodes } = bindArgs(node, ['id']);
+        if (msgs) return msgs;
+        if (args!.id == '') return [new InvalidArgumentMessage(nodes!.id.location)];
+        const value = resolveId(args!.id, cxt);
         node.state = value !== undefined;
         return [];
     },
@@ -66,18 +64,16 @@ export const GetVarInlineMod =
     alwaysTryExpand: true,
     // .$:id
     prepareExpand(node, cxt, immediate) {
-        const check = checkArguments(node, 1);
-        if (check)
-            return immediate ? check : [];
+        let { msgs, args, nodes } = bindArgs(node, ['id']);
+        if (msgs) return immediate ? msgs : [];
 
-        const arg = node.arguments[0];
-        const id = arg.expansion!;
+        const id = args!.id;
         if (id == '')
-            return immediate ? [new InvalidArgumentMessage(arg.location)] : [];
+            return immediate ? [new InvalidArgumentMessage(nodes!.id.location)] : [];
 
         const value = resolveId(id, cxt);
         if (value === undefined)
-            return immediate ? [new UndefinedVariableMessage(arg.location, id)] : [];
+            return immediate ? [new UndefinedVariableMessage(nodes!.id.location, id)] : [];
         node.state = { value };
         return [];
     },
@@ -92,9 +88,9 @@ export const PrintInlineMod =
 {
     // .print:args...
     prepareExpand(node) {
-        const check = checkArguments(node);
-        if (check) return check;
-        node.state = {value: node.arguments.map((x) => x.expansion!).join('')};
+        let { msgs, rest } = bindArgs(node, [], { rest: true });
+        if (msgs) return msgs;
+        node.state = { value: rest!.join('') };
         return [];
     },
     expand(node) {
@@ -119,16 +115,14 @@ export const VarMod = new SystemModifierDefinition<{
 }>('var', ModifierSlotType.None, {
     // .var id:value
     prepareExpand(node, cxt) {
-        const check = checkArguments(node, 2);
-        if (check) return check;
+        let { msgs, args, nodes } = bindArgs(node, ['id', 'value']);
+        if (msgs) return msgs;
 
-        const arg = node.arguments[0];
-        const id = arg.expansion!;
-        if (id == '')
-            return [new InvalidArgumentMessage(arg.location)];
+        if (!args!.id)
+            return [new InvalidArgumentMessage(nodes!.id.location)];
         node.state = {
-            id,
-            value: node.arguments[1].expansion!
+            id: args!.id,
+            value: args!.value
         };
         return [];
     },
