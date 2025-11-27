@@ -5,7 +5,7 @@ import * as Parser from "../../src/parser";
 
 function parse(src: string) {
     const config = Configuration.from(DefaultConfiguration);
-    return Parser.parse(new SimpleScanner(src), new ParseContext(config)).toStripped();
+    return new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
 }
 
 function render(doc: Document) {

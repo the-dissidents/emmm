@@ -38,8 +38,9 @@
   let status = Interface.status;
   let parsedStatus = $state('');
   let posStatus = $state('line ?, col ?');
-  let sourceHandle = $state<EditorHandleOut>({}),
-      libraryHandle = $state<EditorHandleOut>({});
+  let sourceHandle = $state<EditorHandleOut>(),
+      libraryHandle = $state<EditorHandleOut>(),
+      cssHandle = $state<EditorHandleOut>();
   
   let source = $state(''),
       library = $state('');
@@ -47,10 +48,8 @@
   let config: emmm.Configuration;
   {
     emmm.setDebugLevel(emmm.DebugLevel.Warning);
-    let lib = emmm.parse(
-      new emmm.SimpleScanner(testLib), 
-      new emmm.ParseContext(
-        emmm.Configuration.from(CustomConfig)));
+    let lib = new emmm.ParseContext(
+      emmm.Configuration.from(CustomConfig)).parse(new emmm.SimpleScanner(testLib));
     config = lib.context.config;
   }
 
@@ -180,7 +179,10 @@
           provideDescriptor={() => ({name: '<Source>'})}
           provideContext={getContext}>
         <Editor bind:text={source}
-          onFocus={() => updateCursorPosition(sourceHandle)}
+          onFocus={() => {
+            updateCursorPosition(sourceHandle);
+            Interface.activeEditor = sourceHandle;
+          }}
           {onCursorPositionChanged}
           bind:hout={sourceHandle} />
       </EmmmContext>
@@ -188,9 +190,12 @@
     <TabPage name="Library"
         onActivate={() => libraryHandle?.focus?.()}>
       <EmmmContext onParse={onParseLibrary}
-          provideDescriptor={() => ({name: '<Source>'})}>
+          provideDescriptor={() => ({name: '<Library>'})}>
         <Editor bind:text={library}
-          onFocus={() => updateCursorPosition(libraryHandle)}
+          onFocus={() => {
+            updateCursorPosition(libraryHandle);
+            Interface.activeEditor = libraryHandle;
+          }}
           {onCursorPositionChanged}
           bind:hout={libraryHandle} />
       </EmmmContext>
@@ -202,11 +207,15 @@
         css()
       ]}>
         <Editor bind:text={Interface.stylesheet}
-          onFocus={() => updateCursorPosition(libraryHandle)}
+          onFocus={() => {
+            updateCursorPosition(cssHandle);
+            Interface.activeEditor = cssHandle;
+          }}
           {onCursorPositionChanged}
           onChange={() => {
             Interface.render();
-          }}/>
+          }}
+          bind:hout={cssHandle} />
       </GenericContext>
     </TabPage>
   </TabView>

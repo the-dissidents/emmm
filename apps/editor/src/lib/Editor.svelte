@@ -16,7 +16,7 @@
   import { getContext, onMount, setContext } from "svelte";
   import { drawSelection, dropCursor, EditorView, highlightActiveLine, highlightSpecialChars, highlightWhitespace, keymap, lineNumbers } from "@codemirror/view";
   import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
-  import { EditorState, Prec, type Extension } from "@codemirror/state";
+  import { EditorSelection, EditorState, type Extension, type TransactionSpec } from "@codemirror/state";
   import { closeBrackets } from "@codemirror/autocomplete";
   import { hook } from "./details/Hook.svelte";
 
@@ -34,16 +34,24 @@
     text?: string,
     hout?: EditorHandleOut
   }
+
+  export type Selection = {
+    from: number, to: number
+  };
   
   export interface EditorHandleOut {
-    focus?(): void;
-    getCursorPosition?(): [pos: number, l: number, c: number];
+    focus(): void;
+    getCursorPosition(): [pos: number, l: number, c: number];
+    getText(): string;
+    getSelections(): Selection[];
+    setSelections(s: Selection[]): void;
+    update(c: TransactionSpec): void;
   }
 
   let {
     onChange: onTextChange, onCursorPositionChanged, onFocus, onBlur,
     text = $bindable(''),
-    hout = $bindable({}),
+    hout = $bindable(),
   }: Props = $props();
 
   let editorContainer: HTMLDivElement;
@@ -106,6 +114,21 @@
         const line = view.state.doc.lineAt(pos);
         return [pos, line.number, pos - line.from];
       },
+      getText() {
+        return text;
+      },
+      getSelections() {
+        return view.state.selection.ranges.map((x) => ({ from: x.from, to: x.to }));
+      },
+      setSelections(s) {
+        view.dispatch({
+          selection: EditorSelection.create(
+            s.map((x) => EditorSelection.range(x.from, x.to)))
+        });
+      },
+      update(spec) {
+        view.dispatch(spec);
+      }
     };
     hook(() => text, (x) => {
       if (!shouldChange) {

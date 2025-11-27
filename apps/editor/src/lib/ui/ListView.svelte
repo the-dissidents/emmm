@@ -186,7 +186,7 @@
     .list-container {
         box-sizing: border-box;
         width: 100%;
-        /* height: 100%; */
+        height: 100%;
         overflow: scroll;
         /* margin: 2px 0px; */
         border-radius: 3px;

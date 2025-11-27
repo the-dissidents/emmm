@@ -6,6 +6,7 @@ import * as emmm from '@the_dissidents/libemmm';
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { CustomHTMLRenderer } from "./custom/Custom";
 import type { EmmmParseData } from "./editor/ParseData";
+import type { EditorHandleOut } from "./Editor.svelte";
 
 export class EventHost<T extends unknown[] = []> {
     #listeners = new Set<(...args: [...T]) => void>;
@@ -23,16 +24,16 @@ export class EventHost<T extends unknown[] = []> {
 let status = writable<string>('ok');
 let parseData = writable<EmmmParseData | undefined>();
 
-let objUrl: string | undefined;
-
 export const Interface = $state({
     get status() { return status; },
     get parseData() { return parseData; },
 
     stylesheet: '',
+    activeEditor: undefined as EditorHandleOut | undefined,
 
     frame: undefined as HTMLIFrameElement | undefined,
     renderedDocument: null as Document | null,
+
     colors: {
         theme: new Color('pink'),
         text: new Color('black'),

@@ -1,22 +1,24 @@
 import { debug } from "./debug";
 import { debugPrint } from "./debug-print";
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierSlotType, ParagraphNode, LocationRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType, DocumentNode } from "./interface";
+import { BlockEntity, BlockModifierDefinition, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierSlotType, ParagraphNode, LocationRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType } from "./interface";
 import { ShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, UnknownModifierMessage, UnnecessaryNewlineMessage, InternalErrorMessage } from "./messages";
 import { ParseContext, Document } from "./parser-config";
 import { Scanner } from "./scanner";
 import { _Def, _Node, _Shorthand } from "./typing-helper";
 import { assert, NameManager } from "./util";
 
-const GROUP_BEGIN = ':--';
-const GROUP_END = '--:';
+const ESCAPE_CHAR = '\\';
+
+const GROUP_BEGIN = '<<<';
+const GROUP_END = '>>>';
 
 const MODIFIER_BLOCK_OPEN = '[.';
 const MODIFIER_INLINE_OPEN = '[/';
 const MODIFIER_SYSTEM_OPEN = '[-';
-
 const MODIFIER_CLOSE_SIGN = ']';
 const MODIFIER_END_SIGN = ';';
 const MODIFIER_INLINE_END_TAG = '[;]';
+const MODIFIER_ARGUMENT_SEPARATOR = '|';
 
 const UnknownModifier = {
     [NodeType.BlockModifier]: new BlockModifierDefinition('UNKNOWN', ModifierSlotType.Normal),
@@ -267,7 +269,7 @@ export class Parser {
 
             if (!node.expansion)
                 return true;
-            
+
             debug.trace(`${this.delayDepth > 0 ? 'early ' : ''}expanding:`, node.mod.name);
             if (node.expansion.length > 0)
                 debug.trace(() => '-->\n' + debugPrint.node(...node.expansion!));
@@ -382,7 +384,7 @@ export class Parser {
                 && !this.scanner.peek(MODIFIER_CLOSE_SIGN)
                 && !this.scanner.peek(MODIFIER_END_SIGN))
             {
-                if (this.scanner.accept('\\'))
+                if (this.scanner.accept(ESCAPE_CHAR))
                     if (this.scanner.isEOF()) break;
                 name += this.scanner.acceptChar();
             }
@@ -625,9 +627,9 @@ export class Parser {
         const short = this.cxt.config.inlineShorthands.find((x) => this.scanner.accept(x.name));
         if (short) return this.SHORTHAND(NodeType.InlineModifier, short);
 
-        if (this.scanner.accept('\\')) {
+        if (this.scanner.accept(ESCAPE_CHAR)) {
             if (this.scanner.isEOF()) {
-                this.emit.addString('\\');
+                this.emit.addString(ESCAPE_CHAR);
                 return true;
             }
             const start = this.scanner.position();
@@ -701,7 +703,7 @@ export class Parser {
         while (true) {
             if (end && this.scanner.accept(end))
                 break;
-            if (end === undefined && this.scanner.accept(':'))
+            if (end === undefined && this.scanner.accept(MODIFIER_ARGUMENT_SEPARATOR))
                 break;
             if (close.find((x) => this.scanner.peek(x))
              || this.scanner.isEOF())
@@ -710,11 +712,11 @@ export class Parser {
                 break;
             }
 
-            if (this.scanner.accept('\\')) {
+            if (this.scanner.accept(ESCAPE_CHAR)) {
                 // handle escaping
                 posEnd = this.scanner.position();
                 if (this.scanner.isEOF()) {
-                    emitString('\\');
+                    emitString(ESCAPE_CHAR);
                     ok = false;
                     break;
                 }
@@ -754,9 +756,9 @@ export class Parser {
     }
 
     private ARGUMENTS(): ModifierArgument[] {
-        // optionally accept semicolon before first argument
-        const firstSemicolon = this.scanner.accept(':');
-        // don't eat whites if there is a first semicolon
+        // optionally accept separator before first argument
+        const firstSemicolon = this.scanner.accept(MODIFIER_ARGUMENT_SEPARATOR);
+        // don't eat whites if there is a first separator
         if (!firstSemicolon) this.WHITESPACES_OR_NEWLINES();
 
         const list: ModifierArgument[] = [];
@@ -765,7 +767,7 @@ export class Parser {
             const [arg, ok] = this.ARGUMENT_CONTENT();
             if (!ok) {
                 end = true;
-                // if we haven't parsed anything so far: if there is no first semicolon, there's no arguments; otherwise, there is a single empty argument
+                // if we haven't parsed anything so far: if there is no first separator, there's no arguments; otherwise, there is a single empty argument
                 if (list.length == 0 && arg.content.length == 0 && !firstSemicolon)
                     break;
             }
@@ -773,9 +775,4 @@ export class Parser {
         }
         return list;
     }
-}
-
-/** @deprecated */
-export function parse(scanner: Scanner, cxt: ParseContext) {
-    return new Parser(scanner, cxt).parse();
 }

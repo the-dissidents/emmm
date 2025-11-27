@@ -38,7 +38,7 @@ export const ratingTableBlock = new emmm.BlockModifierDefinition<RatingTableData
             return [new emmm.messages.InvalidArgumentMessage(
                 node.arguments.at(-1)!.location, 'a rating should be paired with a name')];
 
-        const [title, author] = node.arguments[0].expansion!.trim().split('|');
+        const [title, author] = node.arguments[0].expansion!.trim().split('@');
         const map = new Map<string, number>();
         for (let i = 1; i < node.arguments.length; i += 2) {
             const ratingArg = node.arguments[i+1];
@@ -150,12 +150,13 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, string> = [
             return cxt.state.invalidBlock(node, 'bad format');
 
         const members = new Set<string>();
-        const all = cxt.parsedDocument.context.get(ratings)!.data;
+        const all = cxt.parsedDocument.context.get(ratings)!
+            .data.sort((a, b) => b.data.avg - a.data.avg);
         for (const entry of all)
             for (const member of entry.data.ratings.keys())
                 members.add(member);
         
-        const columns = [...members].sort();
+        const columns = [...members].sort((a, b) => a.localeCompare(b));
         const colgroups: Node[] = [];
         colgroups.push(<col class="title" />);
         colgroups.push(<col class="avg" />);

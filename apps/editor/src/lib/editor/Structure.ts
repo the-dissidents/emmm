@@ -11,6 +11,8 @@ export type LineStructure = {
     indentation: {hanging: number, normal: number}
 };
 
+const HANGING_MAX_LANGTH = 6;
+
 class Structure {
     private lines: LineStructure[] = [];
 
@@ -94,7 +96,8 @@ class Structure {
                     const {number: line, from} = this.doc.lineAt(node.content[0].location.start);
                     if (line == l1 && node.type !== emmm.NodeType.InlineModifier) {
                         // do hanging indentation
-                        let hang = node.content[0].location.start - from;
+                        let hang = Math.min(HANGING_MAX_LANGTH, 
+                            node.content[0].location.start - from);
                         if (l2 > line)
                             for (let i = line + 1; i <= l2; i++)
                                 this.lines[i].indentation.normal = 
