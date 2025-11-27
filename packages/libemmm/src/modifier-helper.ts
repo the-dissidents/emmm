@@ -1,6 +1,6 @@
 import { debug } from "./debug";
 import { ModifierNode, Message, BlockModifierNode, NodeType, BlockEntity, SystemModifierNode, InlineEntity, ModifierSlotType, SystemModifierDefinition, ParagraphNode, ModifierArgument } from "./interface";
-import { ArgumentCountMismatchMessage, CannotExpandArgumentMessage, ContentExpectedMessage, EntityNotAllowedMessage, MultipleBlocksNotPermittedMessage, OnlySimpleParagraphsPermittedMessage, OverwriteSpecialVariableMessage } from "./messages";
+import { ArgumentCountMismatchMessage, CannotExpandArgumentMessage, ContentExpectedMessage, EntityNotAllowedMessage, InvalidArgumentMessage, MultipleBlocksNotPermittedMessage, OnlySimpleParagraphsPermittedMessage, OverwriteSpecialVariableMessage } from "./messages";
 import { ParseContext } from "./parser-config";
 import { cloneNode, stripNode } from "./util";
 
@@ -24,6 +24,7 @@ export function bindArgs<P extends string[], Opt extends string[] = [], N extend
         named?: N, 
         optional?: readonly [...Opt], 
         rest?: boolean, 
+        restNamed?: boolean,
         trim?: boolean
     }
 ): BindResult<P, Opt, N> {
@@ -56,6 +57,8 @@ export function bindArgs<P extends string[], Opt extends string[] = [], N extend
 
     const args: any = {};
     const nodes: any = {};
+    const msgs: Message[] = [];
+
     p.forEach((name, i) => {
         nodes[name] = node.arguments.positional[i];
         args[name] = nodes[name].expansion!;
@@ -73,6 +76,17 @@ export function bindArgs<P extends string[], Opt extends string[] = [], N extend
         args[name] = node.arguments.named.get(name)?.expansion! ?? def;
         if (opts?.trim && args[name]) args[name] = args[name].trim();
     });
+    if (!opts?.restNamed) node.arguments.named.forEach((v, k) => {
+        if (!opts?.named || !Object.hasOwn(opts.named, k))
+            msgs.push(new InvalidArgumentMessage(v.location, `no such named argument: "${k}"`));
+    });
+    if (msgs.length) return {
+        msgs,
+        args: undefined,
+        nodes: undefined,
+        rest: undefined,
+        restNodes: undefined
+    }
 
     const restNodes = node.arguments.positional
         .slice(p.length + (opts?.optional?.length ?? 0));

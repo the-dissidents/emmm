@@ -16,7 +16,7 @@ function parseDefineArguments(
     node: SystemModifierNode<ModifierState>,
     stack: CustomModifierSignature[]
 ) {
-    let { msgs, args, nodes, rest } = bindArgs(node, ['name'], { rest: true });
+    let { msgs, args, nodes, rest } = bindArgs(node, ['name'], { rest: true, restNamed: true });
     if (msgs) return msgs;
 
     msgs = [];

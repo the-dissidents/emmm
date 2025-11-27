@@ -191,7 +191,7 @@ export class OnlySimpleParagraphsPermittedMessage implements Message {
         public readonly location: LocationRange) {}
     readonly code = 14;
     readonly severity = MessageSeverity.Error;
-    get info(): string { return `Only simple paragraphs are permitted here` }
+    get info(): string { return `only simple paragraphs are permitted here` }
 }
 
 export class ContentExpectedMessage implements Message {
@@ -199,7 +199,7 @@ export class ContentExpectedMessage implements Message {
         public readonly location: LocationRange) {}
     readonly code = 15;
     readonly severity = MessageSeverity.Error;
-    get info(): string { return `Content expected` }
+    get info(): string { return `content expected` }
 }
 
 export class InternalErrorMessage implements Message {
@@ -208,9 +208,17 @@ export class InternalErrorMessage implements Message {
         public readonly error: any) {}
     readonly code = 16;
     readonly severity = MessageSeverity.Error;
-    get info(): string { return `An internal error occurred when parsing: ${this.error}` }
+    get info(): string { return `an internal error occurred when parsing: ${this.error}` }
 }
 
+export class DuplicateNamedArgumentMessage implements Message {
+    constructor(
+        public readonly location: LocationRange,
+        public readonly name: string) {}
+    readonly code = 17;
+    readonly severity = MessageSeverity.Error;
+    get info(): string { return `an argument has already been defined with the same name "${this.name}"` }
+}
 
 // warnings
 

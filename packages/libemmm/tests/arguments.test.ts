@@ -77,7 +77,6 @@ describe('positional arguments', () => {
     });
 });
 
-
 describe('named arguments', () => {
     test('simple', () => {
         let doc = parseWithoutStrip(`[.normal name1=value1|name2=value2]`);
@@ -121,6 +120,24 @@ describe('named arguments', () => {
                     { content: [{content: "http://example.com?q=search"}] },
                 ],
                 named: new Map()
+            }
+        } ]);
+    });
+    test('error -- duplicate', () => {
+        let doc = parseWithoutStrip(`[.normal name=value1|name=value2]`);
+        expect.soft(doc.messages).toMatchObject([
+            {
+                code: 17,
+                severity: 2
+            }
+        ]);
+        expect.soft(doc.root.content).toMatchObject([ {
+            type: NodeType.BlockModifier, mod: {name: 'normal'},
+            arguments: {
+                positional: [],
+                named: new Map([
+                    ['name', { content: [{ content: "value2" }] }],
+                ])
             }
         } ]);
     });

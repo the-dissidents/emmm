@@ -1,7 +1,7 @@
 import { debug } from "./debug";
 import { debugPrint } from "./debug-print";
 import { BlockEntity, BlockModifierDefinition, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierSlotType, ParagraphNode, LocationRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType, ModifierArguments } from "./interface";
-import { ShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, UnknownModifierMessage, UnnecessaryNewlineMessage, InternalErrorMessage } from "./messages";
+import { ShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, UnknownModifierMessage, UnnecessaryNewlineMessage, InternalErrorMessage, DuplicateNamedArgumentMessage } from "./messages";
 import { ParseContext, Document } from "./parser-config";
 import { Scanner } from "./scanner";
 import { _Def, _Node, _Shorthand } from "./typing-helper";
@@ -761,14 +761,16 @@ export class Parser {
         }, ok];
     }
 
-    // returns isOk
+    // returns error message and isOk
     private POSSIBLY_NAMED_ARGUMENT(
         args: ModifierArguments
-    ): boolean {
+    ): [Message[] | undefined, boolean] {
         let ok = true;
         const close = [MODIFIER_END_SIGN, MODIFIER_CLOSE_SIGN];
         let content: ArgumentEntity[] = [];
-        let posStart = this.scanner.position();
+
+        const posStart = this.scanner.position();
+        let contentStart = posStart;
         let posEnd = this.scanner.position();
 
         let name: { type: 'possible' | 'ok', value: string } | undefined = {
@@ -844,6 +846,7 @@ export class Parser {
                     if (char == '=') {
                         name.type = 'ok';
                         content = [];
+                        contentStart = posEnd;
                         continue; // consume '='
                     }
 
@@ -856,14 +859,20 @@ export class Parser {
             }
         }
         const arg: ModifierArgument = {
-            location: this.#locFrom(posStart, posEnd),
+            location: this.#locFrom(contentStart, posEnd),
             content
         };
-        if (name?.type == 'ok')
+
+        let msgs: Message[] | undefined;
+        if (name?.type == 'ok') {
+            if (args.named.has(name.value)) {
+                msgs = [new DuplicateNamedArgumentMessage(
+                    this.#locFrom(posStart, contentStart - 1), name.value)];
+            }
             args.named.set(name.value, arg);
-        else
+        } else
             args.positional.push(arg);
-        return ok;
+        return [msgs, ok];
     }
 
     private ARGUMENTS(): ModifierArguments {
@@ -881,7 +890,11 @@ export class Parser {
         if (this.scanner.peek(MODIFIER_CLOSE_SIGN)
          || this.scanner.peek(MODIFIER_END_SIGN)) return args;
 
-        while (this.POSSIBLY_NAMED_ARGUMENT(args)) {}
+        while (true) {
+            const [msgs, ok] = this.POSSIBLY_NAMED_ARGUMENT(args);
+            if (msgs) this.emit.message(...msgs);
+            if (!ok) break;
+        }
 
         args.location.end = this.scanner.position();
         return args;
