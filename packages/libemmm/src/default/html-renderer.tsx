@@ -2,6 +2,7 @@ import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
 import { BlockEntity, InlineEntity, NodeType } from "../interface";
 import { RenderContext, RenderConfiguration, ReadonlyRenderConfiguration } from "../renderer";
+import { stripNode } from "../util";
 import { BulletBlockRenderersHTML } from "./bullets";
 import { CodeBlockRendererHTML, CodeInlineRendererHTML } from "./code";
 import { HeadingBlockRenderersHTML } from "./headings";
@@ -9,6 +10,7 @@ import { InlineStyleRenderersHTML } from "./inline-styles";
 import { MiscBlockRenderersHTML, MiscInlineRenderersHTML } from "./misc";
 import { NoteBlockRenderersHTML, NoteInlineRenderersHTML, NotesFooterPlugin } from "./notes";
 import { QuoteBlockRenderersHTML } from "./quotes";
+import { TableBlockRenderers, TableInlineRenderers } from "./table";
 
 export type HTMLRendererOptions = {
     headPlugins: HTMLComponentPlugin[];
@@ -155,14 +157,16 @@ htmlConfig.addBlockRenderer(
     CodeBlockRendererHTML,
     ...QuoteBlockRenderersHTML,
     ...MiscBlockRenderersHTML,
-    ...NoteBlockRenderersHTML
+    ...NoteBlockRenderersHTML,
+    ...TableBlockRenderers,
 );
 
 htmlConfig.addInlineRenderer(
     CodeInlineRendererHTML,
     ...InlineStyleRenderersHTML,
     ...MiscInlineRenderersHTML,
-    ...NoteInlineRenderersHTML
+    ...NoteInlineRenderersHTML,
+    ...TableInlineRenderers,
 )
 
 export const HTMLRenderConfiguration

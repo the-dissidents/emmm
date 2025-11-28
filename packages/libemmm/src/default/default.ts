@@ -7,22 +7,25 @@ import { QuoteBlocks } from "./quotes";
 import { InlineStyles } from "./inline-styles";
 import { MiscBlocks, MiscInlines } from "./misc";
 import { Configuration, ReadonlyConfiguration } from "../parser-config";
+import { initTable, TableBlocks, TableInlines } from "./table";
 
 let config = Configuration.from(BuiltinConfiguration);
-config.initializers.push(initNotes, initHeadings);
+config.initializers.push(initNotes, initHeadings, initTable);
 config.blockModifiers.add(
     ...HeadingBlocks,
     ...BulletBlocks,
     CodeBlock,
     ...QuoteBlocks,
     ...MiscBlocks,
-    ...NoteBlocks
+    ...NoteBlocks,
+    ...TableBlocks,
 );
 config.inlineModifiers.add(
     CodeInline,
     ...InlineStyles,
     ...MiscInlines,
-    ...NoteInlines
+    ...NoteInlines,
+    ...TableInlines,
 );
 config.systemModifiers.add(
     ...NoteSystems,

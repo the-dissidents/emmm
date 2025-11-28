@@ -45,20 +45,16 @@
   let source = $state(''),
       library = $state('');
 
-  let config: emmm.Configuration;
+  let libContext = $state<emmm.ParseContext>();
   {
     emmm.setDebugLevel(emmm.DebugLevel.Warning);
     let lib = new emmm.ParseContext(
       emmm.Configuration.from(CustomConfig)).parse(new emmm.SimpleScanner(testLib));
-    config = lib.context.config;
+    libContext = lib.context;
   }
 
   function onParseLibrary(doc: EmmmParseData) {
-    config = doc.data.context.config;
-  }
-
-  function getContext() {
-    return new emmm.ParseContext(emmm.Configuration.from(config));
+    libContext = doc.data.context;
   }
 
   function onCursorPositionChanged(_: number, l: number, c: number) {
@@ -177,7 +173,7 @@
         onActivate={() => sourceHandle?.focus?.()}>
       <EmmmContext {onParse} 
           provideDescriptor={() => ({name: '<Source>'})}
-          provideContext={getContext}>
+          provideContext={() => libContext}>
         <Editor bind:text={source}
           onFocus={() => {
             updateCursorPosition(sourceHandle);

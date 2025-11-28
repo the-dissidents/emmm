@@ -62,7 +62,51 @@ text1 = `
 
 [.z]`;
 
-text1 = `[-define-block p]abc\n[.p]\ndef`;
+text1 = `
+[.table]
+<<<
+[.table-row]
+<<<
+[.table-cell]1234
+[.table-cell]5678
+>>>
+[.table-separator]
+[.table-row]
+<<<
+[.table-cell]1234
+[.table-cell]5678
+>>>
+>>>`;
+
+text1 = String.raw`
+[.module table]
+<<<
+
+[-block-shorthand .|()]
+[.table-row][.slot]
+
+[-inline-shorthand \||()|\|]
+[/table-cell][/slot][;]
+
+[-block-shorthand \===]
+[.table-separator]
+
+>>>
+
+[.use table]
+<<<
+000
+
+[.table]
+<<<
+.|123||456|
+===
+.|123||456|
+>>>
+
+111
+
+>>>`
 
 // text1 = `[.heading 1]`;
 

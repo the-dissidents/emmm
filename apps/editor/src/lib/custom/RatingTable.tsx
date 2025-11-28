@@ -1,18 +1,20 @@
 import * as emmm from '@the_dissidents/libemmm';
 
-const ratings = Symbol();
+const rating = Symbol();
 
 declare module '@the_dissidents/libemmm' {
     export interface ParseContextStoreDefinitions {
-        [ratings]?: {
-            data: RatingTableData[]
+        [rating]?: {
+            data: RatingTableData[],
+            showHeader: boolean
         }
     }
 }
 
 export function initRatings(cxt: emmm.ParseContext) {
-    cxt.init(ratings, {
-        data: []
+    cxt.init(rating, {
+        data: [],
+        showHeader: true
     });
 }
 
@@ -27,6 +29,22 @@ type RatingTableData = {
     author?: string,
     data: RatingData
 };
+
+export const ratingHeaderSystem = new emmm.SystemModifierDefinition(
+    'ratings-header', emmm.ModifierSlotType.None,
+{
+    prepareExpand(node, cxt) {
+        let { msgs, args, nodes } = 
+            emmm.helper.bindArgs(node, ['value']);
+        if (msgs) return msgs;
+
+        if (!['on', 'off'].includes(args!.value))
+            return [new emmm.messages.InvalidArgumentMessage(nodes!.value.location)];
+
+        cxt.get(rating)!.showHeader = args!.value == 'on';
+        return [];
+    }
+})
 
 export const ratingTableBlock = new emmm.BlockModifierDefinition<RatingTableData>(
     'ratings', emmm.ModifierSlotType.None,
@@ -62,7 +80,7 @@ export const ratingTableBlock = new emmm.BlockModifierDefinition<RatingTableData
             avg, stddev
         };
         node.state = { title, author, data };
-        cxt.get(ratings)!.data.push(node.state);
+        cxt.get(rating)!.data.push(node.state);
         return [];
     },
 });
@@ -87,7 +105,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, RatingTableData> = [
         if (!node.state)
             return cxt.state.invalidBlock(node, 'bad format');
         const { title, author, data: { ratings, avg, stddev } } = node.state;
-        const head = title
+        const head = title && cxt.parsedDocument.context.get(rating)!.showHeader
           ? <thead>
                 <tr class='title'><th colspan={TABLE_COLUMNS}>
                     {title}
@@ -152,7 +170,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, string> = [
             return cxt.state.invalidBlock(node, 'bad format');
 
         const members = new Set<string>();
-        const all = cxt.parsedDocument.context.get(ratings)!
+        const all = cxt.parsedDocument.context.get(rating)!
             .data.sort((a, b) => b.data.avg - a.data.avg);
         for (const entry of all)
             for (const member of entry.data.ratings.keys())

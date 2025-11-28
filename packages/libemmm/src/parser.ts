@@ -278,12 +278,12 @@ export class Parser {
 
         this.#tryAndMessage(node, node.mod.beforeProcessExpansion, node as never, this.cxt, immediate);
 
+        const expansion = node.expansion;
+        if (!expansion || expansion.length == 0) return true;
         debug.trace('reparsing expansion of:', node.mod.name);
-        const expansion = node.expansion ?? node.content;
-        if (expansion.length == 0) return true;
         let ok = this.#reparse(expansion, depth);
-
         debug.trace('done reparsing expansion of:', node.mod.name);
+
         this.#tryAndMessage(node, node.mod.afterProcessExpansion, node as never, this.cxt, immediate);
 
         if (!ok && depth == 0) {

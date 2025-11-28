@@ -8,7 +8,7 @@ import { BlockRendererDefiniton, InlineRendererDefiniton, RenderContext } from "
 import { stripNode } from "../util";
 import { HTMLComponentPlugin, HTMLRenderType } from "./html-renderer";
 
-export const notes = Symbol();
+const notes = Symbol();
 
 type NoteSystem = {
     position: 'preserve' | 'global',
