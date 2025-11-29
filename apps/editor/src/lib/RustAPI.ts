@@ -50,7 +50,11 @@ function createChannel(handler: {[key in BackendEventKey]?: BackendEventHandler<
 
 export const RustAPI = {
     async compressImage(path: string, maxSize: number) {
-        const buf = await invoke<ArrayBuffer>('compress_image', {path, maxSize});
+        const buf = await invoke<ArrayBuffer>('compress_image', { 
+            path, maxSize, 
+            supportedTypes: ['image/jpeg'],
+            max_width: 1920 
+        });
         return new Blob([buf], {type: 'image/jpeg'});
     }
 }

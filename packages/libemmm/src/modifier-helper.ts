@@ -1,4 +1,5 @@
 import { debug } from "./debug";
+import { debugPrint } from "./debug-print";
 import { ModifierNode, Message, BlockModifierNode, NodeType, BlockEntity, SystemModifierNode, InlineEntity, ModifierSlotType, SystemModifierDefinition, ParagraphNode, ModifierArgument } from "./interface";
 import { ArgumentCountMismatchMessage, CannotExpandArgumentMessage, ContentExpectedMessage, EntityNotAllowedMessage, InvalidArgumentMessage, MultipleBlocksNotPermittedMessage, OnlySimpleParagraphsPermittedMessage, OverwriteSpecialVariableMessage } from "./messages";
 import { ParseContext } from "./parser-config";
@@ -213,7 +214,7 @@ export function createPlaintextWrapper(name: string,
         slotType = ModifierSlotType.Normal) {
     return new SystemModifierDefinition<void>(name, slotType, {
         delayContentExpansion: true,
-        afterProcessExpansion(node, cxt) {
+        beforeProcessExpansion(node, cxt) {
             let { msgs } = bindArgs(node, []);
             if (msgs) return msgs;
             const result = onlyPermitPlaintextParagraph(node);
@@ -233,7 +234,7 @@ export function createParagraphWrapper(name: string,
         set: (cxt: ParseContext, value: ParagraphNode) => void,
         slotType = ModifierSlotType.Normal) {
     return new SystemModifierDefinition<void>(name, slotType, {
-        afterProcessExpansion(node, cxt) {
+        beforeProcessExpansion(node, cxt) {
             let { msgs } = bindArgs(node, []);
             if (msgs) return msgs;
             msgs = onlyPermitSingleBlock(node);
@@ -247,6 +248,7 @@ export function createParagraphWrapper(name: string,
             const content = cloneNode(node.content[0]);
             const stripped = stripNode(content)[0] as ParagraphNode;
             set(cxt, stripped);
+            debug.info(name, '->', debugPrint.node(stripped));
             return msgs ?? [];
         },
     });

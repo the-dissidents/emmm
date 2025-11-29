@@ -112,7 +112,7 @@ const noteInline = new InlineModifierDefinition<string>(
         node.state = args?.index ?? '';
         return [];
     },
-    afterProcessExpansion(node, cxt) {
+    beforeProcessExpansion(node, cxt) {
         if (node.state !== undefined) {
             const defs = cxt.get(notes)!;
             defs.definitions.push({

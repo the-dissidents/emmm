@@ -44,7 +44,7 @@ export const infoFieldSystem = new emmm.SystemModifierDefinition(
     'info-field', emmm.ModifierSlotType.Normal,
 {
     // delayContentExpansion: true,
-    afterProcessExpansion(node, cxt) {
+    beforeProcessExpansion(node, cxt) {
         let { msgs, args } = emmm.helper.bindArgs(node, ['key'], { trim: true });
         if (msgs) return msgs;
         msgs = emmm.helper.onlyPermitSingleBlock(node);

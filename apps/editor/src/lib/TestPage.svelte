@@ -45,16 +45,16 @@
   let source = $state(''),
       library = $state('');
 
-  let libContext = $state<emmm.ParseContext>();
+  let libConfig = $state<emmm.Configuration>();
   {
     emmm.setDebugLevel(emmm.DebugLevel.Warning);
     let lib = new emmm.ParseContext(
       emmm.Configuration.from(CustomConfig)).parse(new emmm.SimpleScanner(testLib));
-    libContext = lib.context;
+    libConfig = lib.context.config;
   }
 
   function onParseLibrary(doc: EmmmParseData) {
-    libContext = doc.data.context;
+    libConfig = doc.data.context.config;
   }
 
   function onCursorPositionChanged(_: number, l: number, c: number) {
@@ -137,24 +137,24 @@
     <TabPage name="Options">
       <h5>Theme color</h5>
       <Colorpicker bind:color={Interface.colors.theme} mode='hsl'
-        onchange={doDeriveColors} />
+        oninput={doDeriveColors} />
       <hr/>
       <label><input type="checkbox"
-          bind:checked={autoColor} onchange={doDeriveColors} />
+          bind:checked={autoColor} oninput={doDeriveColors} />
         automatically derive the rest
       </label>
       <h5>Text color</h5>
       <Colorpicker bind:color={Interface.colors.text} mode='hsl'
-        onchange={doDeriveColors} />
+        oninput={doDeriveColors} />
       <h5>Commentary color</h5>
       <Colorpicker bind:color={Interface.colors.commentary} mode='hsl'
-        onchange={doDeriveColors} />
+        oninput={doDeriveColors} />
       <h5>Link color</h5>
       <Colorpicker bind:color={Interface.colors.link} mode='hsl'
-        onchange={doDeriveColors} />
+        oninput={doDeriveColors} />
       <h5>Highlight color</h5>
       <Colorpicker bind:color={Interface.colors.highlight} mode='hsl'
-        onchange={doDeriveColors} />
+        oninput={doDeriveColors} />
     </TabPage>
     <TabPage name='Search'>
       <SearchToolbox />
@@ -173,7 +173,7 @@
         onActivate={() => sourceHandle?.focus?.()}>
       <EmmmContext {onParse} 
           provideDescriptor={() => ({name: '<Source>'})}
-          provideContext={() => libContext}>
+          provideContext={() => libConfig ? new emmm.ParseContext(libConfig) : undefined}>
         <Editor bind:text={source}
           onFocus={() => {
             updateCursorPosition(sourceHandle);
@@ -236,6 +236,11 @@
           <input type="checkbox" bind:checked={strip} />
           only show transformed (stripped) AST
         </label>
+        <button onclick={() => {
+          emmm.setDebugLevel(emmm.DebugLevel.Trace);
+          new emmm.ParseContext(libConfig!).parse(new emmm.SimpleScanner(source));
+          emmm.setDebugLevel(emmm.DebugLevel.Error);
+        }}>trace</button>
       </div>
     </TabPage>
     <TabPage name="HTML">

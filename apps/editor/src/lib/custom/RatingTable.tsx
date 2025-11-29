@@ -17,17 +17,13 @@ export function initRatings(cxt: emmm.ParseContext) {
         showHeader: true
     });
 }
-
-type RatingData = {
+type RatingTableData = {
+    title: string,
+    author: string,
+    group: string,
     ratings: Map<string, number>;
     avg: number;
     stddev: number;
-};
-
-type RatingTableData = {
-    title: string,
-    author?: string,
-    data: RatingData
 };
 
 export const ratingHeaderSystem = new emmm.SystemModifierDefinition(
@@ -46,52 +42,73 @@ export const ratingHeaderSystem = new emmm.SystemModifierDefinition(
     }
 })
 
+function parseRatings(
+    node: emmm.BlockModifierNode<RatingTableData>, cxt: emmm.ParseContext
+): emmm.Message[] {
+    let { msgs, args, rest, restNodes } = emmm.helper.bindArgs(node, ['key'], {
+        named: { dir: '', g: '' }, rest: true, trim: true
+    });
+    if (msgs) return msgs;
+    if (rest!.length % 2 !== 0)
+        return [new emmm.messages.InvalidArgumentMessage(
+            restNodes!.at(-1)!.location, 'a rating should be paired with a name')];
+
+    const map = new Map<string, number>();
+    for (let i = 0; i < rest!.length; i += 2) {
+        const ratingArg = restNodes![i+1];
+        const rating = parseInt(rest![i+1], 10);
+        if (isNaN(rating))
+            return [new emmm.messages.InvalidArgumentMessage(
+                ratingArg.location, 'a rating should be a number')];
+        if (rating < 0 || rating > 4)
+            return [new emmm.messages.InvalidArgumentMessage(
+                ratingArg.location, 'a rating should be between 0 and 4 (inclusive)')];
+        map.set(rest![i], rating);
+    }
+    const avg = [...map].map((x) => x[1]).reduce((a, b) => a + b / map.size, 0);
+    const stddev = Math.sqrt([...map]
+        .map((x) => x[1])
+        .reduce((a, b) => a + (b - avg) * (b - avg) / map.size, 0));
+    
+    node.state = {
+        title: args!.key, 
+        author: args!.dir, 
+        group: args!.g,
+        ratings: map, avg, stddev
+    };
+    cxt.get(rating)!.data.push(node.state);
+    return [];
+}
+
 export const ratingTableBlock = new emmm.BlockModifierDefinition<RatingTableData>(
     'ratings', emmm.ModifierSlotType.None,
 {
     prepareExpand(node, cxt) {
-        let { msgs, args, rest, restNodes } = 
-            emmm.helper.bindArgs(node, ['key'], { named: { dir: '' }, rest: true, trim: true });
-        if (msgs) return msgs;
-        if (rest!.length % 2 !== 0)
-            return [new emmm.messages.InvalidArgumentMessage(
-                restNodes!.at(-1)!.location, 'a rating should be paired with a name')];
+        return parseRatings(node, cxt);
+    },
+});
 
-        const title = args!.key;
-        const author = args!.dir;
-        const map = new Map<string, number>();
-        for (let i = 0; i < rest!.length; i += 2) {
-            const ratingArg = restNodes![i+1];
-            const rating = parseInt(rest![i+1], 10);
-            if (isNaN(rating))
-                return [new emmm.messages.InvalidArgumentMessage(
-                    ratingArg.location, 'a rating should be a number')];
-            if (rating < 0 || rating > 4)
-                return [new emmm.messages.InvalidArgumentMessage(
-                    ratingArg.location, 'a rating should be between 0 and 4 (inclusive)')];
-            map.set(rest![i], rating);
-        }
-        const avg = [...map].map((x) => x[1]).reduce((a, b) => a + b / map.size, 0);
-        const stddev = Math.sqrt([...map]
-            .map((x) => x[1])
-            .reduce((a, b) => a + (b - avg) * (b - avg) / map.size, 0));
-        const data: RatingData = {
-            ratings: map,
-            avg, stddev
-        };
-        node.state = { title, author, data };
-        cxt.get(rating)!.data.push(node.state);
+export const ratingHiddenBlock = new emmm.BlockModifierDefinition<RatingTableData>(
+    'ratings-data', emmm.ModifierSlotType.None,
+{
+    prepareExpand(node, cxt) {
+        return parseRatings(node, cxt);
+    },
+    expand() {
         return [];
     },
 });
 
-export const overallTableBlock = new emmm.BlockModifierDefinition<string>(
+export const overallTableBlock = new emmm.BlockModifierDefinition<{
+    title: string,
+    group: string
+}>(
     'overall-ratings', emmm.ModifierSlotType.None,
 {
     prepareExpand(node) {
-        let { msgs, args } = emmm.helper.bindArgs(node, ['key']);
+        let { msgs, args } = emmm.helper.bindArgs(node, ['key'], { named: { g: '' } });
         if (msgs) return msgs;
-        node.state = args!.key;
+        node.state = { title: args!.key, group: args!.g };
         return [];
     },
 });
@@ -104,7 +121,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, RatingTableData> = [
     (node, cxt) => {
         if (!node.state)
             return cxt.state.invalidBlock(node, 'bad format');
-        const { title, author, data: { ratings, avg, stddev } } = node.state;
+        const { title, author, ratings, avg, stddev } = node.state;
         const head = title && cxt.parsedDocument.context.get(rating)!.showHeader
           ? <thead>
                 <tr class='title'><th colspan={TABLE_COLUMNS}>
@@ -163,17 +180,21 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, RatingTableData> = [
 ];
 
 export const overallTableRenderer: 
-emmm.BlockRendererDefiniton<emmm.HTMLRenderType, string> = [
+emmm.BlockRendererDefiniton<emmm.HTMLRenderType, {
+    title: string,
+    group: string
+}> = [
     overallTableBlock,
     (node, cxt) => {
         if (!node.state)
             return cxt.state.invalidBlock(node, 'bad format');
 
         const members = new Set<string>();
-        const all = cxt.parsedDocument.context.get(rating)!
-            .data.sort((a, b) => b.data.avg - a.data.avg);
+        const all = cxt.parsedDocument.context.get(rating)!.data
+            .filter((x) => x.group == node.state!.group)
+            .sort((a, b) => b.avg - a.avg);
         for (const entry of all)
-            for (const member of entry.data.ratings.keys())
+            for (const member of entry.ratings.keys())
                 members.add(member);
         
         const columns = [...members].sort((a, b) => a.localeCompare(b));
@@ -184,7 +205,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, string> = [
         colgroups.push(...columns.map((x) => <col class="member" />));
 
         const heads: Node[] = [];
-        heads.push(<th class="corner">{node.state}</th>);
+        heads.push(<th class="corner">{node.state.title}</th>);
         heads.push(<th class="avg" scope="col">平均</th>);
         heads.push(<th class="stddev" scope="col">标准差</th>);
         heads.push(...columns.map((x) => <th class="member" scope="col">{x}</th>));
@@ -198,10 +219,10 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, string> = [
                     ? [<br/>, <span class='author'>{entry.author}</span>] 
                     : []}
             </th>);
-            cells.push(<td class='avg'>{entry.data.avg.toFixed(2)}</td>);
-            cells.push(<td class='stddev'>{entry.data.stddev.toFixed(2)}</td>);
+            cells.push(<td class='avg'>{entry.avg.toFixed(2)}</td>);
+            cells.push(<td class='stddev'>{entry.stddev.toFixed(2)}</td>);
             for (const member of columns) {
-                const n = entry.data.ratings.get(member);
+                const n = entry.ratings.get(member);
                 if (n === undefined) {
                     cells.push(<td class='member empty'></td>);
                 } else {

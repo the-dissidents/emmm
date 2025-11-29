@@ -33,7 +33,7 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
         const start = performance.now();
         const context = state.facet(emmmContextProvider)() 
             ?? new emmm.ParseContext(emmm.Configuration.from(CustomConfig));
-
+        
         let inspector: EmmmInspectorData | null = null;
         const scanner = new emmm.SimpleScanner(
             state.doc.toString(), 

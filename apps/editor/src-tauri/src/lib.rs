@@ -111,7 +111,12 @@ async fn compress_image(
 
         log::info!("compress_image decoded image");
 
-        if format.to_mime_type() != "image/jpeg" {
+        let mut r: f64 = 1.0;
+        if let Some(mw) = max_width {
+            r = r.min(mw.to_f64().unwrap() / img.width().to_f64().unwrap());
+        }
+
+        if supported_types.iter().any(|x| *x == format.to_mime_type()) {
             if original.len() < max_size {
                 return Ok(original);
             }
@@ -123,7 +128,6 @@ async fn compress_image(
         }
 
         let mut l = 0.1;
-        let mut r = 1.0;
         let mut last_ok: Option<Vec<u8>> = None;
         let passable_size = (max_size.to_f64().unwrap() * 0.9).to_usize().unwrap();
 

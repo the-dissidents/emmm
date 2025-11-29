@@ -61,8 +61,8 @@
         try {
             const file = await loadImage(img.url, /* maxSizeMB: */ 1);
             console.log(file);
-            if (!img.url.href.endsWith('png'))
-                img.url.href += '.png';
+            // if (!img.url.href.endsWith('png'))
+            //     img.url.href += '.png';
             Interface.status.set(`uploading: ${img.url.href}`);
             await Weixin.uploadSmallImage(file, img.url.href, true);
             updateImg(img);
