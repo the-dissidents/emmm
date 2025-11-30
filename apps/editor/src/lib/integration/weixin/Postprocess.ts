@@ -1,21 +1,21 @@
-import { renderText } from "$lib/custom/Custom";
+import { renderText } from "$lib/emmm/Custom";
 import { DOMUtil } from "$lib/Util";
 import { inlineCss } from "@the_dissidents/dom-css-inliner";
 import { Weixin } from "./API";
 
 const CONVERT_TO_SECTION = new Set([
-    'address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'fieldset', 
-    'figcaption', 'figure', 'footer', 'form', 'header', 
+    'address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'fieldset',
+    'figcaption', 'figure', 'footer', 'form', 'header',
     'li', 'main', 'nav', 'ol', 'pre', 'ul'
 ]);
 
 const CONVERT_TO_SPAN = new Set([
-    'abbr', 'acronym', 'b', 'bdo', 'big', 'cite', 'code', 'dfn', 'em', 'i', 
+    'abbr', 'acronym', 'b', 'bdo', 'big', 'cite', 'code', 'dfn', 'em', 'i',
     'kbd', 'output', 'q', 'samp', 'small', 'strong',  'time', 'tt', 'var'
 ]);
 
 const PRESERVE = new Set([
-    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
     'table', 'thead', 'tbody', 'tfoot', 'th', 'td', 'tr',
     'p', 'span', 'section', 'img', 'a', 'hr', 'br', 'sub', 'sup',
 ]);
@@ -75,8 +75,8 @@ export async function postprocess(doc: Document, win: Window) {
             // console.log(elem);
             const img = elem as HTMLImageElement;
             const url = new URL(img.dataset.originalSrc ?? img.src);
-            
-            const realhref = url.href + (url.href.endsWith('png') ? '' : '.png');
+
+            const realhref = url.href;
             const cached = Weixin.smallImageCache.get(realhref);
             if (cached) {
                 img.src = cached;

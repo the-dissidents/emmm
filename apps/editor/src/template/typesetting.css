@@ -1,0 +1,595 @@
+/* large structures */
+
+body {
+  font-family: system-ui, sans-serif;
+  background-color: white;
+  line-height: 1.4;
+  letter-spacing: 0px;
+}
+
+section {
+  white-space: pre-wrap;
+}
+
+section.article-container {
+  display: inline-block;
+  background-color: var(--theme-color);
+  color: var(--text-color);
+  justify-content: center;
+  box-sizing: border-box;
+  display: flex;
+  flex-flow: row;
+  padding: 25px 0px;
+}
+
+section.article-body {
+  width: 88%;
+  position: static;
+  box-sizing: border-box;
+  text-align: justify;
+  font-size: 14px;
+  line-height: 2;
+}
+
+span.wide {
+  letter-spacing: 2px;
+}
+
+*+span.wide {
+  padding-inline-start: 2px;
+}
+
+/* meta elements */
+
+details.invalid {
+  border-radius: 3px;
+  padding: 5px;
+  font-size: 80%;
+  border: 1px black;
+  background-color: darkred;
+  color: white;
+}
+
+span.invalid {
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 80%;
+  border: 1px black;
+  background-color: darkred;
+  color: white;
+}
+
+/* notes */
+
+sup {
+  line-height: 0;
+  font-size: 65%;
+}
+
+sup.note a::before {
+  content: '[';
+}
+
+sup.note a::after {
+  content: ']';
+}
+
+sup.note a {
+  color: var(--link-color);
+  text-decoration: none;
+  margin-inline: 2px;
+}
+
+sup.note.invalid {
+  color: red;
+}
+
+section.notes-global {}
+
+section.note {
+  display: flex;
+  color: var(--note-color);
+  font-size: 85%;
+  line-height: 1.7;
+}
+
+section.note .note-name a::before {
+  content: '[';
+}
+
+section.note .note-name a::after {
+  content: ']';
+}
+
+section.note .note-name p {
+  padding-right: 5px;
+}
+
+section.note .note-name * {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+/* paragraphs and headings */
+
+p {
+  margin-block: 0 1.5em;
+}
+
+p.attribution {
+  text-align: end;
+}
+
+blockquote {
+  padding-left: 1.5em;
+  margin: 0;
+  text-align: justify;
+  /* border-left: 2px black solid; */
+}
+
+:is(h2, h3, h4, h5, h6) {
+  margin-block: 2em 1em;
+}
+
+h1 {
+  font-size: 150%;
+  font-weight: bold;
+  margin-block: 4em 2em;
+}
+
+h2 {
+  font-size: 115%;
+  font-weight: bold;
+}
+
+h3 {
+  font-size: 100%;
+  font-weight: bold;
+}
+
+.implicit:is(h1, h2, h3, h4, h5, h6) {
+  text-align: center;
+}
+
+.implicit:is(h1, h2, h3, h4, h5, h6)::before {
+  content: '• • •';
+}
+
+.numbered-heading {
+  text-align: center;
+  & .heading-number {
+    display: inline-block;
+    background-color: var(--highlight-color);
+    border-radius: 0.5lh;
+    min-width: 1lh;
+    padding: 0 0.5em;
+    box-sizing: border-box;
+  }
+  & .heading-content {
+    display: inline-block;
+    padding-left: 0.5em;
+  }
+}
+
+header figure {
+  margin-block: 1em 0.5em;
+}
+
+header h1 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+header h1:not(:has(+ .subtitle)) {
+  margin-top: 0em;
+  margin-bottom: 1em;
+}
+
+header h1.subtitle {
+  font-size: 130%;
+  margin-bottom: 1em;
+}
+
+header p:has(+ p) {
+  margin-bottom: 0.2em;
+}
+
+header .originalUrl {
+  word-break: break-all;
+  text-decoration: underline;
+}
+
+header .key {
+  color: var(--commentary-color);
+}
+
+aside:is(.ttr, .the-end) {
+  font-size: 12px;
+  line-height: 1.8;
+  text-align: end;
+}
+
+aside:is(.ttr, .the-end) p {
+  margin-top: 3em;
+  margin-bottom: 1em;
+}
+
+aside:is(.ttr, .the-end)+hr {
+  margin-top: 0;
+  margin-bottom: 6em;
+}
+
+/* blocks */
+
+.detail {
+  font-size: 13px;
+  text-align: justify;
+  line-height: 1.7;
+}
+
+aside.the-end {
+  font-weight: bold;
+  & p {
+    margin-top: 7em;
+  }
+}
+
+li {
+  margin-left: 1em;
+  display: flex;
+    white-space: pre;
+  &::before {
+    content: "○\a";
+    display: block;
+  }
+  & p {
+    margin-left: 1em;
+    white-space: normal;
+  }
+}
+
+/* inline formattings */
+
+em {
+  font-style: italic;
+}
+
+strong,
+b {
+  font-weight: bold;
+}
+
+span code {
+  background-color: #eee;
+  padding: 2px 4px;
+  margin: 0 2px;
+  border-radius: 3px;
+}
+
+span.commentary {
+  font-size: 85%;
+  color: var(--commentary-color);
+  letter-spacing: 0.5px;
+  margin-inline: 2px;
+}
+
+mark {
+  background-color: var(--highlight-color);
+  color: var(--text-color);
+}
+
+.seq {
+  word-break: break-all;
+}
+
+.emmmstyle-speaker-a p {
+  padding-right: 3em;
+  color: var(--link-color);
+}
+
+.emmmstyle-speaker-b p {
+  padding-left: 3em;
+}
+
+.emmmstyle-lr, .emmmstyle-ll {
+  display: block !important;
+  min-width: 75% !important;
+  width: 75% !important;
+  max-width: 75% !important;
+}
+
+.emmmstyle-lr {
+  margin-left: auto;
+}
+
+.emmmstyle-lr * {
+  text-align: right;
+}
+
+.emmmstyle-lr figure {
+  margin-top: 1em;
+}
+
+.emmmstyle-ll * {
+  text-align: left;
+}
+
+.emmmstyle-ll figure {
+  margin-bottom: 1em;
+}
+
+.emmmstyle-lr-r {
+  display: flex !important;
+}
+
+.emmmstyle-lr-r figure {
+  min-width: 30vw;
+  max-width: 30vw;
+  margin-left: 1.5em;
+}
+
+.emmmstyle-lrc {
+  display: block !important;
+}
+
+/* misc */
+
+hr {
+  margin-block: 3em;
+  height: 0px;
+  border-top: 1px dashed var(--separator-color);
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+}
+
+figure {
+  margin: 0;
+  max-width: 100%;
+  width: 100%;
+  margin-block: 2em 2em;
+}
+
+figure img {
+  max-width: 100%;
+  width: 100%;
+}
+
+figure figcaption {
+  text-align: right;
+  font-size: 85%;
+  color: var(--commentary-color);
+  letter-spacing: 0.5px;
+}
+
+.emmmstyle-gallery figure {
+  position: relative;
+  padding: 0;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  border: 1px solid var(--commentary-color);
+}
+
+.emmmstyle-gallery figure>img {
+  display: block;
+  height: auto;
+}
+
+.emmmstyle-gallery figure>figcaption {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  vertical-align: bottom;
+  display: inline-block;
+  box-sizing: border-box;
+  padding: 0 10px;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.65);
+  color: white;
+  text-align: justify;
+}
+
+.emmmstyle-center {
+  text-align: center;
+}
+
+.emmmstyle-right {
+  text-align: right;
+}
+
+.emmmstyle-footer :is(figure, hr) {
+  margin: 0;
+}
+
+.emmmstyle-footer figure:first-child {
+  margin-top: 6em;
+}
+
+.emmmstyle-footer p {
+  margin-block: 0.5lh;
+  line-height: 1.4;
+  font-size: 85%;
+  text-align: justify;
+}
+
+/* tables */
+
+
+/* ratings */
+
+.ratings {
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: Arial, '黑体-简';
+  margin-bottom: 1lh;
+}
+
+.ratings thead tr.title th {
+  line-height: 2.5;
+  font-size: 120%;
+  & .author::before {
+    content: '〔'
+  }
+  & .author::after {
+    content: '〕'
+  }
+}
+
+.ratings thead tr.info th {
+  line-height: 2;
+  font-size: 90%;
+  font-weight: normal;
+}
+
+.ratings th {
+  border: 2px solid var(--text-color);
+  background-color: transparent;
+}
+
+.ratings td {
+  border: 2px solid var(--text-color);
+  background-color: transparent;
+}
+
+.ratings tbody th {
+  font-size: 90%;
+  line-height: 100%;
+  padding: 0;
+  height: 3em;
+}
+
+.ratings tbody td {
+  white-space: pre-wrap;
+  line-height: 90%;
+  font-size: 120%;
+  height: 2em;
+  padding: 15px;
+  /*color: var(--commentary-color);*/
+}
+
+.ratings tfoot td {
+  white-space: collapse;
+  line-height: 250%;
+  padding: 5px;
+}
+
+.ratings tfoot span {
+  font-size: 100%;
+  font-weight: bold;
+  padding: 3px;
+}
+
+.ratings .stars-0::before {
+  content: '×';
+}
+.ratings .stars-1::before {
+  content: '★';
+}
+.ratings .stars-2::before {
+  white-space: pre-wrap;
+  content: '★★';
+}
+.ratings .stars-3::before {
+  white-space: pre-wrap;
+  content: '★\A★★';
+}
+.ratings .stars-4::before {
+  white-space: pre-wrap;
+  content: '★★\A★★';
+}
+
+/* overall */
+
+.overall-container {
+  width: 100%;
+  overflow-x: scroll;
+  margin-bottom: 1lh;
+}
+
+.overall {
+  text-align: center;
+  /* max-width: 500px; */
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: Arial, 'PingFang SC';
+  border: none;
+  width: auto !important;
+}
+
+.overall :is(th, td) {
+  background-color: #FFF !important;
+  color: black !important;
+  padding: 5px 10px;
+  min-width: 5ic;
+  white-space: nowrap;
+}
+
+.overall .corner {
+  background-color: black !important;
+  text-align: end;
+  color: white !important;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.overall thead * {
+  line-height: 1.5;
+  height: 2lh;
+}
+
+.overall tbody th {
+  background-color: #FFF !important;
+  text-align: end;
+  line-height: 1.5;
+  position: sticky !important;
+  left: 0;
+  z-index: 1;
+}
+
+.overall tbody th .author {
+  font-weight: normal;
+  font-size: 85%;
+}
+
+.overall :is(.avg, .stddev) {
+  min-width: 0;
+}
+
+.overall :is(td, tbody th) {
+  border-top: 1px solid #DDD;
+}
+
+.overall td.member:nth-child(even) {
+  background-color: #F8F8F8 !important;
+}
+
+.overall .empty::before {
+  font-size: 130%;
+  content: ' ';
+}
+.overall .stars-0::before {
+  font-size: 130%;
+  content: '×';
+}
+.overall .stars-1::before {
+  font-size: 100%;
+  content: '★';
+}
+.overall .stars-2::before {
+  font-size: 100%;
+  content: '★★';
+}
+.overall .stars-3::before {
+  font-size: 100%;
+  white-space: pre-wrap;
+  content: '★★★';
+}
+.overall .stars-4::before {
+  font-size: 100%;
+  white-space: pre-wrap;
+  content: '★★★★';
+}

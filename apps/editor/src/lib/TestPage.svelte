@@ -1,36 +1,35 @@
 <script lang="ts">
-  import WeixinToolbox from './WeixinToolbox.svelte';
+  import WeixinToolbox from './integration/weixin/WeixinToolbox.svelte';
 
   import * as emmm from '@the_dissidents/libemmm';
   import { css } from '@codemirror/lang-css';
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 
-  import Editor, { type EditorHandleOut } from './Editor.svelte';
+  import Editor, { type EditorHandleOut } from './editor/Editor.svelte';
   import Resizer from './ui/Resizer.svelte';
   import TabView from './ui/TabView.svelte';
   import TabPage from './ui/TabPage.svelte';
 
-  import Colorpicker from './ui/Colorpicker.svelte';
-  import { deriveColorsFrom } from './ColorTheme';
   import ListView, { type ListColumn, type ListViewHandleOut } from './ui/ListView.svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import { Interface } from './Interface.svelte';
   import { Settings } from './Settings';
 
-  import testStyles from './typesetting.css?raw';
-  import testString from './testsource.txt?raw';
-  import testLib from './testlib.txt?raw';
-  
+  import testStyles from '../template/typesetting.css?raw';
+  import testString from '../template/testsource.txt?raw';
+  import testLib from '../template/testlib.txt?raw';
+
   import { onMount } from 'svelte';
-  import EmmmContext from './EmmmContext.svelte';
-  import GenericContext from './GenericContext.svelte';
-  import { CustomConfig } from './custom/Custom';
-  import SearchToolbox from './SearchToolbox.svelte';
-    import type { EmmmParseData } from './editor/ParseData';
+  import EmmmContext from './editor/EmmmContext.svelte';
+  import GenericContext from './editor/GenericContext.svelte';
+  import { CustomConfig } from './emmm/Custom';
+  import SearchToolbox from './toolbox/SearchToolbox.svelte';
+  import type { EmmmParseData } from './editor/ParseData';4
+  import ParametersToolbox from './toolbox/ParametersToolbox.svelte';
 
   let outputAST = $state('');
-  let left = $state<HTMLElement>(), 
-      middle = $state<HTMLElement>(), 
+  let left = $state<HTMLElement>(),
+      middle = $state<HTMLElement>(),
       right = $state<HTMLElement>(),
       bottom = $state<HTMLElement>();
 
@@ -41,7 +40,7 @@
   let sourceHandle = $state<EditorHandleOut>(),
       libraryHandle = $state<EditorHandleOut>(),
       cssHandle = $state<EditorHandleOut>();
-  
+
   let source = $state(''),
       library = $state('');
 
@@ -105,15 +104,6 @@
     }));
   });
 
-  let autoColor = $state(true);
-
-  function doDeriveColors() {
-    if (autoColor) Interface.colors = deriveColorsFrom(Interface.colors.theme);
-    Interface.render();
-  }
-
-  doDeriveColors();
-
   onMount(() => {
     Settings.onInitialized(() => {
       Interface.stylesheet = Settings.get('tempStylesheet') || testStyles;
@@ -134,27 +124,8 @@
     <TabPage name='Weixin'>
       <WeixinToolbox />
     </TabPage>
-    <TabPage name="Options">
-      <h5>Theme color</h5>
-      <Colorpicker bind:color={Interface.colors.theme} mode='hsl'
-        oninput={doDeriveColors} />
-      <hr/>
-      <label><input type="checkbox"
-          bind:checked={autoColor} oninput={doDeriveColors} />
-        automatically derive the rest
-      </label>
-      <h5>Text color</h5>
-      <Colorpicker bind:color={Interface.colors.text} mode='hsl'
-        oninput={doDeriveColors} />
-      <h5>Commentary color</h5>
-      <Colorpicker bind:color={Interface.colors.commentary} mode='hsl'
-        oninput={doDeriveColors} />
-      <h5>Link color</h5>
-      <Colorpicker bind:color={Interface.colors.link} mode='hsl'
-        oninput={doDeriveColors} />
-      <h5>Highlight color</h5>
-      <Colorpicker bind:color={Interface.colors.highlight} mode='hsl'
-        oninput={doDeriveColors} />
+    <TabPage name="Parameters">
+      <ParametersToolbox />
     </TabPage>
     <TabPage name='Search'>
       <SearchToolbox />
@@ -169,9 +140,9 @@
 <!-- source view -->
 <div class="pane flexgrow" bind:this={middle}>
   <TabView>
-    <TabPage name="Source" 
+    <TabPage name="Source"
         onActivate={() => sourceHandle?.focus?.()}>
-      <EmmmContext {onParse} 
+      <EmmmContext {onParse}
           provideDescriptor={() => ({name: '<Source>'})}
           provideContext={() => libConfig ? new emmm.ParseContext(libConfig) : undefined}>
         <Editor bind:text={source}
@@ -225,7 +196,7 @@
 <div class="pane" bind:this={right} style="width: 500px;">
   <TabView>
     <TabPage name="Preview" active={true}>
-      <iframe bind:this={Interface.frame} title="preview" 
+      <iframe bind:this={Interface.frame} title="preview"
         sandbox="allow-same-origin">
       </iframe>
     </TabPage>

@@ -4,9 +4,9 @@ import Color from "colorjs.io";
 
 import * as emmm from '@the_dissidents/libemmm';
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { CustomHTMLRenderer } from "./custom/Custom";
+import { CustomHTMLRenderer } from "./emmm/Custom";
 import type { EmmmParseData } from "./editor/ParseData";
-import type { EditorHandleOut } from "./Editor.svelte";
+import type { EditorHandleOut } from "./editor/Editor.svelte";
 
 export class EventHost<T extends unknown[] = []> {
     #listeners = new Set<(...args: [...T]) => void>;

@@ -1,0 +1,111 @@
+[-block-shorthand #[|num|\]|()]
+[.numbered-heading $(num)][.slot]
+
+[-block-shorthand #-[|num|\]]
+[.numbered-heading $(num);]
+
+[-block-shorthand #|()]    [.heading 1][.slot]
+[-block-shorthand ##|()]   [.heading 2][.slot]
+[-block-shorthand ###|()]  [.heading 3][.slot]
+[-block-shorthand ####|()] [.heading 4][.slot]
+[-block-shorthand #####|()][.heading 5][.slot]
+
+[-block-shorthand ***][.implicit-heading]
+
+[-block-shorthand ---][.break]
+
+[-block-shorthand ::|key|\=|()]
+[-info-field $(key)][.slot]
+
+[.module interview]
+[-block-shorthand \||person|\|]
+### [/$person]:
+
+[-inline-shorthand <>]
+[/tab]
+
+[-inline-shorthand …]⋯
+
+[-inline-shorthand ——]⸺
+
+[-inline-shorthand _|()|_]
+[/emphasis][/slot][;]
+
+[-inline-shorthand *|()|*]
+[/keyword][/slot][;]
+
+[-inline-shorthand <<|()|>>]
+[/highlight][/slot][;]
+
+[-inline-shorthand [\=|()|\]]
+[/commentary][[/slot]][;]
+
+[-inline-shorthand|[\||title|\||()|\]]
+[/commentary][_[/$title]_, [/slot]][;]
+
+[-inline-shorthand|`|()|`]
+[/inject-pre-slot code]
+
+[-block-shorthand >|()]
+[.quote][.slot]
+
+[-block-shorthand -.|()]
+[.bullet-item][.slot]
+
+[-inline-shorthand|[[|id|\]\]]
+[/note $(id);]
+
+[-block-shorthand|[:|id|\]|()]
+[.note $(id)][.slot]
+
+[.module table]
+<<<
+[-block-shorthand .|()]
+[.table-row][.slot]
+
+[-inline-shorthand \||()|\|]
+[/table-cell][/slot][;]
+
+[-block-shorthand \=\||arg|\|]
+[.table-separator]
+>>>
+
+[-define-block recommend|id|link]
+[.style gallery]
+[.link $(link)]
+[.image $(id)]
+[.slot]
+
+[-define-block speaker|id]
+[.style speaker-$(id)]
+[.slot]
+
+[-define-block lr|proto|path]
+[.style lr]
+<<<
+[.image $(proto)|$(path);]
+[.style lrc]
+[.slot]
+>>>
+
+[-define-block lrr|proto|path]
+[.style lr-r]
+<<<
+[.style lrc]
+[.slot]
+[.image $(proto)|$(path);]
+>>>
+
+[-define-block lr2|proto|path]
+<<<
+[.style float]
+[.image $(proto)|$(path);]
+[.slot]
+>>>
+
+[-define-block lr3|proto|path]
+<<<
+[.style float-r]
+[.image $(proto)|$(path);]
+[.slot]
+>>>

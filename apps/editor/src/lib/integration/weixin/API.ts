@@ -1,8 +1,8 @@
 import { get, readonly, writable, type Readable } from "svelte/store";
-import { Settings } from "../Settings";
+import { Settings } from "$lib/Settings";
 import { fetch } from '@tauri-apps/plugin-http';
-import { RequestFailedError } from "../Util";
-import { assert } from "../Debug";
+import { RequestFailedError } from "$lib/Util";
+import { assert } from "$lib/Debug";
 import { BaseDirectory, writeFile } from "@tauri-apps/plugin-fs";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 
@@ -169,7 +169,7 @@ export const Weixin = {
     async fetchToken(forced = false) {
         if (!forced && this.tokenOk)
             return get(stableToken);
-        if (!get(appid) || !get(secret)) 
+        if (!get(appid) || !get(secret))
             throw new WeixinBadCredentialError();
         const r = await fetch('https://api.weixin.qq.com/cgi-bin/stable_token', {
             method: 'POST',
@@ -269,7 +269,7 @@ export const Weixin = {
             return assetCache.get(id)!;
         if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
             throw new WeixinInvalidTokenError();
-        
+
         console.log('downloadAsset', id, name, force);
         let path: string;
         try {
@@ -284,7 +284,7 @@ export const Weixin = {
             if (!r.ok)
                 throw new RequestFailedError(r);
             const filename = `${id}-${[...name].filter((x) => /[a-zA-Z0-9.]/.test(x)).join('')}`;
-            await writeFile(filename, 
+            await writeFile(filename,
                 new Uint8Array(await r.arrayBuffer()), { baseDir: BaseDirectory.AppLocalData });
             path = await join(await appLocalDataDir(), filename);
         } catch (_) {

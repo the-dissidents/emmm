@@ -1,18 +1,13 @@
 <script lang="ts">
-    import { assert } from "./Debug";
-    import ListView, { type ListButtonCell, type ListCell, type ListColumn, type ListItem, type ListViewHandleIn, type ListViewHandleOut } from './ui/ListView.svelte';
+    import { assert } from "../../Debug";
+    import ListView, { type ListButtonCell, type ListCell, type ListColumn, type ListItem, type ListViewHandleIn, type ListViewHandleOut } from '../../ui/ListView.svelte';
     import { SvelteMap } from 'svelte/reactivity';
-    import { Weixin } from './weixin/API';
-    import { Interface } from './Interface.svelte';
-    import { getIP, GetIPMethod, loadImage } from './Util';
-    import { RustAPI } from "./RustAPI";
-    import { path } from "@tauri-apps/api";
-    import { tempDir } from "@tauri-apps/api/path";
+    import { Weixin } from './API';
+    import { Interface } from '../../Interface.svelte';
+    import { getIP, GetIPMethod, loadImage } from '../../Util';
     import { convertFileSrc } from "@tauri-apps/api/core";
     import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
-    import { postprocess } from "./weixin/Postprocess";
-    import * as dialog from '@tauri-apps/plugin-dialog';
-    import { writeFile } from "@tauri-apps/plugin-fs";
+    import { postprocess } from "./Postprocess";
 
     let publicIP = $state('');
     let appid = Weixin.appid;
@@ -22,7 +17,7 @@
     const imgListHeader = new SvelteMap<string, ListColumn>([
         ['refresh', {name: '', type: 'button', width: '15%'}],
         ['status', {name: '', type: 'text', width: '10%'}],
-        ['name', {name: 'name', type: 'text', 
+        ['name', {name: 'name', type: 'text',
             contentStyle: 'text-overflow: ellipsis; white-space: nowrap; overflow: hidden;'}],
     ]);
     let imgListHandleOut: ListViewHandleOut | undefined = $state();
@@ -31,7 +26,7 @@
         ['action', {name: '', type: 'button', width: '15%'}],
         ['type', {name: '', type: 'text', width: '10%'}],
         ['author', {name: 'author', type: 'text', width: '15%'}],
-        ['title', {name: 'title', type: 'text', 
+        ['title', {name: 'title', type: 'text',
             contentStyle: 'text-overflow: ellipsis; white-space: nowrap; overflow: hidden;'}],
     ]);
     let articleListHandleOut: ListViewHandleOut | undefined = $state();
@@ -41,7 +36,7 @@
         ['test', {name: '', type: 'button', width: '15%'}],
         ['refresh', {name: '', type: 'button', width: '15%'}],
         ['img', {name: '', type: 'image', width: '25%'}],
-        ['name', {name: 'name', type: 'text', 
+        ['name', {name: 'name', type: 'text',
             contentStyle: 'text-overflow: ellipsis; white-space: nowrap; overflow: hidden;'}],
     ]);
     let permimgListHandleOut: ListViewHandleOut | undefined = $state();
@@ -86,7 +81,7 @@
 
     function updateImg(img: Img) {
         img.mode = 'pending';
-        const realhref = img.url.href.endsWith('png') ? img.url.href : img.url.href + '.png';
+        const realhref = img.url.href;
         if (Weixin.smallImageCache.has(realhref)) {
             img.mode = 'ok';
             img.status.content = '🟢';
@@ -118,7 +113,7 @@
         sourceImgs = [];
         let items: ListItem[] = [...doc.querySelectorAll('img')].map((x) => {
             const url = new URL(x.dataset.originalSrc ?? x.src);
-            let img: Img = { 
+            let img: Img = {
                 mode: 'pending',
                 status: { type: 'text' as const, content: '', alt: '' },
                 refresh: undefined,
@@ -132,29 +127,14 @@
                 img.status.content = '🔴';
                 img.status.alt = 'this image failed to load!';
             }
-            let name = { 
-                type: 'text', 
-                content: url.href.split('/').at(-1)! 
+            let name = {
+                type: 'text',
+                content: url.href.split('/').at(-1)!
             } satisfies ListCell;
             return {cols: { refresh: img.refresh, status: img.status, name }};
         });
         imgListHandleOut!.reset(items);
     });
-
-    async function test() {
-        Interface.status.set(`compressing with RustAPI`);
-        try {
-            const out = await path.join(await tempDir(), 'out.jpg');
-            const file = await dialog.open();
-            if (!file) return;
-            const data = await RustAPI.compressImage(file, 1024*1024);
-            writeFile(out, data.stream());
-            Interface.status.set(`compressed to ${out}`);
-            console.log(out);
-        } catch (e) {
-            Interface.status.set(`error: ${e}`);
-        }
-    }
 
     async function fetchArticles() {
         articleListHandleIn.provideMoreItems = async () => {
@@ -166,7 +146,7 @@
             for (const draft of drafts) {
                 draft.articles.map((article, i) => items.push({
                     cols: {
-                        action: { type: 'button', text: 'write', 
+                        action: { type: 'button', text: 'write',
                             onClick: async () => {
                                 const doc = Interface.frame?.contentDocument;
                                 const win = Interface.frame?.contentWindow;
@@ -180,14 +160,14 @@
                             }
                         },
                         type: { type: 'text', content: article.articleType },
-                        author: { type: 'text', 
+                        author: { type: 'text',
                             content: article.articleType == 'news' ? article.author : ''
                         },
                         title: { type: 'text', content: article.title },
                     }
                 }));
             }
-                
+
             return { items, more: items.length > 0 };
         };
         articleListHandleOut?.reset();
@@ -210,21 +190,21 @@
                 }
                 console.log('got:', path);
                 items.push({ cols: {
-                    test: { type: 'button', text: 'insert', 
+                    test: { type: 'button', text: 'insert',
                         onClick: () => {
                             // TODO
                         }
                     },
-                    refresh: { type: 'button', text: 'refresh', 
+                    refresh: { type: 'button', text: 'refresh',
                         onClick: async () => {
                             await Weixin.downloadAsset(x.id, x.name, true);
                             permimgListHandleOut?.reset();
-                        } 
+                        }
                     },
-                    img: path ? { 
-                        type: 'image', 
+                    img: path ? {
+                        type: 'image',
                         url: convertFileSrc(path),
-                        height: '50px', 
+                        height: '50px',
                     } : undefined,
                     name: { type: 'text', content: x.name },
                 } });
@@ -265,7 +245,7 @@
         <td>stable token</td>
         <td>
             <input type="text" style="width: 100%" disabled value={$stableToken} /><br/>
-            <button style="width: 100%" 
+            <button style="width: 100%"
                 onclick={() => Weixin.fetchToken()}>retrieve token</button>
         </td>
     </tr>
@@ -278,7 +258,6 @@
     if (!doc || !win) return;
     const {result, notCached} = await postprocess(doc, win);
     await clipboard.writeHtml(result);
-    // await navigator.clipboard.write([new ClipboardItem({'text/html': result})]);
     if (notCached > 0) {
         Interface.status.set(`warning: ${notCached} local image[s] not uploaded`);
     } else {
@@ -297,7 +276,6 @@
         Interface.status.set(`successfully copied HTML as text`);
     }
 }}>copy rendered result as text</button>
-<button onclick={() => test()}>test</button>
 
 <h5>Images</h5>
 <button onclick={() => uploadAll()}>upload images</button>
@@ -306,15 +284,15 @@
 
 <h5>Other articles</h5>
 <button onclick={() => fetchArticles()}>fetch</button>
-<ListView header={articleListHeader} 
-    hin={articleListHandleIn} 
+<ListView header={articleListHeader}
+    hin={articleListHandleIn}
     bind:hout={articleListHandleOut} style="min-height: 300px">
 </ListView>
 
 <h5>Permanent images</h5>
 <button onclick={() => fetchPermimgs()}>fetch</button>
-<ListView header={permimgListHeader} 
-    hin={permimgListHandleIn} 
+<ListView header={permimgListHeader}
+    hin={permimgListHandleIn}
     bind:hout={permimgListHandleOut} style="min-height: 300px">
 </ListView>
 

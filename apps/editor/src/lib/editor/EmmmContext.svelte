@@ -2,8 +2,8 @@
   import { EditorView } from "@codemirror/view";
   import { setEditorContext } from "./Editor.svelte";
   import type { Snippet } from "svelte";
-  import { emmmDocument, type ContextProvider, type DescriptorProvider, type EmmmParseData } from "./editor/ParseData";
-  import { emmmLanguageSupport } from "./editor/LanguageSupport";
+  import { emmmDocument, type ContextProvider, type DescriptorProvider, type EmmmParseData } from "./ParseData";
+  import { emmmLanguageSupport } from "./LanguageSupport";
 
   interface Props {
     provideContext?: ContextProvider;

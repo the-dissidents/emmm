@@ -1,8 +1,8 @@
 <script lang="ts">
   import { ChangeSet, type ChangeSpec } from "@codemirror/state";
-  import type { Selection } from "./Editor.svelte";
-  import { Interface } from "./Interface.svelte";
-  import { Debug } from "./Debug";
+  import type { Selection } from "$lib/editor/Editor.svelte";
+  import { Interface } from "../Interface.svelte";
+  import { Debug } from "../Debug";
 
   let searchPattern = $state('');
   let replacement = $state('');
@@ -18,11 +18,11 @@
     }
 
     const pattern = new RegExp(useRegex ? searchPattern : escapeRegexp(searchPattern), 'ug');
-    const startPos = 
+    const startPos =
       all ? 0 : Interface.activeEditor.getSelections().at(-1)?.to ?? 0;
     const text = Interface.activeEditor.getText();
     const textSliced = text.slice(startPos);
-    
+
     const ranges: Selection[] = [];
     const changes: ChangeSpec[] = [];
     for (const match of textSliced.matchAll(pattern)) {

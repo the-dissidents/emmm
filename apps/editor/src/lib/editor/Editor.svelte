@@ -18,7 +18,7 @@
   import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
   import { EditorSelection, EditorState, type Extension, type TransactionSpec } from "@codemirror/state";
   import { closeBrackets } from "@codemirror/autocomplete";
-  import { hook } from "./details/Hook.svelte";
+  import { hook } from "$lib/details/Hook.svelte";
 
   interface Props {
     /**
@@ -38,7 +38,7 @@
   export type Selection = {
     from: number, to: number
   };
-  
+
   export interface EditorHandleOut {
     focus(): void;
     getCursorPosition(): [pos: number, l: number, c: number];
@@ -61,7 +61,7 @@
   const exts = [
     EditorView.updateListener.of((update) => {
       if (update.startState.selection.main.head != update.state.selection.main.head
-       && onCursorPositionChanged) 
+       && onCursorPositionChanged)
       {
         const pos = update.state.selection.main.head;
         const line = update.state.doc.lineAt(pos);
