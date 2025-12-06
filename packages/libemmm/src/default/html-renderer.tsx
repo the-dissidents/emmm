@@ -2,7 +2,7 @@ import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
 import { BlockEntity, InlineEntity, NodeType } from "../interface";
 import { RenderContext, RenderConfiguration, ReadonlyRenderConfiguration } from "../renderer";
-import { stripNode } from "../util";
+import { stripNode } from "../node-util";
 import { BulletBlockRenderersHTML } from "./bullets";
 import { CodeBlockRendererHTML, CodeInlineRendererHTML } from "./code";
 import { HeadingBlockRenderersHTML } from "./headings";
@@ -27,13 +27,13 @@ export type HTMLRenderType = {
     return: Node | Node[],
 };
 
-export type HTMLRenderPlugin = 
+export type HTMLRenderPlugin =
     (elem: BlockEntity | InlineEntity, cxt: RenderContext<HTMLRenderType>) => string | undefined;
 
-export type HTMLComponentPlugin = 
+export type HTMLComponentPlugin =
     (cxt: RenderContext<HTMLRenderType>) => Node | Node[] | undefined;
 
-export type HTMLPostprocessPlugin = 
+export type HTMLPostprocessPlugin =
     (cxt: RenderContext<HTMLRenderType>, output: Document) => void;
 
 export class HTMLRenderState {
@@ -76,7 +76,7 @@ export class HTMLRenderState {
     }
 }
 
-const htmlConfig = 
+const htmlConfig =
     new RenderConfiguration<HTMLRenderType>(
 {
     headPlugins: [],
@@ -88,7 +88,7 @@ const htmlConfig =
 },
 (results, cxt) => {
     // TODO: seriously...
-    let styles = cxt.state.stylesheet.replaceAll(/var\(--(.*?)\)/g, 
+    let styles = cxt.state.stylesheet.replaceAll(/var\(--(.*?)\)/g,
         (m, c) => cxt.state.cssVariables.get(c) ?? m);
     let doc = document.implementation.createHTMLDocument(cxt.state.title);
     doc.head.append(
@@ -118,7 +118,7 @@ const htmlConfig =
     return doc;
 });
 
-htmlConfig.paragraphRenderer = (node, cxt) => 
+htmlConfig.paragraphRenderer = (node, cxt) =>
     <p>{node.content
             .map((x) => cxt.renderEntity(x))
             .filter((x) => x !== undefined)}
@@ -152,7 +152,7 @@ htmlConfig.undefinedInlineRenderer = (node, cxt) => {
 }
 
 htmlConfig.addBlockRenderer(
-    ...HeadingBlockRenderersHTML, 
+    ...HeadingBlockRenderersHTML,
     ...BulletBlockRenderersHTML,
     CodeBlockRendererHTML,
     ...QuoteBlockRenderersHTML,

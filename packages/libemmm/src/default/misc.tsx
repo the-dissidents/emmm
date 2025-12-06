@@ -1,4 +1,5 @@
-import { ModifierSlotType, InlineModifierDefinition, BlockModifierDefinition, ParagraphNode } from "../interface";
+import { ParagraphNode } from "../interface";
+import { ModifierSlotType, InlineModifierDefinition, BlockModifierDefinition } from "../modifier";
 import { bindArgs, onlyPermitSimpleParagraphs, onlyPermitSingleBlock } from "../modifier-helper";
 import { BlockRendererDefiniton, InlineRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
@@ -77,7 +78,7 @@ export const MiscInlines = [rubyInline, linkInline, tabInline];
 export const MiscBlocks = [styleBlock, breakBlock, linkBlock, imageBlock];
 
 export const MiscInlineRenderersHTML = [
-    [rubyInline, (node, cxt) => 
+    [rubyInline, (node, cxt) =>
         node.state === undefined
             ? cxt.state.invalidInline(node, 'bad format')
             : <ruby>
@@ -123,7 +124,7 @@ export const MiscBlockRenderersHTML = [
             return cxt.state.invalidBlock(node, 'unable to transform asset');
         }
         return <figure>
-                 {transformed 
+                 {transformed
                     ? <img src={transformed} data-original-src={node.state} />
                     : <img src={node.state} />}
                  {node.content.length > 0

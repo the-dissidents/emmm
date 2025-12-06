@@ -62,7 +62,7 @@ fn try_compress_size(img: &DynamicImage, scaling: f64) -> Result<Vec<u8>, String
     let height = (f64::from(img.height()) * scaling).to_u32().unwrap();
 
     let mut out = Vec::<u8>::new();
-    let mut encoder = 
+    let mut encoder =
         JpegEncoder::new_with_quality(&mut out, 80);
 
     if width == img.width() {
@@ -74,7 +74,7 @@ fn try_compress_size(img: &DynamicImage, scaling: f64) -> Result<Vec<u8>, String
     } else {
         log::info!("try_compress_size: resizing {width} x {height}");
         let mut dst = Image::new(
-            width, height, 
+            width, height,
             img.pixel_type().unwrap());
         Resizer::new()
             .resize(img, &mut dst, None)
@@ -87,20 +87,33 @@ fn try_compress_size(img: &DynamicImage, scaling: f64) -> Result<Vec<u8>, String
     }
 }
 
+fn pack_image_result(ext: &str, data: Vec<u8>) -> Vec<u8> {
+    let mut buf: Vec<u8> = vec![];
+    buf.extend((ext.len().to_u32().unwrap()).to_le_bytes());
+    buf.extend(ext.as_bytes());
+    buf.extend(data);
+    buf
+}
+
+/// Returns: [
+///     `ext_len`: i32,
+///     `ext`: string,
+///     `data`: u8[]
+/// ]
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)]
 async fn compress_image(
-    path: String, 
+    path: String,
     max_size: usize,
     max_width: Option<usize>,
     supported_types: Vec<String>
 ) -> Result<Response, String> {
     log::info!("compress_image start");
-    let result = 
+    let result =
     tokio::task::spawn_blocking(move || -> Result<Vec<u8>, String> {
-        let original = 
+        let original =
             fs::read(path.clone()).map_err(|e| format!("fs::read: {e}"))?;
-        let reader = 
+        let reader =
             ImageReader::new(Cursor::new(original.as_slice()))
             .with_guessed_format()
             .map_err(|e| format!("with_guessed_format: {e}"))?;
@@ -118,12 +131,13 @@ async fn compress_image(
 
         if supported_types.iter().any(|x| *x == format.to_mime_type()) {
             if original.len() < max_size {
-                return Ok(original);
+                let ext = format.extensions_str().first().map_or("", |v| v);
+                return Ok(pack_image_result(ext, original));
             }
 
             let result = try_compress_size(&img, 1.0)?;
             if result.len() < max_size {
-                return Ok(result);
+                return Ok(pack_image_result("jpg", result));
             }
         }
 
@@ -145,9 +159,9 @@ async fn compress_image(
         }
         let result = last_ok
             .ok_or("Unable to compress within size limit".to_owned())?;
-        Ok(result)
+        Ok(pack_image_result("jpg", result))
     }).await;
-    
+
     match result {
         Ok(Ok(data)) => {
             log::info!("compress_image done");

@@ -1,5 +1,6 @@
 import { debug } from "../debug";
-import { SystemModifierDefinition, ModifierSlotType, Message, NodeType, SystemModifierNode, InlineEntity, ModifierArgument } from "../interface";
+import { Message, NodeType, SystemModifierNode, InlineEntity, ModifierArgument } from "../interface";
+import { SystemModifierDefinition, ModifierSlotType } from "../modifier";
 import { InvalidArgumentMessage, NameAlreadyDefinedMessage } from "../messages";
 import { bindArgs } from "../modifier-helper";
 import { assert } from "../util";
@@ -39,7 +40,7 @@ function parseDefineArguments(
     let namedArgs = Object.fromEntries([...node.arguments.named]
         .map((x) => [x[0], x[1].expansion!]));
 
-    let signature: CustomModifierSignature = { 
+    let signature: CustomModifierSignature = {
         slotName, args: rest!, namedArgs, preformatted: undefined
     };
     node.state = { name, nameNode, signature, msgs };
@@ -48,7 +49,7 @@ function parseDefineArguments(
 }
 
 export const DefineBlockMod = new SystemModifierDefinition
-    <ModifierState>('define-block', ModifierSlotType.Normal, 
+    <ModifierState>('define-block', ModifierSlotType.Normal,
 {
     // .define-block:name:args...[:(slot-id)]
     delayContentExpansion: true,
@@ -77,7 +78,7 @@ export const DefineBlockMod = new SystemModifierDefinition
     prepareExpand(node, cxt, immediate) {
         if (!immediate || !node.state) return [];
         const msgs = node.state.msgs;
-        if (!node.state.name) 
+        if (!node.state.name)
             msgs.push(new InvalidArgumentMessage(node.state.nameNode.location));
         else if (cxt.config.blockModifiers.has(node.state.name))
             msgs.push(new NameAlreadyDefinedMessage(node.state.nameNode.location, node.state.name));
@@ -88,7 +89,7 @@ export const DefineBlockMod = new SystemModifierDefinition
         if (node.state?.name) {
             if (cxt.config.blockModifiers.has(node.state.name))
                 cxt.config.blockModifiers.remove(node.state.name);
-            cxt.config.blockModifiers.add(customModifier(NodeType.BlockModifier, 
+            cxt.config.blockModifiers.add(customModifier(NodeType.BlockModifier,
                 node.state.name, node.state.signature, node.content));
         }
         return [];
@@ -97,7 +98,7 @@ export const DefineBlockMod = new SystemModifierDefinition
 
 export const DefineInlineMod = new SystemModifierDefinition
     <ModifierState & { definition?: InlineEntity[]; }>(
-    'define-inline', ModifierSlotType.Normal, 
+    'define-inline', ModifierSlotType.Normal,
 {
     // .define-inline name:args...[:(slot-id)]
     delayContentExpansion: true,
@@ -126,13 +127,13 @@ export const DefineInlineMod = new SystemModifierDefinition
     prepareExpand(node, cxt, immediate) {
         if (!immediate || !node.state) return [];
 
-        if (!node.state.name) 
+        if (!node.state.name)
             return [new InvalidArgumentMessage(node.state.nameNode.location)];
 
         const msgs = node.state.msgs;
         if (cxt.config.inlineModifiers.has(node.state.name))
             msgs.push(new NameAlreadyDefinedMessage(node.state.nameNode.location, node.state.name));
-        
+
         node.state.definition = makeInlineDefinition(node, msgs);
         return msgs;
     },
@@ -142,7 +143,7 @@ export const DefineInlineMod = new SystemModifierDefinition
             if (cxt.config.inlineModifiers.has(node.state.name))
                 cxt.config.inlineModifiers.remove(node.state.name);
             cxt.config.inlineModifiers.add(
-                customModifier(NodeType.InlineModifier, 
+                customModifier(NodeType.InlineModifier,
                     node.state.name, node.state.signature, node.state.definition!));
         }
         return [];

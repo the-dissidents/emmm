@@ -1,91 +1,19 @@
 import { debug } from "../debug";
-import { debugPrint } from "../debug-print";
-import { BlockModifierDefinition, BlockShorthand, InlineModifierDefinition, InlineShorthand, ModifierSlotType, SystemModifierDefinition } from "../interface";
+import { ModifierNode } from "../interface";
+import { BlockModifierDefinition, ModifierSlotType, SystemModifierDefinition } from "../modifier";
 import { CannotUseModuleInSelfMessage, InvalidArgumentMessage, NoNestedModuleMessage, OverwriteDefinitionsMessage } from "../messages";
 import { bindArgs } from "../modifier-helper";
+import { ModuleDefinition } from "../module";
 import { ParseContext } from "../parser-config";
-import { NameManager } from "../util";
 import { builtins } from "./internal";
 
-export type ConfigDefinitions = {
-    usedModules: Set<string>;
-    blocks: Set<BlockModifierDefinition<unknown>>;
-    inlines: Set<InlineModifierDefinition<unknown>>;
-    inlineShorthands: Set<InlineShorthand<unknown>>;
-    blockShorthands: Set<BlockShorthand<unknown>>;
-}
-
-function getDefs(cxt: ParseContext): ConfigDefinitions {
-    const data = cxt.get(builtins)!;
-    return {
-        usedModules: new Set(data.usedModules),
-        blocks: cxt.config.blockModifiers.toSet(),
-        inlines: cxt.config.inlineModifiers.toSet(),
-        inlineShorthands: cxt.config.inlineShorthands.toSet(),
-        blockShorthands: cxt.config.blockShorthands.toSet()
-    };
-}
-
-function applyDefs(cxt: ParseContext, defs: ConfigDefinitions) {
-    const data = cxt.get(builtins)!;
-    data.usedModules = new Set(defs.usedModules);
-    cxt.config.blockModifiers = new NameManager(defs.blocks);
-    cxt.config.inlineModifiers = new NameManager(defs.inlines);
-    cxt.config.inlineShorthands = new NameManager(defs.inlineShorthands);
-    cxt.config.blockShorthands = new NameManager(defs.blockShorthands);
-}
-
-function add<T extends {name: string}>(
-    snew: ReadonlySet<T>, sold: ReadonlySet<T>, transform: (x: T) => string
-): [Set<T>, string] {
-    let newNames = new Set<string>([...snew].map((x) => x.name));
-    let out = new Set<T>(snew);
-    let overlap: T[] = [];
-    for (const x of sold) {
-        if (newNames.has(x.name))
-            overlap.push(x);
-        else
-            out.add(x);
-    }
-    return [out, overlap.map(transform).join(', ')];
-}
-
-function diffDef(cnew: ConfigDefinitions, cold: ConfigDefinitions): ConfigDefinitions {
-    return {
-        usedModules: cnew.usedModules.difference(cold.usedModules),
-        blocks: cnew.blocks.difference(cold.blocks),
-        inlines: cnew.inlines.difference(cold.inlines),
-        inlineShorthands: cnew.inlineShorthands.difference(cold.inlineShorthands),
-        blockShorthands: cnew.blockShorthands.difference(cold.blockShorthands)
-    };
-}
-
-function addDef(cnew: ConfigDefinitions, cold: ConfigDefinitions): [ConfigDefinitions, string] {
-    let [blocks, s1] = 
-        add(cnew.blocks, cold.blocks, debugPrint.blockModifier);
-    let [inlines, s2] =
-        add(cnew.inlines, cold.inlines, debugPrint.inlineModifier);
-    let [inlineShorthands, s3] = 
-        add(cnew.inlineShorthands, cold.inlineShorthands, debugPrint.inlineShorthand);
-    let [blockShorthands, s4] = 
-        add(cnew.blockShorthands, cold.blockShorthands, debugPrint.blockShorthand);
-    return [{
-        usedModules: cnew.usedModules.union(cold.usedModules),
-        blocks, inlines, inlineShorthands, blockShorthands
-    },
-        (s1 ? s1 + '; ' : '') 
-      + (s2 ? s2 + '; ' : '') 
-      + (s3 ? 'inline shorthand ' + s3 + '; ' : '')
-      + (s4 ? 'block shorthand ' + s4 : '')];
-}
-
-export const ModuleMod = 
+export const ModuleMod =
     new BlockModifierDefinition<{
         name: string,
-        defs: ConfigDefinitions
-    }>('module', ModifierSlotType.Normal, 
+        defs: ModuleDefinition
+    }>('module', ModifierSlotType.Normal,
 {
-    expand(node) {
+    expand() {
         // no need to clone?
         return []; // node.content;
     },
@@ -95,7 +23,7 @@ export const ModuleMod =
 
         const data = cxt.get(builtins)!;
         const name = args!.name;
-        const defs = getDefs(cxt);
+        const defs = ModuleDefinition.from(cxt);
 
         if (data.insideModule !== undefined)
             return [new NoNestedModuleMessage(node.head)];
@@ -103,11 +31,11 @@ export const ModuleMod =
         msgs = [];
         node.state = { name, defs };
         data.insideModule = name;
-        if (data.modules.has(name)) {
-            const [added, msg] = addDef(defs, data.modules.get(name)!);
+        if (cxt.config.modules.has(name)) {
+            const [combined, msg] = ModuleDefinition.combine(defs, cxt.config.modules.get(name)!);
             if (msg) msgs.push(
                 new OverwriteDefinitionsMessage(node.head, msg));
-            applyDefs(cxt, added);
+            ModuleDefinition.apply(combined, cxt);
             debug.trace('entering defs for module', name, '(earlier data loaded)');
         } else {
             debug.trace('entering defs for module', name);
@@ -118,68 +46,53 @@ export const ModuleMod =
         if (!node.state) return [];
         const data = cxt.get(builtins)!;
         data.insideModule = undefined;
-        data.modules.set(node.state.name, 
-            diffDef(getDefs(cxt), node.state.defs));
-        applyDefs(cxt, node.state.defs);
+
+        const old = ModuleDefinition.from(cxt);
+        cxt.config.modules.set(node.state.name,
+            ModuleDefinition.diff(old, node.state.defs));
+        ModuleDefinition.apply(node.state.defs, cxt);
         debug.trace('exiting defs for module', node.state.name);
         return [];
     },
 });
 
-export const UseSystemMod = 
-    new SystemModifierDefinition<ConfigDefinitions>('use', ModifierSlotType.None, 
+function use(node: ModifierNode<ModuleDefinition>, cxt: ParseContext) {
+    let { msgs, args, nodes } = bindArgs(node, ['name']);
+    if (msgs) return msgs;
+
+    const data = cxt.get(builtins)!;
+    if (!cxt.config.modules.has(args!.name))
+        return [new InvalidArgumentMessage(nodes!.name.location)];
+    if (data.insideModule === args!.name)
+        return [new CannotUseModuleInSelfMessage(nodes!.name.location)];
+
+    const old = ModuleDefinition.from(cxt);
+    const [combined, msg] = ModuleDefinition.combine(cxt.config.modules.get(args!.name)!, old);
+    ModuleDefinition.apply(combined, cxt)
+    node.state = old;
+
+    if (msg)
+        return [new OverwriteDefinitionsMessage(node.head, msg)];
+    return [];
+}
+
+export const UseSystemMod =
+    new SystemModifierDefinition<ModuleDefinition>('use', ModifierSlotType.None,
 {
     prepareExpand(node, cxt) {
-        let { msgs, args, nodes } = bindArgs(node, ['name']);
-        if (msgs) return msgs;
-
-        const data = cxt.get(builtins)!;
-        if (!data.modules.has(args!.name))
-            return [new InvalidArgumentMessage(nodes!.name.location)];
-        if (data.insideModule === args!.name)
-            return [new CannotUseModuleInSelfMessage(nodes!.name.location)];
-
-        const [added, msg] = addDef(data.modules.get(args!.name)!, getDefs(cxt));
-        node.state = added;
-
-        if (msg) 
-            return [new OverwriteDefinitionsMessage(node.head, msg)];
-        return [];
-    },
-    expand(node, cxt) {
-        if (node.state)
-            applyDefs(cxt, node.state);
-        return [];
+        return use(node, cxt);
     },
 });
 
-export const UseBlockMod = 
-    new BlockModifierDefinition<{
-        old: ConfigDefinitions
-    }>('use', ModifierSlotType.Normal, 
+export const UseBlockMod =
+    new BlockModifierDefinition<ModuleDefinition>('use', ModifierSlotType.Normal,
 {
     beforeParseContent(node, cxt) {
-        let { msgs, args, nodes } = bindArgs(node, ['name']);
-        if (msgs) return msgs;
-
-        const data = cxt.get(builtins)!;
-        if (!data.modules.has(args!.name))
-            return [new InvalidArgumentMessage(nodes!.name.location)];
-        if (data.insideModule === args!.name)
-            return [new CannotUseModuleInSelfMessage(nodes!.name.location)];
-
-        const old = getDefs(cxt);
-        const [added, msg] = addDef(data.modules.get(args!.name)!, old);
-        applyDefs(cxt, added);
-        node.state = { old };
-
-        if (msg) 
-            return [new OverwriteDefinitionsMessage(node.head, msg)];
-        return [];
+        return use(node, cxt);
     },
     afterParseContent(node, cxt) {
         if (node.state)
-            applyDefs(cxt, node.state.old);
+            ModuleDefinition.apply(node.state, cxt);
         return [];
     },
     expand(node) {

@@ -1,7 +1,10 @@
-import { RootNode, Message, BlockModifierDefinition, InlineModifierDefinition, SystemModifierDefinition, ArgumentInterpolatorDefinition, BlockShorthand, InlineShorthand, BlockEntity, InlineEntity, ArgumentEntity } from "./interface";
+import { RootNode, Message, BlockEntity, InlineEntity, ArgumentEntity } from "./interface";
+import { BlockModifierDefinition, InlineModifierDefinition, SystemModifierDefinition, ArgumentInterpolatorDefinition } from "./modifier";
+import { ModuleDefinition } from "./module";
 import { Parser } from "./parser";
 import { Scanner } from "./scanner";
-import { assert, cloneNode, ReadonlyNameManager, NameManager, stripNode } from "./util";
+import { assert, ReadonlyNameManager, NameManager } from "./util";
+import { cloneNode, stripNode } from "./node-util";
 
 export interface ParseContextStoreDefinitions { }
 export type ParseContextStoreKey = keyof ParseContextStoreDefinitions;
@@ -9,7 +12,8 @@ type ParseContextStoreEntry<S extends ParseContextStoreKey> = ParseContextStoreD
 
 export class ParseContext {
     private data: ParseContextStoreDefinitions = {};
-    
+    public usedModules = new Set<string>();
+
     constructor(
         public readonly config: Configuration,
         public variables = new Map<string, string>()
@@ -54,7 +58,7 @@ export class Document {
      * Performs a depth-first walk of the node tree.
      */
     walk(
-        callback: (node: BlockEntity | InlineEntity | ArgumentEntity) => 
+        callback: (node: BlockEntity | InlineEntity | ArgumentEntity) =>
             'skip' | 'break' | 'continue'
     ) {
         let nodes: (BlockEntity | InlineEntity | ArgumentEntity)[] = this.root.content;
@@ -79,7 +83,7 @@ export class Document {
     resolvePosition(pos: number): (BlockEntity | InlineEntity | ArgumentEntity)[] {
         const result: (BlockEntity | InlineEntity | ArgumentEntity)[] = [];
         this.walk((node) => {
-            if (node.location.start <= pos 
+            if (node.location.start <= pos
             && (node.location.actualEnd ?? node.location.end) >= pos)
             {
                 result.push(node);
@@ -90,6 +94,16 @@ export class Document {
         return result;
     }
 }
+
+type Shorthand<TMod> = {
+    name: string;
+    parts: readonly string[];
+    postfix: string | undefined;
+    mod: TMod;
+};
+
+export type BlockShorthand<TState> = Shorthand<BlockModifierDefinition<TState>>;
+export type InlineShorthand<TState> = Shorthand<InlineModifierDefinition<TState>>;
 
 export type KernelConfiguration = {
     collapseWhitespaces: boolean;
@@ -110,6 +124,8 @@ export interface ReadonlyConfiguration {
 
 export class Configuration implements ReadonlyConfiguration {
     initializers: ((cxt: ParseContext) => void)[] = [];
+    modules = new Map<string, ModuleDefinition>;
+
     blockModifiers = new NameManager<BlockModifierDefinition<any>>;
     inlineModifiers = new NameManager<InlineModifierDefinition<any>>;
     systemModifiers = new NameManager<SystemModifierDefinition<any>>;
@@ -117,6 +133,7 @@ export class Configuration implements ReadonlyConfiguration {
 
     blockShorthands = new NameManager<BlockShorthand<any>>;
     inlineShorthands = new NameManager<InlineShorthand<any>>;
+
     kernel: KernelConfiguration = {
         collapseWhitespaces: false,
         reparseDepthLimit: 10
@@ -126,6 +143,7 @@ export class Configuration implements ReadonlyConfiguration {
         let config = new Configuration();
         config.initializers = [...from.initializers];
         config.kernel = structuredClone(from.kernel);
+
         config.blockModifiers = new NameManager(from.blockModifiers);
         config.inlineModifiers = new NameManager(from.inlineModifiers);
         config.systemModifiers = new NameManager(from.systemModifiers);

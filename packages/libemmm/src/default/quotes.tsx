@@ -1,4 +1,5 @@
-import { BlockModifierDefinition, ModifierSlotType, ParagraphNode } from "../interface";
+import { ParagraphNode } from "../interface";
+import { BlockModifierDefinition, ModifierSlotType } from "../modifier";
 import { onlyPermitSingleBlock, onlyPermitSimpleParagraphs } from "../modifier-helper";
 import { BlockRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
@@ -36,16 +37,16 @@ const attributionBlock = new BlockModifierDefinition<boolean>(
 export const QuoteBlocks = [quoteBlock, epitaphBlock, calloutBlock, detailBlock, attributionBlock];
 
 export const QuoteBlockRenderersHTML = [
-    [quoteBlock, (node, cxt) => 
+    [quoteBlock, (node, cxt) =>
         <blockquote>{cxt.state.render(node.content, cxt)}</blockquote>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [epitaphBlock, (node, cxt) => 
+    [epitaphBlock, (node, cxt) =>
         <blockquote class='epitaph'>{cxt.state.render(node.content, cxt)}</blockquote>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [detailBlock, (node, cxt) => 
+    [detailBlock, (node, cxt) =>
         <div class='detail'>{cxt.state.render(node.content, cxt)}</div>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [calloutBlock, (node, cxt) => 
+    [calloutBlock, (node, cxt) =>
         <aside>{cxt.state.render(node.content, cxt)}</aside>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
     [attributionBlock, (node, cxt) => {

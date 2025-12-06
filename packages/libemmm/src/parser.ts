@@ -1,6 +1,7 @@
 import { debug } from "./debug";
 import { debugPrint } from "./debug-print";
-import { BlockEntity, BlockModifierDefinition, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierDefinition, InlineModifierNode, Message, ModifierArgument, ModifierSlotType, ParagraphNode, LocationRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierDefinition, SystemModifierNode, NodeType, ModifierArguments } from "./interface";
+import { BlockEntity, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierNode, Message, ModifierArgument, ParagraphNode, LocationRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierNode, NodeType, ModifierArguments } from "./interface";
+import { BlockModifierDefinition, InlineModifierDefinition, ModifierSlotType, SystemModifierDefinition } from "./modifier";
 import { ShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, UnknownModifierMessage, UnnecessaryNewlineMessage, InternalErrorMessage, DuplicateNamedArgumentMessage } from "./messages";
 import { ParseContext, Document } from "./parser-config";
 import { Scanner } from "./scanner";
@@ -26,9 +27,9 @@ const UnknownModifier = {
     [NodeType.SystemModifier]: new SystemModifierDefinition('UNKNOWN', ModifierSlotType.Normal)
 };
 
-type NodeWithBlockContent = 
+type NodeWithBlockContent =
     BlockModifierNode<unknown> | SystemModifierNode<unknown>;
-type NodeWithInlineContent = 
+type NodeWithInlineContent =
     InlineModifierNode<unknown> | ParagraphNode;
 
 class EmitEnvironment {
@@ -107,7 +108,7 @@ export class Parser {
     private groupDepth = 0;
 
     constructor(
-        private scanner: Scanner, 
+        private scanner: Scanner,
         private cxt: ParseContext
     ) {
         this.emit = new EmitEnvironment(scanner);
@@ -180,7 +181,7 @@ export class Parser {
                 case NodeType.Interpolation:
                     if (e.expansion === undefined) {
                         const inner = this.#expandArgument(e.argument);
-                        if (inner === undefined 
+                        if (inner === undefined
                          || e.definition.expand === undefined
                          || (!immediate && !e.definition.alwaysTryExpand))
                             return undefined;
@@ -206,9 +207,9 @@ export class Parser {
         for (const [_name, arg] of node.arguments.named)
             this.#expandArgument(arg);
     }
-    
+
     #tryAndMessage<Params extends any[]>(
-        node: ModifierNode, 
+        node: ModifierNode,
         fn: ((...p: Params) => Message[]) | undefined, ...p: Params
     ) {
         if (!fn) return;
@@ -219,9 +220,9 @@ export class Parser {
             this.emit.message(new InternalErrorMessage(node.location, e));
         }
     }
-    
+
     #try<Params extends any[], R>(
-        node: ModifierNode, 
+        node: ModifierNode,
         fn: ((...p: Params) => R) | undefined, ...p: Params
     ) {
         if (!fn) return;
@@ -265,7 +266,7 @@ export class Parser {
 
         this.#tryAndMessage(node, node.mod.prepareExpand, node as never, this.cxt, immediate);
         if (node.mod.expand) {
-            node.expansion = this.#try(node, 
+            node.expansion = this.#try(node,
                 node.mod.expand as never, node as never, this.cxt, immediate);
 
             if (!node.expansion)
@@ -368,7 +369,7 @@ export class Parser {
 
     private MODIFIER
         <Type extends NodeType.BlockModifier | NodeType.SystemModifier | NodeType.InlineModifier>
-        (type: Type): boolean 
+        (type: Type): boolean
     {
         const posStart = this.scanner.position();
         assert(this.scanner.accept({
@@ -381,7 +382,7 @@ export class Parser {
         const mod = result ?? UnknownModifier[type];
         if (result === undefined) {
             let name = '';
-            while (!this.scanner.isEOF() 
+            while (!this.scanner.isEOF()
                 && !this.scanner.acceptWhitespaceChar()
                 && !this.scanner.peek(MODIFIER_CLOSE_SIGN)
                 && !this.scanner.peek(MODIFIER_END_SIGN))
@@ -433,7 +434,7 @@ export class Parser {
                 let char: string | null;
                 while ((char = this.scanner.acceptWhitespaceChar()) !== null)
                     white += char;
-                    
+
                 if (grouped && this.scanner.accept(GROUP_END)) {
                     paragraphEnd = this.scanner.position();
                     if (!this.scanner.isEOF()) {
@@ -461,7 +462,7 @@ export class Parser {
             posContentEnd = this.scanner.position();
         }
         const node: PreNode = {
-            type: NodeType.Preformatted, 
+            type: NodeType.Preformatted,
             location: this.#locFrom(posStart, paragraphEnd ?? posContentEnd),
             content: {
                 start: posContentStart,
@@ -528,7 +529,7 @@ export class Parser {
     // returns false if breaking out of paragraph
     private SHORTHAND
         <Type extends NodeType.BlockModifier | NodeType.InlineModifier>
-        (type: Type, d: _Shorthand<Type>): boolean 
+        (type: Type, d: _Shorthand<Type>): boolean
     {
         const posStart = this.scanner.position();
         let args: ModifierArgument[] = [];
@@ -561,7 +562,7 @@ export class Parser {
 
     private MODIFIER_BODY
         <Type extends NodeType.BlockModifier | NodeType.InlineModifier | NodeType.SystemModifier>
-        (type: Type, node: ModifierNode, postfix: string | undefined, isMarker: boolean) 
+        (type: Type, node: ModifierNode, postfix: string | undefined, isMarker: boolean)
     {
         this.#expandArguments(node);
         const immediate = this.delayDepth == 0;
@@ -683,7 +684,7 @@ export class Parser {
 
     // returns argument and isOk
     private ARGUMENT_CONTENT(
-        end: string | undefined = undefined, 
+        end: string | undefined = undefined,
         close: string[] = [MODIFIER_END_SIGN, MODIFIER_CLOSE_SIGN]
     ): [ModifierArgument, boolean] {
         let ok = true;
@@ -699,7 +700,7 @@ export class Parser {
             } else {
                 const end = this.scanner.position();
                 content.push({
-                    type: NodeType.Text, 
+                    type: NodeType.Text,
                     location: this.#locFrom(end - s.length),
                     content: s
                 });
@@ -785,7 +786,7 @@ export class Parser {
             } else {
                 const end = this.scanner.position();
                 content.push({
-                    type: NodeType.Text, 
+                    type: NodeType.Text,
                     location: this.#locFrom(end - s.length),
                     content: s
                 });

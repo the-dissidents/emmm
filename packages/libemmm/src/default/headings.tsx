@@ -1,4 +1,5 @@
-import { BlockModifierDefinition, ModifierSlotType, ParagraphNode } from "../interface";
+import { ParagraphNode } from "../interface";
+import { BlockModifierDefinition, ModifierSlotType } from "../modifier";
 import { InvalidArgumentMessage } from "../messages";
 import { bindArgs, onlyPermitSimpleParagraphs, onlyPermitSingleBlock } from "../modifier-helper";
 import { ParseContext } from "../parser-config";
@@ -80,8 +81,8 @@ const implicitHeadingBlock = new BlockModifierDefinition<HeadingData>(
             let { msgs, args, nodes } = bindArgs(node, [], { optional: ['n'] });
             if (msgs) return msgs;
 
-            node.state = { 
-                name: undefined, implicit: true, 
+            node.state = {
+                name: undefined, implicit: true,
                 level: (currentExplicitHeadingLevel(cxt) ?? 0) + 1
             };
             if (args!.n !== undefined) {

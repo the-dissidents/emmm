@@ -1,12 +1,12 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { BlockEntity, InlineEntity, Message, SystemModifierNode, ModifierNode, BlockModifierDefinition, InlineModifierDefinition, ModifierSlotType, NodeType } from "../interface";
+import { BlockEntity, InlineEntity, Message, SystemModifierNode, ModifierNode, NodeType } from "../interface";
+import { BlockModifierDefinition, InlineModifierDefinition, ModifierSlotType } from "../modifier";
 import { EntityNotAllowedMessage } from "../messages";
 import { bindArgs } from "../modifier-helper";
 import { ParseContext } from "../parser-config";
 import { _Ent, _Def } from "../typing-helper";
-import { cloneNodes } from "../util";
-import { ConfigDefinitions } from "./module";
+import { cloneNodes } from "../node-util";
 
 export type CustomModifierSignature = {
     readonly slotName: string | undefined;
@@ -38,8 +38,6 @@ declare module '../parser-config' {
             inlineSlotDelayedStack: CustomModifierSignature[];
             blockInstantiationData: BlockInstantiationData[];
             inlineInstantiationData: InlineInstantiationData[];
-            modules: Map<string, ConfigDefinitions>;
-            usedModules: Set<string>;
             insideModule: string | undefined;
         };
     }
@@ -51,8 +49,6 @@ export function initParseContext(cxt: ParseContext) {
         inlineSlotDelayedStack: [],
         blockInstantiationData: [],
         inlineInstantiationData: [],
-        modules: new Map(),
-        usedModules: new Set(),
         insideModule: undefined
     });
 }
@@ -69,9 +65,9 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
         args: Map<string, string>
     };
 
-    const flag = 
-        signature.slotName === undefined ? ModifierSlotType.None : 
-        signature.preformatted ? ModifierSlotType.Preformatted 
+    const flag =
+        signature.slotName === undefined ? ModifierSlotType.None :
+        signature.preformatted ? ModifierSlotType.Preformatted
         : ModifierSlotType.Normal;
     const mod = (type == NodeType.BlockModifier
         ? new BlockModifierDefinition<State>(name, flag)
@@ -80,7 +76,7 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
     const isInline = type == NodeType.InlineModifier;
 
     if (content.length == 1 && (
-           content[0].type == NodeType.BlockModifier 
+           content[0].type == NodeType.BlockModifier
         || content[0].type == NodeType.InlineModifier))
         mod.roleHint = content[0].mod.roleHint;
 
@@ -88,7 +84,7 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
     mod.prepareExpand = (node: ModifierNode<State>) => {
         let { msgs, args } = bindArgs(node, signature.args, { named: signature.namedArgs });
         if (msgs) return msgs;
-        node.state = { 
+        node.state = {
             ok: true,
             args: new Map(Object.entries(args!))
         } satisfies State;
@@ -103,14 +99,14 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
         if (!node.state?.ok) return [];
         const store = cxt.get(builtins)!;
         const data = isInline ? store.inlineInstantiationData : store.blockInstantiationData;
-        data.push({ 
+        data.push({
             slotName: signature.slotName,
-            mod: mod as any, args: node.state.args, 
-            slotContent: node.content as any 
+            mod: mod as any, args: node.state.args,
+            slotContent: node.content as any
         });
         debug.trace(`pushed ${NodeType[type]} slot data for`, name);
-        debug.trace(`... slotName:`, 
-            signature.slotName === '' ? '<unnamed>' 
+        debug.trace(`... slotName:`,
+            signature.slotName === '' ? '<unnamed>'
             : signature.slotName === undefined ? '<no slot>'
             : `'${signature.slotName}'`);
         debug.trace(`... args:`, '{' + [...node.state.args].map(([a, b]) => `${a} => ${b}`).join(', ') + '}');

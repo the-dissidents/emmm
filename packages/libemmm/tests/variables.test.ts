@@ -1,7 +1,8 @@
 import { describe, expect, test } from "vitest";
 import { BuiltinConfiguration } from "../src/builtin/builtin";
 import { SimpleScanner } from "../src/scanner";
-import { BlockModifierDefinition, MessageSeverity, ModifierSlotType, NodeType } from "../src/interface";
+import { MessageSeverity, NodeType } from "../src/interface";
+import { BlockModifierDefinition, ModifierSlotType } from "../src/modifier";
 import { debug, DebugLevel } from "../src/debug";
 import { Configuration, ParseContext } from "../src/parser-config";
 
@@ -66,11 +67,11 @@ describe('interpolation', () => {
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.BlockModifier, mod: {name: 'normal'},
             arguments: {
-                positional: [{ 
+                positional: [{
                     content: [{
-                        type: NodeType.Interpolation, 
+                        type: NodeType.Interpolation,
                         argument: { content: [{ type: NodeType.Text, content: 'x' }] }
-                    }] 
+                    }]
                 }],
             },
             content: []
@@ -82,7 +83,7 @@ describe('interpolation', () => {
             arguments: {
                 positional: [{
                     content: [{
-                        type: NodeType.Interpolation, 
+                        type: NodeType.Interpolation,
                         argument: { content: [{ type: NodeType.Escaped, content: ")" }] }
                     }]
                 }],
@@ -105,11 +106,11 @@ describe('interpolation', () => {
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.BlockModifier, mod: {name: 'normal'},
             arguments: {
-                positional: [{ 
+                positional: [{
                     content: [{
-                        type: NodeType.Interpolation, 
+                        type: NodeType.Interpolation,
                         argument: { content: [{ type: NodeType.Text, content: 'x' }] }
-                    }] 
+                    }]
                 }],
             },
             content: []

@@ -1,6 +1,8 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { SystemModifierDefinition, InlineEntity, ModifierSlotType, Message, NodeType, SystemModifierNode, InlineShorthand, BlockShorthand, ModifierArgument } from "../interface";
+import { InlineEntity, Message, NodeType, SystemModifierNode, ModifierArgument } from "../interface";
+import { InlineShorthand, BlockShorthand } from "../parser-config";
+import { SystemModifierDefinition, ModifierSlotType } from "../modifier";
 import { NameAlreadyDefinedMessage, InvalidArgumentMessage, ArgumentCountMismatchMessage } from "../messages";
 import { bindArgs } from "../modifier-helper";
 import { assert } from "../util";
@@ -22,7 +24,7 @@ function parseDefineArguments(
 ) {
     let { msgs, args, nodes, rest, restNodes } = bindArgs(node, ['name'], { rest: true });
     if (msgs) return msgs;
-    
+
     msgs = [];
     const nameNode = nodes!.name;
     const name = args!.name;
@@ -53,7 +55,7 @@ function parseDefineArguments(
             }
             break;
         }
-        
+
         i++;
         if (i < rest!.length) {
             const id = arg.expansion!;
@@ -69,14 +71,14 @@ function parseDefineArguments(
             break;
         }
     }
-    
+
     if (i == rest!.length - 1) {
         if (rest![i] !== '') msgs.push(
             new InvalidArgumentMessage(restNodes![i].location, '(must be empty)'));
     } else if (i < rest!.length - 1)
         msgs.push(new ArgumentCountMismatchMessage(node.head));
 
-    let signature: CustomModifierSignature = 
+    let signature: CustomModifierSignature =
         { slotName, args: parts.map((x) => x[0]), namedArgs: {}, preformatted: undefined };
     node.state = { name, nameNode, signature, parts, postfix, msgs };
     stack.push(signature);
@@ -85,7 +87,7 @@ function parseDefineArguments(
 
 export const DefineBlockShorthandMod = new SystemModifierDefinition
     <ShorthandState>
-    ('block-shorthand', ModifierSlotType.Normal, 
+    ('block-shorthand', ModifierSlotType.Normal,
 {
     // -inline-shorthand prefix:arg1:part1:arg2:part2...:(slot):postfix:
     delayContentExpansion: true,
@@ -94,7 +96,7 @@ export const DefineBlockShorthandMod = new SystemModifierDefinition
         if (!immediate) return [];
 
         const store = cxt.get(builtins)!;
-        const check = parseDefineArguments(NodeType.BlockModifier, 
+        const check = parseDefineArguments(NodeType.BlockModifier,
             node, store.blockSlotDelayedStack);
         if (check) return check;
         debug.trace('entering block shorthand definition', node.state!.name);
@@ -110,7 +112,7 @@ export const DefineBlockShorthandMod = new SystemModifierDefinition
     },
     prepareExpand(node, cxt, immediate) {
         if (!immediate || !node.state) return [];
-        if (!node.state.name) 
+        if (!node.state.name)
             return [new InvalidArgumentMessage(node.state.nameNode.location)];
 
         const msgs = node.state.msgs;
@@ -122,7 +124,7 @@ export const DefineBlockShorthandMod = new SystemModifierDefinition
         if (!immediate || !node.state) return undefined;
         const name = '<block shorthand>';
         const parts = node.state.parts.map((x) => x[1]);
-        const mod = customModifier(NodeType.BlockModifier, 
+        const mod = customModifier(NodeType.BlockModifier,
             name, node.state.signature, node.content);
         const shorthand: BlockShorthand<any> = {
             name: node.state.name,
@@ -139,7 +141,7 @@ export const DefineBlockShorthandMod = new SystemModifierDefinition
 
 export const DefineInlineShorthandMod = new SystemModifierDefinition
     <ShorthandState & { definition?: InlineEntity[]; }>
-    ('inline-shorthand', ModifierSlotType.Normal, 
+    ('inline-shorthand', ModifierSlotType.Normal,
 {
     // -inline-shorthand prefix:arg1:part1:arg2:part2...:(slot):postfix:
     delayContentExpansion: true,
@@ -148,7 +150,7 @@ export const DefineInlineShorthandMod = new SystemModifierDefinition
         if (!immediate) return [];
 
         const store = cxt.get(builtins)!;
-        const check = parseDefineArguments(NodeType.InlineModifier, 
+        const check = parseDefineArguments(NodeType.InlineModifier,
             node, store.inlineSlotDelayedStack);
         if (check) return check;
         debug.trace('entering inline shorthand definition', node.state!.name);
@@ -164,7 +166,7 @@ export const DefineInlineShorthandMod = new SystemModifierDefinition
     },
     prepareExpand(node, cxt, immediate) {
         if (!immediate || !node.state) return [];
-        if (!node.state.name) 
+        if (!node.state.name)
             return [new InvalidArgumentMessage(node.state.nameNode.location)];
 
         const msgs = node.state.msgs;
@@ -177,7 +179,7 @@ export const DefineInlineShorthandMod = new SystemModifierDefinition
         if (!immediate || !node.state) return undefined;
         const name = '<inline shorthand>';
         const parts = node.state.parts.map((x) => x[1]);
-        const mod = customModifier(NodeType.InlineModifier, 
+        const mod = customModifier(NodeType.InlineModifier,
             name, node.state.signature, node.state.definition!);
         const shorthand: InlineShorthand<any> = {
             name: node.state.name,

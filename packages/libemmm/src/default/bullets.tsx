@@ -1,4 +1,4 @@
-import { BlockModifierDefinition, ModifierSlotType } from "../interface";
+import { BlockModifierDefinition, ModifierSlotType } from "../modifier";
 import { InvalidArgumentMessage } from "../messages";
 import { bindArgs } from "../modifier-helper";
 import { BlockRendererDefiniton } from "../renderer";
@@ -30,13 +30,13 @@ const subItemBlock = new BlockModifierDefinition(
 export const BulletBlocks = [bulletItemBlock, orderedListItemBlock, subItemBlock];
 
 export const BulletBlockRenderersHTML = [
-    [bulletItemBlock, (node, cxt) => 
+    [bulletItemBlock, (node, cxt) =>
         <li>{cxt.state.render(node.content, cxt)}</li>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [subItemBlock, (node, cxt) => 
+    [subItemBlock, (node, cxt) =>
         <div class='subitem'>{cxt.state.render(node.content, cxt)}</div>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [orderedListItemBlock, (node, cxt) => 
+    [orderedListItemBlock, (node, cxt) =>
         node.state === undefined
             ? cxt.state.invalidBlock(node, 'bad format')
             : <li value={node.state}>{cxt.state.render(node.content, cxt)}</li>

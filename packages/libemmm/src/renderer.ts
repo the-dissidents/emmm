@@ -1,5 +1,6 @@
 import { debug } from "./debug";
-import { BlockEntity, InlineEntity, NodeType, ParagraphNode, TextNode, PreNode, EscapedNode, BlockModifierNode, InlineModifierNode, BlockModifierDefinition, InlineModifierDefinition } from "./interface";
+import { BlockEntity, InlineEntity, NodeType, ParagraphNode, TextNode, PreNode, EscapedNode, BlockModifierNode, InlineModifierNode } from "./interface";
+import { BlockModifierDefinition, InlineModifierDefinition } from "./modifier";
 import { Document } from "./parser-config";
 
 export type RendererType<TState, TReturn, TDocument, TOptions = undefined> = {
@@ -16,10 +17,10 @@ type getReturn<Type> = Type extends RendererType<any, infer T, any, any> ? T : n
 type getDocument<Type> = Type extends RendererType<any, any, infer T, any> ? T : never;
 type getOptions<Type> = Type extends RendererType<any, any, any, infer T> ? T : never;
 
-export type NodeRenderer<Type extends AnyRendererType, TNode> = 
+export type NodeRenderer<Type extends AnyRendererType, TNode> =
     (node: TNode, cxt: RenderContext<Type>) => getReturn<Type>;
 
-export type NodeRendererDefinition<Type extends AnyRendererType, TNode, TDef> = 
+export type NodeRendererDefinition<Type extends AnyRendererType, TNode, TDef> =
     [def: TDef, renderer: NodeRenderer<Type, TNode>];
 
 export class RenderContext<Type extends AnyRendererType> {
@@ -94,7 +95,7 @@ export class RenderConfiguration<Type extends AnyRendererType>
 
     constructor(
         public options: getOptions<Type>,
-        public postprocessor: 
+        public postprocessor:
             (results: getReturn<Type>[], cxt: RenderContext<Type>) => getDocument<Type>
     ) { }
 

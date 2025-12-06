@@ -1,15 +1,17 @@
 import { debug } from "../debug";
-import { BlockModifierDefinition, ModifierSlotType, InlineModifierDefinition, ModifierNode, NodeType } from "../interface";
+import { ModifierNode, NodeType } from "../interface";
+import { BlockModifierDefinition, ModifierSlotType, InlineModifierDefinition } from "../modifier";
 import { SlotUsedOutsideDefinitionMessage, InvalidArgumentMessage, EitherNormalOrPreMessage, UnknownModifierMessage } from "../messages";
 import { bindArgs } from "../modifier-helper";
 import { ParseContext } from "../parser-config";
 import { _Def, _Ent, _InstData, _Node } from "../typing-helper";
-import { assert, cloneNodes, NameManager } from "../util";
+import { assert, NameManager } from "../util";
+import { cloneNodes } from "../node-util";
 import { builtins, CustomModifierSignature } from "./internal";
 
 function slotModifier
     <T extends NodeType.InlineModifier | NodeType.BlockModifier>
-    (name: string, type: T, preformatted: boolean, inject: boolean): _Def<T, any> 
+    (name: string, type: T, preformatted: boolean, inject: boolean): _Def<T, any>
 {
     type TState = {
         ok: true;
@@ -37,9 +39,9 @@ function slotModifier
             }
             return [];
         }
-        
+
         // check args
-        const check = inject 
+        const check = inject
             ? bindArgs(node, ['modname'], { optional: ['id'] })
             : bindArgs(node, [], { optional: ['id'] });
         if (check.msgs) {
@@ -88,8 +90,8 @@ function slotModifier
             const modname = check.args.modname;
             // @ts-expect-error
             const modnameNode = check.nodes.modname;
-            const mod = ((isInline 
-                ? cxt.config.inlineModifiers 
+            const mod = ((isInline
+                ? cxt.config.inlineModifiers
                 : cxt.config.blockModifiers) as NameManager<_Def<T>>).get(modname);
             if (!mod) {
                 node.state = { ok: false };

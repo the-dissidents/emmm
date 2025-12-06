@@ -4,7 +4,7 @@ import { debugPrint } from "./debug-print";
 import { DefaultConfiguration } from "./default/default";
 import { HTMLRenderConfiguration, HTMLRenderState } from "./default/html-renderer";
 import { Configuration, ParseContext } from "./parser-config";
-import { BlockModifierDefinition, ModifierSlotType } from "./interface";
+import { BlockModifierDefinition, ModifierSlotType } from "./modifier";
 
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
 

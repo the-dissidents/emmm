@@ -1,9 +1,10 @@
 import { debug } from "./debug";
 import { debugPrint } from "./debug-print";
-import { ModifierNode, Message, BlockModifierNode, NodeType, BlockEntity, SystemModifierNode, InlineEntity, ModifierSlotType, SystemModifierDefinition, ParagraphNode, ModifierArgument } from "./interface";
+import { ModifierNode, Message, BlockModifierNode, NodeType, BlockEntity, SystemModifierNode, InlineEntity, ParagraphNode, ModifierArgument } from "./interface";
+import { ModifierSlotType, SystemModifierDefinition } from "./modifier";
 import { ArgumentCountMismatchMessage, CannotExpandArgumentMessage, ContentExpectedMessage, EntityNotAllowedMessage, InvalidArgumentMessage, MultipleBlocksNotPermittedMessage, OnlySimpleParagraphsPermittedMessage, OverwriteSpecialVariableMessage } from "./messages";
 import { ParseContext } from "./parser-config";
-import { cloneNode, stripNode } from "./util";
+import { cloneNode, stripNode } from "./node-util";
 
 type BindResult<P extends string[], Opt extends string[], N extends Record<string, string>> = {
     msgs: Message[],
@@ -20,11 +21,11 @@ type BindResult<P extends string[], Opt extends string[], N extends Record<strin
 };
 
 export function bindArgs<P extends string[], Opt extends string[] = [], N extends Record<string, string> = {}>(
-    node: ModifierNode, p: readonly [...P], 
-    opts?: { 
-        named?: N, 
-        optional?: readonly [...Opt], 
-        rest?: boolean, 
+    node: ModifierNode, p: readonly [...P],
+    opts?: {
+        named?: N,
+        optional?: readonly [...Opt],
+        rest?: boolean,
         restNamed?: boolean,
         trim?: boolean
     }
@@ -40,14 +41,14 @@ export function bindArgs<P extends string[], Opt extends string[] = [], N extend
         restNodes: undefined
     };
 
-    const maxLength = 
+    const maxLength =
         opts?.rest ? Infinity : p.length + (opts?.optional?.length ?? 0);
     if (node.arguments.positional.length < p.length
      || node.arguments.positional.length > maxLength
     ) return {
         msgs: [new ArgumentCountMismatchMessage({
             source: node.location.source,
-            start: node.head.start, 
+            start: node.head.start,
             end: node.head.end
         }, p.length, maxLength)],
         args: undefined,
@@ -134,11 +135,11 @@ export function onlyPermitPlaintextParagraph(
         else if (ents.length > 1) {
             let last = ents.at(-1)!.location;
             return [new MultipleBlocksNotPermittedMessage({
-                source: last.source, 
-                start: ents[1].location.start, 
+                source: last.source,
+                start: ents[1].location.start,
                 end: last.actualEnd ?? last.end
             })];
-        } 
+        }
         return check(ents[0]);
     }
 
@@ -154,7 +155,7 @@ export function onlyPermitPlaintextParagraph(
         }
         return checkInline(ent.content);
     }
-    
+
     return checkContent(node.content);
 }
 
@@ -163,7 +164,7 @@ export function onlyPermitPlaintextParagraph(
  * @returns `null` if OK, otherwise an array of error messages.
  */
 export function onlyPermitSimpleParagraphs(
-    node: BlockModifierNode<any> | SystemModifierNode<any>): Message[] | null 
+    node: BlockModifierNode<any> | SystemModifierNode<any>): Message[] | null
 {
     function check(nodes: BlockEntity[]): Message[] | null {
         for (let ent of nodes) {
@@ -191,12 +192,12 @@ export function onlyPermitSingleBlock(
         if (nodes.length > 1) {
             const last = nodes.at(-1)!.location;
             return [new MultipleBlocksNotPermittedMessage({
-                source: last.source, 
-                start: nodes[1].location.start, 
+                source: last.source,
+                start: nodes[1].location.start,
                 end: last.actualEnd ?? last.end
             })];
-        } else if (nodes.length == 1 
-                && nodes[0].type === NodeType.BlockModifier 
+        } else if (nodes.length == 1
+                && nodes[0].type === NodeType.BlockModifier
                 && nodes[0].expansion !== undefined)
         {
             return check(nodes[0].expansion);

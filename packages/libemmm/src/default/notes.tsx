@@ -1,11 +1,12 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { InlineModifierDefinition, ModifierSlotType, BlockModifierDefinition, BlockEntity, NodeType, LocationRange, SystemModifierDefinition } from "../interface";
+import { BlockEntity, NodeType, LocationRange } from "../interface";
+import { InlineModifierDefinition, ModifierSlotType, BlockModifierDefinition, SystemModifierDefinition } from "../modifier";
 import { InvalidArgumentMessage } from "../messages";
 import { bindArgs } from "../modifier-helper";
 import { ParseContext } from "../parser-config";
 import { BlockRendererDefiniton, InlineRendererDefiniton, RenderContext } from "../renderer";
-import { stripNode } from "../util";
+import { stripNode } from "../node-util";
 import { HTMLComponentPlugin, HTMLRenderType } from "./html-renderer";
 
 const notes = Symbol();
@@ -152,7 +153,7 @@ const noteBlock = new BlockModifierDefinition<NoteDefinition>(
         const defs = cxt.get(notes)!;
         const entry: NoteDefinition = {
             id: defs.currentId,
-            system: args!.system ?? '', 
+            system: args!.system ?? '',
             name: args!.name,
             location: node.location,
             content: content

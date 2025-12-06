@@ -1,10 +1,11 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { BlockEntity, BlockModifierDefinition, InlineModifierDefinition, ModifierSlotType } from "../interface";
+import { BlockEntity } from "../interface";
+import { BlockModifierDefinition, InlineModifierDefinition, ModifierSlotType } from "../modifier";
 import { EntityNotAllowedMessage } from "../messages";
 import { ParseContext } from "../parser-config";
 import { BlockRendererDefiniton, InlineRendererDefiniton } from "../renderer";
-import { cloneNode, stripNode } from "../util";
+import { cloneNode, stripNode } from "../node-util";
 import { HTMLRenderType } from "./html-renderer";
 
 const table = Symbol();

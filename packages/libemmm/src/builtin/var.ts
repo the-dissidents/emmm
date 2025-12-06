@@ -1,5 +1,6 @@
 import { debug } from "../debug";
-import { InlineModifierDefinition, ModifierSlotType, ArgumentInterpolatorDefinition, SystemModifierDefinition, NodeType, BlockModifierDefinition, ModifierNode } from "../interface";
+import { NodeType, ModifierNode } from "../interface";
+import { InlineModifierDefinition, ModifierSlotType, ArgumentInterpolatorDefinition, SystemModifierDefinition, BlockModifierDefinition } from "../modifier";
 import { CannotExpandArgumentMessage, InvalidArgumentMessage, UndefinedVariableMessage } from "../messages";
 import { builtins } from "./internal";
 import { ParseContext } from "../parser-config";
@@ -58,8 +59,8 @@ export const IfndefBlockMod = ifdefBlock('ifndef', false);
 export const IfdefInlineMod = ifdefInline('ifdef', true);
 export const IfndefInlineMod = ifdefInline('ifndef', false);
 
-export const GetVarInlineMod = 
-    new InlineModifierDefinition<{ value: string; }>('$', ModifierSlotType.None, 
+export const GetVarInlineMod =
+    new InlineModifierDefinition<{ value: string; }>('$', ModifierSlotType.None,
 {
     alwaysTryExpand: true,
     // .$:id
@@ -83,8 +84,8 @@ export const GetVarInlineMod =
     },
 });
 
-export const PrintInlineMod = 
-    new InlineModifierDefinition<{ value: string; }>('print', ModifierSlotType.None, 
+export const PrintInlineMod =
+    new InlineModifierDefinition<{ value: string; }>('print', ModifierSlotType.None,
 {
     // .print:args...
     prepareExpand(node) {
@@ -99,7 +100,7 @@ export const PrintInlineMod =
     },
 });
 
-export const GetVarInterpolator = 
+export const GetVarInterpolator =
     new ArgumentInterpolatorDefinition('$(', ')',
 {
     alwaysTryExpand: true,

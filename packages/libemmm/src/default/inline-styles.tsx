@@ -1,4 +1,4 @@
-import { InlineModifierDefinition, ModifierSlotType } from "../interface";
+import { InlineModifierDefinition, ModifierSlotType } from "../modifier";
 import { InlineRendererDefiniton } from "../renderer";
 import { HTMLRenderType } from "./html-renderer";
 
@@ -25,19 +25,19 @@ const sequenceInline = new InlineModifierDefinition(
 export const InlineStyles = [emphasisInline, keywordInline, highlightInline, commentaryInline, sequenceInline];
 
 export const InlineStyleRenderersHTML = [
-    [emphasisInline, (node, cxt) => 
+    [emphasisInline, (node, cxt) =>
         <em>{cxt.state.render(node.content, cxt)}</em>
     ] satisfies InlineRendererDefiniton<HTMLRenderType>,
-    [keywordInline, (node, cxt) => 
+    [keywordInline, (node, cxt) =>
         <b>{cxt.state.render(node.content, cxt)}</b>
     ] satisfies InlineRendererDefiniton<HTMLRenderType>,
-    [highlightInline, (node, cxt) => 
+    [highlightInline, (node, cxt) =>
         <mark>{cxt.state.render(node.content, cxt)}</mark>
     ] satisfies InlineRendererDefiniton<HTMLRenderType>,
-    [commentaryInline, (node, cxt) => 
+    [commentaryInline, (node, cxt) =>
         <span class='commentary'>{cxt.state.render(node.content, cxt)}</span>
     ] satisfies InlineRendererDefiniton<HTMLRenderType>,
-    [sequenceInline, (node, cxt) => 
+    [sequenceInline, (node, cxt) =>
         <span class='seq'>{cxt.state.render(node.content, cxt)}</span>
     ] satisfies InlineRendererDefiniton<HTMLRenderType>
 ];

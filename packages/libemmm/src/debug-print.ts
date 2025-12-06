@@ -1,28 +1,30 @@
 import { debug } from "./debug";
-import { ArgumentEntity, NodeType, ModifierArgument, Message, MessageSeverity, BlockModifierDefinition, BlockShorthand, InlineModifierDefinition, InlineShorthand, ModifierSlotType, BlockEntity, InlineEntity, LocationRange } from "./interface";
+import { ArgumentEntity, NodeType, ModifierArgument, Message, MessageSeverity, BlockEntity, InlineEntity, LocationRange } from "./interface";
+import { BlockShorthand, InlineShorthand } from "./parser-config";
+import { BlockModifierDefinition, InlineModifierDefinition, ModifierSlotType } from "./modifier";
 import { Document } from "./parser-config";
 
 export const debugPrint = {
-    blockModifier: (x: BlockModifierDefinition<any>) => 
+    blockModifier: (x: BlockModifierDefinition<any>) =>
         `[.${x.name}] (${ModifierSlotType[x.slotType]})`,
-    
-    inlineModifier: (x: InlineModifierDefinition<any>) => 
+
+    inlineModifier: (x: InlineModifierDefinition<any>) =>
         `[/${x.name}] (${ModifierSlotType[x.slotType]})`,
-    
+
     inlineShorthand: (x: InlineShorthand<any>) =>
-        x.name + x.parts.map((x, i) => ` .. <arg${i}> .. ${x}`).join('') 
+        x.name + x.parts.map((x, i) => ` .. <arg${i}> .. ${x}`).join('')
                + (x.mod.slotType == ModifierSlotType.None
                     ? '' : ` .. <slot> .. ${x.postfix ?? '<no postfix>'}`),
 
     blockShorthand: (x: BlockShorthand<any>) =>
-        x.name + x.parts.map((x, i) => ` .. <arg${i}> .. ${x}`).join('') 
+        x.name + x.parts.map((x, i) => ` .. <arg${i}> .. ${x}`).join('')
                + (x.mod.slotType == ModifierSlotType.None
                     ? '' : ` .. <slot> .. ${x.postfix ?? '<no postfix>'}`),
-    
-    argument: (arg: ModifierArgument) => 
+
+    argument: (arg: ModifierArgument) =>
         arg.content.map(debugPrintArgEntity).join(''),
 
-    node: (...nodes: (BlockEntity | InlineEntity)[]) => 
+    node: (...nodes: (BlockEntity | InlineEntity)[]) =>
         nodes.map((x) => debugPrintNode(x)).join('\n'),
 
     message: debugPrintMsg,
@@ -66,9 +68,9 @@ function debugPrintNode(node: BlockEntity | InlineEntity, prefix = '') {
         case NodeType.InlineModifier:
         case NodeType.BlockModifier:
         case NodeType.SystemModifier:
-            const posargs = node.arguments.positional.map((x, i) => 
+            const posargs = node.arguments.positional.map((x, i) =>
                 `\n${prefix}    (${i})@${x.location.start}-${x.location.end}=${debugPrint.argument(x)}`).join('');
-            const namedargs = [...node.arguments.named].map(([name, x], i) => 
+            const namedargs = [...node.arguments.named].map(([name, x], i) =>
                 `\n${prefix}    <${name}>@${x.location.start}-${x.location.end}=${debugPrint.argument(x)}`).join('');
             if (node.content.length > 0) {
                 result += ` id=${node.mod.name}${posargs}${namedargs}>\n` + debugPrintNodes(node.content, prefix) + `\n${prefix}</${NodeType[node.type]}@${node.location.end}>`;
@@ -105,7 +107,7 @@ function debugPrintRange(loc: LocationRange, context = 1) {
             const startPos = i == sr ? sc : 0;
             const endPos = i == er ? ec : line.length;
             lines.push(
-                  ' '.repeat(rowWidth) + ' | ' 
+                  ' '.repeat(rowWidth) + ' | '
                 + ' '.repeat(startPos)
                 + (isSingleCharacter ? '^' : '~'.repeat(endPos - startPos + 1)));
         }
@@ -131,7 +133,7 @@ function debugPrintMsg(m: Message) {
 
 function debugDumpDocument(doc: Document): string {
     let root = debugPrint.node(...doc.root.content);
-    let msgs = doc.messages.map((x) => 
+    let msgs = doc.messages.map((x) =>
         debugPrintRange(x.location) + '\n' + debugPrintMsg(x)).join('\n');
     if (msgs.length > 0) msgs += '\n';
     return `Document: ${doc.root.source.name}\n${msgs}${root}`;
