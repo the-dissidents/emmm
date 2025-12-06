@@ -304,7 +304,7 @@ export const Weixin = {
      * @param [force=false] Force re-upload of the image even if it is in the cache.
      * @returns Generated URL of the uploaded image, starting with `http://mmbiz.qpic.cn/mmbiz/`. Note that it cannot be used outside pages published in Weixin.
      */
-    async uploadSmallImage(blob: Blob, name: string, force = false) {
+    async uploadSmallImage(blob: Blob, name: string, key: string, force = false) {
         if (!force && smallImageCache.has(name))
             return smallImageCache.get(name)!;
 
@@ -323,7 +323,7 @@ export const Weixin = {
         let json = await r.json();
         if (json.errcode) throw new WeixinAPIError(json);
         const url = json.url as string;
-        smallImageCache.set(name, url);
+        smallImageCache.set(key, url);
         Settings.set('weixinSmallImageCache', [...smallImageCache.entries()]);
         return url;
     }

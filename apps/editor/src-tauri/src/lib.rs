@@ -87,8 +87,10 @@ fn try_compress_size(img: &DynamicImage, scaling: f64) -> Result<Vec<u8>, String
     }
 }
 
-fn pack_image_result(ext: &str, data: Vec<u8>) -> Vec<u8> {
+fn pack_image_result(mime: &str, ext: &str, data: Vec<u8>) -> Vec<u8> {
     let mut buf: Vec<u8> = vec![];
+    buf.extend((mime.len().to_u32().unwrap()).to_le_bytes());
+    buf.extend(mime.as_bytes());
     buf.extend((ext.len().to_u32().unwrap()).to_le_bytes());
     buf.extend(ext.as_bytes());
     buf.extend(data);
@@ -132,12 +134,12 @@ async fn compress_image(
         if supported_types.iter().any(|x| *x == format.to_mime_type()) {
             if original.len() < max_size {
                 let ext = format.extensions_str().first().map_or("", |v| v);
-                return Ok(pack_image_result(ext, original));
+                return Ok(pack_image_result(format.to_mime_type(), ext, original));
             }
 
             let result = try_compress_size(&img, 1.0)?;
             if result.len() < max_size {
-                return Ok(pack_image_result("jpg", result));
+                return Ok(pack_image_result("image/jpeg", "jpg", result));
             }
         }
 
@@ -159,7 +161,7 @@ async fn compress_image(
         }
         let result = last_ok
             .ok_or("Unable to compress within size limit".to_owned())?;
-        Ok(pack_image_result("jpg", result))
+        Ok(pack_image_result("image/jpeg", "jpg", result))
     }).await;
 
     match result {

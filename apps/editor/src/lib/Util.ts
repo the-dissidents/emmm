@@ -24,14 +24,14 @@ export async function getIP(method: GetIPMethod) {
     let r: Response, ip: string;
     switch (method) {
         case GetIPMethod.ipinfo:
-            r = await fetch('https://ipinfo.io/json', 
+            r = await fetch('https://ipinfo.io/json',
                 { signal: AbortSignal.timeout(2000) });
             if (!r.ok) throw new Error();
             ip = (await r.json()).ip;
             console.log(ip);
             break;
         case GetIPMethod.ipify:
-            r = await fetch('https://api.ipify.org/?format=json', 
+            r = await fetch('https://api.ipify.org/?format=json',
                 { signal: AbortSignal.timeout(2000) });
             if (!r.ok) throw new Error();
             ip = (await r.json()).ip;
@@ -68,7 +68,7 @@ export const DOMUtil = {
         try {
             let newElem = doc.createElement(name);
             while (elem.firstChild) {
-                newElem.appendChild(elem.firstChild); 
+                newElem.appendChild(elem.firstChild);
             }
             for (let i = elem.attributes.length - 1; i >= 0; --i) {
                 newElem.attributes.setNamedItem(elem.attributes[i].cloneNode() as Attr);
@@ -86,7 +86,7 @@ export const DOMUtil = {
             throw new Error("Invalid CSS string: missing quotes");
         }
         let raw = cssString.slice(1, -1).replace(/\\\r\n|\\\n|\\\r/g, '');
-        return raw.replace(/\\([0-9a-fA-F]{1,6}[ \t\n\r\f]?|["'\\])/g, 
+        return raw.replace(/\\([0-9a-fA-F]{1,6}[ \t\n\r\f]?|["'\\])/g,
             (_match: string, esc: string): string => {
                 if (/^[0-9a-fA-F]/.test(esc)) {
                     // Remove optional whitespace after hex
@@ -102,34 +102,11 @@ export const DOMUtil = {
 export async function readUrl(url: URL) {
     console.log(url);
     if (url.protocol == 'file:') {
-        return new Blob([await readFile(url)], 
+        return new Blob([await readFile(url)],
             { type: mime.getType(url.href) ?? undefined });
     }
-    
+
     let r = await fetch(url);
     if (!r.ok) throw new RequestFailedError(r);
     return await r.blob();
-}
-
-export async function loadImage(url: URL, maxSizeMB?: number) {
-    let file = new File([await readUrl(url)], url.href, 
-        { type: mime.getType(url.href) ?? undefined });
-
-    if (!maxSizeMB || 
-        ((file.type == 'image/png' || file.type == 'image/jpeg') 
-            && file.size < maxSizeMB * 1024 * 1024))
-    {
-        return file;
-    }
-    
-    let filepath = decodeURIComponent(url.pathname);
-    if (url.protocol !== 'file:') {
-        // save to local
-        filepath = await path.join(
-            await path.tempDir(), 
-            crypto.randomUUID() + await path.extname(filepath));
-        await fs.writeFile(filepath, file.stream());
-    }
-
-    return RustAPI.compressImage(filepath, maxSizeMB * 1024 * 1024);
 }

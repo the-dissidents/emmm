@@ -1,4 +1,9 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { BinaryReader } from "./details/BinaryReader";
+import { path } from "@tauri-apps/api";
+import * as fs from "@tauri-apps/plugin-fs";
+import mime from 'mime/lite';
+import { readUrl } from "./Util";
 
 type BackendEvent = {
     event: 'failed'
@@ -49,12 +54,31 @@ function createChannel(handler: {[key in BackendEventKey]?: BackendEventHandler<
 }
 
 export const RustAPI = {
-    async compressImage(path: string, maxSize: number) {
-        const buf = await invoke<ArrayBuffer>('compress_image', { 
-            path, maxSize, 
-            supportedTypes: ['image/jpeg'],
-            max_width: 1920 
+    async compressImage(url: URL, maxSize: number) {
+        let filepath = decodeURIComponent(url.pathname);
+        if (url.protocol !== 'file:') {
+            let file = new File([await readUrl(url)], url.href,
+                { type: mime.getType(url.href) ?? undefined });
+            // save to local
+            filepath = await path.join(
+                await path.tempDir(),
+                crypto.randomUUID() + await path.extname(filepath));
+            await fs.writeFile(filepath, file.stream());
+        }
+
+        const buf = await invoke<ArrayBuffer>('compress_image', {
+            path: filepath, maxSize,
+            supportedTypes: ['image/jpeg', 'image/png'],
+            max_width: 1920
         });
-        return new Blob([buf], {type: 'image/jpeg'});
+
+        const reader = new BinaryReader(buf);
+        const type = reader.readString();
+        const ext = reader.readString();
+        const data = reader.readToEnd();
+        return {
+            blob: new Blob([data], { type }),
+            ext, mime: type
+        };
     }
 }
