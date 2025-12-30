@@ -129,6 +129,7 @@ blockquote {
 
 :is(h2, h3, h4, h5, h6) {
   margin-block: 2em 1em;
+  text-wrap: balance;
 }
 
 h1 {
@@ -234,7 +235,7 @@ aside.the-end {
   }
 }
 
-li {
+li.bullet {
   margin-left: 1em;
   display: flex;
     white-space: pre;
@@ -284,7 +285,7 @@ mark {
 
 .emmmstyle-speaker-a p {
   padding-right: 3em;
-  color: var(--link-color);
+  color: var(--link-color); 
 }
 
 .emmmstyle-speaker-b p {
@@ -413,6 +414,34 @@ figure figcaption {
 }
 
 /* tables */
+
+
+/* gallery (carousel) */
+
+ul.gallery {
+  display: flex;
+  gap: 4vw;
+  padding: 0;
+  /* border: 1px solid; */
+  overflow-x: scroll;
+  scroll-snap-type: x mandatory;
+}
+
+ul.gallery > li {
+  list-style-type: none;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex: 0 0 100%;
+  /* border: 1px solid; */
+  scroll-snap-align: center;
+  overflow-y: scroll;
+  max-height: 60vh;
+}
+
+ul.gallery > li > :first-child {
+  padding-top: 0;
+  margin-top: 0;
+}
 
 
 /* ratings */

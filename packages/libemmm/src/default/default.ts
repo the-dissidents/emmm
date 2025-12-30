@@ -8,6 +8,7 @@ import { InlineStyles } from "./inline-styles";
 import { MiscBlocks, MiscInlines } from "./misc";
 import { Configuration, ReadonlyConfiguration } from "../parser-config";
 import { initTable, TableBlocks, TableInlines } from "./table";
+import { GalleryBlock } from "./gallery";
 
 let config = Configuration.from(BuiltinConfiguration);
 config.initializers.push(initNotes, initHeadings, initTable);
@@ -19,6 +20,7 @@ config.blockModifiers.add(
     ...MiscBlocks,
     ...NoteBlocks,
     ...TableBlocks,
+    GalleryBlock
 );
 config.inlineModifiers.add(
     CodeInline,

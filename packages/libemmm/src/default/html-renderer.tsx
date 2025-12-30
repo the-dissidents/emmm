@@ -11,6 +11,7 @@ import { MiscBlockRenderersHTML, MiscInlineRenderersHTML } from "./misc";
 import { NoteBlockRenderersHTML, NoteInlineRenderersHTML, NotesFooterPlugin } from "./notes";
 import { QuoteBlockRenderersHTML } from "./quotes";
 import { TableBlockRenderers, TableInlineRenderers } from "./table";
+import { GalleryBlockRendererHTML } from "./gallery";
 
 export type HTMLRendererOptions = {
     headPlugins: HTMLComponentPlugin[];
@@ -68,8 +69,7 @@ export class HTMLRenderState {
     render(elems: (BlockEntity | InlineEntity)[], cxt: RenderContext<HTMLRenderType>) {
         let fragment = new DocumentFragment();
         elems
-            .map((x) => cxt.renderEntity(x))
-            .filter((x) => x !== undefined)
+            .flatMap((x) => cxt.renderEntity(x))
             .flat()
             .forEach((x) => fragment.appendChild(x));
         return fragment;
@@ -119,10 +119,7 @@ const htmlConfig =
 });
 
 htmlConfig.paragraphRenderer = (node, cxt) =>
-    <p>{node.content
-            .map((x) => cxt.renderEntity(x))
-            .filter((x) => x !== undefined)}
-    </p>;
+    <p>{node.content.flatMap((x) => cxt.renderEntity(x))}</p>;
 
 htmlConfig.textRenderer = (node, cxt) => {
     switch (node.type) {
@@ -159,6 +156,7 @@ htmlConfig.addBlockRenderer(
     ...MiscBlockRenderersHTML,
     ...NoteBlockRenderersHTML,
     ...TableBlockRenderers,
+    GalleryBlockRendererHTML
 );
 
 htmlConfig.addInlineRenderer(

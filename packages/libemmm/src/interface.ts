@@ -26,6 +26,7 @@ export type LocationRange = {
 
 export enum NodeType {
     Root,
+    Group,
     Paragraph,
     Preformatted,
     Text,
@@ -40,6 +41,12 @@ export type RootNode = {
     type: NodeType.Root
     content: BlockEntity[],
     source: Source
+};
+
+export type GroupNode = {
+    location: LocationRange,
+    type: NodeType.Group,
+    content: BlockEntity[]
 };
 
 export type ParagraphNode = {
@@ -107,7 +114,7 @@ export type InlineModifierNode<TState> = ModifierNodeBase<TState> & {
 export type ModifierNode<T = any> =
     BlockModifierNode<T> | InlineModifierNode<T> | SystemModifierNode<T>;
 export type BlockEntity =
-    ParagraphNode | PreNode | BlockModifierNode<any> | SystemModifierNode<any>;
+    GroupNode | ParagraphNode | PreNode | BlockModifierNode<any> | SystemModifierNode<any>;
 export type InlineEntity =
     TextNode | EscapedNode | InlineModifierNode<any> | SystemModifierNode<any>;
 export type DocumentNode =

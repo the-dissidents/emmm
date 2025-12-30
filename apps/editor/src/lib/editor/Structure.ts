@@ -1,6 +1,7 @@
 import { Facet, type Text } from "@codemirror/state";
 import * as emmm from '@the_dissidents/libemmm';
 import { emmmDocument } from "./ParseData";
+import { Debug } from "$lib/Debug";
 
 export enum FoldUnit {
     Begin, End, Vertical, Top, Bottom, Space, BottomJoin, TopJoin
@@ -35,7 +36,7 @@ class Structure {
     }
 
     #reformatFolds(
-        line: LineStructure, newWidth: number, 
+        line: LineStructure, newWidth: number,
         uend: FoldUnit, uline: FoldUnit, urepl: FoldUnit
     ) {
         const oldWidth = line.folds.length;
@@ -58,7 +59,7 @@ class Structure {
 
         const width = Math.max(...content.map((x) => this.#makeFold(x)));
 
-        this.#reformatFolds(this.lines[from], width, 
+        this.#reformatFolds(this.lines[from], width,
             FoldUnit.Begin, FoldUnit.Top, FoldUnit.TopJoin);
 
         for (let i = from+1; i < to; i++) {
@@ -66,27 +67,28 @@ class Structure {
                 this.lines[i].folds.push(FoldUnit.Space);
             this.lines[i].folds.push(FoldUnit.Vertical);
         }
-        
-        this.#reformatFolds(this.lines[to], width, 
+
+        this.#reformatFolds(this.lines[to], width,
             FoldUnit.End, FoldUnit.Bottom, FoldUnit.BottomJoin);
 
         return width + 1;
     }
 
     #makeFold(node: emmm.DocumentNode): number {
-        if (node.type !== emmm.NodeType.Root 
+        if (node.type !== emmm.NodeType.Root
          && node.location.source != this.result.root.source) return 0;
 
         let width = 0;
         switch (node.type) {
             case emmm.NodeType.Root:
-                return Math.max(width, 
+            case emmm.NodeType.Group:
+                return Math.max(width,
                     ...node.content.map((x) => this.#makeFold(x)));
             case emmm.NodeType.Paragraph:
                 // FIXME: should include --:
                 return this.#makeBlock(
-                    this.doc.lineAt(node.location.start).number, 
-                    this.doc.lineAt(node.location.actualEnd ?? node.location.end).number, 
+                    this.doc.lineAt(node.location.start).number,
+                    this.doc.lineAt(node.location.actualEnd ?? node.location.end).number,
                     node.content);
             case emmm.NodeType.SystemModifier:
             case emmm.NodeType.InlineModifier:
@@ -94,42 +96,43 @@ class Structure {
                 const {number: l0} = this.doc.lineAt(node.head.start);
                 const {number: l1} = this.doc.lineAt(node.head.end);
                 const {number: l2} = this.doc.lineAt(node.location.actualEnd ?? node.location.end);
-                
+
                 if (l1 > l0)
                     for (let i = l0 + 1; i <= l1; i++)
-                        this.lines[i].indentation.normal = 
+                        this.lines[i].indentation.normal =
                             Math.max(this.lines[i].indentation.normal, SINGLELINE_HANGING);
-                this.lines[l0].indentation.hanging = 
+                this.lines[l0].indentation.hanging =
                     Math.max(this.lines[l0].indentation.hanging, SINGLELINE_HANGING);
 
                 if (node.content.length > 0) {
                     const {number: line, from} = this.doc.lineAt(node.content[0].location.start);
                     if (line == l1 && node.type !== emmm.NodeType.InlineModifier) {
                         // do hanging indentation
-                        let hang = Math.min(HANGING_MAX_LANGTH, 
+                        let hang = Math.min(HANGING_MAX_LANGTH,
                             node.content[0].location.start - from);
                         if (l2 > l1)
                             for (let i = l1 + 1; i <= l2; i++)
-                                this.lines[i].indentation.normal = 
+                                this.lines[i].indentation.normal =
                                     Math.max(this.lines[i].indentation.normal, hang);
-                        this.lines[l1].indentation.hanging = 
+                        this.lines[l1].indentation.hanging =
                             Math.max(this.lines[l1].indentation.hanging, hang);
                     }
                 }
-                if (node.content.length == 1 
+                if (node.content.length == 1
                     && this.doc.lineAt(node.content[0].location.start).number == l1)
                     return this.#makeFold(node.content[0]);
                 return this.#makeBlock(l1, l2, node.content);
             case emmm.NodeType.Preformatted:
             case emmm.NodeType.Text:
             case emmm.NodeType.Escaped:
-            default:
                 return 0;
+            default:
+                Debug.never(node);
         }
     }
 }
 
-export const emmmStructure = 
+export const emmmStructure =
     Facet.define<LineStructure[] | undefined, LineStructure[] | undefined>({
         combine: (values) => values.at(-1) ?? undefined
     });

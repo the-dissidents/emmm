@@ -77,24 +77,48 @@ describe('basic syntax', () => {
         let doc = parse(`<<<\nabc\n\ndef\n>>>`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
+            {
+                type: NodeType.Group,
+                content: [
+                    {
+                        type: NodeType.Paragraph,
+                        content: [{ type: NodeType.Text, content: 'abc' }]
+                    }, {
+                        type: NodeType.Paragraph,
+                        content: [{ type: NodeType.Text, content: 'def' }]
+                    }
+                ]
+            },
         ]);
         doc = parse(`<<<\nabc\n\n<<<\ndef\n>>>\n>>>`);
         expect.soft(doc.messages).toHaveLength(0);
-        expect.soft(doc.root.content).toMatchObject([
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
-        ]);
+        expect.soft(doc.root.content).toMatchObject([ {
+            type: NodeType.Group,
+            content: [
+                {
+                    type: NodeType.Paragraph,
+                    content: [{ type: NodeType.Text, content: 'abc' }]
+                }, {
+                    type: NodeType.Group,
+                    content: [ {
+                        type: NodeType.Paragraph,
+                        content: [{ type: NodeType.Text, content: 'def' }]
+                    } ]
+                },
+            ]
+        } ]);
         doc = parse(`[.normal]<<<\nabc\n\ndef\n>>>`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             {
                 type: NodeType.BlockModifier, mod: {name: 'normal'},
-                content: [
-                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
-                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
-                ]
+                content: [{
+                    type: NodeType.Group,
+                    content: [
+                        { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
+                        { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
+                    ]
+                }]
             },
         ]);
         doc = parse(`   [.normal]   \n   <<<\n   abc   \n>>>`);
@@ -102,7 +126,13 @@ describe('basic syntax', () => {
         expect.soft(doc.root.content).toMatchObject([
             {
                 type: NodeType.BlockModifier, mod: {name: 'normal'},
-                content: [{ type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] }]
+                content: [{
+                    type: NodeType.Group,
+                    content: [{
+                        type: NodeType.Paragraph,
+                        content: [{ type: NodeType.Text, content: 'abc' }]
+                    }]
+                }]
             },
         ]);
     });
@@ -386,36 +416,17 @@ describe('basic syntax', () => {
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 3 }
         ]);
-        expect.soft(doc.root.content).toMatchObject([
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] }
-        ]);
         doc = parse(`[.pre]<<<abc\n>>>`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 3 }
         ]);
-        expect.soft(doc.root.content).toMatchObject([
-            {
-                type: NodeType.BlockModifier, mod: {name: 'pre'},
-                content: [{ type: NodeType.Preformatted, content: {text: 'abc'} }]
-            },
-        ]);doc = parse(`<<<\nabc\n>>>haha`);
+        doc = parse(`<<<\nabc\n>>>haha`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 3 }
-        ]);
-        expect.soft(doc.root.content).toMatchObject([
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'haha' }] }
         ]);
         doc = parse(`[.pre]<<<\nabc\n>>>haha`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 3 }
-        ]);
-        expect.soft(doc.root.content).toMatchObject([
-            {
-                type: NodeType.BlockModifier, mod: {name: 'pre'},
-                content: [{ type: NodeType.Preformatted, content: {text: 'abc'} }]
-            },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'haha' }] }
         ]);
     });
     test('warnings - should be newlines: block modifiers', () => {

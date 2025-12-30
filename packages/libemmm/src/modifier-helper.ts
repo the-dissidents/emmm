@@ -167,9 +167,12 @@ export function onlyPermitSimpleParagraphs(
     node: BlockModifierNode<any> | SystemModifierNode<any>): Message[] | null
 {
     function check(nodes: BlockEntity[]): Message[] | null {
-        for (let ent of nodes) {
+        for (const ent of nodes) {
             if (ent.type == NodeType.BlockModifier && ent.expansion !== undefined) {
                 const cs = check(ent.expansion);
+                if (cs) return cs;
+            } else if (ent.type == NodeType.Group) {
+                const cs = check(ent.content);
                 if (cs) return cs;
             } else if (ent.type !== NodeType.Paragraph) {
                 return [new OnlySimpleParagraphsPermittedMessage(ent.location)];

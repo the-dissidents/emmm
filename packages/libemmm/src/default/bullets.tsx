@@ -31,7 +31,7 @@ export const BulletBlocks = [bulletItemBlock, orderedListItemBlock, subItemBlock
 
 export const BulletBlockRenderersHTML = [
     [bulletItemBlock, (node, cxt) =>
-        <li>{cxt.state.render(node.content, cxt)}</li>
+        <li class='bullet'>{cxt.state.render(node.content, cxt)}</li>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
     [subItemBlock, (node, cxt) =>
         <div class='subitem'>{cxt.state.render(node.content, cxt)}</div>
@@ -39,6 +39,6 @@ export const BulletBlockRenderersHTML = [
     [orderedListItemBlock, (node, cxt) =>
         node.state === undefined
             ? cxt.state.invalidBlock(node, 'bad format')
-            : <li value={node.state}>{cxt.state.render(node.content, cxt)}</li>
+            : <li class='ordered' value={node.state}>{cxt.state.render(node.content, cxt)}</li>
     ] satisfies BlockRendererDefiniton<HTMLRenderType, number>
 ];

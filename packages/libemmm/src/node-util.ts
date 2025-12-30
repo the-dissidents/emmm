@@ -64,6 +64,12 @@ export function cloneNode<T extends DocumentNode>(
                 source: node.source,
                 content: node.content.map((x) => cloneNode(x, options))
             } as T;
+        case NodeType.Group:
+            return {
+                type: node.type,
+                location: cloneLocation(node.location, options),
+                content: node.content.map((x) => cloneNode(x, options))
+            } as T;
         case NodeType.Paragraph:
             return {
                 type: node.type,
@@ -107,8 +113,9 @@ export function stripNode(...nodes: DocumentNode[]): DocumentNode[] {
                 if (node.expansion !== undefined)
                     return node.expansion.flatMap((x) => stripNode(x));
             // else fallthrough!
-            case NodeType.Paragraph:
             case NodeType.Root:
+            case NodeType.Group:
+            case NodeType.Paragraph:
                 node.content = node.content.flatMap((x) => stripNode(x)) as any;
                 return [node];
             case NodeType.SystemModifier:

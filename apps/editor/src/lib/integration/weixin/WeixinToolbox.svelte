@@ -284,7 +284,7 @@
 <ListView header={imgListHeader} bind:hout={imgListHandleOut} style="min-height: 300px">
 </ListView>
 
-<h5>Other articles</h5>
+<!-- <h5>Other articles</h5>
 <button onclick={() => fetchArticles()}>fetch</button>
 <ListView header={articleListHeader}
   hin={articleListHandleIn}
@@ -296,7 +296,7 @@
 <ListView header={permimgListHeader}
   hin={permimgListHandleIn}
   bind:hout={permimgListHandleOut} style="min-height: 300px">
-</ListView>
+</ListView> -->
 
 </div>
 

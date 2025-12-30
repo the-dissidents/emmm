@@ -264,9 +264,14 @@ describe('mixed block and inline definitions', () => {
         let doc = parse(`[-define-block p|x]\n<<<\n[/$x]\n[.slot]\n[/$x]\n>>>\n[-define-inline q|x][/$x]\n\n[.p|0][/q|1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
+            {
+                type: NodeType.Group,
+                content: [
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] },
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
+                ]
+            }
         ]);
     })
 })

@@ -39,8 +39,13 @@ describe('modules', () => {
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.InlineModifier }] },
             { type: NodeType.BlockModifier },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] },
+            {
+                type: NodeType.Group,
+                content: [
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] },
+                ]
+            },
             { type: NodeType.Paragraph, content: [{ type: NodeType.InlineModifier }] },
             { type: NodeType.BlockModifier },
         ]);
@@ -55,12 +60,17 @@ describe('modules', () => {
                 { type: NodeType.Text, content: '789' },
                 { type: NodeType.Text, content: 's' }
             ] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] },
-            { type: NodeType.Paragraph, content: [
-                { type: NodeType.Text, content: '789' },
-                { type: NodeType.Text, content: 'abc' }
-            ] },
+            {
+                type: NodeType.Group,
+                content: [
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] },
+                    { type: NodeType.Paragraph, content: [
+                        { type: NodeType.Text, content: '789' },
+                        { type: NodeType.Text, content: 'abc' }
+                    ] },
+                ]
+            },
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] },
             { type: NodeType.Paragraph, content: [

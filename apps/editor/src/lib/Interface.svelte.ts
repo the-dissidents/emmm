@@ -35,7 +35,7 @@ export const Interface = $state({
     renderedDocument: null as Document | null,
 
     colors: {
-        theme: new Color('pink'),
+        theme: new Color('white'),
         text: new Color('black'),
         commentary: new Color('black'),
         link: new Color('black'),

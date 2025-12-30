@@ -24,25 +24,36 @@ export type NodeRendererDefinition<Type extends AnyRendererType, TNode, TDef> =
     [def: TDef, renderer: NodeRenderer<Type, TNode>];
 
 export class RenderContext<Type extends AnyRendererType> {
-    renderEntity(node: BlockEntity | InlineEntity): getReturn<Type> | undefined {
+    renderEntity(node: BlockEntity | InlineEntity): getReturn<Type>[] {
         switch (node.type) {
+            case NodeType.Group:
+                return node.content.flatMap((x) => this.renderEntity(x));
+
             case NodeType.Paragraph:
-                return this.config.paragraphRenderer?.(node, this);
+                if (!this.config.paragraphRenderer) return [];
+                return this.config.paragraphRenderer(node, this);
+
             case NodeType.Preformatted:
             case NodeType.Text:
             case NodeType.Escaped:
-                // console.log(this.config.textRenderer);
-                return this.config.textRenderer?.(node, this);
+                if (!this.config.textRenderer) return [];
+                return this.config.textRenderer(node, this);
+
             case NodeType.InlineModifier:
                 let ir = this.config.inlineRenderers.get(node.mod);
                 if (ir) return ir(node, this);
-                return this.config.undefinedInlineRenderer?.(node, this);
+                if (!this.config.undefinedInlineRenderer) return [];
+                return this.config.undefinedInlineRenderer(node, this);
+
             case NodeType.BlockModifier:
                 let br = this.config.blockRenderers.get(node.mod);
                 if (br) return br(node, this);
-                return this.config.undefinedBlockRenderer?.(node, this);
+                if (!this.config.undefinedBlockRenderer) return [];
+                return this.config.undefinedBlockRenderer(node, this);
+
             case NodeType.SystemModifier:
-                return undefined;
+                return [];
+
             default:
                 return debug.never(node);
         }
@@ -103,8 +114,7 @@ export class RenderConfiguration<Type extends AnyRendererType>
         let cxt = new RenderContext(this, doc, state);
         let results = doc.toStripped()
             .root.content
-            .map((x) => cxt.renderEntity(x))
-            .filter((x) => (x !== undefined)) as getReturn<Type>[];
+            .flatMap((x) => cxt.renderEntity(x));
         return this.postprocessor(results, cxt);
     }
 

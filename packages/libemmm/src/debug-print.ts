@@ -53,6 +53,7 @@ function debugPrintNode(node: BlockEntity | InlineEntity, prefix = '') {
     }
     let result = `<${NodeType[node.type]}@${node.location.start}`;
     switch (node.type) {
+        case NodeType.Group:
         case NodeType.Paragraph:
             const content = debugPrintNodes(node.content, prefix);
             if (content.length > 0)

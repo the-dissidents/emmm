@@ -123,17 +123,21 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
     return mod;
 }
 
-export function makeInlineDefinition(node: SystemModifierNode<any>, msgs: Message[]) {
+export function makeInlineDefinition(content: BlockEntity[], msgs: Message[]) {
     let lastIsParagraph = false;
     let concat: InlineEntity[] = [];
-    for (const n of node.content) {
+    for (const n of content) {
         switch (n.type) {
+            case NodeType.Group:
+                concat.push(...makeInlineDefinition(n.content, msgs));
+                break;
             case NodeType.Paragraph:
                 if (!lastIsParagraph) {
                     lastIsParagraph = true;
                     concat.push(...n.content);
                     continue;
                 }
+                // else: fallthrough to error
             case NodeType.Preformatted:
             case NodeType.BlockModifier:
                 msgs.push(new EntityNotAllowedMessage(n.location));

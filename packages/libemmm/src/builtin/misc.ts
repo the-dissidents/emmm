@@ -1,3 +1,4 @@
+import { debug } from "../debug";
 import { BlockEntity, InlineEntity, ModifierArgument, NodeType, ParagraphNode } from "../interface";
 import { BlockModifierDefinition, ModifierSlotType } from "../modifier";
 import { bindArgs, onlyPermitSimpleParagraphs } from "../modifier-helper";
@@ -42,12 +43,17 @@ export const ConcatBlockMod = new BlockModifierDefinition<ModifierArgument>
                     result.content.push(...n.content);
                     separator();
                     break;
+                case NodeType.Group:
+                    work(n.content);
+                    break;
                 case NodeType.BlockModifier:
                     if (n.expansion) work(n.expansion);
                     break;
                 case NodeType.Preformatted:
                 case NodeType.SystemModifier:
                     break;
+                default:
+                    debug.never(n);
             }
         }
         work(node.content);

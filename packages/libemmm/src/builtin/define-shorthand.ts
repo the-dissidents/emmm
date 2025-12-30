@@ -172,7 +172,7 @@ export const DefineInlineShorthandMod = new SystemModifierDefinition
         const msgs = node.state.msgs;
         if (cxt.config.inlineShorthands.has(node.state.name))
             msgs.push(new NameAlreadyDefinedMessage(node.state.nameNode.location, node.state.name));
-        node.state.definition = makeInlineDefinition(node, msgs);
+        node.state.definition = makeInlineDefinition(node.content, msgs);
         return msgs;
     },
     expand(node, cxt, immediate) {

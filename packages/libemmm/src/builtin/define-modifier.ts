@@ -134,7 +134,7 @@ export const DefineInlineMod = new SystemModifierDefinition
         if (cxt.config.inlineModifiers.has(node.state.name))
             msgs.push(new NameAlreadyDefinedMessage(node.state.nameNode.location, node.state.name));
 
-        node.state.definition = makeInlineDefinition(node, msgs);
+        node.state.definition = makeInlineDefinition(node.content, msgs);
         return msgs;
     },
     expand(node, cxt, immediate) {

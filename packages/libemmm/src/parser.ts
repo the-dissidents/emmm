@@ -1,6 +1,6 @@
 import { debug } from "./debug";
 import { debugPrint } from "./debug-print";
-import { BlockEntity, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierNode, Message, ModifierArgument, ParagraphNode, LocationRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierNode, NodeType, ModifierArguments } from "./interface";
+import { BlockEntity, BlockModifierNode, EscapedNode, InlineEntity, InlineModifierNode, Message, ModifierArgument, ParagraphNode, LocationRange, PreNode, RootNode, ArgumentEntity, ModifierNode, SystemModifierNode, NodeType, ModifierArguments, GroupNode } from "./interface";
 import { BlockModifierDefinition, InlineModifierDefinition, ModifierSlotType, SystemModifierDefinition } from "./modifier";
 import { ShouldBeOnNewlineMessage, ExpectedMessage, ReachedRecursionLimitMessage, UnknownModifierMessage, UnnecessaryNewlineMessage, InternalErrorMessage, DuplicateNamedArgumentMessage } from "./messages";
 import { ParseContext, Document } from "./parser-config";
@@ -28,7 +28,7 @@ const UnknownModifier = {
 };
 
 type NodeWithBlockContent =
-    BlockModifierNode<unknown> | SystemModifierNode<unknown>;
+    GroupNode | BlockModifierNode<unknown> | SystemModifierNode<unknown>;
 type NodeWithInlineContent =
     InlineModifierNode<unknown> | ParagraphNode;
 
@@ -78,7 +78,7 @@ class EmitEnvironment {
         });
     }
 
-    startBlock(block: BlockModifierNode<unknown> | SystemModifierNode<unknown>) {
+    startBlock(block: NodeWithBlockContent) {
         this.addBlockNode(block);
         this.blockStack.push(block);
     }
@@ -105,7 +105,6 @@ class EmitEnvironment {
 export class Parser {
     private emit: EmitEnvironment;
     private delayDepth = 0;
-    private groupDepth = 0;
 
     constructor(
         private scanner: Scanner,
@@ -152,6 +151,7 @@ export class Parser {
                 case NodeType.Text:
                 case NodeType.Escaped:
                     continue;
+                case NodeType.Group:
                 case NodeType.Paragraph:
                     ok = this.#reparse(node.content, depth + 1) && ok;
                     continue;
@@ -475,17 +475,26 @@ export class Parser {
 
     private MAYBE_GROUPED_PARAGRAPH() {
         assert(!this.scanner.isEOF());
+        const posStart = this.scanner.position();
         if (this.scanner.accept(GROUP_BEGIN)) {
-            this.groupDepth++;
             this.SHOULD_BE_A_NEWLINE();
             this.WARN_IF_MORE_NEWLINES_THAN(1);
+
+            const group: GroupNode = {
+                location: this.#locFrom(posStart),
+                type: NodeType.Group,
+                content: []
+            };
+            this.emit.startBlock(group);
+
             while (!this.scanner.isEOF()) {
                 if (this.scanner.accept(GROUP_END)) {
+                    this.emit.endBlock(); // group
+
                     if (!this.scanner.isEOF()) {
                         this.SHOULD_BE_A_NEWLINE();
                         this.WARN_IF_MORE_NEWLINES_THAN(1);
                     }
-                    this.groupDepth--;
                     return;
                 }
                 this.BLOCK_ENTITY();
@@ -665,10 +674,10 @@ export class Parser {
             // these whitespaces in a blank line have no effect
             this.WHITESPACES();
             if  (this.scanner.peek(MODIFIER_BLOCK_OPEN)
-             ||  this.scanner.peek(MODIFIER_SYSTEM_OPEN)
-             ||  this.cxt.config.blockShorthands.find((x) => this.scanner.peek(x.name))
-             || (this.scanner.peek(GROUP_END) && this.groupDepth > 0)
-             ||  this.scanner.isEOF()) return false;
+              || this.scanner.peek(MODIFIER_SYSTEM_OPEN)
+              || this.cxt.config.blockShorthands.find((x) => this.scanner.peek(x.name))
+              || this.scanner.peek(GROUP_END)
+              || this.scanner.isEOF()) return false;
 
             if (this.scanner.accept('\n')) {
                 this.WARN_IF_MORE_NEWLINES_THAN(0);

@@ -61,33 +61,58 @@ describe('[-define-block]', () => {
         let doc = parse(`[-define-block p]\n<<<\n[-var x=0][.slot]\n[-var x=1][.slot]\n>>>\n[.p][/$x]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
+            {
+                type: NodeType.Group,
+                content: [
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
+                ]
+            },
         ]);
     });
     test('slots: reference in separate scopes', () => {
         let doc = parse(`[-define-block p]\n<<<\na\n[.slot]\n>>>\n[-define-block q][.p]\n<<<\nb\n[.slot]\n>>>\n[.q]c`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'a' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'b' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'c' }] }
+            {
+                type: NodeType.Group,
+                content: [
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'a' }] },
+                    {
+                        type: NodeType.Group,
+                        content: [
+                            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'b' }] },
+                            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'c' }] }
+                        ]
+                    },
+                ]
+            },
         ]);
     });
     test('slots: unnamed reference in nested scopes', () => {
         let doc = parse(`[-define-block p]\n<<<\n[.slot]\n[-define-block q]\n[.slot]\n>>>\n[.p]abc\n[.q]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
+            {
+                type: NodeType.Group,
+                content: [
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
+                ]
+            },
+            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] },
         ]);
     });
     test('slots: named reference in nested scopes', () => {
         let doc = parse(`[-define-block p|(0)]\n[-define-block q|(1)]\n<<<\n[.slot 0]\n[.slot 1]\n>>>\n[.p]abc\n[.q]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] }
+            {
+                type: NodeType.Group,
+                content: [
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'def' }] },
+                ]
+            },
         ]);
     });
     test('arguments: simple', () => {
@@ -119,8 +144,13 @@ describe('[-define-block]', () => {
         doc = parse(`[-define-block p|x]\n<<<\n[.slot]\n[/$x]\n>>>\n[-var x=0][.p|1][/$x]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
+            {
+                type: NodeType.Group,
+                content: [
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
+                ]
+            },
         ]);
     });
     test('arguments: no reference in user scope', () => {
@@ -129,16 +159,26 @@ describe('[-define-block]', () => {
             { code: 5, severity: MessageSeverity.Warning }
         ]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: NodeType.Paragraph, content: [] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
+            {
+                type: NodeType.Group,
+                content: [
+                    { type: NodeType.Paragraph, content: [] },
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
+                ]
+            },
         ]);
     });
     test('arguments: expansion in separate scopes', () => {
         let doc = parse(`[-define-block p|x][/$x]\n\n[-define-block q|x]\n<<<\n[.p 0;]\n[/$x]\n>>>\n[.q|1]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
-            { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
+            {
+                type: NodeType.Group,
+                content: [
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '0' }] },
+                    { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
+                ]
+            },
         ]);
     });
     test('arguments: expansion in nested scopes', () => {

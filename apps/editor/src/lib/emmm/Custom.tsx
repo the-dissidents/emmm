@@ -1,5 +1,6 @@
 import * as emmm from '@the_dissidents/libemmm';
 import { initRatings, overallTableBlock, overallTableRenderer, ratingHeaderSystem, ratingHiddenBlock, ratingTableBlock, ratingTableRenderer } from './RatingTable';
+import { ratingEntryBlock } from './RatingEntry';
 import { basicFieldSystems, endBlock, endRenderer, headerBlock, headerRenderer, infoFieldSystem, initHeader } from './Header';
 import wcwidth from 'wcwidth';
 
@@ -7,7 +8,7 @@ const custom = emmm.Configuration.from(emmm.DefaultConfiguration);
 custom.kernel.collapseWhitespaces = true;
 custom.initializers.push(initHeader, initRatings);
 custom.systemModifiers.add(infoFieldSystem, ...basicFieldSystems, ratingHeaderSystem);
-custom.blockModifiers.add(ratingTableBlock, ratingHiddenBlock, overallTableBlock, headerBlock, endBlock);
+custom.blockModifiers.add(ratingTableBlock, ratingHiddenBlock, overallTableBlock, headerBlock, endBlock, ratingEntryBlock);
 
 const render = emmm.RenderConfiguration.from(emmm.HTMLRenderConfiguration);
 render.addBlockRenderer(ratingTableRenderer, overallTableRenderer, headerRenderer, endRenderer);
@@ -17,7 +18,7 @@ export function renderText(text: string) {
     let previous = '', previousWidth: number | undefined;
     function submit() {
         if (previous.length > 0) {
-            result.push(previousWidth == 2 
+            result.push(previousWidth == 2
                 ? <span class='wide'>{previous}</span>
                 : new Text(previous));
             previous = '';
