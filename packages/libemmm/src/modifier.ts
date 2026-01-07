@@ -24,7 +24,7 @@ class ModifierBase<TNode, TEntity> {
     metadata: ModifierMetadata = {};
 
     /**
-     * Common values: heading, emphasis, keyword, highlight, commentary, comment, link, quote
+     * Common values: heading, emphasis, keyword, highlight, commentary, comment, link, quote, pre
      */
     roleHint?: string;
     /**

@@ -24,19 +24,19 @@ export function initHeader(cxt: emmm.ParseContext) {
 
 export const basicFieldSystems = [
     emmm.helper.createParagraphWrapper('title',
-        (c) => c.get(header)!.title, 
+        (c) => c.get(header)!.title,
         (c, v) => c.get(header)!.title = v),
     emmm.helper.createParagraphWrapper('subtitle',
-        (c) => c.get(header)!.subtitle, 
+        (c) => c.get(header)!.subtitle,
         (c, v) => c.get(header)!.subtitle = v),
     emmm.helper.createParagraphWrapper('orig-title',
-        (c) => c.get(header)!.originalTitle, 
+        (c) => c.get(header)!.originalTitle,
         (c, v) => c.get(header)!.originalTitle = v),
     emmm.helper.createPlaintextWrapper('orig-url',
-        (c) => c.get(header)!.originalUrl, 
+        (c) => c.get(header)!.originalUrl,
         (c, v) => c.get(header)!.originalUrl = v, emmm.ModifierSlotType.Preformatted),
     emmm.helper.createPlaintextWrapper('cover-img',
-        (c) => c.get(header)!.imageUrl, 
+        (c) => c.get(header)!.imageUrl,
         (c, v) => c.get(header)!.imageUrl = v, emmm.ModifierSlotType.Preformatted)
 ];
 
@@ -89,9 +89,9 @@ function countWords(doc: emmm.Document) {
     return count;
 }
 
-export const headerRenderer: 
+export const headerRenderer:
 emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
-    headerBlock, 
+    headerBlock,
     (node, cxt) => {
         const data = cxt.parsedDocument.context.get(header);
         assert(data !== undefined);
@@ -100,7 +100,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
             let content: Node;
             try {
                 let transformed = cxt.config.options.transformAsset(data.imageUrl);
-                content = transformed 
+                content = transformed
                     ? <img src={transformed} data-original-src={data.imageUrl}/>
                     : <img src={data.imageUrl}/>;
             } catch {
@@ -112,7 +112,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
             fragment.appendChild(<h1>{cxt.state.render(data.title.content, cxt)}</h1>);
         else
             fragment.appendChild(cxt.state.invalidBlock(node, 'no title'));
-            
+
         if (data.subtitle)
             fragment.appendChild(<h1 class='subtitle'>{cxt.state.render(data.subtitle.content, cxt)}</h1>)
 
@@ -144,7 +144,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
             const field = fieldsLeft.shift()!;
             const entry = array.find(([_, fields]) => fields.includes(field));
             if (!entry) continue;
-            const node = 
+            const node =
                 <p>
                     <span class='key'>{entry[1].join(' & ')} / </span>
                     <span class='field'>{cxt.state.render(entry[0].content, cxt)}</span>
@@ -159,10 +159,10 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
 
         const wc = countWords(cxt.parsedDocument);
         fragment.append(
-            ...content1.length > 0 
-                ? [<div class='detail'>{content1}</div>] 
+            ...content1.length > 0
+                ? [<div class='metadata'>{content1}</div>]
                 : [],
-            <div class='detail'>
+            <div class='metadata'>
                 {content2}
                 {content3}
             </div>,
@@ -177,7 +177,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
 ];
 
 
-export const endRenderer: 
+export const endRenderer:
 emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
     endBlock,
     (node, cxt) => [

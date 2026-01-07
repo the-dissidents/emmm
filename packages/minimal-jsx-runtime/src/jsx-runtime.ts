@@ -14,8 +14,14 @@ export class InvalidJSXError extends Error {
     }
 }
 
+let D: Document = globalThis.window.document;
+
+export function useDocument(d: Document) {
+    D = d;
+}
+
 export const Fragment = (props: { children?: any }): DocumentFragment => {
-    const fragment = document.createDocumentFragment();
+    const fragment = D.createDocumentFragment();
     if (props.children) {
         appendChildren(fragment, [props.children]);
     }
@@ -34,7 +40,7 @@ export function jsx(
     if (typeof type === 'function')
         return type(props);
 
-    const element = document.createElement(type);
+    const element = D.createElement(type);
     const { children, ...restProps } = props;
     for (const key in restProps) {
         const value = restProps[key];
@@ -58,11 +64,11 @@ function appendChildren(parent: HTMLElement | DocumentFragment, children: any[])
     children.flat(Infinity).forEach(child => {
         if (child instanceof Node) {
             parent.appendChild(child);
-        } else if (typeof child != 'function' 
-                && typeof child != 'object' 
+        } else if (typeof child != 'function'
+                && typeof child != 'object'
                 && typeof child != 'object'
         ) {
-            parent.appendChild(new Text(String(child)));
+            parent.appendChild(D.createTextNode(String(child)));
         } else {
             // throw new InvalidJSXError(`invalid children in JSX`, child);
             console.error(`invalid children in JSX`, child);

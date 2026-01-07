@@ -20,7 +20,7 @@ const commentaryInline = new InlineModifierDefinition(
 
 const sequenceInline = new InlineModifierDefinition(
     'seq', ModifierSlotType.Normal,
-    { roleHint: 'commentary' });
+    { roleHint: 'pre' });
 
 export const InlineStyles = [emphasisInline, keywordInline, highlightInline, commentaryInline, sequenceInline];
 

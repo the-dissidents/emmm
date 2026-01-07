@@ -109,6 +109,10 @@ export const emmmTheme = [
         ".em-role-commentary": {
             color: 'gray',
         },
+        ".em-role-pre": {
+            fontFamily: 'Courier',
+            wordBreak: 'break-all'
+        },
         ":where(.em-role-heading)": {
             color: 'darkred',
             fontWeight: 'bold'

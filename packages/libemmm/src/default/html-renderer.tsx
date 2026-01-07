@@ -2,7 +2,6 @@ import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
 import { BlockEntity, InlineEntity, NodeType } from "../interface";
 import { RenderContext, RenderConfiguration, ReadonlyRenderConfiguration } from "../renderer";
-import { stripNode } from "../node-util";
 import { BulletBlockRenderersHTML } from "./bullets";
 import { CodeBlockRendererHTML, CodeInlineRendererHTML } from "./code";
 import { HeadingBlockRenderersHTML } from "./headings";
@@ -12,8 +11,10 @@ import { NoteBlockRenderersHTML, NoteInlineRenderersHTML, NotesFooterPlugin } fr
 import { QuoteBlockRenderersHTML } from "./quotes";
 import { TableBlockRenderers, TableInlineRenderers } from "./table";
 import { GalleryBlockRendererHTML } from "./gallery";
+import { useDocument } from "minimal-jsx-runtime/jsx-runtime";
 
 export type HTMLRendererOptions = {
+    document: Document,
     headPlugins: HTMLComponentPlugin[];
     headerPlugins: HTMLComponentPlugin[];
     footerPlugins: HTMLComponentPlugin[];
@@ -67,7 +68,10 @@ export class HTMLRenderState {
     }
 
     render(elems: (BlockEntity | InlineEntity)[], cxt: RenderContext<HTMLRenderType>) {
-        let fragment = new DocumentFragment();
+        const document = cxt.config.options.document;
+        useDocument(document);
+
+        let fragment = document.createDocumentFragment();
         elems
             .flatMap((x) => cxt.renderEntity(x))
             .flat()
@@ -79,6 +83,7 @@ export class HTMLRenderState {
 const htmlConfig =
     new RenderConfiguration<HTMLRenderType>(
 {
+    document: globalThis.window.document,
     headPlugins: [],
     headerPlugins: [],
     footerPlugins: [NotesFooterPlugin],
