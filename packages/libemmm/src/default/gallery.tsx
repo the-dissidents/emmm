@@ -8,15 +8,15 @@ export const GalleryBlock = new BlockModifierDefinition(
 {});
 
 export const GalleryBlockRendererHTML = [GalleryBlock,
-    (node, cxt) => {
+    async (node, cxt) => {
         const content = (node.content[0].type == NodeType.Group && node.content.length == 1)
             ? node.content[0].content
             : node.content;
 
         return <ul class='gallery'>
-            {content.map((x) => <li>
-                {cxt.state.render([x], cxt)}
-            </li>)}
+            {await Promise.all(content.map(async (x) => <li>
+                {await cxt.state.render([x], cxt)}
+            </li>))}
         </ul>;
     }
 ] satisfies BlockRendererDefiniton<HTMLRenderType>;

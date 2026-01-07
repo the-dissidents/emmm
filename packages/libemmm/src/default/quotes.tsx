@@ -37,22 +37,32 @@ const attributionBlock = new BlockModifierDefinition<boolean>(
 export const QuoteBlocks = [quoteBlock, epitaphBlock, calloutBlock, detailBlock, attributionBlock];
 
 export const QuoteBlockRenderersHTML = [
-    [quoteBlock, (node, cxt) =>
-        <blockquote>{cxt.state.render(node.content, cxt)}</blockquote>
+    [quoteBlock, async (node, cxt) =>
+        <blockquote>
+            {await cxt.state.render(node.content, cxt)}
+        </blockquote>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [epitaphBlock, (node, cxt) =>
-        <blockquote class='epitaph'>{cxt.state.render(node.content, cxt)}</blockquote>
+    [epitaphBlock, async (node, cxt) =>
+        <blockquote class='epitaph'>
+            {await cxt.state.render(node.content, cxt)}
+        </blockquote>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [detailBlock, (node, cxt) =>
-        <div class='detail'>{cxt.state.render(node.content, cxt)}</div>
+    [detailBlock, async (node, cxt) =>
+        <div class='detail'>
+            {await cxt.state.render(node.content, cxt)}
+        </div>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [calloutBlock, (node, cxt) =>
-        <aside>{cxt.state.render(node.content, cxt)}</aside>
+    [calloutBlock, async (node, cxt) =>
+        <aside>
+            {await cxt.state.render(node.content, cxt)}
+        </aside>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [attributionBlock, (node, cxt) => {
+    [attributionBlock, async (node, cxt) => {
         if (!node.state)
             return cxt.state.invalidBlock(node, 'bad format');
         let para = node.content[0] as ParagraphNode;
-        return <p class='attribution'>{cxt.state.render(para.content, cxt)}</p>;
+        return <p class='attribution'>
+            {await cxt.state.render(para.content, cxt)}
+        </p>;
     }] satisfies BlockRendererDefiniton<HTMLRenderType, boolean>
 ];

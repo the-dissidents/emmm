@@ -78,48 +78,48 @@ export const MiscInlines = [rubyInline, linkInline, tabInline];
 export const MiscBlocks = [styleBlock, breakBlock, linkBlock, imageBlock];
 
 export const MiscInlineRenderersHTML = [
-    [rubyInline, (node, cxt) =>
+    [rubyInline, async (node, cxt) =>
         node.state === undefined
             ? cxt.state.invalidInline(node, 'bad format')
             : <ruby>
-                {cxt.state.render(node.content, cxt)}
+                {await cxt.state.render(node.content, cxt)}
                 <rt>{node.state}</rt>
               </ruby>
     ] satisfies InlineRendererDefiniton<HTMLRenderType, string>,
-    [linkInline, (node, cxt) =>
+    [linkInline, async (node, cxt) =>
         node.state === undefined
             ? cxt.state.invalidInline(node, 'bad format')
             : <a href={encodeURI(node.state)}>
-                {cxt.state.render(node.content, cxt)}
+                {await cxt.state.render(node.content, cxt)}
               </a>
     ] satisfies InlineRendererDefiniton<HTMLRenderType, string>,
     [tabInline, () => new Text('\t')] satisfies InlineRendererDefiniton<HTMLRenderType>,
 ];
 
 export const MiscBlockRenderersHTML = [
-    [styleBlock, (node, cxt) =>
+    [styleBlock, async (node, cxt) =>
         node.state === undefined
             ? cxt.state.invalidBlock(node, 'bad format')
             : <div class={`emmmstyle-${node.state}`} style="display:contents">
-                {cxt.state.render(node.content, cxt)}
+                {await cxt.state.render(node.content, cxt)}
               </div>
     ] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
     [breakBlock, () => <hr/>] satisfies BlockRendererDefiniton<HTMLRenderType>,
-    [linkBlock, (node, cxt) => {
+    [linkBlock, async (node, cxt) => {
         if (node.state === undefined)
             return cxt.state.invalidBlock(node, 'bad format');
-        const content = cxt.state.render(node.content, cxt);
+        const content = await cxt.state.render(node.content, cxt);
         return <a href={encodeURI(node.state)}>
             {content.childElementCount > 0 ? content : node.state}
         </a>;
     }
     ] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
-    [imageBlock, (node, cxt) => {
+    [imageBlock, async (node, cxt) => {
         if (node.state === undefined)
             return cxt.state.invalidBlock(node, 'bad format');
         let transformed: string | undefined;
         try {
-            transformed = cxt.config.options.transformAsset(node.state);
+            transformed = await cxt.config.options.transformAsset(node.state);
         } catch {
             return cxt.state.invalidBlock(node, 'unable to transform asset');
         }
@@ -129,7 +129,7 @@ export const MiscBlockRenderersHTML = [
                     : <img src={node.state} />}
                  {node.content.length > 0
                     ? <figcaption>
-                        {cxt.state.render((node.content[0] as ParagraphNode).content, cxt)}
+                        {await cxt.state.render((node.content[0] as ParagraphNode).content, cxt)}
                       </figcaption>
                     : []}
                </figure>;

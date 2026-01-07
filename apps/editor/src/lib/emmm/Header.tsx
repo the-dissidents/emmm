@@ -92,7 +92,7 @@ function countWords(doc: emmm.Document) {
 export const headerRenderer:
 emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
     headerBlock,
-    (node, cxt) => {
+    async (node, cxt) => {
         const data = cxt.parsedDocument.context.get(header);
         assert(data !== undefined);
         let fragment = new DocumentFragment();
@@ -109,18 +109,18 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
             fragment.appendChild(<figure>{content}</figure>);
         }
         if (data.title)
-            fragment.appendChild(<h1>{cxt.state.render(data.title.content, cxt)}</h1>);
+            fragment.appendChild(<h1>{await cxt.state.render(data.title.content, cxt)}</h1>);
         else
             fragment.appendChild(cxt.state.invalidBlock(node, 'no title'));
 
         if (data.subtitle)
-            fragment.appendChild(<h1 class='subtitle'>{cxt.state.render(data.subtitle.content, cxt)}</h1>)
+            fragment.appendChild(<h1 class='subtitle'>{await cxt.state.render(data.subtitle.content, cxt)}</h1>)
 
         let content1: Node[] = [];
         if (data.originalTitle)
             content1.push(<p>
                 <span class='key'>原标题：</span>
-                <span class='originalTitle'>{cxt.state.render(data.originalTitle.content, cxt)}</span>
+                <span class='originalTitle'>{await cxt.state.render(data.originalTitle.content, cxt)}</span>
             </p>);
         if (data.originalUrl)
             content1.push(<p>
@@ -147,7 +147,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
             const node =
                 <p>
                     <span class='key'>{entry[1].join(' & ')} / </span>
-                    <span class='field'>{cxt.state.render(entry[0].content, cxt)}</span>
+                    <span class='field'>{await cxt.state.render(entry[0].content, cxt)}</span>
                 </p>;
             if (entry[1].length == 1) {
                 content2.push(node);
@@ -180,8 +180,8 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
 export const endRenderer:
 emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
     endBlock,
-    (node, cxt) => [
-        <aside class='the-end'>{cxt.state.render(node.content, cxt)}</aside>,
+    async (node, cxt) => [
+        <aside class='the-end'>{await cxt.state.render(node.content, cxt)}</aside>,
         <hr/>
     ]
 ];

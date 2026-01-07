@@ -2,7 +2,7 @@ import { SimpleScanner } from "./scanner";
 import { debug, DebugLevel } from "./debug";
 import { debugPrint } from "./debug-print";
 import { DefaultConfiguration } from "./default/default";
-import { HTMLRenderConfiguration, HTMLRenderState } from "./default/html-renderer";
+import { createHTMLRenderConfiguration, HTMLRenderState } from "./default/html-renderer";
 import { Configuration, ParseContext } from "./parser-config";
 import { BlockModifierDefinition, ModifierSlotType } from "./modifier";
 
@@ -136,6 +136,6 @@ console.log(debugPrint.document(doc));
 // console.log(debugPrint.document(doc, text2))
 
 console.log('-----');
-let renderConfig = HTMLRenderConfiguration;
-let html = renderConfig.render(doc, new HTMLRenderState()).documentElement.outerHTML;
+let renderConfig = createHTMLRenderConfiguration(window);
+let html = (await renderConfig.render(doc, new HTMLRenderState())).documentElement.outerHTML;
 console.log(html);

@@ -169,13 +169,13 @@ export const NoteBlocks = [noteBlock];
 export const NoteInlines = [noteInline, noteMarkerInline];
 export const NoteSystems = [notePositionSystem, noteRenumberingSystem];
 
-function makeNoteHTML(def: NoteDefinition, cxt: RenderContext<HTMLRenderType>) {
+async function makeNoteHTML(def: NoteDefinition, cxt: RenderContext<HTMLRenderType>) {
     return <section class='note' id={`note-id-${def.id}`}>
         <div class='note-name'>
             <p><a href={`#notemarker-id-${def.id}`}>{def.name}</a></p>
         </div>
         <div class='note-content'>
-            {cxt.state.render(def.content, cxt)}
+            {await cxt.state.render(def.content, cxt)}
         </div>
     </section>
 }

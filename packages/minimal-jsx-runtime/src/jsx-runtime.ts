@@ -14,13 +14,18 @@ export class InvalidJSXError extends Error {
     }
 }
 
-let D: Document = globalThis.window.document;
+let D: Document | undefined = 'window' in globalThis ? globalThis.window.document : undefined;
 
 export function useDocument(d: Document) {
     D = d;
 }
 
+function assert(c: boolean): asserts c {
+    console.assert(c, '[minimal-jsx-runtime] assertion failed');
+}
+
 export const Fragment = (props: { children?: any }): DocumentFragment => {
+    assert(D !== undefined);
     const fragment = D.createDocumentFragment();
     if (props.children) {
         appendChildren(fragment, [props.children]);
@@ -40,6 +45,7 @@ export function jsx(
     if (typeof type === 'function')
         return type(props);
 
+    assert(D !== undefined);
     const element = D.createElement(type);
     const { children, ...restProps } = props;
     for (const key in restProps) {
@@ -60,14 +66,19 @@ export function jsx(
 export const jsxs = jsx;
 export const jsxDEV = jsx;
 
+function isNode(n: any): n is Node {
+    return typeof n === "object" && 'nodeType' in n && 'nodeName' in n && 'ownerDocument' in n;
+}
+
 function appendChildren(parent: HTMLElement | DocumentFragment, children: any[]) {
     children.flat(Infinity).forEach(child => {
-        if (child instanceof Node) {
+        if (isNode(child)) {
             parent.appendChild(child);
         } else if (typeof child != 'function'
                 && typeof child != 'object'
                 && typeof child != 'object'
         ) {
+            assert(D !== undefined);
             parent.appendChild(D.createTextNode(String(child)));
         } else {
             // throw new InvalidJSXError(`invalid children in JSX`, child);

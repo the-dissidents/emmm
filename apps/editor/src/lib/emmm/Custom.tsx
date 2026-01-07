@@ -10,7 +10,7 @@ custom.initializers.push(initHeader, initRatings);
 custom.systemModifiers.add(infoFieldSystem, ...basicFieldSystems, ratingHeaderSystem);
 custom.blockModifiers.add(ratingTableBlock, ratingHiddenBlock, overallTableBlock, headerBlock, endBlock, ratingEntryBlock);
 
-const render = emmm.RenderConfiguration.from(emmm.HTMLRenderConfiguration);
+const render = emmm.createHTMLRenderConfiguration(window);
 render.addBlockRenderer(ratingTableRenderer, overallTableRenderer, headerRenderer, endRenderer);
 
 export function renderText(text: string) {

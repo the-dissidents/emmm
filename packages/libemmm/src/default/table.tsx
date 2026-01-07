@@ -122,27 +122,27 @@ export const TableBlocks = [tableBlock, tableRowBlock, tableCellBlock, tableSepa
 export const TableInlines = [tableCellInline];
 
 export const TableBlockRenderers = [
-    [tableBlock, (node, cxt) => {
+    [tableBlock, async (node, cxt) => {
         const t = node.state;
         if (!t) return cxt.state.invalidBlock(node, 'bad format');
         return <table>
-            <thead>{cxt.state.render(t.header, cxt)}</thead>
-            <tbody>{cxt.state.render(t.body, cxt)}</tbody>
-            <tfoot>{cxt.state.render(t.footer, cxt)}</tfoot>
+            <thead>{await cxt.state.render(t.header, cxt)}</thead>
+            <tbody>{await cxt.state.render(t.body, cxt)}</tbody>
+            <tfoot>{await cxt.state.render(t.footer, cxt)}</tfoot>
         </table>;
     }] satisfies BlockRendererDefiniton<HTMLRenderType, TableDefiniton>,
 
-    [tableRowBlock, (node, cxt) => {
-        return <tr>{cxt.state.render(node.content, cxt)}</tr>;
+    [tableRowBlock, async (node, cxt) => {
+        return <tr>{await cxt.state.render(node.content, cxt)}</tr>;
     }] satisfies BlockRendererDefiniton<HTMLRenderType>,
 
-    [tableCellBlock, (node, cxt) => {
-        return <td>{cxt.state.render(node.content, cxt)}</td>;
+    [tableCellBlock, async (node, cxt) => {
+        return <td>{await cxt.state.render(node.content, cxt)}</td>;
     }] satisfies BlockRendererDefiniton<HTMLRenderType>,
 ];
 
 export const TableInlineRenderers = [
-    [tableCellInline, (node, cxt) => {
-        return <td>{cxt.state.render(node.content, cxt)}</td>;
+    [tableCellInline, async (node, cxt) => {
+        return <td>{await cxt.state.render(node.content, cxt)}</td>;
     }] satisfies InlineRendererDefiniton<HTMLRenderType>,
 ];

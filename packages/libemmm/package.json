@@ -1,6 +1,6 @@
 {
     "name": "@the_dissidents/libemmm",
-    "version": "0.0.8",
+    "version": "0.0.13",
     "description": "Parser and language server for the emmm markup language",
     "author": "the_dissidents",
     "license": "GPL-2.0-only",
@@ -20,7 +20,7 @@
         ".": "./dist/index.js"
     },
     "dependencies": {
-        "minimal-jsx-runtime": "workspace:*"
+        "@the_dissidents/minimal-jsx-runtime": "workspace:latest"
     },
     "devDependencies": {
         "@happy-dom/global-registrator": "^19.0.2",

@@ -112,6 +112,7 @@ export type KernelConfiguration = {
 
 export interface ReadonlyConfiguration {
     readonly initializers: readonly ((cxt: ParseContext) => void)[];
+    readonly modules: ReadonlyMap<string, ModuleDefinition>;
     readonly blockModifiers: ReadonlyNameManager<BlockModifierDefinition<any>>;
     readonly inlineModifiers: ReadonlyNameManager<InlineModifierDefinition<any>>;
     readonly systemModifiers: ReadonlyNameManager<SystemModifierDefinition<any>>;
@@ -119,12 +120,12 @@ export interface ReadonlyConfiguration {
 
     readonly blockShorthands: ReadonlyNameManager<BlockShorthand<any>>;
     readonly inlineShorthands: ReadonlyNameManager<InlineShorthand<any>>;
-    readonly kernel: KernelConfiguration;
+    readonly kernel: Readonly<KernelConfiguration>;
 }
 
 export class Configuration implements ReadonlyConfiguration {
     initializers: ((cxt: ParseContext) => void)[] = [];
-    modules = new Map<string, ModuleDefinition>;
+    modules = new Map<string, ModuleDefinition>();
 
     blockModifiers = new NameManager<BlockModifierDefinition<any>>;
     inlineModifiers = new NameManager<InlineModifierDefinition<any>>;

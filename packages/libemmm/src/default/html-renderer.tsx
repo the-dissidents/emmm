@@ -14,29 +14,32 @@ import { GalleryBlockRendererHTML } from "./gallery";
 import { useDocument } from "minimal-jsx-runtime/jsx-runtime";
 
 export type HTMLRendererOptions = {
-    document: Document,
+    window: Window,
     headPlugins: HTMLComponentPlugin[];
     headerPlugins: HTMLComponentPlugin[];
     footerPlugins: HTMLComponentPlugin[];
     postprocessPlugins: HTMLPostprocessPlugin[];
-    transformAsset: (id: string) => string | undefined;
+    transformAsset: (id: string) => string | Promise<string> | undefined;
 }
 
 export type HTMLRenderType = {
     state: HTMLRenderState,
     options: HTMLRendererOptions,
-    document: Document,
-    return: Node | Node[],
+    document: Promise<Document>,
+    return: (Node | Node[]) | Promise<Node | Node[]>,
 };
 
 export type HTMLRenderPlugin =
-    (elem: BlockEntity | InlineEntity, cxt: RenderContext<HTMLRenderType>) => string | undefined;
+    (elem: BlockEntity | InlineEntity, cxt: RenderContext<HTMLRenderType>)
+        => (string | undefined) | Promise<string | undefined>;
 
 export type HTMLComponentPlugin =
-    (cxt: RenderContext<HTMLRenderType>) => Node | Node[] | undefined;
+    (cxt: RenderContext<HTMLRenderType>)
+        => (Node | Node[] | undefined) | Promise<Node | Node[] | undefined>;
 
 export type HTMLPostprocessPlugin =
-    (cxt: RenderContext<HTMLRenderType>, output: Document) => void;
+    (cxt: RenderContext<HTMLRenderType>, output: Document)
+        => void | Promise<void>;
 
 export class HTMLRenderState {
     title: string = '';
@@ -67,110 +70,109 @@ export class HTMLRenderState {
                </details>;
     }
 
-    render(elems: (BlockEntity | InlineEntity)[], cxt: RenderContext<HTMLRenderType>) {
-        const document = cxt.config.options.document;
+    async render(elems: (BlockEntity | InlineEntity)[], cxt: RenderContext<HTMLRenderType>) {
+        const document = cxt.config.options.window.document;
         useDocument(document);
 
         let fragment = document.createDocumentFragment();
-        elems
-            .flatMap((x) => cxt.renderEntity(x))
+        (await Promise.all(elems.flatMap((x) => cxt.renderEntity(x))))
             .flat()
             .forEach((x) => fragment.appendChild(x));
         return fragment;
     }
 }
 
-const htmlConfig =
-    new RenderConfiguration<HTMLRenderType>(
-{
-    document: globalThis.window.document,
-    headPlugins: [],
-    headerPlugins: [],
-    footerPlugins: [NotesFooterPlugin],
-    postprocessPlugins: [],
-    transformAsset: () => undefined,
-    // postprocessPlugins: [],
-},
-(results, cxt) => {
-    // TODO: seriously...
-    let styles = cxt.state.stylesheet.replaceAll(/var\(--(.*?)\)/g,
-        (m, c) => cxt.state.cssVariables.get(c) ?? m);
-    let doc = document.implementation.createHTMLDocument(cxt.state.title);
-    doc.head.append(
-        <meta charset="UTF-8" />,
-        <style>{styles}</style>,
-        ...cxt.config.options.headPlugins
-            .map((x) => x(cxt))
-            .filter((x) => x !== undefined)
-            .flat()
-    );
-    doc.body.append(
-        <section class="article-container">
-        <section class="article-body">
-        {cxt.config.options.headerPlugins
-            .map((x) => x(cxt))
-            .filter((x) => x !== undefined)}
-        {results}
-        {cxt.config.options.footerPlugins
-            .map((x) => x(cxt))
-            .filter((x) => x !== undefined)}
-        </section>
-        </section>
-    );
-    for (const p of cxt.config.options.postprocessPlugins) {
-        p(cxt, doc);
+export function createHTMLRenderConfiguration(window: Window) {
+    useDocument(window.document);
+
+    const htmlConfig = new RenderConfiguration<HTMLRenderType>(
+    {
+        window,
+        headPlugins: [],
+        headerPlugins: [],
+        footerPlugins: [NotesFooterPlugin],
+        postprocessPlugins: [],
+        transformAsset: () => undefined,
+        // postprocessPlugins: [],
+    },
+    async (results, cxt) => {
+        // TODO: seriously...
+        let styles = cxt.state.stylesheet.replaceAll(/var\(--(.*?)\)/g,
+            (m, c) => cxt.state.cssVariables.get(c) ?? m);
+        let doc = window.document.implementation.createHTMLDocument(cxt.state.title);
+        doc.head.append(
+            <meta charset="UTF-8" />,
+            <style>{styles}</style>,
+            ...(await Promise.all(cxt.config.options.headPlugins.map((x) => x(cxt))))
+                .filter((x) => x !== undefined)
+                .flat()
+        );
+        doc.body.append(
+            <section class="article-container">
+            <section class="article-body">
+            {(await Promise.all(cxt.config.options.headerPlugins.map((x) => x(cxt))))
+                .filter((x) => x !== undefined)}
+            {await Promise.all(results)}
+            {(await Promise.all(cxt.config.options.footerPlugins.map((x) => x(cxt))))
+                .filter((x) => x !== undefined)}
+            </section>
+            </section>
+        );
+        for (const p of cxt.config.options.postprocessPlugins) {
+            await p(cxt, doc);
+        }
+        return doc;
+    });
+
+    htmlConfig.paragraphRenderer = async(node, cxt) =>
+        <p>{await Promise.all(node.content.flatMap((x) => cxt.renderEntity(x)))}</p>;
+
+    htmlConfig.textRenderer = (node, cxt) => {
+        const document = cxt.config.options.window.document;
+        switch (node.type) {
+            case NodeType.Preformatted:
+                return document.createTextNode(node.content.text);
+            case NodeType.Text:
+            case NodeType.Escaped:
+                const split = node.content.split('\n');
+                const result = [];
+                for (let i = 0; i < split.length; i++) {
+                    result.push(document.createTextNode(split[i]));
+                    if (i < split.length - 1)
+                        result.push(<br/>);
+                }
+                return result;
+            default:
+                return debug.never(node);
+        }
     }
-    return doc;
-});
 
-htmlConfig.paragraphRenderer = (node, cxt) =>
-    <p>{node.content.flatMap((x) => cxt.renderEntity(x))}</p>;
-
-htmlConfig.textRenderer = (node, cxt) => {
-    switch (node.type) {
-        case NodeType.Preformatted:
-            return new Text(node.content.text);
-        case NodeType.Text:
-        case NodeType.Escaped:
-            const split = node.content.split('\n');
-            const result = [];
-            for (let i = 0; i < split.length; i++) {
-                result.push(new Text(split[i]));
-                if (i < split.length - 1)
-                    result.push(<br/>);
-            }
-            return result;
-        default:
-            return debug.never(node);
+    htmlConfig.undefinedBlockRenderer = (node, cxt) => {
+        return cxt.state.invalidBlock(node, `No renderer defined! for ${node.mod.name}`);
     }
+
+    htmlConfig.undefinedInlineRenderer = (node, cxt) => {
+        return cxt.state.invalidInline(node, `No renderer defined! for ${node.mod.name}`);
+    }
+
+    htmlConfig.addBlockRenderer(
+        ...HeadingBlockRenderersHTML,
+        ...BulletBlockRenderersHTML,
+        CodeBlockRendererHTML,
+        ...QuoteBlockRenderersHTML,
+        ...MiscBlockRenderersHTML,
+        ...NoteBlockRenderersHTML,
+        ...TableBlockRenderers,
+        GalleryBlockRendererHTML
+    );
+
+    htmlConfig.addInlineRenderer(
+        CodeInlineRendererHTML,
+        ...InlineStyleRenderersHTML,
+        ...MiscInlineRenderersHTML,
+        ...NoteInlineRenderersHTML,
+        ...TableInlineRenderers,
+    );
+
+    return htmlConfig;
 }
-
-htmlConfig.undefinedBlockRenderer = (node, cxt) => {
-    return cxt.state.invalidBlock(node, `No renderer defined! for ${node.mod.name}`);
-}
-
-htmlConfig.undefinedInlineRenderer = (node, cxt) => {
-    return cxt.state.invalidInline(node, `No renderer defined! for ${node.mod.name}`);
-}
-
-htmlConfig.addBlockRenderer(
-    ...HeadingBlockRenderersHTML,
-    ...BulletBlockRenderersHTML,
-    CodeBlockRendererHTML,
-    ...QuoteBlockRenderersHTML,
-    ...MiscBlockRenderersHTML,
-    ...NoteBlockRenderersHTML,
-    ...TableBlockRenderers,
-    GalleryBlockRendererHTML
-);
-
-htmlConfig.addInlineRenderer(
-    CodeInlineRendererHTML,
-    ...InlineStyleRenderersHTML,
-    ...MiscInlineRenderersHTML,
-    ...NoteInlineRenderersHTML,
-    ...TableInlineRenderers,
-)
-
-export const HTMLRenderConfiguration
-    : ReadonlyRenderConfiguration<HTMLRenderType> = htmlConfig;

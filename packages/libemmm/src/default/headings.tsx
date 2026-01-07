@@ -123,12 +123,12 @@ const numberedHeadingBlock = new BlockModifierDefinition<HeadingData>(
 export const HeadingBlocks = [headingBlock, implicitHeadingBlock, numberedHeadingBlock];
 
 export const HeadingBlockRenderersHTML = [
-    [headingBlock, (node, cxt) => {
+    [headingBlock, async (node, cxt) => {
         if (node.state !== undefined) {
             const tag = 'h' + node.state.level;
             const para = node.content[0] as ParagraphNode;
-            const element = document.createElement(tag);
-            element.appendChild(cxt.state.render(para.content, cxt));
+            const element = cxt.config.options.window.document.createElement(tag);
+            element.appendChild(await cxt.state.render(para.content, cxt));
             return element;
         }
         return cxt.state.invalidBlock(node, 'Bad format');
@@ -136,22 +136,24 @@ export const HeadingBlockRenderersHTML = [
     [implicitHeadingBlock, (node, cxt) => {
         if (node.state !== undefined) {
             const tag = 'h' + node.state.level;
-            const element = document.createElement(tag);
+            const element = cxt.config.options.window.document.createElement(tag);
             element.className = 'implicit';
             return element;
         }
         return cxt.state.invalidBlock(node, 'Bad format');
     }] satisfies BlockRendererDefiniton<HTMLRenderType, HeadingData>,
 
-    [numberedHeadingBlock, (node, cxt) => {
+    [numberedHeadingBlock, async (node, cxt) => {
         if (node.state !== undefined) {
             const tag = 'h' + node.state.level;
-            const element = document.createElement(tag);
+            const element = cxt.config.options.window.document.createElement(tag);
             element.className = 'numbered-heading';
             element.appendChild(<span class='heading-number'>{node.state.name}</span>);
             if (node.content.length > 0) {
                 const para = node.content[0] as ParagraphNode;
-                element.appendChild(<span class='heading-content'>{cxt.state.render(para.content, cxt)}</span>);
+                element.appendChild(<span class='heading-content'>
+                    {await cxt.state.render(para.content, cxt)}
+                </span>);
             }
             return element;
         }
