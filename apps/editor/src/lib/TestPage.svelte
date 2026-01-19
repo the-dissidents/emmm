@@ -54,6 +54,8 @@
 
   function onParseLibrary(doc: EmmmParseData) {
     libConfig = doc.data.context.config;
+    if (Interface.activeEditor === sourceHandle)
+      setTimeout(() => sourceHandle?.reparse(), 0);
   }
 
   function onCursorPositionChanged(_: number, l: number, c: number) {
@@ -67,7 +69,7 @@
 
   function onParse(doc: EmmmParseData, source: string) {
     parsedStatus = `parsed in ${doc.parseTime.toFixed(0)}ms`;
-    Interface.parseData.set(doc);
+    Interface.parseData.set({...doc});
     outputAST = emmm.debugPrint.document(strip ? doc.data.toStripped() : doc.data);
     Interface.render();
   }
@@ -144,8 +146,10 @@
         onActivate={() => sourceHandle?.focus?.()}>
       <EmmmContext {onParse}
           provideDescriptor={() => ({name: '<Source>'})}
-          provideContext={() => libConfig ? new emmm.ParseContext(
-            emmm.Configuration.from(libConfig)) : undefined}>
+          provideContext={() => libConfig
+            ? new emmm.ParseContext(emmm.Configuration.from(libConfig))
+            : undefined
+      }>
         <Editor bind:text={source}
           onFocus={() => {
             updateCursorPosition(sourceHandle);

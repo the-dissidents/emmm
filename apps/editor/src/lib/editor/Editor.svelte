@@ -17,8 +17,8 @@
   import { drawSelection, dropCursor, EditorView, highlightActiveLine, highlightSpecialChars, highlightWhitespace, keymap, lineNumbers } from "@codemirror/view";
   import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
   import { EditorSelection, EditorState, type Extension, type TransactionSpec } from "@codemirror/state";
-  import { closeBrackets } from "@codemirror/autocomplete";
   import { hook } from "$lib/details/Hook.svelte";
+  import { emmmForceReparseEffect } from "./ParseData";
 
   interface Props {
     /**
@@ -46,6 +46,7 @@
     getSelections(): Selection[];
     setSelections(s: Selection[]): void;
     update(c: TransactionSpec): void;
+    reparse(): void;
   }
 
   let {
@@ -80,7 +81,6 @@
 
   onMount(() => {
     const context = getEditorContext();
-    console.log(context);
     view = new EditorView({
       parent: editorContainer,
       state: EditorState.create({
@@ -92,7 +92,7 @@
             history(),
             drawSelection(),
             dropCursor(),
-            closeBrackets(),
+            // closeBrackets(),
             highlightWhitespace(),
             highlightActiveLine(),
             // highlightSelectionMatches(),
@@ -128,6 +128,11 @@
       },
       update(spec) {
         view.dispatch(spec);
+      },
+      reparse() {
+        view.dispatch({
+          effects: emmmForceReparseEffect.of(null)
+        });
       }
     };
     hook(() => text, (x) => {

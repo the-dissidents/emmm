@@ -19,19 +19,19 @@ class Structure {
     private lines: LineStructure[] = [];
 
     constructor(
-        private doc: Text,
-        private result: emmm.Document
+        private text: Text,
+        private doc: emmm.Document
     ) {}
 
     compute() {
         this.lines = [];
         // add one extra line to avoid trouble in some edge cases
-        for (let i = 0; i <= this.doc.lines; i++)
+        for (let i = 0; i <= this.text.lines; i++)
             this.lines.push({
                 folds: [],
                 indentation: { hanging: 0, normal: 0 }
             });
-        this.#makeFold(this.result.root);
+        this.#makeFold(this.doc.root);
         return this.lines;
     }
 
@@ -76,7 +76,7 @@ class Structure {
 
     #makeFold(node: emmm.DocumentNode): number {
         if (node.type !== emmm.NodeType.Root
-         && node.location.source != this.result.root.source) return 0;
+         && node.location.source != this.doc.root.source) return 0;
 
         let width = 0;
         switch (node.type) {
@@ -87,15 +87,15 @@ class Structure {
             case emmm.NodeType.Paragraph:
                 // FIXME: should include --:
                 return this.#makeBlock(
-                    this.doc.lineAt(node.location.start).number,
-                    this.doc.lineAt(node.location.actualEnd ?? node.location.end).number,
+                    this.text.lineAt(node.location.start).number,
+                    this.text.lineAt(node.location.actualEnd ?? node.location.end).number,
                     node.content);
             case emmm.NodeType.SystemModifier:
             case emmm.NodeType.InlineModifier:
             case emmm.NodeType.BlockModifier:
-                const {number: l0} = this.doc.lineAt(node.head.start);
-                const {number: l1} = this.doc.lineAt(node.head.end);
-                const {number: l2} = this.doc.lineAt(node.location.actualEnd ?? node.location.end);
+                const {number: l0} = this.text.lineAt(node.head.start);
+                const {number: l1} = this.text.lineAt(node.head.end);
+                const {number: l2} = this.text.lineAt(node.location.actualEnd ?? node.location.end);
 
                 if (l1 > l0)
                     for (let i = l0 + 1; i <= l1; i++)
@@ -105,7 +105,7 @@ class Structure {
                     Math.max(this.lines[l0].indentation.hanging, SINGLELINE_HANGING);
 
                 if (node.content.length > 0) {
-                    const {number: line, from} = this.doc.lineAt(node.content[0].location.start);
+                    const {number: line, from} = this.text.lineAt(node.content[0].location.start);
                     if (line == l1 && node.type !== emmm.NodeType.InlineModifier) {
                         // do hanging indentation
                         let hang = Math.min(HANGING_MAX_LANGTH,
@@ -119,7 +119,7 @@ class Structure {
                     }
                 }
                 if (node.content.length == 1
-                    && this.doc.lineAt(node.content[0].location.start).number == l1)
+                    && this.text.lineAt(node.content[0].location.start).number == l1)
                     return this.#makeFold(node.content[0]);
                 return this.#makeBlock(l1, l2, node.content);
             case emmm.NodeType.Preformatted:

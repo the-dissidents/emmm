@@ -14,12 +14,15 @@
 
   let { provideContext, provideDescriptor, onParse, children }: Props = $props();
 
+  let oldDoc: EmmmParseData | undefined = undefined;
+
   setEditorContext({
     extensions: [
       emmmLanguageSupport(provideContext, provideDescriptor),
       EditorView.updateListener.of((update) => {
-        if (update.docChanged) {
-          const doc = update.state.field(emmmDocument);
+        const doc = update.state.field(emmmDocument);
+        if (doc !== oldDoc) {
+          oldDoc = doc;
           if (doc) onParse?.(doc, update.view.state.doc.toString());
         }
       })

@@ -1,5 +1,5 @@
 import { CustomConfig } from "$lib/emmm/Custom";
-import { Facet, StateField } from "@codemirror/state";
+import { Facet, StateEffect, StateField } from "@codemirror/state";
 import * as emmm from "@the_dissidents/libemmm";
 
 export type EmmmInspectorData = {
@@ -27,6 +27,8 @@ export const emmmSourceDescriptorProvider =
         combine: (values) => values.at(-1)?.() ?? { name: '<unnamed>' },
     });
 
+export const emmmForceReparseEffect = StateEffect.define();
+
 export const emmmDocument = StateField.define<EmmmParseData | undefined>({
     create(state) {
         emmm.setDebugLevel(emmm.DebugLevel.Warning);
@@ -49,15 +51,17 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
                 },
             }]);
         const result = context.parse(scanner);
+        const parseTime = performance.now() - start;
 
         return {
             data: result,
-            parseTime: performance.now() - start,
-            inspector
+            parseTime, inspector
         };
     },
     update(value, transaction) {
-        if (!transaction.docChanged) return value;
+        if (!transaction.docChanged
+         && !transaction.effects.find((x) => x.is(emmmForceReparseEffect))) return value;
+
         return this.create(transaction.state);
     },
 })

@@ -54,26 +54,26 @@ export function cloneNode<T extends DocumentNode>(
                     named: new Map([...node.arguments.named].map(
                         ([x, y]) => [x, cloneArgument(y, options)])),
                 },
-                content: node.content.map((x) => cloneNode(x, options)),
+                content: cloneNodes(node.content, options),
                 expansion: node.expansion ? cloneNodes(node.expansion, options) : undefined
             } as T;
         case NodeType.Root:
             return {
                 type: node.type,
                 source: node.source,
-                content: node.content.map((x) => cloneNode(x, options))
+                content: cloneNodes(node.content, options),
             } as T;
         case NodeType.Group:
             return {
                 type: node.type,
                 location: cloneLocation(node.location, options),
-                content: node.content.map((x) => cloneNode(x, options))
+                content: cloneNodes(node.content, options),
             } as T;
         case NodeType.Paragraph:
             return {
                 type: node.type,
                 location: cloneLocation(node.location, options),
-                content: node.content.map((x) => cloneNode(x, options))
+                content: cloneNodes(node.content, options),
             } as T;
         case NodeType.Preformatted:
             return {
@@ -115,8 +115,9 @@ export function stripNode(...nodes: DocumentNode[]): DocumentNode[] {
             case NodeType.Root:
             case NodeType.Group:
             case NodeType.Paragraph:
-                node.content = node.content.flatMap((x) => stripNode(x)) as any;
-                return [node];
+                const newNode = cloneNode(node, { withState: true });
+                newNode.content = newNode.content.flatMap((x) => stripNode(x)) as any;
+                return [newNode];
             case NodeType.SystemModifier:
                 return [];
             default:

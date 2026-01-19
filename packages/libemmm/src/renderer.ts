@@ -112,10 +112,12 @@ export class RenderConfiguration<Type extends AnyRendererType>
 
     render(doc: Document, state: getState<Type>): getDocument<Type> {
         let cxt = new RenderContext(this, doc, state);
-        let results = doc.toStripped()
+        let stripped = doc.toStripped();
+        let results = stripped
             .root.content
             .flatMap((x) => cxt.renderEntity(x));
-        return this.postprocessor(results, cxt);
+        const r = this.postprocessor(results, cxt);
+        return r;
     }
 
     addBlockRenderer(...rs: BlockRendererDefiniton<Type>[]) {

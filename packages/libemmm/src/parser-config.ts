@@ -61,7 +61,7 @@ export class Document {
         callback: (node: BlockEntity | InlineEntity | ArgumentEntity) =>
             'skip' | 'break' | 'continue'
     ) {
-        let nodes: (BlockEntity | InlineEntity | ArgumentEntity)[] = this.root.content;
+        let nodes: (BlockEntity | InlineEntity | ArgumentEntity)[] = [...this.root.content];
         let node;
         while (node = nodes.shift()) {
             const result = callback(node);

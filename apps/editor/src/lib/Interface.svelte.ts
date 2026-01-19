@@ -45,7 +45,7 @@ export const Interface = $state({
     onFrameLoaded: new EventHost(),
 
     async render() {
-        const pd = get(parseData);
+        const pd = get(parseData)?.data;
         if (!pd || !this.frame) return;
         let renderConfig = emmm.RenderConfiguration.from(CustomHTMLRenderer);
         renderConfig.options.transformAsset = (url) => {
@@ -56,7 +56,7 @@ export const Interface = $state({
         let state = new emmm.HTMLRenderState();
         state.cssVariables = getCssVariablesFromColors(this.colors, 'srgb');
         state.stylesheet = this.stylesheet;
-        this.renderedDocument = await renderConfig.render(pd.data, state);
+        this.renderedDocument = await renderConfig.render(pd, state);
         const sx = this.frame.contentWindow!.scrollX;
         const sy = this.frame.contentWindow!.scrollY;
         this.frame.srcdoc = this.renderedDocument.documentElement.outerHTML;

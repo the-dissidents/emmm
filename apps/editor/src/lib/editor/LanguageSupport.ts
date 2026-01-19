@@ -16,12 +16,12 @@ export function emmmLanguageSupport(
         emmmContextProvider.of(() => (context?.() ?? undefined)),
         emmmSourceDescriptorProvider.of(() => (descriptor?.() ?? undefined)),
         emmmDocument.extension,
+        emmmAutocompletion,
         emmmStructureExt,
         emmmHighlighter,
         emmmWrapIndent,
         emmmGutter,
         emmmLinter,
-        emmmAutocompletion,
         emmmTheme,
         emmmDropImage,
     ];
