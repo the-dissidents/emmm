@@ -1,7 +1,6 @@
 import { debug } from "./debug";
 import { LocationRange, ModifierArgument, NodeType, DocumentNode } from "./interface";
 
-
 export type CloneNodeOptions = {
     newLocation?: LocationRange;
     withState?: boolean;
@@ -124,4 +123,31 @@ export function stripNode(...nodes: DocumentNode[]): DocumentNode[] {
                 return debug.never(node);
         }
     });
+}
+
+export function nodeExtractText(nodes: DocumentNode[], sep = ''): string {
+    return nodes.flatMap((n) => {
+        switch (n.type) {
+            case NodeType.Root:
+                return nodeExtractText(n.content);
+            case NodeType.Group:
+                return nodeExtractText(n.content);
+            case NodeType.Paragraph:
+                return nodeExtractText(n.content);
+            case NodeType.Preformatted:
+                return n.content.text;
+            case NodeType.Text:
+                return n.content;
+            case NodeType.Escaped:
+                return n.content;
+            case NodeType.SystemModifier:
+                return nodeExtractText(n.expansion ?? n.content);
+            case NodeType.InlineModifier:
+                return nodeExtractText(n.expansion ?? n.content);
+            case NodeType.BlockModifier:
+                return nodeExtractText(n.expansion ?? n.content);
+            default:
+                debug.never(n);
+        }
+    }).join(sep);
 }

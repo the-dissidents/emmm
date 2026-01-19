@@ -1,6 +1,18 @@
 import { assert } from '$lib/Debug';
 import * as emmm from '@the_dissidents/libemmm';
 
+export const CATEGORIES = [
+  'review',
+  'interview',
+  'translation',
+  'feature',
+  'essay',
+  'roundtable',
+  'editorial',
+] as const;
+
+export type Category = (typeof CATEGORIES)[number];
+
 const header = Symbol();
 
 declare module '@the_dissidents/libemmm' {
@@ -8,12 +20,55 @@ declare module '@the_dissidents/libemmm' {
         [header]?: {
             title?: emmm.ParagraphNode,
             subtitle?: emmm.ParagraphNode,
+            digest?: emmm.ParagraphNode,
+
             originalTitle?: emmm.ParagraphNode,
             originalUrl?: string,
-            imageUrl?: string,
+            coverUrl?: string,
+            posterUrl?: string,
+            author?: string,
+            category?: Category,
+            publishedDate?: Date,
             fields: [string, emmm.ParagraphNode][]
         };
     }
+}
+
+export type EmmmMetadata = {
+    title?: DocumentFragment;
+    subtitle?: DocumentFragment;
+    digest?: DocumentFragment;
+    originalTitle?: DocumentFragment;
+    originalUrl?: string;
+    coverUrl?: string;
+    posterUrl?: string;
+    author?: string;
+    category?: Category;
+    publishedDate?: Date;
+    fields: (readonly [string, DocumentFragment])[];
+    wordCount: number;
+};
+
+export async function getEmmmMetadata(
+  cxt: emmm.ParseContext,
+  r: emmm.RenderContext<emmm.HTMLRenderType>
+): Promise<EmmmMetadata> {
+  const h = cxt.get(header)!;
+  return {
+    title:         h.title         ? await r.state.render(h.title.content, r) : undefined,
+    subtitle:      h.subtitle      ? await r.state.render(h.subtitle.content, r) : undefined,
+    digest:        h.digest        ? await r.state.render(h.digest.content, r) : undefined,
+    originalTitle: h.originalTitle ? await r.state.render(h.originalTitle.content, r) : undefined,
+    originalUrl:   h.originalUrl,
+    coverUrl:      h.coverUrl,
+    posterUrl:     h.posterUrl,
+    author:        h.author,
+    category:      h.category,
+    publishedDate: h.publishedDate,
+    fields:        await Promise.all(h.fields
+                    .map(async ([k, v]) => [k, await r.state.render(v.content, r)] as const)),
+    wordCount:     countWords(r.parsedDocument)
+  };
 }
 
 export function initHeader(cxt: emmm.ParseContext) {
@@ -29,16 +84,88 @@ export const basicFieldSystems = [
     emmm.helper.createParagraphWrapper('subtitle',
         (c) => c.get(header)!.subtitle,
         (c, v) => c.get(header)!.subtitle = v),
+    emmm.helper.createParagraphWrapper('digest',
+        (c) => c.get(header)!.digest,
+        (c, v) => c.get(header)!.digest = v),
     emmm.helper.createParagraphWrapper('orig-title',
         (c) => c.get(header)!.originalTitle,
         (c, v) => c.get(header)!.originalTitle = v),
     emmm.helper.createPlaintextWrapper('orig-url',
         (c) => c.get(header)!.originalUrl,
         (c, v) => c.get(header)!.originalUrl = v, emmm.ModifierSlotType.Preformatted),
+    emmm.helper.createPlaintextWrapper('author',
+        (c) => c.get(header)!.author,
+        (c, v) => c.get(header)!.author = v),
     emmm.helper.createPlaintextWrapper('cover-img',
-        (c) => c.get(header)!.imageUrl,
-        (c, v) => c.get(header)!.imageUrl = v, emmm.ModifierSlotType.Preformatted)
+        (c) => c.get(header)!.coverUrl,
+        (c, v) => c.get(header)!.coverUrl = v, emmm.ModifierSlotType.Preformatted),
+    emmm.helper.createPlaintextWrapper('poster-img',
+        (c) => c.get(header)!.posterUrl,
+        (c, v) => c.get(header)!.posterUrl = v, emmm.ModifierSlotType.Preformatted),
 ];
+
+export const publishedSystem = new emmm.SystemModifierDefinition(
+    'published', emmm.ModifierSlotType.Normal,
+{
+  beforeProcessExpansion(node, cxt) {
+    let { msgs } = emmm.helper.bindArgs(node, []);
+    if (msgs) return msgs;
+
+    const result = emmm.helper.onlyPermitPlaintextParagraph(node);
+    if (typeof result !== 'string') return result;
+
+    const h = cxt.get(header)!;
+
+    let date: Date;
+    const oldDate = result.match(/^\s*(\d{4})[./-](\d{1,2})[./-](\d{1,2})\s*$/);
+    if (oldDate) {
+      date = new Date(`${oldDate[1]}-${oldDate[2].padStart(2, '0')}-${oldDate[3].padStart(2, '0')}T12:00:00Z`);
+    } else if (result.match(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/)) {
+      date = new Date(result);
+    } else {
+      return [
+        new emmm.messages.InvalidArgumentMessage(node.location,
+          'date should either be YYYY[-./]MM[-./]DD or in ISO format')
+      ];
+    }
+
+    if (h.publishedDate)
+      msgs = [new emmm.messages.OverwriteSpecialVariableMessage(
+        node.head, 'published date', h.publishedDate.toDateString())];
+
+    h.publishedDate = date;
+    return msgs ?? [];
+  }
+});
+
+export const categorySystem = new emmm.SystemModifierDefinition(
+    'category', emmm.ModifierSlotType.Normal,
+{
+  beforeProcessExpansion(node, cxt) {
+    let { msgs } = emmm.helper.bindArgs(node, []);
+    if (msgs) return msgs;
+
+    const result = emmm.helper.onlyPermitPlaintextParagraph(node);
+    if (typeof result !== 'string') return result;
+
+    const h = cxt.get(header)!;
+
+    if (!CATEGORIES.includes(result as Category)) {
+      return [
+        new emmm.messages.InvalidArgumentMessage(node.location,
+          `category must be one of: ${CATEGORIES.join(', ')}`)
+      ];
+    }
+
+    if (h.category)
+      msgs = [new emmm.messages.OverwriteSpecialVariableMessage(
+        node.head, 'cateogry', h.category)];
+
+    h.category = result as Category;
+    return msgs ?? [];
+  }
+});
 
 export const infoFieldSystem = new emmm.SystemModifierDefinition(
     'info-field', emmm.ModifierSlotType.Normal,
@@ -68,10 +195,6 @@ export const infoFieldSystem = new emmm.SystemModifierDefinition(
     },
 });
 
-export const headerBlock = new emmm.BlockModifierDefinition(
-    'header', emmm.ModifierSlotType.None,
-{});
-
 export const endBlock = new emmm.BlockModifierDefinition(
     'the-end', emmm.ModifierSlotType.Normal,
 {});
@@ -88,94 +211,6 @@ function countWords(doc: emmm.Document) {
     });
     return count;
 }
-
-export const headerRenderer:
-emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [
-    headerBlock,
-    async (node, cxt) => {
-        const data = cxt.parsedDocument.context.get(header);
-        assert(data !== undefined);
-        let fragment = new DocumentFragment();
-        if (data.imageUrl) {
-            let content: Node;
-            try {
-                let transformed = cxt.config.options.transformAsset(data.imageUrl);
-                content = transformed
-                    ? <img src={transformed} data-original-src={data.imageUrl}/>
-                    : <img src={data.imageUrl}/>;
-            } catch {
-                content = cxt.state.invalidBlock(node, 'unable to transform asset');
-            }
-            fragment.appendChild(<figure>{content}</figure>);
-        }
-        if (data.title)
-            fragment.appendChild(<h1>{await cxt.state.render(data.title.content, cxt)}</h1>);
-        else
-            fragment.appendChild(cxt.state.invalidBlock(node, 'no title'));
-
-        if (data.subtitle)
-            fragment.appendChild(<h1 class='subtitle'>{await cxt.state.render(data.subtitle.content, cxt)}</h1>)
-
-        let content1: Node[] = [];
-        if (data.originalTitle)
-            content1.push(<p>
-                <span class='key'>原标题：</span>
-                <span class='originalTitle'>{await cxt.state.render(data.originalTitle.content, cxt)}</span>
-            </p>);
-        if (data.originalUrl)
-            content1.push(<p>
-                <span class='key'>原文链接：</span>
-                <span class='originalUrl'>{data.originalUrl}</span>
-            </p>);
-
-        let valueToField = new Map<emmm.ParagraphNode, string[]>();
-        for (const [field, value] of data!.fields) {
-            // if (valueToField.has(value))
-            //     valueToField.get(value)!.push(field);
-            // else
-            valueToField.set(value, [field]);
-        }
-
-        const array = [...valueToField.entries()];
-        let fieldsLeft = data!.fields.map((x) => x[0]);
-        let content2: Node[] = [];
-        let content3: Node[] = [];
-        while (fieldsLeft.length > 0) {
-            const field = fieldsLeft.shift()!;
-            const entry = array.find(([_, fields]) => fields.includes(field));
-            if (!entry) continue;
-            const node =
-                <p>
-                    <span class='key'>{entry[1].join(' & ')} / </span>
-                    <span class='field'>{await cxt.state.render(entry[0].content, cxt)}</span>
-                </p>;
-            if (entry[1].length == 1) {
-                content2.push(node);
-            } else {
-                content3.push(node);
-                fieldsLeft = fieldsLeft.filter((x) => !entry[1].includes(x));
-            }
-        }
-
-        const wc = countWords(cxt.parsedDocument);
-        fragment.append(
-            ...content1.length > 0
-                ? [<div class='metadata'>{content1}</div>]
-                : [],
-            <div class='metadata'>
-                {content2}
-                {content3}
-            </div>,
-            <aside class='ttr'><p>
-                全文约<b>{Math.round(wc / 50) * 50}</b>字<br/>
-                阅读需要<b>{(wc / 400).toFixed(0)}</b>分钟
-            </p></aside>,
-            <hr/>
-        );
-        return <header>{fragment}</header>;
-    }
-];
-
 
 export const endRenderer:
 emmm.BlockRendererDefiniton<emmm.HTMLRenderType> = [

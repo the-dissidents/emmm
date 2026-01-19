@@ -143,6 +143,10 @@ export class Configuration implements ReadonlyConfiguration {
     static from(from: ReadonlyConfiguration) {
         let config = new Configuration();
         config.initializers = [...from.initializers];
+        config.modules = new Map(
+            [...from.modules.entries()]
+            .map(([k, v]) => [k, ModuleDefinition.clone(v)])
+        );
         config.kernel = structuredClone(from.kernel);
 
         config.blockModifiers = new NameManager(from.blockModifiers);

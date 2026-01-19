@@ -23,6 +23,16 @@ export namespace ModuleDefinition {
         };
     }
 
+    export function clone(c: ModuleDefinition): ModuleDefinition {
+        return {
+            usedModules: new Set(c.usedModules),
+            blocks: new Set(c.blocks),
+            inlines: new Set(c.inlines),
+            inlineShorthands: new Set(c.inlineShorthands),
+            blockShorthands: new Set(c.blockShorthands),
+        }
+    }
+
     export function apply(defs: ModuleDefinition, cxt: ParseContext) {
         cxt.usedModules = new Set(defs.usedModules);
         cxt.config.blockModifiers = new NameManager(defs.blocks);

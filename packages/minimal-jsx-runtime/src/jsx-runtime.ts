@@ -72,10 +72,11 @@ function isNode(n: any): n is Node {
 
 function appendChildren(parent: HTMLElement | DocumentFragment, children: any[]) {
     children.flat(Infinity).forEach(child => {
+        if (child === undefined)
+            return;
         if (isNode(child)) {
             parent.appendChild(child);
         } else if (typeof child != 'function'
-                && typeof child != 'object'
                 && typeof child != 'object'
         ) {
             assert(D !== undefined);

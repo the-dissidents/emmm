@@ -39,7 +39,7 @@ export const BulletBlockRenderersHTML = [
     [orderedListItemBlock, async (node, cxt) =>
         node.state === undefined
             ? cxt.state.invalidBlock(node, 'bad format')
-            : <li class='ordered' value={node.state}>
+            : <li class='ordered' data-value={node.state}>
                 {await cxt.state.render(node.content, cxt)}
               </li>
     ] satisfies BlockRendererDefiniton<HTMLRenderType, number>

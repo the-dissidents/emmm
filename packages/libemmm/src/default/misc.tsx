@@ -93,7 +93,8 @@ export const MiscInlineRenderersHTML = [
                 {await cxt.state.render(node.content, cxt)}
               </a>
     ] satisfies InlineRendererDefiniton<HTMLRenderType, string>,
-    [tabInline, () => new Text('\t')] satisfies InlineRendererDefiniton<HTMLRenderType>,
+    [tabInline, (_, cxt) => cxt.config.options.window.document
+        .createTextNode('\t')] satisfies InlineRendererDefiniton<HTMLRenderType>,
 ];
 
 export const MiscBlockRenderersHTML = [

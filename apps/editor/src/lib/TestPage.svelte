@@ -144,7 +144,8 @@
         onActivate={() => sourceHandle?.focus?.()}>
       <EmmmContext {onParse}
           provideDescriptor={() => ({name: '<Source>'})}
-          provideContext={() => libConfig ? new emmm.ParseContext(libConfig) : undefined}>
+          provideContext={() => libConfig ? new emmm.ParseContext(
+            emmm.Configuration.from(libConfig)) : undefined}>
         <Editor bind:text={source}
           onFocus={() => {
             updateCursorPosition(sourceHandle);

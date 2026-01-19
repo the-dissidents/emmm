@@ -60,7 +60,7 @@ export class RenderContext<Type extends AnyRendererType> {
     }
 
     constructor(
-        public readonly config: RenderConfiguration<Type>,
+        public readonly config: ReadonlyRenderConfiguration<Type>,
         public readonly parsedDocument: Document,
         public state: getState<Type>) { }
 }
