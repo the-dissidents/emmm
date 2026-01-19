@@ -9,34 +9,34 @@
   type ModeInfo = {
     bounds: readonly [number, number, number],
     expr: (v0: number, v1: number, v2: number, alpha?: number) => string,
-    fromColorIo: (v0: number, v1: number, v2: number) => readonly [number, number, number],
+    fromColorIo: (v0: number | null, v1: number | null, v2: number | null) => readonly [number, number, number],
     interpolationMode: readonly [string, string, string],
   };
 
   const modes: Record<string, ModeInfo> = {
     srgb: {
       bounds: [255, 255, 255],
-      expr: (v0, v1, v2, alpha = 1) => 
+      expr: (v0, v1, v2, alpha = 1) =>
         `rgb(${v0.toFixed(2)} ${v1.toFixed(2)} ${v2.toFixed(2)} / ${alpha})`,
-      fromColorIo: (v0, v1, v2) => [v0 * 255, v1 * 255, v2 * 255],
+      fromColorIo: (v0, v1, v2) => [(v0 ?? 0) * 255, (v1 ?? 0) * 255, (v2 ?? 0) * 255],
       interpolationMode: ['in srgb', 'in srgb', 'in srgb'],
     },
     hsl: {
       bounds: [360, 100, 100],
-      expr: (v0, v1, v2, alpha = 1) => 
+      expr: (v0, v1, v2, alpha = 1) =>
         `hsl(${v0.toFixed(2)}deg ${v1.toFixed(3)}% ${v2.toFixed(3)}% / ${alpha})`,
-      fromColorIo: (v0, v1, v2) => [v0, v1, v2],
+      fromColorIo: (v0, v1, v2) => [v0 ?? 0, v1 ?? 0, v2 ?? 0],
       interpolationMode: ['in hsl longer hue', 'in hsl', 'in hsl'],
     },
     oklch: {
       bounds: [1, 0.4, 360],
-      expr: (v0, v1, v2, alpha = 1) => 
+      expr: (v0, v1, v2, alpha = 1) =>
         `oklch(${v0.toFixed(3)} ${v1.toFixed(3)} ${v2.toFixed(2)} / ${alpha})`,
-      fromColorIo: (v0, v1, v2) => [v0, v1, v2],
+      fromColorIo: (v0, v1, v2) => [v0 ?? 0, v1 ?? 0, v2 ?? 0],
       interpolationMode: ['in oklch', 'in oklch', 'in oklch longer hue'],
     },
   };
-  
+
   type ColorMode = keyof typeof modes;
 
   function convertMode(to: ColorMode) {
@@ -83,7 +83,8 @@
       modeChanged = true;
     }
 
-    [value0, value1, value2] = modes[mode].fromColorIo(...color.to(mode).toGamut().coords);
+    [value0, value1, value2] = modes[mode].fromColorIo(
+      ...color.to(mode).toGamut().coords);
     alpha = c.alpha ?? 1;
     // TODO: this isn't entirely correct, but is effective
     if (Number.isNaN(value0)) value0 = 0;
@@ -100,9 +101,9 @@
     outOfGamut = !srgb.inGamut();
     srgb = srgb.toGamut();
     hex = `#${
-      Math.round(srgb.r * 255).toString(16).padStart(2, '0')}${
-      Math.round(srgb.g * 255).toString(16).padStart(2, '0')}${
-      Math.round(srgb.b * 255).toString(16).padStart(2, '0')}`;
+      Math.round((srgb.r ?? 0) * 255).toString(16).padStart(2, '0')}${
+      Math.round((srgb.g ?? 0) * 255).toString(16).padStart(2, '0')}${
+      Math.round((srgb.b ?? 0) * 255).toString(16).padStart(2, '0')}`;
   }
 
   function getGamutBoundary01(
@@ -149,8 +150,8 @@
   }
 
   function getGamutBoundary(
-    bound: number, 
-    fun: (x: number) => [v1: number, v2: number, v3: number], 
+    bound: number,
+    fun: (x: number) => [v1: number, v2: number, v3: number],
     precise = false
   ): Boundary | null {
     const x = getGamutBoundary01((x) => fun(x * bound), precise);
@@ -165,7 +166,7 @@
     let [a, b, c] = range;
     a *= 100 / bound;
     b *= 100 / bound;
-    return c 
+    return c
       ? `linear-gradient(to right, ${IN} ${a}%, ${OUT} ${a}%, ${OUT} ${b}%, ${IN} ${b}%)`
       : `linear-gradient(to right, ${OUT} ${a}%, ${IN} ${a}%, ${IN} ${b}%, ${OUT} ${b}%)`;
   }
@@ -198,7 +199,7 @@
       outOfGamut = $state(false);
 
   let changed = false;
-  
+
   let popupHandler: PopupHandler = {};
 </script>
 
@@ -419,8 +420,8 @@
       top: 0; left: 0;
       width: 100%; height: 100%;
       background: linear-gradient(
-        to right, 
-        var(--color) 50%, 
+        to right,
+        var(--color) 50%,
         var(--trspColor) 50%
       );
     }

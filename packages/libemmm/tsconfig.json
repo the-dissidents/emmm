@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "esnext",
     "jsx": "react-jsx",
-    "jsxImportSource": "minimal-jsx-runtime",
+    "jsxImportSource": "@the_dissidents/minimal-jsx-runtime",
     "module": "esnext",
     "moduleResolution": "bundler",
     "declaration": true,

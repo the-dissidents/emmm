@@ -11,7 +11,7 @@ import { NoteBlockRenderersHTML, NoteInlineRenderersHTML, NotesFooterPlugin } fr
 import { QuoteBlockRenderersHTML } from "./quotes";
 import { TableBlockRenderers, TableInlineRenderers } from "./table";
 import { GalleryBlockRendererHTML } from "./gallery";
-import { useDocument } from "minimal-jsx-runtime/jsx-runtime";
+import { useDocument } from "@the_dissidents/minimal-jsx-runtime/jsx-runtime";
 
 export type HTMLRendererOptions = {
     window: Window,
