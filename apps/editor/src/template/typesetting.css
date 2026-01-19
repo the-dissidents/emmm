@@ -129,18 +129,19 @@ blockquote {
 
 :is(h2, h3, h4, h5, h6) {
   margin-block: 2em 1em;
-  text-wrap: balance;
+  /* text-wrap: balance; */
 }
 
 h1 {
   font-size: 150%;
   font-weight: bold;
-  margin-block: 4em 2em;
+  margin-block: 2em 2em;
 }
 
 h2 {
-  font-size: 115%;
+  font-size: 125%;
   font-weight: bold;
+  margin-block: 3em 2em;
 }
 
 h3 {
@@ -160,7 +161,7 @@ h3 {
   text-align: center;
   & .heading-number {
     display: inline-block;
-    background-color: var(--highlight-color);
+    /* background-color: var(--highlight-color); */
     border-radius: 0.5lh;
     min-width: 1lh;
     padding: 0 0.5em;
@@ -224,7 +225,13 @@ aside:is(.ttr, .the-end)+hr {
 
 .detail {
   font-size: 13px;
-  text-align: justify;
+  text-align: right;
+  line-height: 1.7;
+  color: var(--commentary-color);
+}
+
+.metadata {
+  font-size: 13px;
   line-height: 1.7;
 }
 
@@ -281,11 +288,30 @@ mark {
 
 .seq {
   word-break: break-all;
+  color: var(--link-color);
+}
+
+.emmmstyle-test figure {
+  padding: 0;
+  margin: 0;
+  /* align-items: center; */
+  /* display: flex; */
+  /* flex-direction: column; */
+}
+
+.emmmstyle-test img {
+  /* height: 300px; */
+  width: auto;
+}
+
+.emmmstyle-test + h2 {
+  margin: 0 0 1em 0 !important;
+  padding: 0;
 }
 
 .emmmstyle-speaker-a p {
   padding-right: 3em;
-  color: var(--link-color); 
+  color: var(--link-color);
 }
 
 .emmmstyle-speaker-b p {
@@ -435,7 +461,7 @@ ul.gallery > li {
   /* border: 1px solid; */
   scroll-snap-align: center;
   overflow-y: scroll;
-  max-height: 60vh;
+  /* max-height: 60vh; */
 }
 
 ul.gallery > li > :first-child {

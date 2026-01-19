@@ -17,10 +17,6 @@
 [-block-shorthand ::|key|\=|()]
 [-info-field $(key)][.slot]
 
-[.module interview]
-[-block-shorthand \||person|\|]
-### [/$person]:
-
 [-inline-shorthand <>]
 [/tab]
 
@@ -40,8 +36,11 @@
 [-inline-shorthand [\=|()|\]]
 [/commentary][[/slot]][;]
 
-[-inline-shorthand|[\||title|\||()|\]]
-[/commentary][_[/$title]_, [/slot]][;]
+[-inline-shorthand|[\||title|\||year|\]]
+[/commentary][_[/$title]_, [/$year]][;]
+
+[-inline-shorthand !\[|url|\]\(|()|\)]
+[/link $(url)][/slot][;]
 
 [-inline-shorthand|`|()|`]
 [/inject-pre-slot code]
@@ -58,6 +57,21 @@
 [-block-shorthand|[:|id|\]|()]
 [.note $(id)][.slot]
 
+[-inline-shorthand {{|()|}}]
+[/seq][/slot][;]
+
+[.module interview1]
+[-block-shorthand \||person|\|]
+### [/$person]:
+
+[.module interview2]
+[-block-shorthand \||person|\||()]
+[.concat]
+<<<
+*[/$person]：*
+[.slot]
+>>>
+
 [.module table]
 <<<
 [-block-shorthand .|()]
@@ -70,6 +84,15 @@
 [.table-separator]
 >>>
 
+[.module quotes]
+<<<
+[-inline-shorthand| "|()|" ]
+\ “[/slot]”\
+
+[-inline-shorthand| '|()|' ]
+\ ‘[/slot]’\
+>>>
+
 [-define-block recommend|id|link]
 [.style gallery]
 [.link $(link)]
@@ -79,33 +102,3 @@
 [-define-block speaker|id]
 [.style speaker-$(id)]
 [.slot]
-
-[-define-block lr|proto|path]
-[.style lr]
-<<<
-[.image $(proto)|$(path);]
-[.style lrc]
-[.slot]
->>>
-
-[-define-block lrr|proto|path]
-[.style lr-r]
-<<<
-[.style lrc]
-[.slot]
-[.image $(proto)|$(path);]
->>>
-
-[-define-block lr2|proto|path]
-<<<
-[.style float]
-[.image $(proto)|$(path);]
-[.slot]
->>>
-
-[-define-block lr3|proto|path]
-<<<
-[.style float-r]
-[.image $(proto)|$(path);]
-[.slot]
->>>
