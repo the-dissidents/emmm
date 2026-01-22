@@ -19,8 +19,8 @@
     "exports": {
         ".": "./dist/index.js"
     },
-    "dependencies": {
-        "@the_dissidents/minimal-jsx-runtime": "workspace:latest"
+    "peerDependencies": {
+        "@the_dissidents/minimal-jsx-runtime": "workspace:0.0.3"
     },
     "devDependencies": {
         "@happy-dom/global-registrator": "^19.0.2",

@@ -7,6 +7,9 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { CustomHTMLRenderer } from "./emmm/Custom";
 import type { EmmmParseData } from "./editor/ParseData";
 import type { EditorHandleOut } from "./editor/Editor.svelte";
+import { Memorized } from "./config/Memorized.svelte";
+
+import * as z from "zod/v4-mini";
 
 export class EventHost<T extends unknown[] = []> {
     #listeners = new Set<(...args: [...T]) => void>;
@@ -24,11 +27,18 @@ export class EventHost<T extends unknown[] = []> {
 let status = writable<string>('ok');
 let parseData = writable<EmmmParseData | undefined>();
 
+import testStyles from '../template/typesetting.css?raw';
+import testString from '../template/testsource.txt?raw';
+import testLib from '../template/testlib.txt?raw';
+
 export const Interface = $state({
     get status() { return status; },
     get parseData() { return parseData; },
 
-    stylesheet: '',
+    stylesheet: Memorized.$('stylesheet', z.string(), testStyles),
+    source: Memorized.$('source', z.string(), testString),
+    library: Memorized.$('library', z.string(), testLib),
+
     activeEditor: undefined as EditorHandleOut | undefined,
 
     frame: undefined as HTMLIFrameElement | undefined,
@@ -55,7 +65,7 @@ export const Interface = $state({
         };
         let state = new emmm.HTMLRenderState();
         state.cssVariables = getCssVariablesFromColors(this.colors, 'srgb');
-        state.stylesheet = this.stylesheet;
+        state.stylesheet = this.stylesheet.get();
         this.renderedDocument = await renderConfig.render(pd, state);
         const sx = this.frame.contentWindow!.scrollX;
         const sy = this.frame.contentWindow!.scrollY;

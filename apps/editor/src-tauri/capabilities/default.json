@@ -52,6 +52,9 @@
         },
         {
           "url": "https://api.weixin.qq.com/"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/"
         }
       ]
     },

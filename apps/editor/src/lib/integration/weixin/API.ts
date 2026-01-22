@@ -5,6 +5,9 @@ import { RequestFailedError } from "$lib/Util";
 import { assert } from "$lib/Debug";
 import { BaseDirectory, writeFile } from "@tauri-apps/plugin-fs";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
+import { Memorized } from "$lib/config/Memorized.svelte";
+
+import * as z from "zod/v4-mini";
 
 export type WeixinAssetType = 'image' | 'video' | 'voice';
 
@@ -129,22 +132,17 @@ export class WeixinAPIError extends Error {
     }
 }
 
-let appid = writable<string>('');
-let secret = writable<string>('');
-let stableToken = writable<string>('');
+let appid = Memorized.$('weixinAppId', z.string(), '');
+let secret = Memorized.$('weixinAppSecret', z.string(), '');
+let stableToken = writable('');
 let expireTime = new Date();
 
 let smallImageCache = new Map<string, string>();
 let assetCache = new Map<string, string>();
 
 Settings.onInitialized(() => {
-    appid.set(Settings.get('weixinAppId'));
-    secret.set(Settings.get('weixinAppSecret'));
     smallImageCache = new Map(Settings.get('weixinSmallImageCache'));
     assetCache = new Map(Settings.get('weixinAssetCache'));
-
-    appid.subscribe((x) => Settings.set('weixinAppId', x));
-    secret.subscribe((x) => Settings.set('weixinAppSecret', x));
 });
 
 export const Weixin = {

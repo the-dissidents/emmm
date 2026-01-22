@@ -51,18 +51,22 @@
 [-block-shorthand -.|()]
 [.bullet-item][.slot]
 
+[-block-shorthand -|number|.|()]
+[.ordered-item $(number)][.slot]
+
 [-inline-shorthand|[[|id|\]\]]
 [/note $(id);]
 
 [-block-shorthand|[:|id|\]|()]
 [.note $(id)][.slot]
 
-[-inline-shorthand {{|()|}}]
-[/seq][/slot][;]
+[-inline-shorthand {{|url|}}]
+[/link $(url)][/seq][/$url][;][;]
 
 [.module interview1]
 [-block-shorthand \||person|\|]
-### [/$person]:
+[.style speaker]
+[/$person]:
 
 [.module interview2]
 [-block-shorthand \||person|\||()]
@@ -86,8 +90,8 @@
 
 [.module quotes]
 <<<
-[-inline-shorthand| "|()|" ]
-\ “[/slot]”\
+[-inline-shorthand|"|()|"]
+“[/slot]”
 
 [-inline-shorthand| '|()|' ]
 \ ‘[/slot]’\

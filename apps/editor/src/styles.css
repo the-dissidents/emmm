@@ -25,6 +25,31 @@ html, body {
     -moz-user-select: none; -ms-user-select: none;
 }
 
+input {
+  font-size: 0.75rem;
+}
+
+input[type=number],
+input[type=text] {
+  border-radius: 3px;
+  padding: 2px 3px;
+}
+
+input[type=number], input[type=text],
+select, [data-select-trigger], div.combobox,
+textarea, ol[role='listbox'] {
+    border: 1px solid var(--uchu-gray-3);
+    background-color: white;
+    color: var(--uchu-yin);
+    &:focus, &:has(:focus) {
+        outline: 2px solid color-mix(in oklab, var(--uchu-red-3), transparent);
+    }
+    &:disabled {
+        background-color: var(--uchu-gray-1);
+        color: var(--uchu-gray-9);
+    }
+}
+
 button,
 label:has(input[type='checkbox'].button) {
     appearance: none;
@@ -52,6 +77,17 @@ label:has(input[type='checkbox'].button) {
     &:has(input[type='checkbox'].button:checked) {
         background-color: lightblue;
     }
+}
+
+table.config {
+    width: 100%;
+}
+table.config tr > td:nth-child(1) {
+    font-size: 80%;
+    padding-right: 5px;
+    /* font-weight: bold; */
+    text-align: end;
+    align-content: start;
 }
 
 .scrollable {

@@ -13,44 +13,42 @@
   import ListView, { type ListColumn, type ListViewHandleOut } from './ui/ListView.svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import { Interface } from './Interface.svelte';
-  import { Settings } from './Settings';
-
-  import testStyles from '../template/typesetting.css?raw';
-  import testString from '../template/testsource.txt?raw';
-  import testLib from '../template/testlib.txt?raw';
-
-  import { onMount } from 'svelte';
   import EmmmContext from './editor/EmmmContext.svelte';
   import GenericContext from './editor/GenericContext.svelte';
-  import { CustomConfig } from './emmm/Custom';
   import SearchToolbox from './toolbox/SearchToolbox.svelte';
   import type { EmmmParseData } from './editor/ParseData';4
   import ParametersToolbox from './toolbox/ParametersToolbox.svelte';
+  import ASTViewer from './emmm/ASTViewer.svelte';
+  import { Memorized } from './config/Memorized.svelte';
 
-  let outputAST = $state('');
+  import * as z from "zod/v4-mini";
+  import SyncToolbox from './toolbox/SyncToolbox.svelte';
+
   let left = $state<HTMLElement>(),
       middle = $state<HTMLElement>(),
       right = $state<HTMLElement>(),
       bottom = $state<HTMLElement>();
 
   let strip = $state(false);
-  let status = Interface.status;
   let parsedStatus = $state('');
   let posStatus = $state('line ?, col ?');
   let sourceHandle = $state<EditorHandleOut>(),
       libraryHandle = $state<EditorHandleOut>(),
       cssHandle = $state<EditorHandleOut>();
 
-  let source = $state(''),
-      library = $state('');
+  let status = Interface.status;
+  let parseData = Interface.parseData;
+  let source = Interface.source,
+      library = Interface.library,
+      stylesheet = Interface.stylesheet;
 
   let libConfig = $state<emmm.Configuration>();
-  {
-    emmm.setDebugLevel(emmm.DebugLevel.Warning);
-    let lib = new emmm.ParseContext(
-      emmm.Configuration.from(CustomConfig)).parse(new emmm.SimpleScanner(testLib));
-    libConfig = lib.context.config;
-  }
+  // {
+  //   emmm.setDebugLevel(emmm.DebugLevel.Warning);
+  //   let lib = new emmm.ParseContext(
+  //     emmm.Configuration.from(CustomConfig)).parse(new emmm.SimpleScanner(testLib));
+  //   libConfig = lib.context.config;
+  // }
 
   function onParseLibrary(doc: EmmmParseData) {
     libConfig = doc.data.context.config;
@@ -67,10 +65,10 @@
     onCursorPositionChanged(...h.getCursorPosition());
   }
 
-  function onParse(doc: EmmmParseData, source: string) {
+  function onParse(doc: EmmmParseData) {
     parsedStatus = `parsed in ${doc.parseTime.toFixed(0)}ms`;
     Interface.parseData.set({...doc});
-    outputAST = emmm.debugPrint.document(strip ? doc.data.toStripped() : doc.data);
+    // outputAST = emmm.debugPrint.document(strip ? doc.data.toStripped() : doc.data);
     Interface.render();
   }
 
@@ -105,14 +103,6 @@
       }
     }));
   });
-
-  onMount(() => {
-    Settings.onInitialized(() => {
-      Interface.stylesheet = Settings.get('tempStylesheet') || testStyles;
-      library = Settings.get('tempLibrary') || testLib;
-      source = Settings.get('tempSource') || testString;
-    });
-  })
 </script>
 
 <div class="vlayout fill">
@@ -128,6 +118,9 @@
     </TabPage>
     <TabPage name="Parameters">
       <ParametersToolbox />
+    </TabPage>
+    <TabPage name='Sync'>
+      <SyncToolbox />
     </TabPage>
     <TabPage name='Search'>
       <SearchToolbox />
@@ -150,7 +143,7 @@
             ? new emmm.ParseContext(emmm.Configuration.from(libConfig))
             : undefined
       }>
-        <Editor bind:text={source}
+        <Editor bind:text={$source}
           onFocus={() => {
             updateCursorPosition(sourceHandle);
             Interface.activeEditor = sourceHandle;
@@ -163,7 +156,7 @@
         onActivate={() => libraryHandle?.focus?.()}>
       <EmmmContext onParse={onParseLibrary}
           provideDescriptor={() => ({name: '<Library>'})}>
-        <Editor bind:text={library}
+        <Editor bind:text={$library}
           onFocus={() => {
             updateCursorPosition(libraryHandle);
             Interface.activeEditor = libraryHandle;
@@ -172,13 +165,13 @@
           bind:hout={libraryHandle} />
       </EmmmContext>
     </TabPage>
-    <TabPage name="CSS">
+    <TabPage name="Stylesheet">
       <GenericContext extension={[
         syntaxHighlighting(defaultHighlightStyle),
         bracketMatching(),
         css()
       ]}>
-        <Editor bind:text={Interface.stylesheet}
+        <Editor bind:text={$stylesheet}
           onFocus={() => {
             updateCursorPosition(cssHandle);
             Interface.activeEditor = cssHandle;
@@ -207,14 +200,16 @@
     </TabPage>
     <TabPage name="AST">
       <div class="vlayout fill">
-        <textarea class="flexgrow">{outputAST}</textarea>
+        <div class="ast">
+          <ASTViewer node={strip ? $parseData?.data.toStripped().root : $parseData?.data.root} />
+        </div>
         <label>
           <input type="checkbox" bind:checked={strip} />
           only show transformed (stripped) AST
         </label>
         <button onclick={() => {
           emmm.setDebugLevel(emmm.DebugLevel.Trace);
-          new emmm.ParseContext(libConfig!).parse(new emmm.SimpleScanner(source));
+          new emmm.ParseContext(libConfig!).parse(new emmm.SimpleScanner($source));
           emmm.setDebugLevel(emmm.DebugLevel.Error);
         }}>trace</button>
       </div>
@@ -248,10 +243,8 @@
       {parsedStatus}
     </span>
     <hr/>
-    <button onclick={() => {
-      Settings.set('tempSource', source);
-      Settings.set('tempLibrary', library);
-      Settings.set('tempStylesheet', Interface.stylesheet);
+    <button onclick={async () => {
+      await Memorized.save();
       status.set('saved');
     }}>
       save
@@ -289,6 +282,14 @@
     position: sticky;
     width: 100%;
     height: 100%;
+  }
+
+  .ast {
+    flex-grow: 1;
+    overflow-y: scroll;
+    background-color: white;
+    border-radius: 3px;
+    padding: 5px;
   }
 
   .status {

@@ -221,7 +221,7 @@
 <div class="vlayout contain">
 
 <h5>Connections & Credentials</h5>
-<table><tbody>
+<table class="config"><tbody>
   <tr>
     <td>public ip</td>
     <td class='hlayout'>
@@ -307,16 +307,6 @@
   }
   button {
     margin-bottom: 5px;
-  }
-  table {
-    width: 100%;
-  }
-  table tr > td:nth-child(1) {
-    font-size: 80%;
-    padding-right: 5px;
-    /* font-weight: bold; */
-    text-align: end;
-    align-content: start;
   }
 </style>
 

@@ -32,7 +32,8 @@
     "@types/wcwidth": "^1.0.2",
     "colorjs.io": "^0.6.1",
     "mime": "^4.1.0",
-    "wcwidth": "^1.0.1"
+    "wcwidth": "^1.0.1",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.10",

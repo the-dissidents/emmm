@@ -214,7 +214,7 @@ export function onlyPermitSingleBlock(
 
 export function createPlaintextWrapper(name: string,
         get: (cxt: ParseContext) => string | undefined,
-        set: (cxt: ParseContext, value: string) => string,
+        set: (cxt: ParseContext, value: string) => void,
         slotType = ModifierSlotType.Normal) {
     return new SystemModifierDefinition<void>(name, slotType, {
         delayContentExpansion: true,

@@ -33,7 +33,7 @@ async function saveSettings() {
         await fs.mkdir(configDir, {recursive: true});
 
     try {
-        await fs.writeTextFile(configPath, 
+        await fs.writeTextFile(configPath,
             JSON.stringify(configData), {baseDir: BaseDirectory.AppConfig});
         console.log('saved config');
     } catch (e) {
@@ -58,7 +58,7 @@ export const Settings = {
                 callback();
         }
     },
-    
+
     onInitialized(callback: () => void) {
         if (!settingsInitialized) onInitCallbacks.push(callback);
         else callback();

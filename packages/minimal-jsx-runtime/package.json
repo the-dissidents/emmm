@@ -1,6 +1,6 @@
 {
   "name": "@the_dissidents/minimal-jsx-runtime",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A private little wrapper for using JSX the above projects",
   "author": "the_dissidents",
   "license": "GPL-2.0-only",

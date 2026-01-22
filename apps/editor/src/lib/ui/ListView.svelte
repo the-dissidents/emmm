@@ -97,7 +97,7 @@
         } finally {
             working = false;
         }
-        
+
         // check if it is still visible
         await tick();
         observer.unobserve(loadingLine!);
@@ -203,7 +203,7 @@
         table-layout: fixed;
     }
     th {
-        background-color: thistle;
+        background-color: rgb(237, 202, 210);
         position: sticky;
         top: 0;
     }

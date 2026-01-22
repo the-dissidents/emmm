@@ -309,6 +309,11 @@ mark {
   padding: 0;
 }
 
+.emmmstyle-speaker p {
+  margin-top: 2em;
+  font-weight: bold;
+}
+
 .emmmstyle-speaker-a p {
   padding-right: 3em;
   color: var(--link-color);

@@ -1,4 +1,4 @@
-import { acceptCompletion, autocompletion, closeCompletion, moveCompletionSelection, startCompletion, type CloseBracketConfig, type Completion, type CompletionSource } from "@codemirror/autocomplete";
+import { acceptCompletion, autocompletion, closeCompletion, moveCompletionSelection, startCompletion, type Completion, type CompletionSource } from "@codemirror/autocomplete";
 import * as emmm from "@the_dissidents/libemmm";
 import { emmmDocument } from "./ParseData";
 import { EditorView, keymap } from "@codemirror/view";
@@ -101,8 +101,10 @@ export const emmmAutocompletion = [
         ];
         brackets.sort(([a, _1], [b, _2]) => b.length - a.length);
 
+        const text = view.state.doc.sliceString(0, from, '\n') + insert;
+
         if (from !== to) {
-            const bracket = brackets.find(([a, _]) => a == insert);
+            const bracket = brackets.find(([a, _]) => text.endsWith(a));
             if (!bracket) return false;
             view.dispatch(view.state.changeByRange((range) => ({
                 changes: [{
@@ -119,7 +121,10 @@ export const emmmAutocompletion = [
             return true;
         }
 
-        const text = view.state.doc.sliceString(0, from, '\n') + insert;
+        const rest = view.state.doc.sliceString(to);
+        if (rest.length > 0 && !rest[0].match(/\s|\n/))
+            return false;
+
         for (const [a, b] of brackets) {
             if (text.endsWith(a)) {
                 view.dispatch(view.state.changeByRange((range) => ({

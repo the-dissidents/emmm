@@ -39,7 +39,7 @@
                 if (i < 0) return;
                 Pages.splice(i, 1);
                 if (Pages.length == 0) Selected.set(undefined);
-                else Selected.update((x) => x === id 
+                else Selected.update((x) => x === id
                     ? (Pages[i] ?? Pages[Pages.length - 1])[0] : x);
             });
         },
@@ -53,7 +53,7 @@
     <div class='header'>
         {#key update}
         {#each Pages as [id, data]}
-        <button 
+        <button
             class:selected="{selected === id}"
             onclick={() => Selected.set(id)}>{get(data.name)}</button>
         {/each}
@@ -72,7 +72,7 @@
         display: flex;
         flex-direction: row;
         flex-wrap: nowrap;
-        border-bottom: 1px solid skyblue;
+        border-bottom: 1px solid rgb(235, 135, 188);
         overflow-x: auto;
         scrollbar-width: thin;
         margin-bottom: 2px;
@@ -92,7 +92,7 @@
         }
 	}
 	.selected {
-		border-bottom: 2px solid skyblue;
+		border-bottom: 2px solid rgb(235, 135, 188);
 		color: #333;
 	}
 </style>

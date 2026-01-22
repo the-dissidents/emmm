@@ -2,20 +2,25 @@
   import { Settings } from '$lib/Settings';
   import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
   import TestPage from '../lib/TestPage.svelte';
+  import { Memorized } from '$lib/config/Memorized.svelte';
 
   const currentWindow = getCurrentWindow();
 
+  Memorized.init();
+
   Settings.init().then(() => {
     currentWindow.setSize(new LogicalSize(
-      Settings.get('windowW'), 
+      Settings.get('windowW'),
       Settings.get('windowH')));
   });
 
   currentWindow.onCloseRequested(async (ev) => {
     const factor = await currentWindow.scaleFactor();
     const size = (await currentWindow.innerSize()).toLogical(factor);
-    Settings.set('windowW', size.width);
-    Settings.set('windowH', size.height);
+    await Settings.set('windowW', size.width);
+    await Settings.set('windowH', size.height);
+
+    await Memorized.save();
   });
 </script>
 

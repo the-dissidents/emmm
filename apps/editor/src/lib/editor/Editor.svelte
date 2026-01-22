@@ -121,9 +121,13 @@
         return view.state.selection.ranges.map((x) => ({ from: x.from, to: x.to }));
       },
       setSelections(s) {
+        if (s.length == 0) {
+
+        }
         view.dispatch({
-          selection: EditorSelection.create(
-            s.map((x) => EditorSelection.range(x.from, x.to)))
+          selection: s.length > 0
+            ? EditorSelection.create(s.map((x) => EditorSelection.range(x.from, x.to)))
+            : EditorSelection.cursor(view.state.selection.main.head),
         });
       },
       update(spec) {
