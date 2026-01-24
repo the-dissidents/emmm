@@ -6,6 +6,10 @@ use num_traits::ToPrimitive;
 use serde::Serialize;
 use tauri::ipc::{Response};
 
+mod archive;
+
+use archive::{archive, unarchive};
+
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
 pub enum BackendEvent {
@@ -52,7 +56,11 @@ pub fn run() {
                 .filter(|metadata| !metadata.target().starts_with("tao::"))
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![compress_image])
+        .invoke_handler(tauri::generate_handler![
+            compress_image,
+            archive,
+            unarchive,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

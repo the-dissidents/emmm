@@ -54,6 +54,18 @@ function createChannel(handler: {[key in BackendEventKey]?: BackendEventHandler<
 }
 
 export const RustAPI = {
+    async archive(source: string, path: string, onProgress?: (x: number) => void) {
+        const channel = new Channel<{ progress: number }>();
+        channel.onmessage = ({ progress }) => onProgress?.(progress);
+        await invoke('archive', { channel, source, path });
+    },
+
+    async unarchive(path: string, output: string, onProgress?: (x: number) => void) {
+        const channel = new Channel<{ progress: number }>();
+        channel.onmessage = ({ progress }) => onProgress?.(progress);
+        return await invoke('unarchive', { channel, path, output }) as string;
+    },
+
     async compressImage(url: URL, maxSize: number) {
         let filepath = decodeURIComponent(url.pathname);
         if (url.protocol !== 'file:') {

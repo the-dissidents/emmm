@@ -21,7 +21,6 @@
   import ASTViewer from './emmm/ASTViewer.svelte';
   import { Memorized } from './config/Memorized.svelte';
 
-  import * as z from "zod/v4-mini";
   import SyncToolbox from './toolbox/SyncToolbox.svelte';
 
   let left = $state<HTMLElement>(),
@@ -36,11 +35,18 @@
       libraryHandle = $state<EditorHandleOut>(),
       cssHandle = $state<EditorHandleOut>();
 
-  let status = Interface.status;
-  let parseData = Interface.parseData;
+  let status = Interface.status,
+      parseData = Interface.parseData,
+      progress = Interface.progress;
+
   let source = Interface.source,
       library = Interface.library,
       stylesheet = Interface.stylesheet;
+
+  source.subscribe((x) => {
+    console.log(x);
+    sourceHandle?.setText(x);
+  });
 
   let libConfig = $state<emmm.Configuration>();
   // {
@@ -234,6 +240,12 @@
     <span class='flexgrow'>
       {$status}
     </span>
+    {#if $progress !== undefined}
+      <hr>
+      <span>
+        <progress max="1" value={$progress}></progress>
+      </span>
+    {/if}
     <hr/>
     <span>
       {posStatus}

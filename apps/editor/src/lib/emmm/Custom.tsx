@@ -55,10 +55,10 @@ render.textRenderer = (node, cxt) => {
 render.options.headerPlugins.push(async (cxt) => {
     const metadata = await getEmmmMetadata(cxt.parsedDocument.context, cxt);
     return <header>
-        { metadata.coverUrl &&
+        { metadata.posterUrl &&
             <figure>
-            <img src={await cxt.config.options.transformAsset(metadata.coverUrl)}
-                 data-original-src={metadata.coverUrl} />
+            <img src={await cxt.config.options.transformAsset(metadata.posterUrl)}
+                 data-original-src={metadata.posterUrl} />
             </figure> }
 
       <h1 class="titles">
@@ -88,7 +88,7 @@ render.options.headerPlugins.push(async (cxt) => {
       </div>
 
       <aside class='ttr'><p>
-        全文 {(Math.round(metadata.wordCount / 50) * 50).toString()} 字，阅读时间 {(metadata.wordCount / 225).toFixed(0)} 分钟
+        全文 {(Math.round(metadata.wordCount / 50) * 50).toString()} 字，阅读时间 {(metadata.wordCount / 400).toFixed(0)} 分钟
       </p></aside>
 
       <hr />

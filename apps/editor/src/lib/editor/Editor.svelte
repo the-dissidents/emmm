@@ -43,6 +43,7 @@
     focus(): void;
     getCursorPosition(): [pos: number, l: number, c: number];
     getText(): string;
+    setText(x: string): void;
     getSelections(): Selection[];
     setSelections(s: Selection[]): void;
     update(c: TransactionSpec): void;
@@ -117,6 +118,15 @@
       getText() {
         return text;
       },
+      setText(x: string) {
+        // view.dispatch({changes: [{
+        //   from: 0, to: view.state.doc.length,
+        //   insert: x
+        // }]});
+        // shouldChange = false;
+        // text = x;
+        // onTextChange?.(text);
+      },
       getSelections() {
         return view.state.selection.ranges.map((x) => ({ from: x.from, to: x.to }));
       },
@@ -140,10 +150,9 @@
       }
     };
     hook(() => text, (x) => {
-      if (!shouldChange) {
-        shouldChange = true;
-        return;
-      }
+      const value = view.state.doc.toString();
+      if (value == x) return;
+
       view.dispatch({changes: [{
         from: 0, to: view.state.doc.length,
         insert: x

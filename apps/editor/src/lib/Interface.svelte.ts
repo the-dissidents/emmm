@@ -26,6 +26,7 @@ export class EventHost<T extends unknown[] = []> {
 
 let status = writable<string>('ok');
 let parseData = writable<EmmmParseData | undefined>();
+let progress = writable<number | undefined>();
 
 import testStyles from '../template/typesetting.css?raw';
 import testString from '../template/testsource.txt?raw';
@@ -34,6 +35,8 @@ import testLib from '../template/testlib.txt?raw';
 export const Interface = $state({
     get status() { return status; },
     get parseData() { return parseData; },
+
+    get progress() { return progress; },
 
     stylesheet: Memorized.$('stylesheet', z.string(), testStyles),
     source: Memorized.$('source', z.string(), testString),
