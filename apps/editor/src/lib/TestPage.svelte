@@ -43,22 +43,12 @@
       library = Interface.library,
       stylesheet = Interface.stylesheet;
 
-  source.subscribe((x) => {
-    console.log(x);
-    sourceHandle?.setText(x);
-  });
-
   let libConfig = $state<emmm.Configuration>();
-  // {
-  //   emmm.setDebugLevel(emmm.DebugLevel.Warning);
-  //   let lib = new emmm.ParseContext(
-  //     emmm.Configuration.from(CustomConfig)).parse(new emmm.SimpleScanner(testLib));
-  //   libConfig = lib.context.config;
-  // }
 
   function onParseLibrary(doc: EmmmParseData) {
+    console.log('parse library');
     libConfig = doc.data.context.config;
-    if (Interface.activeEditor === sourceHandle)
+    if (Interface.activeEditor !== libraryHandle)
       setTimeout(() => sourceHandle?.reparse(), 0);
   }
 
@@ -72,10 +62,10 @@
   }
 
   function onParse(doc: EmmmParseData) {
+    console.log('parse source');
     parsedStatus = `parsed in ${doc.parseTime.toFixed(0)}ms`;
     Interface.parseData.set({...doc});
-    // outputAST = emmm.debugPrint.document(strip ? doc.data.toStripped() : doc.data);
-    Interface.render();
+    setTimeout(() => Interface.render(), 0);
   }
 
   const problemListHeader = new SvelteMap<string, ListColumn>([

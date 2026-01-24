@@ -103,7 +103,7 @@
 </tbody></table>
 <button onclick={updateAll}>Update all</button>
 <h5>Archive</h5>
-<button onclick={archive}>Save as archive</button>
+<button onclick={archive} class="important">Save as archive</button>
 <button onclick={unarchive}>Import archive</button>
 
 <style>

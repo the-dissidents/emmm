@@ -5,7 +5,6 @@
   import { Weixin } from './API';
   import { Interface } from '../../Interface.svelte';
   import { getIP, GetIPMethod } from '../../Util';
-  import { convertFileSrc } from "@tauri-apps/api/core";
   import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
   import { postprocess } from "./Postprocess";
   import { RustAPI } from "$lib/RustAPI";
@@ -14,6 +13,8 @@
   let appid = Weixin.appid;
   let secret = Weixin.secret;
   let stableToken = Weixin.stableToken;
+
+  let progress = Interface.progress;
 
   const imgListHeader = new SvelteMap<string, ListColumn>([
     ['refresh', {name: '', type: 'button', width: '15%'}],
@@ -45,9 +46,9 @@
 
   type ImgStatus = 'ok' | 'notUploaded' | 'error' | 'pending';
   type Img = {
-    status: { type: 'text', content: string, alt: string },
+    indicator: { type: 'text', content: string, alt: string },
     refresh: ListButtonCell | undefined,
-    mode: ImgStatus,
+    status: ImgStatus,
     url: URL
   };
   let sourceImgs: Img[] = [];
@@ -66,46 +67,53 @@
       Interface.status.set(`done`);
     } catch (e) {
       Interface.status.set(`error when uploading ${img.url.href}: ${e}`);
-      img.mode = 'notUploaded';
-      img.status.content = '⚠️';
-      img.status.alt = 'this image is loaded, but an error occurred when trying to upload it';
+      img.status = 'notUploaded';
+      img.indicator.content = '⚠️';
+      img.indicator.alt = 'this image is loaded, but an error occurred when trying to upload it';
       throw e;
     }
   }
 
   async function uploadAll() {
+    const total = sourceImgs.filter((x) => x.status == 'notUploaded').length;
+    if (total == 0) return;
+
+    $progress = 0;
     for (const img of sourceImgs) {
-      if (img.mode == 'notUploaded') {
+      if (img.status == 'notUploaded') {
         await uploadImg(img);
+        $progress += 1 / total;
       }
     }
+    $progress = undefined;
+    Interface.status.set(`uploaded ${total} image${total == 1 ? '' : 's'}`);
   }
 
   function updateImg(img: Img) {
-    img.mode = 'pending';
+    img.status = 'pending';
     const realhref = img.url.href;
     if (Weixin.smallImageCache.has(realhref)) {
-      img.mode = 'ok';
-      img.status.content = '🟢';
-      img.status.alt = 'already uploaded';
+      img.status = 'ok';
+      img.indicator.content = '🟢';
+      img.indicator.alt = 'already uploaded';
       img.refresh = {
         type: 'button',
         text: 'refresh',
         onClick: () => uploadImg(img),
       };
     } else if (img.url.protocol !== 'file:') {
-      img.mode = 'ok';
-      img.status.content = '⚪';
-      img.status.alt = 'no need to upload this image';
+      img.status = 'ok';
+      img.indicator.content = '⚪';
+      img.indicator.alt = 'no need to upload this image';
       img.refresh = {
         type: 'button',
         text: 'force',
         onClick: () => uploadImg(img),
       };
     } else {
-      img.mode = 'notUploaded';
-      img.status.content = '🟡';
-      img.status.alt = 'loaded but not uploaded yet';
+      img.status = 'notUploaded';
+      img.indicator.content = '🟡';
+      img.indicator.alt = 'loaded but not uploaded yet';
     }
   }
 
@@ -116,8 +124,8 @@
     let items: ListItem[] = [...doc.querySelectorAll('img')].map((x) => {
       const url = new URL(x.dataset.originalSrc ?? x.src);
       let img: Img = {
-        mode: 'pending',
-        status: { type: 'text' as const, content: '', alt: '' },
+        status: 'pending',
+        indicator: { type: 'text' as const, content: '', alt: '' },
         refresh: undefined,
         url: url
       };
@@ -125,97 +133,18 @@
       if (x.complete && x.naturalWidth > 0) {
         updateImg(img);
       } else if (x.complete) {
-        img.mode = 'error';
-        img.status.content = '🔴';
-        img.status.alt = 'this image failed to load!';
+        img.status = 'error';
+        img.indicator.content = '🔴';
+        img.indicator.alt = 'this image failed to load!';
       }
       let name = {
         type: 'text',
         content: url.href.split('/').at(-1)!
       } satisfies ListCell;
-      return {cols: { refresh: img.refresh, status: img.status, name }};
+      return {cols: { refresh: img.refresh, status: img.indicator, name }};
     });
     imgListHandleOut!.reset(items);
   });
-
-  async function fetchArticles() {
-    articleListHandleIn.provideMoreItems = async () => {
-      if (!$stableToken)
-        return { items: [], more: false };
-      const listItems = articleListHandleOut!.getItems();
-      const { total: _, drafts } = await Weixin.getDrafts(listItems.length);
-      const items: ListItem[] = [];
-      for (const draft of drafts) {
-        draft.articles.map((article, i) => items.push({
-          cols: {
-            action: { type: 'button', text: 'write',
-              onClick: async () => {
-                const doc = Interface.frame?.contentDocument;
-                const win = Interface.frame?.contentWindow;
-                if (!doc || !win) return;
-                const {result, notCached: _} = await postprocess(doc, win);
-                Weixin.writeDraftArticle(draft.id, i, {
-                  ...article,
-                  content: result
-                });
-                Interface.status.set(`Updated ${draft.id}`);
-              }
-            },
-            type: { type: 'text', content: article.articleType },
-            author: { type: 'text',
-              content: article.articleType == 'news' ? article.author : ''
-            },
-            title: { type: 'text', content: article.title },
-          }
-        }));
-      }
-
-      return { items, more: items.length > 0 };
-    };
-    articleListHandleOut?.reset();
-  }
-
-  async function fetchPermimgs() {
-    permimgListHandleIn.provideMoreItems = async () => {
-      if (!$stableToken)
-        return { items: [], more: false };
-      const listItems = permimgListHandleOut!.getItems();
-      const { total: _, assets } = await Weixin.getAssets('image', listItems.length);
-      console.log(assets);
-      const items: ListItem[] = [];
-      for (const x of assets) {
-        let path: string | undefined;
-        try {
-          path = await Weixin.downloadAsset(x.id, x.name);
-        } catch (_) {
-          console.warn('unable to download:', x.name, x.id);
-        }
-        console.log('got:', path);
-        items.push({ cols: {
-          test: { type: 'button', text: 'insert',
-            onClick: () => {
-              // TODO
-            }
-          },
-          refresh: { type: 'button', text: 'refresh',
-            onClick: async () => {
-              await Weixin.downloadAsset(x.id, x.name, true);
-              permimgListHandleOut?.reset();
-            }
-          },
-          img: path ? {
-            type: 'image',
-            url: convertFileSrc(path),
-            height: '50px',
-          } : undefined,
-          name: { type: 'text', content: x.name },
-        } });
-      };
-      console.log(items);
-      return { items, more: items.length > 0 };
-    };
-    permimgListHandleOut?.reset();
-  }
 </script>
 
 <div class="vlayout contain">
@@ -247,7 +176,7 @@
     <td>stable token</td>
     <td>
       <input type="text" style="width: 100%" disabled value={$stableToken} /><br/>
-      <button style="width: 100%"
+      <button style="width: 100%" class="important"
         onclick={() => Weixin.fetchToken()}>retrieve token</button>
     </td>
   </tr>
@@ -265,7 +194,7 @@
   } else {
     Interface.status.set(`successfully copied for Weixin`);
   }
-}}>copy rendered result for Weixin</button>
+}} class='important'>copy rendered result for Weixin</button>
 <button onclick={async () => {
   const doc = Interface.frame?.contentDocument;
   const win = Interface.frame?.contentWindow;
@@ -280,23 +209,9 @@
 }}>copy rendered result as text</button>
 
 <h5>Images</h5>
-<button onclick={() => uploadAll()}>upload images</button>
+<button onclick={() => uploadAll()} class="important">upload images</button>
 <ListView header={imgListHeader} bind:hout={imgListHandleOut} style="min-height: 300px">
 </ListView>
-
-<!-- <h5>Other articles</h5>
-<button onclick={() => fetchArticles()}>fetch</button>
-<ListView header={articleListHeader}
-  hin={articleListHandleIn}
-  bind:hout={articleListHandleOut} style="min-height: 300px">
-</ListView>
-
-<h5>Permanent images</h5>
-<button onclick={() => fetchPermimgs()}>fetch</button>
-<ListView header={permimgListHeader}
-  hin={permimgListHandleIn}
-  bind:hout={permimgListHandleOut} style="min-height: 300px">
-</ListView> -->
 
 </div>
 

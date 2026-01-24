@@ -12,5 +12,5 @@ indent_style = space
 indent_size = 4
 
 # 2 spaces for files with a LOT of indentations
-[*.{html,svelte}]
+[*.{html,svelte,css}]
 indent_size = 2

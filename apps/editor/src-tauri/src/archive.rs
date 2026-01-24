@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fs::{File, canonicalize};
 use std::io::{self, BufReader, BufWriter, Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 use tauri::ipc::Channel;
 use zip::{ZipArchive, ZipWriter};
 use zip::write::SimpleFileOptions;
@@ -61,7 +61,8 @@ pub async fn archive(
         let total_files = map.len();
         let mut processed = 0;
 
-        zip.add_directory("assets", options)?;
+        let assets_path = Path::new("assets/");
+        zip.add_directory(assets_path.to_string_lossy(), options)?;
 
         for (filename, source_path) in map {
             processed += 1;
@@ -71,7 +72,7 @@ pub async fn archive(
             match File::open(&source_path) {
                 Ok(mut f) => {
                     f.read_to_end(&mut buf)?;
-                    zip.start_file(filename, options)?;
+                    zip.start_file(assets_path.join(filename).to_string_lossy(), options)?;
                     zip.write_all(&buf)?;
                 }
                 Err(e) => {
