@@ -122,6 +122,7 @@ p.attribution {
 
 blockquote {
   padding-left: 1.5em;
+  padding-right: 1.5em;
   margin: 0;
   text-align: justify;
   /* border-left: 2px black solid; */
@@ -174,22 +175,20 @@ h3 {
 }
 
 header figure {
-  margin-block: 1em 0.5em;
+  margin-block: 0em 0.5em;
 }
 
 header h1 {
-  margin-top: 0;
-  margin-bottom: 0;
-}
+  margin-block: 0 1em;
+  white-space: normal;
 
-header h1:not(:has(+ .subtitle)) {
-  margin-top: 0em;
-  margin-bottom: 1em;
-}
+  div {
+    white-space: pre-wrap;
+  }
 
-header h1.subtitle {
-  font-size: 130%;
-  margin-bottom: 1em;
+  .subtitle {
+    font-size: 90%;
+  }
 }
 
 header p:has(+ p) {
@@ -253,6 +252,29 @@ li.bullet {
   & p {
     margin-left: 1em;
     white-space: normal;
+  }
+}
+
+li.ordered {
+  margin-left: 0;
+  display: flex;
+
+  &::before {
+    content: attr(data-value) ".";
+    text-align: right;
+    display: block;
+    width: 2em;
+    min-width: 2em;
+  }
+
+  & p {
+    flex-grow: 1;
+    margin-left: 0.5em;
+    white-space: pre-wrap;
+
+    &:only-child {
+      padding: 0;
+    }
   }
 }
 
@@ -367,7 +389,7 @@ mark {
 /* misc */
 
 hr {
-  margin-block: 3em;
+  margin-block: 6em;
   height: 0px;
   border-top: 1px dashed var(--separator-color);
   border-left: none;

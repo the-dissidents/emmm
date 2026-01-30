@@ -1,0 +1,2766 @@
+{
+  "nodes": {
+    "content": [
+      "para",
+      {
+        "group": "block paragraph",
+        "content": "(leaf|block)+",
+        "attrs": {
+          "tagName": {
+            "default": "section"
+          },
+          "attributes": {
+            "default": {}
+          },
+          "namespaceURI": {
+            "default": ""
+          }
+        },
+        "breakline": true,
+        "parseDOM": [
+          {
+            "tag": "section",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          },
+          {
+            "tag": "p",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          },
+          {
+            "tag": "dir",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          },
+          {
+            "tag": "address",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          },
+          {
+            "tag": "center",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          },
+          {
+            "tag": "dl",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          },
+          {
+            "tag": "fieldset",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          },
+          {
+            "tag": "form",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          },
+          {
+            "tag": "isindex",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          },
+          {
+            "tag": "menu",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          },
+          {
+            "tag": "noframes",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          },
+          {
+            "tag": "pre",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          },
+          {
+            "tag": "div",
+            "getAttrs": "r=>{const t=Qr(r);return Le(Fe({},t),{tagName:\"section\"})}"
+          },
+          {
+            "tag": "script",
+            "getAttrs": "r=>{const t=Qr(r);return Le(Fe({},t),{tagName:\"section\"})}"
+          },
+          {
+            "tag": "style",
+            "getAttrs": "r=>{const t=Qr(r);return Le(Fe({},t),{tagName:\"section\"})}"
+          },
+          {
+            "tag": "link",
+            "getAttrs": "r=>{const t=Qr(r);return Le(Fe({},t),{tagName:\"section\"})}"
+          },
+          {
+            "tag": "article",
+            "getAttrs": "r=>{const t=Qr(r);return Le(Fe({},t),{tagName:\"section\"})}"
+          }
+        ],
+        "toDOM": "E=>[t(E.attrs.namespaceURI)?`${E.attrs.namespaceURI} ${D(E.attrs.tagName)}`:D(E.attrs.tagName),E.attrs.attributes,0]"
+      },
+      "caption",
+      {
+        "group": "block paragraph",
+        "content": "(leaf|block)+",
+        "attrs": {
+          "tagName": {
+            "default": "figcaption"
+          },
+          "attributes": {
+            "default": {}
+          },
+          "namespaceURI": {
+            "default": ""
+          },
+          "align": {
+            "default": "center"
+          }
+        },
+        "parseDOM": [
+          {
+            "tag": "figcaption",
+            "getAttrs": "r=>Le(Fe({},Qr(r)),{align:r.getAttribute(\"align\")||\"center\"})"
+          }
+        ],
+        "toDOM": "toDOM(r){return[\"figcaption\",r.attrs.attributes,0]}"
+      },
+      "heading",
+      {
+        "group": "block paragraph",
+        "content": "(leaf|block)+",
+        "attrs": {
+          "tagName": {
+            "default": "h1"
+          },
+          "attributes": {
+            "default": {}
+          },
+          "namespaceURI": {
+            "default": ""
+          },
+          "level": {
+            "default": 1
+          }
+        },
+        "parseDOM": [
+          {
+            "tag": "h1",
+            "getAttrs": "r=>Le(Fe({},Qr(r)),{level:1})"
+          },
+          {
+            "tag": "h2",
+            "getAttrs": "r=>Le(Fe({},Qr(r)),{level:2})"
+          },
+          {
+            "tag": "h3",
+            "getAttrs": "r=>Le(Fe({},Qr(r)),{level:3})"
+          },
+          {
+            "tag": "h4",
+            "getAttrs": "r=>Le(Fe({},Qr(r)),{level:4})"
+          },
+          {
+            "tag": "h5",
+            "getAttrs": "r=>Le(Fe({},Qr(r)),{level:5})"
+          },
+          {
+            "tag": "h6",
+            "getAttrs": "r=>Le(Fe({},Qr(r)),{level:6})"
+          }
+        ],
+        "toDOM": "toDOM(r){var t;const n=(t=r.attrs.level)!=null?t:1;const a=`h${n}`;return[a,r.attrs.attributes,0]}"
+      },
+      "nodeleaf_default",
+      {
+        "atom": true,
+        "inline": true,
+        "group": "inlinenode",
+        "toDOM": "()=>[\"span\"]"
+      },
+      "nodeleaf",
+      {
+        "group": "block paragraph",
+        "content": "inlinenode",
+        "nodeLeaf": true,
+        "attrs": {
+          "tagName": {
+            "default": "section"
+          },
+          "attributes": {
+            "default": {}
+          },
+          "namespaceURI": {
+            "default": ""
+          }
+        },
+        "parseDOM": [
+          {
+            "tag": "section[nodeleaf]",
+            "getAttrs": "r=>{const t=Qr(r);return Le(Fe({},t),{tagName:\"section\"})}",
+            "priority": 100
+          },
+          {
+            "tag": "p[nodeleaf]",
+            "getAttrs": "r=>{const t=Qr(r);return Le(Fe({},t),{tagName:\"section\"})}",
+            "priority": 100
+          }
+        ],
+        "toDOM": "r=>[\"section\",Le(Fe({},r.attrs.attributes),{nodeleaf:\"\"}),0]"
+      },
+      "shoptag",
+      {
+        "replaceInBlockquote": "[小店店铺]",
+        "attrs": {
+          "textContent": {
+            "default": ""
+          },
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-type": {
+            "default": null
+          },
+          "data-json": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-shoptag",
+            "getAttrs": "D=>be({textContent:D.textContent},Object(Q[\"D\"])(he,D))"
+          }
+        ],
+        "toDOM": "toDOM(D){const t=Object(Q[\"M\"])(he,D);const{textContent:d}=D.attrs;delete t[Q[\"d\"]];delete t[Q[\"a\"]];return[\"mp-common-shoptag\",t,d]}"
+      },
+      "shopprofile",
+      {
+        "replaceInBlockquote": "[小店店铺]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-appid": {
+            "default": null
+          },
+          "data-shop_encrypt_key": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-shopprofile",
+            "getAttrs": "Me=>Object(we[\"D\"])(ke,Me)"
+          },
+          {
+            "tag": "iframe",
+            "getAttrs": "Me=>{if(!Me.classList.contains(\"js_editor_shopprofile_card\")){return false}return Object(we[\"D\"])(ke,Me)}"
+          }
+        ],
+        "toDOM": "toDOM(Me){const He=Object(we[\"M\"])(ke,Me);delete He[we[\"d\"]];delete He[we[\"a\"]];return[\"mp-common-shopprofile\",He]}"
+      },
+      "lottery",
+      {
+        "replaceInBlockquote": "[礼物]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-loaded": {
+            "default": null
+          },
+          "data-url-params": {
+            "default": null
+          },
+          "data-customstyle": {
+            "default": null
+          },
+          "data-scroll-blur": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-bluepacket",
+            "getAttrs": "he=>Object(Ae[\"D\"])(pt.ATTR,he)"
+          }
+        ],
+        "toDOM": "toDOM(he){const se=Object(Ae[\"M\"])(pt.ATTR,he);delete se[Ae[\"d\"]];delete se[Ae[\"a\"]];return[\"mp-common-bluepacket\",se]}"
+      },
+      "sponsorlink",
+      {
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-ban-status": {
+            "default": null
+          },
+          "data-img-src": {
+            "default": null
+          },
+          "data-title": {
+            "default": null
+          },
+          "data-jump-url": {
+            "default": null
+          },
+          "data-card-type": {
+            "default": null
+          },
+          "data-scene": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          },
+          "data-link-id": {
+            "default": null
+          },
+          "data-link-component-id": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode",
+        "selectable": false,
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-cpslink",
+            "getAttrs": "r=>Object(u[\"D\"])(vf,r)"
+          }
+        ],
+        "toDOM": "toDOM(r){const t=Object(u[\"M\"])(vf,r);delete t[u[\"d\"]];delete t[u[\"a\"]];return[hf,Object(u[\"e\"])(t,[\"js_editor_mpcpslink\",\"appmsg_cpslink_iframe\",\"js_uneditable\",\"custom_select_card\",\"mp_common_widget\"])]}"
+      },
+      "incntad",
+      {
+        "replaceInBlockquote": "[广告]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-category_id_list": {
+            "default": null
+          },
+          "js_editor_cpcad": {
+            "default": null
+          },
+          "src": {
+            "default": null
+          },
+          "data-id": {
+            "default": null
+          }
+        },
+        "group": "block",
+        "selectable": true,
+        "atom": true,
+        "draggable": false,
+        "parseDOM": [
+          {
+            "tag": "mpcpc[js_editor_cpcad]",
+            "getAttrs": "r=>Object(u[\"D\"])(kv,r)"
+          }
+        ],
+        "toDOM": "r=>[\"mpcpc\",r.attrs]"
+      },
+      "product",
+      {
+        "replaceInBlockquote": "[商品]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-windowproduct": {
+            "default": null
+          },
+          "data-customstyle": {
+            "default": null
+          },
+          "data-ecsource": {
+            "default": null
+          },
+          "data-exportkey": {
+            "default": null
+          },
+          "data-wap_export_token": {
+            "default": null
+          },
+          "data-loaded": {
+            "default": null
+          },
+          "data-cardtype": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          },
+          "data-token": {
+            "default": null
+          },
+          "data-title": {
+            "default": null
+          },
+          "data-immutable": {
+            "default": null
+          },
+          "data-req-scene": {
+            "default": null
+          },
+          "data-url-params": {
+            "default": null
+          },
+          "data-ext-info": {
+            "default": null
+          },
+          "data-scroll-blur": {
+            "default": null
+          },
+          "data-wrp-style": {
+            "default": null
+          },
+          "data-type": {
+            "default": null
+          },
+          "data-product-image": {
+            "default": null
+          },
+          "data-origin-price": {
+            "default": null
+          },
+          "data-discounted-price": {
+            "default": null
+          },
+          "data-outerclick": {
+            "default": null
+          },
+          "data-product-info": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-product",
+            "getAttrs": "z=>{const Q=Object(I[\"D\"])(N[\"ATTR\"],z);delete Q[\"data-loaded\"];delete Q[\"data-exportkey\"];delete Q[\"data-req-scene\"];return Q}"
+          }
+        ],
+        "toDOM": "toDOM(z){const Q=Object(I[\"M\"])(N[\"ATTR\"],z);return[\"mp-common-product\",Q]}"
+      },
+      "product_img",
+      {
+        "replaceInBlockquote": "[商品]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-windowproduct": {
+            "default": ""
+          },
+          "data-customstyle": {
+            "default": null
+          },
+          "data-ecsource": {
+            "default": null
+          },
+          "data-exportkey": {
+            "default": null
+          },
+          "data-wap_export_token": {
+            "default": null
+          },
+          "data-loaded": {
+            "default": null
+          },
+          "data-cardtype": {
+            "default": 0
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          },
+          "data-token": {
+            "default": null
+          },
+          "data-title": {
+            "default": null
+          },
+          "data-immutable": {
+            "default": null
+          },
+          "data-req-scene": {
+            "default": null
+          },
+          "data-url-params": {
+            "default": null
+          },
+          "data-ext-info": {
+            "default": null
+          },
+          "data-scroll-blur": {
+            "default": null
+          },
+          "data-wrp-style": {
+            "default": null
+          },
+          "data-type": {
+            "default": null
+          },
+          "data-product-image": {
+            "default": null
+          },
+          "data-origin-price": {
+            "default": null
+          },
+          "data-discounted-price": {
+            "default": null
+          },
+          "data-outerclick": {
+            "default": null
+          },
+          "data-product-info": {
+            "default": null
+          },
+          "style": {
+            "default": ""
+          },
+          "data-product-imageurl": {
+            "default": ""
+          }
+        },
+        "group": "block",
+        "content": "image",
+        "nodeLeaf": true,
+        "parseDOM": [
+          {
+            "tag": "a.product_image_link[data-windowproduct]",
+            "priority": 100,
+            "getAttrs": "z=>{const Q=z.getAttribute(\"data-windowproduct\")||\"\";const re=C(z);const ge=(re==null?void 0:re.getAttribute(\"data-src\"))||(re==null?void 0:re.getAttribute(\"src\"))||z.getAttribute(\"data-miniprogram-imageurl\");if(!Q||!ge){return false}let te=z.getAttribute(\"style\")||\"\";if(re){const q=/width:\\s*100%/.test(re.getAttribute(\"style\")||\"\")?\"100%\":null;te=Object(I[\"N\"])(te,{width:q})}return E(A({},Object(I[\"D\"])(N[\"ATTR\"],z)),{style:te,\"data-windowproduct\":Q,\"data-cardtype\":z.getAttribute(\"data-cardtype\")||0,\"data-product-imageurl\":ge})}"
+          }
+        ],
+        "toDOM": "toDOM(z){return[\"a\",E(A({},z.attrs),{class:\"product_image_link js_product_entry\",tagname:\"mp-common-product\"}),0]}"
+      },
+      "profile",
+      {
+        "replaceInBlockquote": "[公众号]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-nickname": {
+            "default": null
+          },
+          "data-fakeid": {
+            "default": null
+          },
+          "data-alias": {
+            "default": null
+          },
+          "data-index": {
+            "default": null
+          },
+          "data-from": {
+            "default": null
+          },
+          "data-headimg": {
+            "default": null
+          },
+          "data-username": {
+            "default": null
+          },
+          "data-signature": {
+            "default": null
+          },
+          "data-id": {
+            "default": null
+          },
+          "data-is_biz_ban": {
+            "default": null
+          },
+          "data-origin_num": {
+            "default": null
+          },
+          "data-biz_account_status": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          },
+          "data-service_type": {
+            "default": null
+          },
+          "data-verify_status": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-profile",
+            "getAttrs": "t=>Object(u[\"D\"])(Mc[\"ATTR\"],t)"
+          },
+          {
+            "tag": "mpprofile",
+            "getAttrs": "t=>Object(u[\"D\"])(Mc[\"ATTR\"],t)"
+          }
+        ],
+        "toDOM": "toDOM(t){const n=Object(u[\"M\"])(Mc[\"ATTR\"],t);delete n[u[\"d\"]];delete n[u[\"a\"]];return[\"mp-common-profile\",n]}"
+      },
+      "subscribe",
+      {
+        "replaceInBlockquote": "[订阅]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-templateidlist": {
+            "default": null
+          },
+          "data-supportwxopen": {
+            "default": null
+          },
+          "data-appmsgIndex": {
+            "default": null
+          },
+          "data-scene": {
+            "default": null
+          },
+          "data-scale": {
+            "default": null
+          },
+          "data-tagContent": {
+            "default": null
+          },
+          "data-username": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-subscribe",
+            "getAttrs": "t=>Object(u[\"D\"])(sm[\"ATTR\"],t)"
+          }
+        ],
+        "toDOM": "toDOM(t){const n=Object(u[\"M\"])(sm[\"ATTR\"],t);return[\"mp-common-subscribe\",n]}"
+      },
+      "videosnap",
+      {
+        "replaceInBlockquote": "[视频号]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-url": {
+            "default": null
+          },
+          "data-endtime": {
+            "default": null
+          },
+          "data-headimgurl": {
+            "default": null
+          },
+          "data-username": {
+            "default": null
+          },
+          "data-nickname": {
+            "default": null
+          },
+          "data-desc": {
+            "default": null
+          },
+          "data-nonceid": {
+            "default": null
+          },
+          "data-authiconurl": {
+            "default": null
+          },
+          "data-width": {
+            "default": null
+          },
+          "data-height": {
+            "default": null
+          },
+          "data-ratio": {
+            "default": null
+          },
+          "data-type": {
+            "default": null
+          },
+          "data-intro": {
+            "default": null
+          },
+          "data-name": {
+            "default": null
+          },
+          "data-likenum": {
+            "default": null
+          },
+          "data-isnews": {
+            "default": null
+          },
+          "data-parentwidth": {
+            "default": null
+          },
+          "data-maxwidth": {
+            "default": null
+          },
+          "data-eventid": {
+            "default": null
+          },
+          "data-closeflag": {
+            "default": null
+          },
+          "data-flag": {
+            "default": null
+          },
+          "data-feedsharecoverurl": {
+            "default": null
+          },
+          "data-feedfullcoverurl": {
+            "default": null
+          },
+          "data-feedthumburl": {
+            "default": null
+          },
+          "data-feedcoverurl": {
+            "default": null
+          },
+          "data-noticeid": {
+            "default": null
+          },
+          "data-id": {
+            "default": null
+          },
+          "data-status": {
+            "default": null
+          },
+          "data-reservation": {
+            "default": null
+          },
+          "data-isdisabled": {
+            "default": null
+          },
+          "data-errortips": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-videosnap",
+            "getAttrs": "t=>Object(u[\"D\"])(Gc[\"ATTR\"],t)"
+          },
+          {
+            "tag": "mpvideosnap",
+            "getAttrs": "t=>Object(u[\"D\"])(Gc[\"ATTR\"],t)"
+          }
+        ],
+        "toDOM": "toDOM(t){const n=Object(u[\"M\"])(Gc[\"ATTR\"],t);delete n[u[\"d\"]];delete n[u[\"a\"]];return[\"mp-common-videosnap\",n]}"
+      },
+      "poi",
+      {
+        "replaceInBlockquote": "[位置]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-type": {
+            "default": null
+          },
+          "data-name": {
+            "default": null
+          },
+          "data-address": {
+            "default": null
+          },
+          "data-img": {
+            "default": null
+          },
+          "data-longitude": {
+            "default": null
+          },
+          "data-latitude": {
+            "default": null
+          },
+          "data-province": {
+            "default": null
+          },
+          "data-city": {
+            "default": null
+          },
+          "data-id": {
+            "default": null
+          },
+          "data-poiid": {
+            "default": null
+          },
+          "data-districtid": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          },
+          "data-version": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-poi",
+            "getAttrs": "t=>Object(u[\"D\"])(Pc[\"ATTR\"],t)"
+          },
+          {
+            "tag": "mppoi",
+            "getAttrs": "t=>Object(u[\"D\"])(Pc[\"ATTR\"],t)"
+          }
+        ],
+        "toDOM": "toDOM(t){const n=Object(u[\"M\"])(Pc[\"ATTR\"],t);delete n[u[\"d\"]];delete n[u[\"a\"]];return[\"mp-common-poi\",n]}"
+      },
+      "redpacket",
+      {
+        "replaceInBlockquote": "[红包]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-errortype": {
+            "default": null
+          },
+          "data-name": {
+            "default": null
+          },
+          "data-synthetic": {
+            "default": null
+          },
+          "data-receiveimg": {
+            "default": null
+          },
+          "data-openimg": {
+            "default": null
+          },
+          "data-orderid": {
+            "default": null
+          },
+          "data-coveruri": {
+            "default": null
+          },
+          "data-bizuin": {
+            "default": null
+          },
+          "data-status": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          },
+          "data-is-purchase-order": {
+            "default": null
+          },
+          "data-small-card": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-redpacket",
+            "getAttrs": "t=>Object(u[\"D\"])(Jf[\"ATTR\"],t)"
+          }
+        ],
+        "toDOM": "toDOM(t){const n=Object(u[\"M\"])(Jf[\"ATTR\"],t);delete n[u[\"d\"]];delete n[u[\"a\"]];return[\"mp-common-redpacket\",n]}"
+      },
+      "search",
+      {
+        "replaceInBlockquote": "[搜索]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-nickname": {
+            "default": null
+          },
+          "data-headImg": {
+            "default": null
+          },
+          "data-keywords": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-search",
+            "getAttrs": "t=>Object(u[\"D\"])(Fc[\"ATTR\"],t)"
+          },
+          {
+            "tag": "mpsearch",
+            "getAttrs": "t=>Object(u[\"D\"])(Fc[\"ATTR\"],t)"
+          }
+        ],
+        "toDOM": "toDOM(t){const n=Object(u[\"M\"])(Fc[\"ATTR\"],t);delete n[u[\"d\"]];delete n[u[\"a\"]];return[\"mp-common-search\",n]}"
+      },
+      "answer",
+      {
+        "replaceInBlockquote": "[问一问]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-status": {
+            "default": null
+          },
+          "data-card_type": {
+            "default": null
+          },
+          "data-message": {
+            "default": null
+          },
+          "data-question_text": {
+            "default": null
+          },
+          "data-usertype": {
+            "default": null
+          },
+          "data-like_count": {
+            "default": null
+          },
+          "data-forward_count": {
+            "default": null
+          },
+          "data-comment_count": {
+            "default": null
+          },
+          "data-follow_count": {
+            "default": null
+          },
+          "data-answer_count": {
+            "default": null
+          },
+          "data-username": {
+            "default": null
+          },
+          "data-nickname": {
+            "default": null
+          },
+          "data-headimg_url": {
+            "default": null
+          },
+          "data-aid": {
+            "default": null
+          },
+          "data-qid": {
+            "default": null
+          },
+          "data-content_text": {
+            "default": null
+          },
+          "data-content_type": {
+            "default": null
+          },
+          "data-picture_list": {
+            "default": null
+          },
+          "data-picture_clist": {
+            "default": null
+          },
+          "data-video_list": {
+            "default": null
+          },
+          "data-medias_num": {
+            "default": null
+          },
+          "data-comment": {
+            "default": null
+          },
+          "data-custom_style": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          },
+          "data-avatar_style": {
+            "default": null
+          },
+          "data-author_title": {
+            "default": null
+          },
+          "data-answer_flag": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-answer",
+            "getAttrs": "t=>Object(u[\"D\"])(Qf[\"ATTR\"],t)"
+          }
+        ],
+        "toDOM": "t=>{const n=Object(u[\"M\"])(Qf[\"ATTR\"],t);delete n[u[\"d\"]];delete n[u[\"a\"]];return[\"mp-common-answer\",n]}"
+      },
+      "vote",
+      {
+        "replaceInBlockquote": "[投票]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-supervoteid": {
+            "default": null
+          },
+          "data-logincheckfailed": {
+            "default": null
+          },
+          "data-expiretime": {
+            "default": null
+          },
+          "data-votesubject": {
+            "default": null
+          },
+          "data-delflag": {
+            "default": null
+          },
+          "data-fail": {
+            "default": null
+          },
+          "data-retry": {
+            "default": null
+          },
+          "data-itemshowtype": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-vote",
+            "getAttrs": "t=>Object(u[\"D\"])(Hc[\"ATTR\"],t)"
+          },
+          {
+            "tag": "iframe",
+            "getAttrs": "t=>{if(!t.classList.contains(\"js_editor_vote_card\")){return false}return Object(u[\"D\"])(Hc[\"ATTR\"],t)}"
+          }
+        ],
+        "toDOM": "toDOM(t){const n=Object(u[\"M\"])(Hc[\"ATTR\"],t);delete n[u[\"d\"]];delete n[u[\"a\"]];return[\"mp-common-vote\",n]}"
+      },
+      "cpsad",
+      {
+        "replaceInBlockquote": "[广告]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          },
+          "data-parentwidth": {
+            "default": null
+          },
+          "data-ready": {
+            "default": null
+          },
+          "data-adtype": {
+            "default": null
+          },
+          "data-templateid": {
+            "default": null
+          },
+          "data-cpsversion": {
+            "default": null
+          },
+          "data-goodssouce": {
+            "default": null
+          },
+          "data-materialcoverurl": {
+            "default": null
+          },
+          "data-materialurl": {
+            "default": null
+          },
+          "data-videocarddata": {
+            "default": null
+          },
+          "data-showchangebtn": {
+            "default": null
+          },
+          "data-banvideo": {
+            "default": null
+          },
+          "data-disablechangevideo": {
+            "default": null
+          },
+          "data-videorate": {
+            "default": null
+          },
+          "data-dramaid": {
+            "default": null
+          },
+          "data-srcappid": {
+            "default": null
+          },
+          "data-playappid": {
+            "default": null
+          },
+          "data-planid": {
+            "default": null
+          },
+          "data-traceid": {
+            "default": null
+          },
+          "data-appid": {
+            "default": null
+          },
+          "data-pid": {
+            "default": null
+          },
+          "data-defaultpath": {
+            "default": null
+          },
+          "data-mediano": {
+            "default": null
+          },
+          "data-extinfo": {
+            "default": null
+          },
+          "data-imgurl": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-cpsad",
+            "getAttrs": "t=>Object(u[\"D\"])(yc[\"ATTR\"],t)"
+          },
+          {
+            "tag": "mpcps",
+            "getAttrs": "t=>Object(u[\"D\"])(yc[\"ATTR\"],t)"
+          }
+        ],
+        "toDOM": "toDOM(t){const n=Object(u[\"M\"])(yc[\"ATTR\"],t);delete n[u[\"d\"]];delete n[u[\"a\"]];return[\"mp-common-cpsad\",n]}"
+      },
+      "weapp_img",
+      {
+        "replaceInBlockquote": "[小程序]",
+        "attrs": {
+          "style": {
+            "default": ""
+          },
+          "data-miniprogram-appid": {
+            "default": ""
+          },
+          "data-miniprogram-path": {
+            "default": ""
+          },
+          "data-miniprogram-nickname": {
+            "default": ""
+          },
+          "data-miniprogram-servicetype": {
+            "default": ""
+          },
+          "data-miniprogram-applink": {
+            "default": ""
+          },
+          "data-miniprogram-imageurl": {
+            "default": ""
+          }
+        },
+        "group": "block",
+        "content": "image",
+        "nodeLeaf": true,
+        "parseDOM": [
+          {
+            "tag": "a.weapp_image_link[data-miniprogram-appid]",
+            "priority": 100,
+            "getAttrs": "t=>{const n=t.getAttribute(\"data-miniprogram-appid\");const a=t.getAttribute(\"data-miniprogram-path\");const o=t.getAttribute(\"data-miniprogram-nickname\");const c=t.getAttribute(\"data-miniprogram-servicetype\");const d=t.getAttribute(\"data-miniprogram-applink\");const h=Db(t);const b=(h==null?void 0:h.getAttribute(\"data-src\"))||(h==null?void 0:h.getAttribute(\"src\"))||t.getAttribute(\"data-miniprogram-imageurl\");if(!n||!b){return false}let P=t.getAttribute(\"style\")||\"\";if(h){const U=/width:\\s*100%/.test(h.getAttribute(\"style\")||\"\")?\"100%\":null;P=Object(u[\"N\"])(P,{width:U})}return{style:P,\"data-miniprogram-appid\":n,\"data-miniprogram-path\":a,\"data-miniprogram-nickname\":o,\"data-miniprogram-servicetype\":c,\"data-miniprogram-applink\":d,\"data-miniprogram-imageurl\":b}}"
+          }
+        ],
+        "toDOM": "toDOM(t){return[\"a\",yl({class:\"weapp_image_link js_weapp_entry\",\"data-miniprogram-type\":\"image\"},t.attrs),0]}"
+      },
+      "weapp",
+      {
+        "replaceInBlockquote": "[小程序]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-miniprogram-path": {
+            "default": null
+          },
+          "data-miniprogram-nickname": {
+            "default": null
+          },
+          "data-miniprogram-avatar": {
+            "default": null
+          },
+          "data-miniprogram-title": {
+            "default": null
+          },
+          "data-miniprogram-imageurl": {
+            "default": null
+          },
+          "data-miniprogram-type": {
+            "default": null
+          },
+          "data-miniprogram-textcontent": {
+            "default": null
+          },
+          "data-miniprogram-servicetype": {
+            "default": null
+          },
+          "data-miniprogram-appid": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          },
+          "data-miniprogram-applink": {
+            "default": null
+          },
+          "data-miniprogram-imageurlback": {
+            "default": null
+          },
+          "data-miniprogram-cropperinfo": {
+            "default": null
+          },
+          "data-miniprogram-username": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-miniprogram",
+            "getAttrs": "t=>Object(u[\"D\"])(Gf[\"ATTR\"],t)"
+          }
+        ],
+        "toDOM": "toDOM(t){const n=Object(u[\"M\"])(Gf[\"ATTR\"],t);delete n[u[\"d\"]];delete n[u[\"a\"]];return[\"mp-common-miniprogram\",n]}"
+      },
+      "link_img",
+      {
+        "replaceInBlockquote": "[图片]",
+        "attrs": {
+          "href": {
+            "default": ""
+          },
+          "style": {
+            "default": ""
+          },
+          "imgurl": {
+            "default": ""
+          },
+          "linktype": {
+            "default": ""
+          },
+          "tab": {
+            "default": ""
+          },
+          "data-itemshowtype": {
+            "default": ""
+          }
+        },
+        "group": "block",
+        "content": "image",
+        "nodeLeaf": true,
+        "parseDOM": [
+          {
+            "tag": "a[href]",
+            "getAttrs": "r=>{const t=r.getAttribute(\"href\")||r.getAttribute(\"_href\");const n=r.getAttribute(\"tab\");const a=r.getAttribute(\"data-itemshowtype\");const o=xb(r);const c=(o==null?void 0:o.getAttribute(\"data-src\"))||(o==null?void 0:o.getAttribute(\"src\"))||r.getAttribute(\"imgurl\");if(!t||!c){return false}let d=\"\";if(o){const h=/width:\\s*100%/.test(o.getAttribute(\"style\")||\"\")?\"100%\":null;d=Object(u[\"N\"])(r.firstElementChild.getAttribute(\"style\")||\"\",{width:h})}return{href:t,style:d,imgurl:c,linktype:\"image\",tab:n,\"data-itemshowtype\":a}}"
+          }
+        ],
+        "toDOM": "toDOM(r){const t=Is({},r.attrs);const n=t.style||null;delete t.style;return[\"a\",$f(Is({},t),{target:\"_blank\",linktype:\"image\",\"data-linktype\":\"1\"}),[\"span\",{style:n,class:\"js_jump_icon h5_image_link\"},0]]}"
+      },
+      "clmusic",
+      {
+        "replaceInBlockquote": "[音乐]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "type": {
+            "default": null
+          },
+          "music_name": {
+            "default": null
+          },
+          "albumurl": {
+            "default": null
+          },
+          "singer": {
+            "default": null
+          },
+          "avatar": {
+            "default": null
+          },
+          "count": {
+            "default": null
+          },
+          "is_vip": {
+            "default": null
+          },
+          "duration": {
+            "default": null
+          },
+          "posindex": {
+            "default": null
+          },
+          "verify_err": {
+            "default": null
+          },
+          "music_source": {
+            "default": null
+          },
+          "categoryid": {
+            "default": null
+          },
+          "listenid": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-clmusic",
+            "getAttrs": "t=>Object(u[\"D\"])(cf[\"ATTR\"],t)"
+          }
+        ],
+        "toDOM": "t=>{const n=Object(u[\"M\"])(cf[\"ATTR\"],t);return[\"mp-common-clmusic\",Object(u[\"e\"])(n,[\"res_iframe\",n.type*1===1?\"clmusic_iframe\":\"clalbum_iframe\"])]}"
+      },
+      "qqmusic",
+      {
+        "replaceInBlockquote": "[音乐]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "singer": {
+            "default": null
+          },
+          "posindex": {
+            "default": null
+          },
+          "albumurl": {
+            "default": null
+          },
+          "music_name": {
+            "default": null
+          },
+          "verify_err": {
+            "default": null
+          },
+          "musictype": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          },
+          "musicid": {
+            "default": null
+          },
+          "mid": {
+            "default": null
+          },
+          "audiourl": {
+            "default": null
+          },
+          "play_length": {
+            "default": null
+          },
+          "src": {
+            "default": null
+          },
+          "otherid": {
+            "default": null
+          },
+          "albumid": {
+            "default": null
+          },
+          "jumpurlkey": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-qqmusic",
+            "getAttrs": "t=>Object(u[\"D\"])(mc[\"ATTR\"],t)"
+          },
+          {
+            "tag": "qqmusic",
+            "getAttrs": "t=>Object(u[\"D\"])(mc[\"ATTR\"],t)"
+          }
+        ],
+        "toDOM": "t=>{const n=Object(u[\"M\"])(mc[\"ATTR\"],t);delete n[u[\"d\"]];delete n[u[\"a\"]];const a=n.musictype||\"\";const o=n.albumurl||\"\";n.albumurl=D2(o,a);return[\"mp-common-qqmusic\",Object(u[\"e\"])(n,[\"res_iframe\",\"qqmusic_iframe\"])]}"
+      },
+      "claudio",
+      {
+        "replaceInBlockquote": "[音频]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "name": {
+            "default": null
+          },
+          "author": {
+            "default": null
+          },
+          "duration": {
+            "default": null
+          },
+          "pos_index": {
+            "default": null
+          },
+          "cover": {
+            "default": null
+          },
+          "show-listen-later": {
+            "default": null
+          },
+          "spam_flag": {
+            "default": null
+          },
+          "ext_flag": {
+            "default": null
+          },
+          "invalid_flag": {
+            "default": null
+          },
+          "err_tips": {
+            "default": null
+          },
+          "listen_id": {
+            "default": null
+          },
+          "data-url": {
+            "default": null
+          },
+          "data-username": {
+            "default": null
+          },
+          "data-nonceid": {
+            "default": null
+          },
+          "data-tid": {
+            "default": null
+          },
+          "data-playable": {
+            "default": null
+          },
+          "data-id": {
+            "default": null
+          },
+          "data-mediatype": {
+            "default": null
+          },
+          "data-from": {
+            "default": null
+          },
+          "data-type": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          },
+          "has-added-listen-later": {
+            "default": null
+          },
+          "star": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-claudio",
+            "getAttrs": "ve=>Object(f[\"D\"])(A[\"ATTR\"],ve)"
+          }
+        ],
+        "toDOM": "toDOM(ve){const Ze=Object(f[\"M\"])(A[\"ATTR\"],ve);return[\"mp-common-claudio\",Object(f[\"e\"])(Ze,[\"js_editor_claudio\",\"res_iframe\",\"js_uneditable\",\"custom_select_card\"])]}"
+      },
+      "audio",
+      {
+        "replaceInBlockquote": "[音频]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "name": {
+            "default": null
+          },
+          "author": {
+            "default": null
+          },
+          "src": {
+            "default": null
+          },
+          "isaac2": {
+            "default": null
+          },
+          "low_size": {
+            "default": null
+          },
+          "source_size": {
+            "default": null
+          },
+          "high_size": {
+            "default": null
+          },
+          "play_length": {
+            "default": null
+          },
+          "data-trans_state": {
+            "default": null
+          },
+          "data-verify_state": {
+            "default": null
+          },
+          "pos_index": {
+            "default": null
+          },
+          "duration": {
+            "default": null
+          },
+          "show-listen-later": {
+            "default": null
+          },
+          "has-added-listen-later": {
+            "default": null
+          },
+          "star": {
+            "default": null
+          },
+          "data-topic_id": {
+            "default": null
+          },
+          "data-topic_name": {
+            "default": null
+          },
+          "data-topic_link": {
+            "default": null
+          },
+          "data-topic_num": {
+            "default": null
+          },
+          "err_tips": {
+            "default": null
+          },
+          "voice_encode_fileid": {
+            "default": null
+          },
+          "cover": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "section.audio_iframe",
+            "getAttrs": "ve=>{const Ze=ve.querySelector(\"mp-common-mpaudio\");if(Ze){return Object(f[\"D\"])(T[\"ATTR\"],Ze)}return false}",
+            "priority": 100
+          },
+          {
+            "tag": "mp-common-mpaudio",
+            "getAttrs": "ve=>Object(f[\"D\"])(T[\"ATTR\"],ve)"
+          },
+          {
+            "tag": "mpvoice",
+            "getAttrs": "ve=>Object(f[\"D\"])(T[\"ATTR\"],ve)"
+          }
+        ],
+        "toDOM": "toDOM(ve){const Ze=Object(f[\"M\"])(T[\"ATTR\"],ve);return[\"mp-common-mpaudio\",Object(f[\"e\"])(Ze,[\"js_editor_audio\",\"res_iframe\",\"js_uneditable\",\"custom_select_card\"])]}"
+      },
+      "video",
+      {
+        "replaceInBlockquote": "[视频]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "style": {
+            "default": null
+          },
+          "height": {
+            "default": null
+          },
+          "width": {
+            "default": null
+          },
+          "allowfullscreen": {
+            "default": null
+          },
+          "frameborder": {
+            "default": null
+          },
+          "data-src": {
+            "default": null
+          },
+          "data-mpvid": {
+            "default": null
+          },
+          "data-vidtype": {
+            "default": null
+          },
+          "data-cover": {
+            "default": null
+          },
+          "data-ratio": {
+            "default": null
+          },
+          "data-w": {
+            "default": null
+          },
+          "data-danmusetting": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "iframe",
+            "getAttrs": "r=>{const t=r.getAttribute(\"data-src\")||r.getAttribute(\"src\")||\"\";const n=d0(t);if(!n)return false;return yI(bI({},Object(u[\"D\"])($c,r)),{\"data-src\":p0(n,!!r.getAttribute(\"data-mpvid\"))})}"
+          },
+          {
+            "tag": "span.video_iframe",
+            "getAttrs": "r=>{const t=r.getAttribute(\"data-src\")||r.getAttribute(\"src\")||\"\";const n=d0(t);if(!n)return false;return yI(bI({},Object(u[\"D\"])($c,r)),{\"data-src\":p0(n,!!r.getAttribute(\"data-mpvid\"))})}"
+          }
+        ],
+        "toDOM": "toDOM(t){const n=Object(u[\"M\"])($c,t);delete n.height;delete n.width;delete n[\"data-danmusetting\"];const a=d0(`${n[\"data-src\"]||\"\"}`);const o=a?p0(a,!!n[\"data-mpvid\"]):false;if(o){n[\"data-src\"]=o}else{delete n[\"data-src\"]}return[\"iframe\",Object(u[\"e\"])(n,[\"video_iframe\",\"rich_pages\"])]}"
+      },
+      "image",
+      {
+        "replaceInBlockquote": "[图片]",
+        "attrs": {
+          "data-remoteid": {
+            "default": ""
+          },
+          "data-asynid": {
+            "default": ""
+          },
+          "src": {
+            "default": ""
+          },
+          "data-src": {
+            "default": ""
+          },
+          "_src": {
+            "default": ""
+          },
+          "align": {
+            "default": ""
+          },
+          "alt": {
+            "default": ""
+          },
+          "border": {
+            "default": ""
+          },
+          "class": {
+            "default": "rich_pages wxw-img"
+          },
+          "data-ratio": {
+            "default": ""
+          },
+          "data-s": {
+            "default": ""
+          },
+          "data-type": {
+            "default": ""
+          },
+          "data-w": {
+            "default": ""
+          },
+          "aria-label": {
+            "default": ""
+          },
+          "aria-braillelabel": {
+            "default": ""
+          },
+          "aria-description": {
+            "default": ""
+          },
+          "height": {
+            "default": ""
+          },
+          "hspace": {
+            "default": ""
+          },
+          "ismap": {
+            "default": ""
+          },
+          "opacity": {
+            "default": ""
+          },
+          "sizes": {
+            "default": ""
+          },
+          "style": {
+            "default": ""
+          },
+          "title": {
+            "default": ""
+          },
+          "type": {
+            "default": ""
+          },
+          "usemap": {
+            "default": ""
+          },
+          "vspace": {
+            "default": ""
+          },
+          "width": {
+            "default": ""
+          },
+          "data-width": {
+            "default": ""
+          },
+          "data-height": {
+            "default": ""
+          },
+          "data-croporisrc": {
+            "default": ""
+          },
+          "data-cropx1": {
+            "default": ""
+          },
+          "data-cropx2": {
+            "default": ""
+          },
+          "data-cropy1": {
+            "default": ""
+          },
+          "data-cropy2": {
+            "default": ""
+          },
+          "data-cropselx1": {
+            "default": ""
+          },
+          "data-cropselx2": {
+            "default": ""
+          },
+          "data-cropsely1": {
+            "default": ""
+          },
+          "data-cropsely2": {
+            "default": ""
+          },
+          "data-backw": {
+            "default": ""
+          },
+          "data-backh": {
+            "default": ""
+          },
+          "data-copyright": {
+            "default": ""
+          },
+          "data-oversubscription-url": {
+            "default": ""
+          },
+          "data-before-oversubscription-url": {
+            "default": ""
+          },
+          "data-galleryid": {
+            "default": ""
+          },
+          "data-gallerysupplier": {
+            "default": ""
+          },
+          "data-cardimg": {
+            "default": ""
+          },
+          "data-fileid": {
+            "default": ""
+          },
+          "data-imgfileid": {
+            "default": ""
+          },
+          "data-positionback": {
+            "default": ""
+          },
+          "data-imgqrcoded": {
+            "default": ""
+          },
+          "data-imgid": {
+            "default": ""
+          },
+          "data-upload": {
+            "default": ""
+          },
+          "data-fromlib": {
+            "default": ""
+          },
+          "data-aiimageid": {
+            "default": ""
+          },
+          "data-aiimagesource": {
+            "default": ""
+          },
+          "data-cacheurl": {
+            "default": ""
+          },
+          "data-aistatus": {
+            "default": ""
+          },
+          "data-retry": {
+            "default": ""
+          }
+        },
+        "parseDOM": [
+          {
+            "tag": "img",
+            "getAttrs": "C=>{const j=C.getAttribute(\"src\")||C.getAttribute(\"data-src\");return w.reduce((k,D)=>{let B=C.getAttribute(D);if((D===\"src\"||D===\"_src\")&&j){B=j}return B===null?k:s(f({},k),{[D]:B})},{})}"
+          }
+        ],
+        "toDOM": "C=>{const j=C.attrs.src||C.attrs[\"data-src\"];const k={};for(const D of Object.keys(C.attrs)){if(D!==\"_src\"&&C.attrs[D]){k[D]=C.attrs[D]}}return[\"img\",s(f({},k),{\"data-src\":j})]}",
+        "group": "inline inlinenode",
+        "inline": true,
+        "atom": true
+      },
+      "blockquote",
+      {
+        "replaceInBlockquote": "[引用]",
+        "content": "block+",
+        "group": "block",
+        "marks": "",
+        "draggable": false,
+        "selectable": false,
+        "selectAllBorder": true,
+        "attrs": {
+          "type": {
+            "default": "normal"
+          },
+          "editId": {
+            "default": null
+          },
+          "title": {
+            "default": ""
+          },
+          "url": {
+            "default": ""
+          },
+          "nickname": {
+            "default": ""
+          },
+          "authorName": {
+            "default": ""
+          },
+          "from": {
+            "default": ""
+          },
+          "style": {
+            "default": null
+          }
+        },
+        "toDOM": "r=>r.attrs.type===\"normal\"?[Ca.CONTAINER,{style:r.attrs.style},0]:[Ca.CONTAINER,{class:Oa.CONTAINER,\"data-editid\":r.attrs.editId},[Ca.CONTENT,{class:Oa.CONTENT},0],[Ca.INFO,{class:Oa.INFO.join(\" \"),\"data-json\":encodeURIComponent(JSON.stringify(Object.assign({type:r.attrs.type},r.attrs.type===\"inner\"||r.attrs.type===\"app_inner\"?{article:{title:r.attrs.title,url:r.attrs.url,nickname:r.attrs.nickname,authorName:r.attrs.authorName}}:{article:{},from:r.attrs.from})))},r.attrs.type===\"inner\"||r.attrs.type===\"app_inner\"?[Ca.BIZ[0],{class:Oa.BIZ[0]},[r.attrs.authorName,`${dc[1]}${r.attrs.nickname}`].filter(t=>t.length).join(dc[0]),[Ca.LINK,{class:Oa.LINK[0],href:r.attrs.url},r.attrs.title]]:[Ca.SOURCE[0],{class:Oa.SOURCE},r.attrs.from]]]",
+        "parseDOM": [
+          {
+            "tag": "blockquote",
+            "getContent": "(r,t)=>{if(mv(r)===\"normal\"){const n=x[\"a\"].fromSchema(t).parse(r,{preserveWhitespace:true});return fv(n.content)}return dv(t,x[\"a\"].fromSchema(t).parse(r.children[0],{preserveWhitespace:true}).content)}",
+            "getAttrs": "r=>{const t={type:mv(r)};if(t.type===\"normal\"){return lv({style:r.getAttribute(\"style\")||null},t)}const n=r.children[1].children[0];if(t.type===\"inner\"||t.type===\"app_inner\"){if(r.children[1].nodeName.toLowerCase()!==Ca.IFRAME){const[a,o]=n.childNodes[0].textContent.split(dc[1]);t.nickname=o;t.authorName=a.length?a.slice(0,-dc[0].length):a;const c=t.type===\"inner\"?n.getElementsByClassName(Oa.LINK[0])[0]:r.children[1].children[1];t.title=c.textContent;t.url=c.getAttribute(\"href\")}else{const a=r.children[1].getAttribute(\"data-json\");const o=JSON.parse(decodeURIComponent(a));t.nickname=o.article.nickname;t.authorName=o.article.authorName;t.title=o.article.title;t.url=o.article.url}}else{t.from=n.textContent}return lv({editId:r.dataset.editid},t)}"
+          }
+        ]
+      },
+      "code",
+      {
+        "content": "leaf+",
+        "group": "block",
+        "marks": "",
+        "code": true,
+        "defining": true,
+        "breakline": true,
+        "attrs": {},
+        "parseDOM": [
+          {
+            "tag": "code",
+            "getAttrs": "r=>{var t;if(((t=r.parentElement)==null?void 0:t.nodeName)===\"PRE\"&&r.parentElement.classList.contains(\"code-snippet__js\")){return{}}return false}"
+          }
+        ],
+        "toDOM": "()=>[\"code\",0]"
+      },
+      "codeblock",
+      {
+        "replaceInBlockquote": "[代码]",
+        "content": "code+",
+        "group": "block",
+        "marks": "",
+        "draggable": false,
+        "selectable": false,
+        "selectAllBorder": true,
+        "attrs": {
+          "data-lang": {
+            "default": ""
+          }
+        },
+        "parseDOM": [
+          {
+            "tag": "section.code-snippet__js",
+            "preserveWhitespace": false,
+            "priority": 100,
+            "getAttrs": "getAttrs(r){const t=r.querySelector(\"pre.code-snippet__js\");if(t){return{\"data-lang\":t.getAttribute(\"data-lang\")||\"\"}}}"
+          }
+        ],
+        "toDOM": "toDOM(r){const t=[];r.forEach(()=>t.push([\"li\"]));return[\"section\",{class:\"code-snippet__fix code-snippet__js\"},[\"ul\",{class:\"code-snippet__line-index code-snippet__js\"},...t],[\"pre\",{class:\"code-snippet__js\",\"data-lang\":r.attrs[\"data-lang\"]},0]]}"
+      },
+      "sticker",
+      {
+        "replaceInBlockquote": "[表情]",
+        "attrs": {
+          "contenteditable": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "data-pluginname": {
+            "default": null
+          },
+          "data-without-section": {
+            "default": null
+          },
+          "data-md5": {
+            "default": null
+          },
+          "data-emoji_url": {
+            "default": null
+          },
+          "data-thumb_url": {
+            "default": null
+          },
+          "data-buf": {
+            "default": null
+          },
+          "data-is_ban": {
+            "default": null
+          },
+          "data-type": {
+            "default": null
+          },
+          "data-can_show": {
+            "default": null
+          },
+          "data-loading": {
+            "default": null
+          },
+          "data-error": {
+            "default": null
+          },
+          "data-is-hover": {
+            "default": null
+          },
+          "data-is-selected": {
+            "default": null
+          },
+          "data-inserted": {
+            "default": null
+          }
+        },
+        "group": "inline inlinenode mpcard",
+        "inline": true,
+        "atom": true,
+        "parseDOM": [
+          {
+            "tag": "mp-common-sticker",
+            "getAttrs": "r=>Object(u[\"D\"])(sf[\"ATTR\"],r)"
+          }
+        ],
+        "toDOM": "toDOM(r){const t=Object(u[\"M\"])(sf[\"ATTR\"],r);delete t[u[\"d\"]];delete t[u[\"a\"]];return[\"mp-common-sticker\",t]}"
+      },
+      "table_header",
+      {
+        "content": "block+",
+        "attrs": {
+          "colspan": {
+            "default": 1
+          },
+          "rowspan": {
+            "default": 1
+          },
+          "colwidth": {
+            "default": null
+          },
+          "width": {
+            "default": null
+          },
+          "valign": {
+            "default": null
+          },
+          "align": {
+            "default": null
+          },
+          "style": {
+            "default": null
+          }
+        },
+        "tableRole": "header_cell",
+        "isolating": true,
+        "parseDOM": [
+          {
+            "tag": "th",
+            "getAttrs": "Ne=>y(Ne,pe)"
+          }
+        ],
+        "toDOM": "toDOM(Ne){return[\"th\",w(Ne,pe),0]}"
+      },
+      "table_cell",
+      {
+        "content": "block+",
+        "attrs": {
+          "colspan": {
+            "default": 1
+          },
+          "rowspan": {
+            "default": 1
+          },
+          "colwidth": {
+            "default": null
+          },
+          "width": {
+            "default": null
+          },
+          "valign": {
+            "default": null
+          },
+          "align": {
+            "default": null
+          },
+          "style": {
+            "default": null
+          }
+        },
+        "tableRole": "cell",
+        "isolating": true,
+        "parseDOM": [
+          {
+            "tag": "td",
+            "getAttrs": "Ne=>y(Ne,pe)"
+          }
+        ],
+        "toDOM": "toDOM(Ne){return[\"td\",w(Ne,pe),0]}"
+      },
+      "table_row",
+      {
+        "content": "(table_cell | table_header)*",
+        "tableRole": "row",
+        "attrs": {
+          "class": {
+            "default": null
+          },
+          "style": {
+            "default": null
+          }
+        },
+        "parseDOM": [
+          {
+            "tag": "tr",
+            "getAttrs": "getAttrs(Ne){return{class:Ne.getAttribute(\"class\")||null,style:Ne.getAttribute(\"style\")||null}}"
+          }
+        ],
+        "toDOM": "Ne=>[\"tr\",Ne.attrs,0]"
+      },
+      "table_body",
+      {
+        "content": "table_row+",
+        "tableRole": "body",
+        "isolating": true,
+        "parseDOM": [
+          {
+            "tag": "tbody"
+          }
+        ],
+        "toDOM": "toDOM(){return[\"tbody\",0]}"
+      },
+      "table_foot",
+      {
+        "content": "table_row+",
+        "tableRole": "foot",
+        "isolating": true,
+        "parseDOM": [
+          {
+            "tag": "tfoot"
+          }
+        ],
+        "toDOM": "toDOM(){return[\"tfoot\",0]}"
+      },
+      "table_head",
+      {
+        "content": "table_row+",
+        "tableRole": "head",
+        "isolating": true,
+        "parseDOM": [
+          {
+            "tag": "thead"
+          }
+        ],
+        "toDOM": "toDOM(){return[\"thead\",0]}"
+      },
+      "table_caption",
+      {
+        "content": "block+",
+        "tableRole": "caption",
+        "isolating": true,
+        "parseDOM": [
+          {
+            "tag": "caption"
+          }
+        ],
+        "toDOM": "toDOM(){return[\"caption\",0]}"
+      },
+      "table",
+      {
+        "content": "table_caption? table_head? table_body* table_foot?",
+        "tableRole": "table",
+        "isolating": true,
+        "group": "block",
+        "attrs": {
+          "interlaced": {
+            "default": null
+          },
+          "align": {
+            "default": null
+          },
+          "class": {
+            "default": null
+          },
+          "style": {
+            "default": null
+          }
+        },
+        "parseDOM": [
+          {
+            "tag": "table",
+            "getAttrs": "getAttrs(Ne){return{interlaced:Ne.getAttribute(\"interlaced\")||null,align:Ne.getAttribute(\"align\")||null,class:Ne.getAttribute(\"class\")||null,style:Ne.getAttribute(\"style\")||null}}"
+          }
+        ],
+        "toDOM": "Ne=>[\"table\",Ne.attrs,0]",
+        "replaceInBlockquote": "[表格]"
+      },
+      "listitem",
+      {
+        "attrs": {
+          "style": {
+            "default": null
+          }
+        },
+        "defining": true,
+        "breakline": 100,
+        "content": "block+",
+        "parseDOM": [
+          {
+            "tag": "li",
+            "getAttrs": "r=>nf(r,\"li\")"
+          }
+        ],
+        "toDOM": "r=>[\"li\",{style:r.attrs.style||null},0]"
+      },
+      "list",
+      {
+        "attrs": {
+          "type": {
+            "default": "ul"
+          },
+          "style": {
+            "default": "list-style-type: disc"
+          },
+          "class": {
+            "default": "list-paddingleft-1"
+          },
+          "start": {
+            "default": null
+          }
+        },
+        "group": "block",
+        "content": "(list|listitem)*",
+        "toDOM": "r=>[r.attrs.type,{style:r.attrs.style||null,class:r.attrs.class||null,start:r.attrs.start||null},0]",
+        "parseDOM": [
+          {
+            "tag": "ul",
+            "getAttrs": "r=>nf(r,\"ul\")"
+          },
+          {
+            "tag": "ol",
+            "getAttrs": "r=>nf(r,\"ol\")"
+          }
+        ]
+      },
+      "horizontal",
+      {
+        "attrs": {
+          "style": {
+            "default": "border-style: solid; border-width: 1px 0 0; border-color: rgba(0,0,0,0.1); -webkit-transform-origin: 0 0; -webkit-transform: scale(1, 0.5); transform-origin: 0 0; transform: scale(1, 0.5);"
+          }
+        },
+        "group": "block",
+        "selectable": true,
+        "draggable": false,
+        "parseDOM": [
+          {
+            "tag": "hr",
+            "getAttrs": "r=>{const t=r.getAttribute(\"style\")||ef;return{style:t}}"
+          }
+        ],
+        "toDOM": "r=>{const{style:t}=r.attrs;return[\"hr\",{style:t||ef}]}"
+      },
+      "doc",
+      {
+        "content": "block+"
+      },
+      "text",
+      {
+        "group": "inline"
+      },
+      "leaf",
+      {
+        "content": "(inline|text)*",
+        "attrs": {
+          "tagName": {
+            "default": "span"
+          },
+          "attributes": {
+            "default": {
+              "leaf": ""
+            }
+          },
+          "namespaceURI": {
+            "default": ""
+          }
+        },
+        "parseDOM": [
+          {
+            "tag": "span[leaf]",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          },
+          {
+            "tag": "tspan[leaf]",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          }
+        ],
+        "toDOM": "E=>[t(E.attrs.namespaceURI)?`${E.attrs.namespaceURI} ${D(E.attrs.tagName)}`:D(E.attrs.tagName),E.attrs.attributes,0]"
+      },
+      "node",
+      {
+        "group": "block",
+        "content": "(leaf|block)*",
+        "attrs": {
+          "tagName": {
+            "default": "section"
+          },
+          "attributes": {
+            "default": {}
+          },
+          "namespaceURI": {
+            "default": ""
+          }
+        },
+        "parseDOM": [
+          {
+            "tag": "*",
+            "getAttrs": "E=>({tagName:/^[A-Z0-9]+$/.test(E.nodeName)?E.nodeName.toLowerCase():E.nodeName,attributes:Array.from(E.attributes).reduce((x,j)=>he(W({},x),{[j.name]:j.value}),{}),namespaceURI:E.namespaceURI})"
+          }
+        ],
+        "toDOM": "E=>[t(E.attrs.namespaceURI)?`${E.attrs.namespaceURI} ${D(E.attrs.tagName)}`:D(E.attrs.tagName),E.attrs.attributes,0]"
+      }
+    ]
+  },
+  "marks": {
+    "content": [
+      "pasteLink",
+      {
+        "attrs": {
+          "id": {
+            "default": ""
+          },
+          "url": {
+            "default": ""
+          }
+        },
+        "inclusive": false,
+        "toDOM": "toDOM(he){return[be,{class:Ue,\"data-id\":he.attrs.id},0]}",
+        "parseDOM": [
+          {
+            "tag": "span.js_paste_link_container",
+            "getAttrs": "he=>({id:he.dataset.id})"
+          }
+        ]
+      },
+      "poi_link",
+      {
+        "attrs": {
+          "style": {
+            "default": ""
+          },
+          "data-id": {
+            "default": ""
+          },
+          "data-poiid": {
+            "default": ""
+          },
+          "data-districtid": {
+            "default": ""
+          },
+          "data-type": {
+            "default": ""
+          },
+          "data-version": {
+            "default": ""
+          },
+          "data-name": {
+            "default": ""
+          },
+          "data-address": {
+            "default": ""
+          },
+          "data-latitude": {
+            "default": ""
+          },
+          "data-longitude": {
+            "default": ""
+          },
+          "data-img": {
+            "default": ""
+          },
+          "data-province": {
+            "default": ""
+          },
+          "data-city": {
+            "default": ""
+          }
+        },
+        "inclusive": false,
+        "parseDOM": [
+          {
+            "tag": "a.wx_poi_link[data-poiid][data-districtid]",
+            "priority": 100,
+            "getAttrs": "t=>{const n=t.getAttribute(\"data-id\");const a=t.getAttribute(\"data-poiid\");const o=t.getAttribute(\"data-districtid\");const c=t.getAttribute(\"data-type\");const d=t.getAttribute(\"data-version\");const h=t.getAttribute(\"data-name\");const b=t.getAttribute(\"data-address\");const P=t.getAttribute(\"data-latitude\");const U=t.getAttribute(\"data-longitude\");const Y=t.getAttribute(\"data-img\");const Z=t.getAttribute(\"data-province\");const fe=t.getAttribute(\"data-city\");if(!t.textContent||!a&&!o){return false}return{style:jA(t),\"data-id\":n,\"data-poiid\":a,\"data-districtid\":o,\"data-type\":c,\"data-version\":d,\"data-name\":h,\"data-address\":b,\"data-latitude\":P,\"data-longitude\":U,\"data-img\":Y,\"data-province\":Z,\"data-city\":fe}}"
+          }
+        ],
+        "toDOM": "toDOM(t){return[\"a\",Wb({class:\"wx_poi_link js_poi_entry\"},t.attrs),0]}"
+      },
+      "weapp_link",
+      {
+        "attrs": {
+          "style": {
+            "default": ""
+          },
+          "uniqueId": {
+            "default": ""
+          },
+          "data-miniprogram-appid": {
+            "default": ""
+          },
+          "data-miniprogram-path": {
+            "default": ""
+          },
+          "data-miniprogram-nickname": {
+            "default": ""
+          },
+          "data-miniprogram-servicetype": {
+            "default": ""
+          },
+          "data-miniprogram-applink": {
+            "default": ""
+          }
+        },
+        "inclusive": false,
+        "excludes": "topic",
+        "parseDOM": [
+          {
+            "tag": "a.weapp_text_link[data-miniprogram-appid]",
+            "priority": 100,
+            "getAttrs": "t=>{const n=t.getAttribute(\"data-miniprogram-appid\");const a=Db(t);if(!t.textContent||!n||a){return false}return{style:OO(t),uniqueId:t.getAttribute(\"data-unique-id\"),\"data-miniprogram-appid\":n,\"data-miniprogram-path\":t.getAttribute(\"data-miniprogram-path\"),\"data-miniprogram-nickname\":t.getAttribute(\"data-miniprogram-nickname\"),\"data-miniprogram-servicetype\":t.getAttribute(\"data-miniprogram-servicetype\"),\"data-miniprogram-applink\":t.getAttribute(\"data-miniprogram-applink\")}}"
+          }
+        ],
+        "toDOM": "toDOM(t){const{style:n,uniqueId:a,\"data-miniprogram-appid\":o,\"data-miniprogram-path\":c,\"data-miniprogram-nickname\":d,\"data-miniprogram-servicetype\":h,\"data-miniprogram-applink\":b}=t.attrs;return[\"a\",{class:\"weapp_text_link js_weapp_entry\",style:n,\"data-unique-id\":a,\"data-miniprogram-type\":\"text\",\"data-miniprogram-appid\":o,\"data-miniprogram-path\":c,\"data-miniprogram-nickname\":d,\"data-miniprogram-servicetype\":h,\"data-miniprogram-applink\":b},0]}"
+      },
+      "topic",
+      {
+        "attrs": {
+          "index": {
+            "default": ""
+          }
+        },
+        "parseDOM": [
+          {
+            "tag": "a.wx_topic_link",
+            "getAttrs": "W=>({index:W.getAttribute(\"topic-id\")})"
+          }
+        ],
+        "toDOM": "W=>{const{index:he}=W.attrs;return[\"a\",{class:\"wx_topic_link\",\"topic-id\":he,style:\"color: #576B95 !important;\",\"data-topic\":1},0]}"
+      },
+      "link",
+      {
+        "attrs": {
+          "style": {
+            "default": ""
+          },
+          "href": {
+            "default": ""
+          },
+          "textvalue": {
+            "default": ""
+          },
+          "data-itemshowtype": {
+            "default": ""
+          },
+          "hasImage": {
+            "default": ""
+          }
+        },
+        "inclusive": false,
+        "excludes": "topic",
+        "parseDOM": [
+          {
+            "tag": "a[href]",
+            "getAttrs": "r=>{const t=r.getAttribute(\"href\");const n=r.getAttribute(\"linktype\")||\"text\";const a=xb(r);if(!t||n!==\"text\"||a){r.classList.remove(Ab);return false}return{style:pO(r),href:t,textvalue:r.getAttribute(\"textvalue\")||\"\",linktype:n,tab:r.getAttribute(\"tab\"),\"data-itemshowtype\":r.getAttribute(\"data-itemshowtype\"),hasImage:r.querySelector(\"img\")!==null}}"
+          }
+        ],
+        "toDOM": "toDOM(r){const{style:t,href:n,textvalue:a,\"data-itemshowtype\":o,hasImage:c}=r.attrs;const d=_O(n);return[\"a\",{class:c?\"\":d,target:\"_blank\",style:t,href:n,textvalue:a,\"data-itemshowtype\":o,linktype:\"text\",\"data-linktype\":\"2\"},0]}"
+      },
+      "codehighlight",
+      {
+        "attrs": {
+          "classList": {
+            "default": [
+              ""
+            ]
+          }
+        },
+        "inclusive": false,
+        "excludes": "_",
+        "toDOM": "r=>r.attrs.classList.reduce((t,n)=>[\"span\",{class:n},t],0)",
+        "parseDOM": [
+          {
+            "tag": "span",
+            "getAttrs": "r=>{var t,n;if(typeof r.className===\"string\"&&((t=r.className)==null?void 0:t.startsWith(nc))){const a=[r.className];let o=0;let c=r;while(o<10&&(c=c.parentElement)&&((n=c.className)==null?void 0:n.startsWith(nc))){a.push(c.className);o+=1}return{classList:a}}return false}"
+          }
+        ]
+      },
+      "textstyle",
+      {
+        "attrs": {
+          "fontSize": {
+            "default": null
+          },
+          "letterSpacing": {
+            "default": null
+          },
+          "backgroundColor": {
+            "default": null
+          },
+          "color": {
+            "default": null
+          },
+          "fontWeight": {
+            "default": null
+          },
+          "fontStyle": {
+            "default": null
+          },
+          "textDecoration": {
+            "default": null
+          }
+        },
+        "toDOM": "Se=>{const{attrs:Ce}=Se;return[\"span\",{textstyle:\"\",style:t.map(Ne=>Ce[Ne]?`${d[Ne]}: ${Ce[Ne]}`:\"\").filter(Boolean).join(\"; \")},0]}",
+        "parseDOM": [
+          {
+            "tag": "span[textstyle]",
+            "getAttrs": "Se=>{const{style:Ce}=Se;const Ne={};let ct=false;for(const Te of t){const Me=Ce[Te];if(Me){Ne[Te]=Me;ct=true}else{Ne[Te]=null}}if(ct){return Ne}return false}"
+          }
+        ]
+      }
+    ]
+  }
+}

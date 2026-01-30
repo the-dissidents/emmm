@@ -110,11 +110,13 @@ pub async fn unarchive(
         for i in 0..len {
             let mut file = zip.by_index(i)?;
             if let Some(file_path) = file.enclosed_name()
+                && let Some(file_name) = file_path.file_name()
                 && !file_path.eq(Path::new("source.emmm"))
+                && file.is_file()
             {
-                let full_path = base_path.join(file_path.clone());
+                let full_path = base_path.join(file_name);
                 map.insert(
-                    file_path.to_string_lossy().to_string(),
+                    file_name.to_string_lossy().to_string(),
                     full_path.to_string_lossy().to_string());
 
                 let created_file = File::create(full_path)?;
@@ -126,7 +128,6 @@ pub async fn unarchive(
             }
             channel.send(Progress { progress: (i as f64) / (len as f64) })?;
         }
-
 
         let mut source = String::new();
         zip.by_name("source.emmm")?.read_to_string(&mut source)?;
@@ -145,6 +146,6 @@ pub async fn unarchive(
         Ok(result.to_string())
     })
     .await
-    .map_err(|e| e.to_string())?
-    .map_err(|e| e.to_string())
+    .map_err(|e| { log::debug!("{e:?}"); e.to_string() } )?
+    .map_err(|e| { log::debug!("{e:?}"); e.to_string() } )
 }
