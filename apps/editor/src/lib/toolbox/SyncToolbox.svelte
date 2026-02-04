@@ -5,7 +5,6 @@
   import * as z from "zod/v4-mini";
 
   import * as dialog from '@tauri-apps/plugin-dialog';
-  import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
   import { RustAPI } from "$lib/RustAPI";
   import { htmlToEmmm } from "$lib/integration/weixin/Importer";
 

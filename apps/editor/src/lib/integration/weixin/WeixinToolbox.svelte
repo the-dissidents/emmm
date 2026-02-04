@@ -1,13 +1,15 @@
 <script lang="ts">
+  import ListView, { type ListButtonCell, type ListCell, type ListColumn, type ListItem, type ListViewHandleOut } from '../../ui/ListView.svelte';
   import { assert } from "../../Debug";
-  import ListView, { type ListButtonCell, type ListCell, type ListColumn, type ListItem, type ListViewHandleIn, type ListViewHandleOut } from '../../ui/ListView.svelte';
-  import { SvelteMap } from 'svelte/reactivity';
   import { Weixin } from './API';
   import { Interface } from '../../Interface.svelte';
   import { getIP, GetIPMethod } from '../../Util';
-  import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
   import { postprocess } from "./Postprocess";
   import { RustAPI } from "$lib/RustAPI";
+
+  import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
+  import * as dialog from '@tauri-apps/plugin-dialog';
+  import { SvelteMap } from 'svelte/reactivity';
 
   let publicIP = $state('');
   let appid = Weixin.appid;
@@ -157,7 +159,11 @@
     <td>
       <input type="text" style="width: 100%" disabled value={$stableToken} /><br/>
       <button style="width: 100%" class="important"
-        onclick={() => Weixin.fetchToken()}>retrieve token</button>
+        onclick={() => {
+          Weixin.fetchToken().catch((x) => {
+            dialog.message(`${x}`, { kind: 'error' });
+          });
+        }}>retrieve token</button>
     </td>
   </tr>
 </tbody></table>
