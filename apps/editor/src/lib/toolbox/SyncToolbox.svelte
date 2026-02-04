@@ -5,7 +5,9 @@
   import * as z from "zod/v4-mini";
 
   import * as dialog from '@tauri-apps/plugin-dialog';
+  import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
   import { RustAPI } from "$lib/RustAPI";
+  import { htmlToEmmm } from "$lib/integration/weixin/Importer";
 
   let progress = Interface.progress;
 
@@ -105,6 +107,24 @@
 <h5>Archive</h5>
 <button onclick={archive} class="important">Save as archive</button>
 <button onclick={unarchive}>Import archive</button>
+<h5>From other sources</h5>
+<button onclick={async () => {
+  let result: string | undefined;
+  for (const item of await navigator.clipboard.read()) {
+    if (item.types.includes('text/html')) {
+      const html = await (await item.getType('text/html')).text();
+      result = htmlToEmmm(html);
+      break;
+    }
+  }
+  if (!result) {
+    await dialog.message('No HTML found in the clipboard', { kind: 'error' });
+    return;
+  }
+  if (!await dialog.confirm('Are you sure to clear any current existing document?'))
+    return;
+  Interface.source.set(result);
+}}>Read from clipboard</button>
 
 <style>
   button {

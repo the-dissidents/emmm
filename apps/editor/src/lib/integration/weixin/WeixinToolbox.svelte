@@ -24,26 +24,6 @@
   ]);
   let imgListHandleOut: ListViewHandleOut | undefined = $state();
 
-  const articleListHeader = new SvelteMap<string, ListColumn>([
-    ['action', {name: '', type: 'button', width: '15%'}],
-    ['type', {name: '', type: 'text', width: '10%'}],
-    ['author', {name: 'author', type: 'text', width: '15%'}],
-    ['title', {name: 'title', type: 'text',
-      contentStyle: 'text-overflow: ellipsis; white-space: nowrap; overflow: hidden;'}],
-  ]);
-  let articleListHandleOut: ListViewHandleOut | undefined = $state();
-  let articleListHandleIn: ListViewHandleIn = $state({});
-
-  const permimgListHeader = new SvelteMap<string, ListColumn>([
-    ['test', {name: '', type: 'button', width: '15%'}],
-    ['refresh', {name: '', type: 'button', width: '15%'}],
-    ['img', {name: '', type: 'image', width: '25%'}],
-    ['name', {name: 'name', type: 'text',
-      contentStyle: 'text-overflow: ellipsis; white-space: nowrap; overflow: hidden;'}],
-  ]);
-  let permimgListHandleOut: ListViewHandleOut | undefined = $state();
-  let permimgListHandleIn: ListViewHandleIn = $state({});
-
   type ImgStatus = 'ok' | 'notUploaded' | 'error' | 'pending';
   type Img = {
     indicator: { type: 'text', content: string, alt: string },

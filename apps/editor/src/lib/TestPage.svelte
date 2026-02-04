@@ -194,7 +194,7 @@
         sandbox="allow-same-origin">
       </iframe>
     </TabPage>
-    <TabPage name="AST">
+    <TabPage name="AST" removeIfInactive={true}>
       <div class="vlayout fill">
         <div class="ast">
           <ASTViewer node={strip ? $parseData?.data.toStripped().root : $parseData?.data.root} />
