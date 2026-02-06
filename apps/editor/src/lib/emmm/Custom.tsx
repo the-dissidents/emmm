@@ -1,13 +1,14 @@
 import * as emmm from '@the_dissidents/libemmm';
+import wcwidth from 'wcwidth';
 import { initRatings, overallTableBlock, overallTableRenderer, ratingHeaderSystem, ratingHiddenBlock, ratingTableBlock, ratingTableRenderer } from './RatingTable';
 import { ratingEntryBlock } from './RatingEntry';
 import { basicFieldSystems, categorySystem, endBlock, endRenderer, getEmmmMetadata, infoFieldSystem, initHeader, publishedSystem } from './Header';
-import wcwidth from 'wcwidth';
+import { lintRuleSystem } from './Linting';
 
-const custom = emmm.Configuration.from(emmm.DefaultConfiguration);
+const custom = emmm.Configuration.from(emmm.DefaultConfiguration, false);
 custom.kernel.collapseWhitespaces = true;
 custom.initializers.push(initHeader, initRatings);
-custom.systemModifiers.add(infoFieldSystem, publishedSystem, categorySystem, ...basicFieldSystems, ratingHeaderSystem);
+custom.systemModifiers.add(infoFieldSystem, publishedSystem, categorySystem, ...basicFieldSystems, ratingHeaderSystem, lintRuleSystem);
 custom.blockModifiers.add(ratingTableBlock, ratingHiddenBlock, overallTableBlock, endBlock, ratingEntryBlock);
 
 const render = emmm.createHTMLRenderConfiguration(window);

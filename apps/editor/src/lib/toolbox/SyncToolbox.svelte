@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Memorized } from "$lib/config/Memorized.svelte";
-  import { Interface } from "$lib/Interface.svelte";
+  import { defaultSource, Interface } from "$lib/Interface.svelte";
   import { fetch } from "@tauri-apps/plugin-http";
   import * as z from "zod/v4-mini";
 
@@ -124,6 +124,13 @@
     return;
   Interface.source.set(result);
 }}>Read from clipboard</button>
+
+
+<button onclick={async () => {
+  if (!await dialog.confirm('Are you sure to clear any current existing document?'))
+    return;
+  Interface.source.set(defaultSource);
+}}>Start a new document</button>
 
 <style>
   button {

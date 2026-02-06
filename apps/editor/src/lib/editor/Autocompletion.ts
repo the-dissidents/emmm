@@ -87,8 +87,8 @@ export const emmmAutocompletion = [
         }
 
         if (context !== 'markup') return false;
-        type Bracket = [string, string];
 
+        type Bracket = [string, string];
         const brackets: Bracket[] = [
             ['[.', ']'],
             ['[-', ']'],

@@ -19,6 +19,7 @@
   import { EditorSelection, EditorState, type Extension, type TransactionSpec } from "@codemirror/state";
   import { hook } from "$lib/details/Hook.svelte";
   import { emmmForceReparseEffect } from "./ParseData";
+  import { forEachDiagnostic, type Diagnostic } from "@codemirror/lint";
 
   interface Props {
     /**
@@ -41,6 +42,7 @@
 
   export interface EditorHandleOut {
     focus(): void;
+    diagnostics(): Diagnostic[],
     getCursorPosition(): [pos: number, l: number, c: number];
     getText(): string;
     setText(x: string): void;
@@ -107,6 +109,11 @@
       })
     });
     hout = {
+      diagnostics() {
+        const result: Diagnostic[] = [];
+        forEachDiagnostic(view.state, (d) => result.push(d));
+        return result;
+      },
       focus() {
           view.focus();
       },

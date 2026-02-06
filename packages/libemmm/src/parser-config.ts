@@ -5,13 +5,14 @@ import { Parser } from "./parser";
 import { Scanner } from "./scanner";
 import { assert, ReadonlyNameManager, NameManager } from "./util";
 import { cloneNode, stripNode } from "./node-util";
+import { debug } from "./debug";
 
 export interface ParseContextStoreDefinitions { }
 export type ParseContextStoreKey = keyof ParseContextStoreDefinitions;
 type ParseContextStoreEntry<S extends ParseContextStoreKey> = ParseContextStoreDefinitions[S];
 
 export class ParseContext {
-    private data: ParseContextStoreDefinitions = {};
+    private store: ParseContextStoreDefinitions = {};
     public usedModules = new Set<string>();
 
     constructor(
@@ -22,18 +23,18 @@ export class ParseContext {
     }
 
     init<S extends ParseContextStoreKey>(key: S, obj: ParseContextStoreEntry<S>) {
-        assert(!(key in this.data));
-        this.data[key] = obj;
+        assert(!(key in this.store));
+        this.store[key] = obj;
     }
 
     set<S extends ParseContextStoreKey>(key: S, obj: ParseContextStoreEntry<S>) {
-        assert(key in this.data);
-        this.data[key] = obj;
+        assert(key in this.store);
+        this.store[key] = obj;
     }
 
     get<S extends ParseContextStoreKey>(key: S): ParseContextStoreEntry<S> {
-        assert(key in this.data);
-        return this.data[key];
+        assert(key in this.store);
+        return this.store[key];
     }
 
     parse(scanner: Scanner) {
@@ -111,6 +112,7 @@ export type KernelConfiguration = {
 };
 
 export interface ReadonlyConfiguration {
+    readonly store: Readonly<ConfigurationStoreDefinitions>;
     readonly initializers: readonly ((cxt: ParseContext) => void)[];
     readonly modules: ReadonlyMap<string, ModuleDefinition>;
     readonly blockModifiers: ReadonlyNameManager<BlockModifierDefinition<any>>;
@@ -123,7 +125,14 @@ export interface ReadonlyConfiguration {
     readonly kernel: Readonly<KernelConfiguration>;
 }
 
+
+export interface ConfigurationStoreDefinitions { }
+export type ConfigurationStoreKey = keyof ConfigurationStoreDefinitions;
+type ConfigurationStoreEntry<S extends ConfigurationStoreKey> = ConfigurationStoreDefinitions[S];
+
 export class Configuration implements ReadonlyConfiguration {
+    store: ConfigurationStoreDefinitions = {};
+
     initializers: ((cxt: ParseContext) => void)[] = [];
     modules = new Map<string, ModuleDefinition>();
 
@@ -140,7 +149,7 @@ export class Configuration implements ReadonlyConfiguration {
         reparseDepthLimit: 10
     };
 
-    static from(from: ReadonlyConfiguration) {
+    static from(from: ReadonlyConfiguration, copyStore: boolean) {
         let config = new Configuration();
         config.initializers = [...from.initializers];
         config.modules = new Map(
@@ -148,6 +157,8 @@ export class Configuration implements ReadonlyConfiguration {
             .map(([k, v]) => [k, ModuleDefinition.clone(v)])
         );
         config.kernel = structuredClone(from.kernel);
+        if (copyStore)
+            config.store = from.store;
 
         config.blockModifiers = new NameManager(from.blockModifiers);
         config.inlineModifiers = new NameManager(from.inlineModifiers);

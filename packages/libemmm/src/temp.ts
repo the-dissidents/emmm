@@ -10,7 +10,7 @@ import { GlobalRegistrator } from '@happy-dom/global-registrator';
 
 GlobalRegistrator.register();
 
-const TestConfig = Configuration.from(DefaultConfiguration);
+const TestConfig = Configuration.from(DefaultConfiguration, false);
 TestConfig.blockModifiers.add(
     new BlockModifierDefinition('normal', ModifierSlotType.Normal),
     new BlockModifierDefinition('pre', ModifierSlotType.Preformatted),

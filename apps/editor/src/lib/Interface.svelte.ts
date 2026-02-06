@@ -32,6 +32,10 @@ import testStyles from '../template/typesetting.css?raw';
 import testString from '../template/testsource.txt?raw';
 import testLib from '../template/testlib.txt?raw';
 
+export const defaultSource = testString;
+
+let renderTimer: any;
+
 export const Interface = $state({
     get status() { return status; },
     get parseData() { return parseData; },
@@ -56,6 +60,14 @@ export const Interface = $state({
     } satisfies ArticleColors,
     onFrameDOMLoaded: new EventHost(),
     onFrameLoaded: new EventHost(),
+
+    requestRender(t = 500) {
+        if (!renderTimer)
+            renderTimer = setTimeout(() => {
+                renderTimer = undefined;
+                this.render();
+            }, t);
+    },
 
     async render() {
         const pd = get(parseData)?.data;

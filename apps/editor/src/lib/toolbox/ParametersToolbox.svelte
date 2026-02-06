@@ -7,7 +7,7 @@
 
   function doDeriveColors() {
     if (autoColor) Interface.colors = deriveColorsFrom(Interface.colors.theme);
-    Interface.render();
+    Interface.requestRender(0);
   }
 
   doDeriveColors();

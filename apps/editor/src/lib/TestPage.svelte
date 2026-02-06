@@ -22,6 +22,7 @@
   import { Memorized } from './config/Memorized.svelte';
 
   import SyncToolbox from './toolbox/SyncToolbox.svelte';
+  import type { EmmmDiagnostic } from './editor/Linter';
 
   let left = $state<HTMLElement>(),
       middle = $state<HTMLElement>(),
@@ -46,7 +47,6 @@
   let libConfig = $state<emmm.Configuration>();
 
   function onParseLibrary(doc: EmmmParseData) {
-    console.log('parse library');
     libConfig = doc.data.context.config;
     if (Interface.activeEditor !== libraryHandle)
       setTimeout(() => sourceHandle?.reparse(), 0);
@@ -62,16 +62,14 @@
   }
 
   function onParse(doc: EmmmParseData) {
-    console.log('parse source');
     parsedStatus = `parsed in ${doc.parseTime.toFixed(0)}ms`;
     Interface.parseData.set({...doc});
-    setTimeout(() => Interface.render(), 0);
+    Interface.requestRender();
   }
 
   const problemListHeader = new SvelteMap<string, ListColumn>([
     ['file', {name: 'file', type: 'text', vAlign: 'top', width: '5%'}],
     ['type', {name: 'T', type: 'text', vAlign: 'top', width: '5%'}],
-    ['code', {name: '#', type: 'text', vAlign: 'top', width: '5%'}],
     ['line', {name: 'line', type: 'text', vAlign: 'top', width: '5%'}],
     ['column', {name: 'column', type: 'text', vAlign: 'top', width: '5%'}],
     ['length', {name: 'length', type: 'text', vAlign: 'top', width: '5%'}],
@@ -79,26 +77,26 @@
   ]);
   let problemListHandleOut: ListViewHandleOut | undefined = $state();
 
-  Interface.parseData.subscribe((pd) => {
-    problemListHandleOut?.reset(pd!.data.messages.map((x) => {
+  function onLint(d: EmmmDiagnostic[]) {
+    problemListHandleOut?.reset(d.map((x) => {
       const source = x.location.source;
       return {
         cols: {
-          file: {type: 'text', content: source.name},
           type: {type: 'text', content: {
-            [emmm.MessageSeverity.Warning]: '⚠️',
-            [emmm.MessageSeverity.Error]: '❌',
-            [emmm.MessageSeverity.Info]: 'ℹ️'
+            warning: '⚠️',
+            error: '❌',
+            hint: '💡',
+            info: 'ℹ️'
           }[x.severity]},
-          code: {type: 'text', content: `${x.code}`},
-          line: {type: 'text', content: `${source.getRowCol(x.location.start)[0] + 1}`},
-          column: {type: 'text', content: `${source.getRowCol(x.location.start)[1] + 1}`},
-          length: {type: 'text', content: `${(x.location.actualEnd ?? x.location.end) - x.location.start + 1}`},
-          msg: {type: 'text', content: x.info},
+          file: {type: 'text', content: source.name},
+          line: {type: 'text', content: `${source.getRowCol(x.from)[0] + 1}`},
+          column: {type: 'text', content: `${source.getRowCol(x.from)[1] + 1}`},
+          length: {type: 'text', content: `${x.to - x.from}`},
+          msg: {type: 'text', content: x.message},
         }
-      }
+      };
     }));
-  });
+  }
 </script>
 
 <div class="vlayout fill">
@@ -109,14 +107,14 @@
 <!-- tools view -->
 <div class="pane" style="width: 300px;" bind:this={left}>
   <TabView>
+    <TabPage name='Document'>
+      <SyncToolbox />
+    </TabPage>
     <TabPage name='Weixin'>
       <WeixinToolbox />
     </TabPage>
     <TabPage name="Parameters">
       <ParametersToolbox />
-    </TabPage>
-    <TabPage name='Sync'>
-      <SyncToolbox />
     </TabPage>
     <TabPage name='Search'>
       <SearchToolbox />
@@ -136,9 +134,11 @@
       <EmmmContext {onParse}
           provideDescriptor={() => ({name: '<Source>'})}
           provideContext={() => libConfig
-            ? new emmm.ParseContext(emmm.Configuration.from(libConfig))
+            ? new emmm.ParseContext(emmm.Configuration.from(libConfig, true))
             : undefined
-      }>
+          }
+          {onLint}
+      >
         <Editor bind:text={$source}
           onFocus={() => {
             updateCursorPosition(sourceHandle);
@@ -173,9 +173,7 @@
             Interface.activeEditor = cssHandle;
           }}
           {onCursorPositionChanged}
-          onChange={() => {
-            Interface.render();
-          }}
+          onChange={() => Interface.requestRender()}
           bind:hout={cssHandle} />
       </GenericContext>
     </TabPage>

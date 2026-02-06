@@ -6,14 +6,14 @@ import { BlockModifierDefinition, ModifierSlotType } from "../src/modifier";
 import { debug, DebugLevel } from "../src/debug";
 import { Configuration, ParseContext } from "../src/parser-config";
 
-const TestConfig = Configuration.from(BuiltinConfiguration);
+const TestConfig = Configuration.from(BuiltinConfiguration, false);
 TestConfig.blockModifiers.add(
     new BlockModifierDefinition('normal', ModifierSlotType.Normal),
     new BlockModifierDefinition('pre', ModifierSlotType.Normal)
 );
 
 function parse(src: string) {
-    const config = Configuration.from(TestConfig);
+    const config = Configuration.from(TestConfig, false);
     let doc = new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
     return doc;
 }
