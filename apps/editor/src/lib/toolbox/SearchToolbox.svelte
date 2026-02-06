@@ -4,10 +4,13 @@
   import { Interface } from "../Interface.svelte";
   import { Debug } from "../Debug";
   import { EditorView } from "@codemirror/view";
+  import { Memorized } from "$lib/config/Memorized.svelte";
+  import * as z from "zod/v4-mini";
 
   let searchPattern = $state('');
   let replacement = $state('');
-  let useRegex = $state(true);
+  let useRegex = Memorized.$('search-useRegex', z.boolean(), true);
+  let caseSensitive = Memorized.$('search-caseSensitive', z.boolean(), true);
 
   function escapeRegexp(str: string) {
       return str.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
@@ -25,7 +28,9 @@
 
     start ??= all ? 0 : Interface.activeEditor.getSelections().at(0)?.to ?? 0;
 
-    const pattern = new RegExp(useRegex ? searchPattern : escapeRegexp(searchPattern), 'ug');
+    const pattern = new RegExp(
+      $useRegex ? searchPattern : escapeRegexp(searchPattern),
+      'ug' + ($caseSensitive ? '' : 'i'));
     const text = Interface.activeEditor.getText();
     const textSliced = text.slice(start);
 
@@ -77,8 +82,13 @@
 <input type="text" placeholder="replace by" bind:value={replacement} />
 
 <label>
-  <input type="checkbox" bind:checked={useRegex} />
+  <input type="checkbox" bind:checked={$useRegex} />
   use regex
+</label>
+
+<label>
+  <input type="checkbox" bind:checked={$caseSensitive} />
+  case sensitive
 </label>
 
 <div class="hlayout">

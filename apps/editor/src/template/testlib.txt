@@ -21,23 +21,19 @@
 (?<=\p{Script=Han}[ ]*)(\.[ ]?){2,}
 
 [-lint desc=中文标点符号不应为半角字符]
-(?<=\p{Script=Han})[,.;?!"'][ ]?(?=\p{Script=Han}|\n|$)
+(?<=\p{Script=Han})[,.:;?!"'][ ]?(?=\p{Script=Han}|\n|$)
 
 [-lint desc=西文标点符号后、下一个词之前，应该恰好有一个空格]
-(?<=\p{Script=Latin})[,.;?!](?=\p{Script=Latin}+ )
+(?<=\p{Script=Latin})[,.:;?!](?=\p{Script=Latin}+ )
 
 [-lint desc=单词之间不要有多于一个空格]
-(?<=\p{L})[ ]{2,}(?=\p{L})(?!$|\s)
+(?<=\p{Letter})[ ]{2,}(?=\p{Letter})
 
 [-lint desc=全角标点符号后不应有空格]
 (?<=[\u3000-\u303F|\uFF00-\uFF5A])[ ]+
 
 [-lint desc=全角标点符号前不应有空格]
 [ ]+(?=[\u3000-\u303F|\uFF00-\uFF5A])
-
-;; skip this for now
--lint desc=引号不成对
-“(?=[^”]*(“|$))|(?<=(”|^)[^“]*)”
 
 [-lint desc=你可能是要写\[\|...\|...\]，但是打成了全角]
 \[｜.+?｜.+?\]

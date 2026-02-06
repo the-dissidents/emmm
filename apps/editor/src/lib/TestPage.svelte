@@ -61,10 +61,13 @@
     onCursorPositionChanged(...h.getCursorPosition());
   }
 
-  function onParse(doc: EmmmParseData) {
+  function onParseSource(doc: EmmmParseData) {
     parsedStatus = `parsed in ${doc.parseTime.toFixed(0)}ms`;
     Interface.parseData.set({...doc});
     Interface.requestRender();
+
+    if (!Interface.activeEditor)
+      Interface.activeEditor = sourceHandle;
   }
 
   const problemListHeader = new SvelteMap<string, ListColumn>([
@@ -131,7 +134,7 @@
   <TabView>
     <TabPage name="Source"
         onActivate={() => sourceHandle?.focus?.()}>
-      <EmmmContext {onParse}
+      <EmmmContext onParse={onParseSource}
           provideDescriptor={() => ({name: '<Source>'})}
           provideContext={() => libConfig
             ? new emmm.ParseContext(emmm.Configuration.from(libConfig, true))
