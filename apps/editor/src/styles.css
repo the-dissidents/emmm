@@ -1,28 +1,28 @@
 :root {
-    font-family: Helvetica, Arial, sans-serif;
-    font-size: 16px;
-    line-height: 24px;
-    font-weight: 400;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
 
-    color: #0f0f0f;
-    background-color: #f6f6f6;
-    box-sizing: border-box;
+  color: #0f0f0f;
+  background-color: #f6f6f6;
+  box-sizing: border-box;
 
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    -webkit-text-size-adjust: 100%;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
 }
 
 html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    box-sizing: border-box;
-    overflow: hidden;
-    user-select: none; -webkit-user-select: none;
-    -moz-user-select: none; -ms-user-select: none;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  user-select: none; -webkit-user-select: none;
+  -moz-user-select: none; -ms-user-select: none;
 }
 
 input, button {
@@ -30,7 +30,7 @@ input, button {
 }
 
 label {
-    font-size: 0.8rem;
+  font-size: 0.8rem;
 }
 
 input[type=number],
@@ -42,121 +42,125 @@ input[type=text] {
 input[type=number], input[type=text],
 select, [data-select-trigger], div.combobox,
 textarea, ol[role='listbox'] {
-    border: 1px solid var(--uchu-gray-3);
-    background-color: white;
-    color: var(--uchu-yin);
-    &:focus, &:has(:focus) {
-        outline: 2px solid color-mix(in oklab, var(--uchu-red-3), transparent);
-    }
-    &:disabled {
-        background-color: var(--uchu-gray-1);
-        color: var(--uchu-gray-9);
-    }
+  border: 1px solid var(--uchu-gray-3);
+  background-color: white;
+  color: var(--uchu-yin);
+  &:focus, &:has(:focus) {
+      outline: 2px solid color-mix(in oklab, var(--uchu-red-3), transparent);
+  }
+  &:disabled {
+      background-color: var(--uchu-gray-1);
+      color: var(--uchu-gray-9);
+  }
 }
 
 button,
 label:has(input[type='checkbox'].button) {
-    appearance: none;
-    background-color: white;
-    display: inline-block;
+  appearance: none;
+  background-color: white;
+  display: inline-block;
 
-    box-shadow: 0 1px 3px rgba(128, 128, 128, 0.378);
-    border: none;
-    border-radius: 3px;
-    padding: 3px 5px;
-    margin: 1px;
+  box-shadow: 0 1px 3px rgba(128, 128, 128, 0.378);
+  border: none;
+  border-radius: 3px;
+  padding: 3px 5px;
+  margin: 1px;
 
-    text-align: center;
-    text-decoration: none;
-    padding-block-start: 2px;
-    padding-block-end: 3px;
-    padding-inline-start: 6px;
-    line-height: normal;
+  text-align: center;
+  text-decoration: none;
+  padding-block-start: 2px;
+  padding-block-end: 3px;
+  padding-inline-start: 6px;
+  line-height: normal;
 
-    &:hover {
-        filter: brightness(95%);
-        /* background-color: rgb(241, 241, 241); */
-    }
+  &:hover {
+    filter: brightness(95%);
+    /* background-color: rgb(241, 241, 241); */
+  }
 
-    &:has(input[type='checkbox'].button:checked) {
-        background-color: lightblue;
-    }
+  &:has(input[type='checkbox'].button:checked) {
+    background-color: lightblue;
+  }
+}
+
+.veryimportant {
+  font-size: 0.8rem;
+  background-color: var(--uchu-pink-1);
+  color: var(--uchu-red-9);
+  padding-block: 0.5em;
 }
 
 .important {
-    /* font-size: 1rem; */
-    /* text-transform: uppercase; */
-    /* font-weight: bold; */
-    background-color: var(--uchu-pink-1);
-    color: var(--uchu-red-9);
+  font-size: 0.8rem;
+  padding-block: 0.5em;
 }
 
 table.config {
-    width: 100%;
+  width: 100%;
 }
 table.config tr > td:nth-child(1) {
-    font-size: 80%;
-    padding-right: 5px;
-    /* font-weight: bold; */
-    text-align: end;
-    align-content: start;
+  font-size: 80%;
+  padding-right: 5px;
+  /* font-weight: bold; */
+  text-align: end;
+  align-content: start;
 }
 
 .scrollable {
-    overflow: auto;
+  overflow: auto;
 }
 
 .vlayout {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
 }
 .vcenter {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 .hlayout {
-    display: flex;
-    flex-direction: row;
-    min-height: 0;
-    min-width: 0;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  min-width: 0;
 }
 .hcenter {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
 }
 
 .flexgrow {
-    flex: 1 0;
+  flex: 1 0;
 }
 
 .flexshrink {
-    flex: 0 1;
+  flex: 0 1;
 }
 
 .fill {
-    width: 100%;
-    height: 100%;
-    max-height: 100%;
-    max-width: 100%;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  max-width: 100%;
 }
 
 h5 {
-    margin: 0 1px 3px 1px;
-    padding-top: 6px;
-    color: #555;
-    font-size: 0.8rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    /* border-bottom: 1px solid gray; */
+  margin: 12px 1px 3px 1px;
+  padding: 0;
+  color: #555;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  /* border-bottom: 1px solid gray; */
 }
 
 hr {
-    border-top: none;
-    border-left: none;
-    border-right: none;
-    border-bottom: 1px solid gray;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid gray;
 }

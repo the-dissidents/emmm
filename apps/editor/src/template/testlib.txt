@@ -8,6 +8,9 @@
     |repl=–]
 (?<=\p{Script=Han})(-)(?=\p{Script=Han})
 
+[-lint desc=两对中文引号或书名号之间不应有其它标点符号（《标点符号用法》4.5.3.5）]
+(?<=[》”]\s*)[\u3000-\u303F|\uFF00-\uFF5A](?=\s*[《“])
+
 [-lint desc=中文破折号不能以一半的形式出现，你可能想要一个连接号？
     |repl=–]
 (?<=\p{Script=Han}[ ]*|^|\n)—(?=[ ]*\p{Script=Han}|$|\n)
@@ -21,11 +24,12 @@
 (?<=\p{Script=Han}[ ]*)(\.[ ]?){2,}
 
 [-lint desc=中文标点符号不应为半角字符]
-(?<=\p{Script=Han})[,.:;?!"'][ ]?(?=\p{Script=Han}|\n|$)
+(?<=\p{Script=Han})[,.:;?!"'()][ ]?(?=\p{Script=Han}|\n|$)
 
 [-lint desc=西文标点符号后、下一个词之前，应该恰好有一个空格]
 (?<=\p{Script=Latin})[,.:;?!](?=\p{Script=Latin}+ )
 
+;; This is currently limited, because in our configuration the emmm parser collapses spaces before the linter can see them
 [-lint desc=单词之间不要有多于一个空格]
 (?<=\p{Letter})[ ]{2,}(?=\p{Letter})
 
@@ -34,6 +38,14 @@
 
 [-lint desc=全角标点符号前不应有空格]
 [ ]+(?=[\u3000-\u303F|\uFF00-\uFF5A])
+
+;; “(?=[^”]*(“|$))|(?<=(”|^)[^“]*)”
+
+[-lint desc=你可能想要添加行内注释，格式应该是\[=...\]]
+（([\u0000-\u5000]+?)）
+
+[-lint desc=你可能想要添加行内注释，这里方括号开头需要一个等号]
+\[.+?\]
 
 [-lint desc=你可能是要写\[\|...\|...\]，但是打成了全角]
 \[｜.+?｜.+?\]

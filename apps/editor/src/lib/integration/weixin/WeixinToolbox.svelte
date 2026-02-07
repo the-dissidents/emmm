@@ -158,7 +158,7 @@
     <td>stable token</td>
     <td>
       <input type="text" style="width: 100%" disabled value={$stableToken} /><br/>
-      <button style="width: 100%" class="important"
+      <button class="veryimportant" style="width: 100%"
         onclick={() => {
           Weixin.fetchToken().catch((x) => {
             dialog.message(`${x}`, { kind: 'error' });
@@ -180,7 +180,7 @@
   } else {
     Interface.status.set(`successfully copied for Weixin`);
   }
-}} class='important'>copy rendered result for Weixin</button>
+}} class='veryimportant'>copy rendered result for Weixin</button>
 <button onclick={async () => {
   const doc = Interface.frame?.contentDocument;
   const win = Interface.frame?.contentWindow;
@@ -192,10 +192,10 @@
   } else {
     Interface.status.set(`successfully copied HTML as text`);
   }
-}}>copy rendered result as text</button>
+}} class="important">copy rendered result as text</button>
 
 <h5>Images</h5>
-<button onclick={() => uploadAll()} class="important">upload images</button>
+<button onclick={() => uploadAll()} class="veryimportant">upload images</button>
 <ListView header={imgListHeader} bind:hout={imgListHandleOut} style="min-height: 300px">
 </ListView>
 

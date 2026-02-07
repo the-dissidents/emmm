@@ -17,6 +17,32 @@
     "fs:allow-appconfig-read-recursive",
     "fs:allow-appconfig-write-recursive",
     {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "get-voices",
+          "cmd": "say",
+          "args": [
+            "-v",
+            "?"
+          ]
+        },
+        {
+          "name": "say",
+          "cmd": "say",
+          "args": [
+            "-v",
+            {
+              "validator": ".+"
+            },
+            {
+              "validator": ".+"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "identifier": "fs:allow-create",
       "allow": [
         {

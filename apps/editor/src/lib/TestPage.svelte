@@ -1,6 +1,4 @@
 <script lang="ts">
-  import WeixinToolbox from './integration/weixin/WeixinToolbox.svelte';
-
   import * as emmm from '@the_dissidents/libemmm';
   import { css } from '@codemirror/lang-css';
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
@@ -15,13 +13,16 @@
   import { Interface } from './Interface.svelte';
   import EmmmContext from './editor/EmmmContext.svelte';
   import GenericContext from './editor/GenericContext.svelte';
-  import SearchToolbox from './toolbox/SearchToolbox.svelte';
   import type { EmmmParseData } from './editor/ParseData';4
-  import ParametersToolbox from './toolbox/ParametersToolbox.svelte';
   import ASTViewer from './emmm/ASTViewer.svelte';
   import { Memorized } from './config/Memorized.svelte';
 
+  import WeixinToolbox from './integration/weixin/WeixinToolbox.svelte';
+  import SearchToolbox from './toolbox/SearchToolbox.svelte';
+  import ParametersToolbox from './toolbox/ParametersToolbox.svelte';
   import SyncToolbox from './toolbox/SyncToolbox.svelte';
+  import TestToolbox from './toolbox/TestToolbox.svelte';
+
   import type { EmmmDiagnostic } from './editor/Linter';
 
   let left = $state<HTMLElement>(),
@@ -35,6 +36,10 @@
   let sourceHandle = $state<EditorHandleOut>(),
       libraryHandle = $state<EditorHandleOut>(),
       cssHandle = $state<EditorHandleOut>();
+
+  $effect(() => {
+    Interface.sourceEditor = sourceHandle;
+  });
 
   let status = Interface.status,
       parseData = Interface.parseData,
@@ -110,7 +115,7 @@
 <!-- tools view -->
 <div class="pane" style="width: 300px;" bind:this={left}>
   <TabView>
-    <TabPage name='Document'>
+    <TabPage name='File'>
       <SyncToolbox />
     </TabPage>
     <TabPage name='Weixin'>
@@ -121,6 +126,9 @@
     </TabPage>
     <TabPage name='Search'>
       <SearchToolbox />
+    </TabPage>
+    <TabPage name='Eggs'>
+      <TestToolbox />
     </TabPage>
   </TabView>
 </div>
