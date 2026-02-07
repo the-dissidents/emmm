@@ -73,7 +73,7 @@ label:has(input[type='checkbox'].button) {
   padding-inline-start: 6px;
   line-height: normal;
 
-  &:hover {
+  &:not([disabled]):hover {
     filter: brightness(95%);
     /* background-color: rgb(241, 241, 241); */
   }
@@ -85,8 +85,10 @@ label:has(input[type='checkbox'].button) {
 
 .veryimportant {
   font-size: 0.8rem;
-  background-color: var(--uchu-pink-1);
-  color: var(--uchu-red-9);
+  &:not([disabled]) {
+    background-color: var(--uchu-pink-1);
+    color: var(--uchu-red-9);
+  }
   padding-block: 0.5em;
 }
 

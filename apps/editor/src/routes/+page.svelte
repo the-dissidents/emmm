@@ -3,6 +3,8 @@
   import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
   import TestPage from '../lib/TestPage.svelte';
   import { Memorized } from '$lib/config/Memorized.svelte';
+  import { getVersion } from '@tauri-apps/api/app';
+  import { arch, platform, version } from '@tauri-apps/plugin-os';
 
   const currentWindow = getCurrentWindow();
 
@@ -13,6 +15,11 @@
       Settings.get('windowW'),
       Settings.get('windowH')));
   });
+
+  (async () => {
+    const v = await getVersion();
+    await currentWindow.setTitle(`kfgui ${v} (${arch()}/${platform()}${version()})`);
+  })();
 
   currentWindow.onCloseRequested(async (ev) => {
     const factor = await currentWindow.scaleFactor();
