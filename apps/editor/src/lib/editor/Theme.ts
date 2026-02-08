@@ -44,13 +44,16 @@ export const emmmTheme = [
         ".cm-cursor, .cm-dropCursor": {
             borderLeftWidth: '1.5px'
         },
+        ".cm-cursor": {
+            display: 'block',
+        },
         "&.cm-focused .cm-selectionBackground, ::selection": {
             backgroundColor: "#074"
         },
         ".cm-gutters": {
             fontSize: '85%',
             fontFamily: 'Roboto Mono, Menlo, Consolas, 等线, monospace',
-            backgroundColor: "lightcoral",
+            backgroundColor: "#f0a299",
             color: "lavenderblush",
             padding: '0 5px 0 10px',
             // use margin to pad here instead

@@ -6,10 +6,12 @@
   import { EditorView } from "@codemirror/view";
   import { Memorized } from "$lib/config/Memorized.svelte";
   import * as z from "zod/v4-mini";
+  import { getReplacement } from "$lib/details/Replace";
 
   let searchPattern = $state('');
   let replacement = $state('');
   let useRegex = Memorized.$('search-useRegex', z.boolean(), true);
+  let useEscape = Memorized.$('search-useEscape', z.boolean(), true);
   let caseSensitive = Memorized.$('search-caseSensitive', z.boolean(), true);
 
   function escapeRegexp(str: string) {
@@ -41,7 +43,8 @@
       const to = from + match[0].length;
       ranges.push({ from, to });
       if (action == 'replace') {
-        changes.push({ from, to, insert: replacement });
+        const insert = $useEscape ? getReplacement(match, replacement) : replacement;
+        changes.push({ from, to, insert });
       }
       if (!all) break;
     }
@@ -82,13 +85,18 @@
 <input type="text" placeholder="replace by" bind:value={replacement} />
 
 <label>
+  <input type="checkbox" bind:checked={$caseSensitive} />
+  case sensitive
+</label>
+
+<label>
   <input type="checkbox" bind:checked={$useRegex} />
   use regex
 </label>
 
 <label>
-  <input type="checkbox" bind:checked={$caseSensitive} />
-  case sensitive
+  <input type="checkbox" bind:checked={$useEscape} />
+  use escape characters in replacement expression
 </label>
 
 <div class="hlayout">

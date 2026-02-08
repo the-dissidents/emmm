@@ -2,6 +2,7 @@ import * as emmm from "@the_dissidents/libemmm";
 import { emmmDocument } from "./ParseData";
 import { linter, type Diagnostic } from "@codemirror/lint";
 import { getLintRules } from "$lib/emmm/Linting";
+import { getReplacement } from "$lib/details/Replace";
 
 export type EmmmDiagnostic = Diagnostic & {
     location: emmm.LocationRange
@@ -41,6 +42,11 @@ export const emmmLinter = (onLint?: (d: EmmmDiagnostic[]) => void) => linter((vi
                 if (msgs.length > 100) break outer;
                 const start = text.location.start + match.index;
                 const end = start + match[0].length;
+
+                const insert = rule.replacement
+                    ? getReplacement(match, rule.replacement)
+                    : undefined;
+
                 msgs.push({
                     location: {
                         source: text.location.source,
@@ -49,13 +55,11 @@ export const emmmLinter = (onLint?: (d: EmmmDiagnostic[]) => void) => linter((vi
                     from: start, to: end,
                     severity: 'warning',
                     message: rule.description ?? 'No description given',
-                    actions: rule.replacement ? [
+                    actions: insert ? [
                         {
-                            name: `change to: "${rule.replacement}"`,
+                            name: `change to: "${insert}"`,
                             apply(view, from, to) {
-                                view.dispatch({
-                                    changes: { from, to, insert: rule.replacement }
-                                })
+                                view.dispatch({ changes: { from, to, insert } });
                             },
                         }
                     ] : []

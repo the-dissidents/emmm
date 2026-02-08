@@ -31,15 +31,7 @@
         {
           "name": "say",
           "cmd": "say",
-          "args": [
-            "-v",
-            {
-              "validator": ".+"
-            },
-            {
-              "validator": ".+"
-            }
-          ]
+          "args": true
         }
       ]
     },
