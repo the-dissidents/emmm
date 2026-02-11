@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { deriveColorsFrom } from "$lib/ColorTheme";
+  // import { deriveColorsFrom } from "$lib/ColorTheme";
   import { Interface } from "$lib/Interface.svelte";
   import { Colorpicker } from "@the_dissidents/svelte-ui";
 
-  let autoColor = $state(true);
+  let autoColor = $state(false);
 
   function doDeriveColors() {
-    if (autoColor) Interface.colors = deriveColorsFrom(Interface.colors.theme);
-    Interface.requestRender(0);
+    // if (autoColor) Interface.colors = deriveColorsFrom(Interface.colors.theme);
+    // Interface.requestRender(0);
   }
 
   doDeriveColors();
@@ -17,7 +17,7 @@
 <Colorpicker bind:color={Interface.colors.theme} mode='hsl'
   oninput={doDeriveColors} />
 <hr/>
-<label><input type="checkbox"
+<label><input type="checkbox" disabled
   bind:checked={autoColor} oninput={doDeriveColors} />
 automatically derive the rest
 </label>

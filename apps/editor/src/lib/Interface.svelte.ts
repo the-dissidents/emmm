@@ -1,6 +1,6 @@
 import { get, writable } from "svelte/store"
 import { getCssVariablesFromColors, type ArticleColors } from "./ColorTheme";
-import Color from "colorjs.io";
+import * as Color from "colorjs.io/fn";
 
 import * as emmm from '@the_dissidents/libemmm';
 import { convertFileSrc } from "@tauri-apps/api/core";
@@ -56,11 +56,11 @@ export const Interface = $state({
     renderedDocument: null as Document | null,
 
     colors: {
-        theme: new Color('white'),
-        text: new Color('black'),
-        commentary: new Color('black'),
-        link: new Color('black'),
-        highlight: new Color('yellow')
+        theme: Color.getColor('white'),
+        text: Color.getColor('black'),
+        commentary: Color.getColor('indianred'),
+        link: Color.getColor('MediumVioletRed'),
+        highlight: Color.getColor('yellow')
     } satisfies ArticleColors,
     onFrameDOMLoaded: new EventHost(),
     onFrameLoaded: new EventHost(),
