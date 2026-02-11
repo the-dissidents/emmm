@@ -12,7 +12,9 @@ type Range = {
 
 const WBR = new class WordBreakWidget extends WidgetType {
     toDOM(): HTMLElement {
-        return document.createElement('wbr');
+        const elem = document.createElement('span');
+        elem.innerText = '\u200b';
+        return elem;
     }
 };
 

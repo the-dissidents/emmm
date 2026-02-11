@@ -12,7 +12,7 @@
     "module": "ESNext",
     "jsx": "react-jsx",
     "jsxImportSource": "@the_dissidents/minimal-jsx-runtime",
-    "types": ["vite/client", ]
+    "types": ["vite/client", ],
   }
   // Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias
   // except $lib which is handled by https://kit.svelte.dev/docs/configuration#files

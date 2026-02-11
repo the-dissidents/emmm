@@ -8,17 +8,17 @@ class IndentSuggestion extends WidgetType {
     }
 
     toDOM(): HTMLElement {
-        let div = document.createElement('div');
+        let div = document.createElement('span');
         div.className = 'fu-indentation-container';
 
         if (this.normal > 0) {
-            let div2 = document.createElement('div');
+            let div2 = document.createElement('span');
             div2.className = 'fu-indentation';
             div.appendChild(div2);
         }
 
         // too ugly
-        
+
         // if (this.hanging > 0) {
         //     let div3 = document.createElement('div');
         //     div3.className = 'fu-hanging-visualizer';
@@ -46,9 +46,9 @@ export const emmmWrapIndent = ViewPlugin.fromClass(class {
                         attributes: { style: `--hanging:${indentation.hanging}ch;--normal:${indentation.normal}ch;` }
                     }));
 
-                    builder.add(line.from, line.from, Decoration.widget({
-                        widget: new IndentSuggestion(indentation.hanging, indentation.normal)
-                    }));
+                    // builder.add(line.from, line.from, Decoration.widget({
+                    //     widget: new IndentSuggestion(indentation.hanging, indentation.normal)
+                    // }));
                 }
                 pos = line.to + 1;
             }

@@ -10,7 +10,7 @@ import { Configuration, ReadonlyConfiguration } from "../parser-config";
 import { initTable, TableBlocks, TableInlines } from "./table";
 import { GalleryBlock } from "./gallery";
 
-let config = Configuration.from(BuiltinConfiguration);
+let config = Configuration.from(BuiltinConfiguration, false);
 config.initializers.push(initNotes, initHeadings, initTable);
 config.blockModifiers.add(
     ...HeadingBlocks,

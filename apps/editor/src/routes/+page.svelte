@@ -3,6 +3,9 @@
   import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
   import TestPage from '../lib/TestPage.svelte';
   import { Memorized } from '$lib/config/Memorized.svelte';
+  import { getVersion } from '@tauri-apps/api/app';
+  import { arch, platform, version } from '@tauri-apps/plugin-os';
+  import { Banner } from '@the_dissidents/svelte-ui';
 
   const currentWindow = getCurrentWindow();
 
@@ -14,6 +17,11 @@
       Settings.get('windowH')));
   });
 
+  (async () => {
+    const v = await getVersion();
+    await currentWindow.setTitle(`kfgui ${v} (${arch()}/${platform()}${version()})`);
+  })();
+
   currentWindow.onCloseRequested(async (ev) => {
     const factor = await currentWindow.scaleFactor();
     const size = (await currentWindow.innerSize()).toLogical(factor);
@@ -22,8 +30,18 @@
 
     await Memorized.save();
   });
+
+  let errorBanner = $state(false);
+  window.addEventListener('error', () => {
+    errorBanner = true;
+  });
+  window.addEventListener('unhandledrejection', () => {
+    errorBanner = true;
+  });
 </script>
 
+<Banner style='error' bind:open={errorBanner}
+  text="Internal error: please contact the developers"/>
 
 <main class="container vlayout fill">
   <div id="titlebar" data-tauri-drag-region>

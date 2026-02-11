@@ -3,7 +3,7 @@ import { BuiltinConfiguration, Configuration, DebugLevel, NodeType, ParseContext
 import { debug } from "../src/debug";
 
 function parse(src: string) {
-    const config = Configuration.from(BuiltinConfiguration);
+    const config = Configuration.from(BuiltinConfiguration, false);
     let doc = new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
     return doc;
 }

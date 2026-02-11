@@ -27,8 +27,11 @@ pub async fn archive(
 
         let result = re.replace_all(&source, |caps: &Captures| {
             let file_path = &caps[1];
+            let path = Path::new(file_path);
 
-            if let Some(name) = Path::new(file_path).file_name() {
+            if let Some(name) = path.file_name()
+                && path.is_file()
+            {
                 let key = name.to_string_lossy().to_string();
 
                 let distinct_key = if map.contains_key(&key) {
@@ -44,7 +47,7 @@ pub async fn archive(
 
                 format!("asset:{distinct_key}")
             } else {
-                log::debug!("failed to get filename: {file_path}");
+                log::debug!("bad path: {file_path}");
 
                 caps[0].to_string()
             }

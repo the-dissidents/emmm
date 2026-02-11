@@ -12,10 +12,29 @@
     "core:window:allow-set-size",
     "core:window:allow-destroy",
     "core:window:allow-start-dragging",
+    "core:window:allow-set-title",
     "opener:default",
     "fs:default",
     "fs:allow-appconfig-read-recursive",
     "fs:allow-appconfig-write-recursive",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "get-voices",
+          "cmd": "say",
+          "args": [
+            "-v",
+            "?"
+          ]
+        },
+        {
+          "name": "say",
+          "cmd": "say",
+          "args": true
+        }
+      ]
+    },
     {
       "identifier": "fs:allow-create",
       "allow": [
@@ -61,6 +80,7 @@
     "clipboard-manager:allow-write-html",
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-write-image",
+    "clipboard-manager:allow-read-text",
     "dialog:default"
   ]
 }

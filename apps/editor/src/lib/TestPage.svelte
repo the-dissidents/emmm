@@ -1,27 +1,27 @@
 <script lang="ts">
-  import WeixinToolbox from './integration/weixin/WeixinToolbox.svelte';
-
   import * as emmm from '@the_dissidents/libemmm';
+  import { TabView, TabPage, Resizer, ListView } from '@the_dissidents/svelte-ui';
+  import { CircleXIcon, InfoIcon, TriangleAlertIcon } from '@lucide/svelte';
   import { css } from '@codemirror/lang-css';
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 
   import Editor, { type EditorHandleOut } from './editor/Editor.svelte';
-  import Resizer from './ui/Resizer.svelte';
-  import TabView from './ui/TabView.svelte';
-  import TabPage from './ui/TabPage.svelte';
 
-  import ListView, { type ListColumn, type ListViewHandleOut } from './ui/ListView.svelte';
-  import { SvelteMap } from 'svelte/reactivity';
   import { Interface } from './Interface.svelte';
   import EmmmContext from './editor/EmmmContext.svelte';
   import GenericContext from './editor/GenericContext.svelte';
-  import SearchToolbox from './toolbox/SearchToolbox.svelte';
-  import type { EmmmParseData } from './editor/ParseData';4
-  import ParametersToolbox from './toolbox/ParametersToolbox.svelte';
+  import type { EmmmParseData } from './editor/ParseData';
   import ASTViewer from './emmm/ASTViewer.svelte';
   import { Memorized } from './config/Memorized.svelte';
 
+  import WeixinToolbox from './integration/weixin/WeixinToolbox.svelte';
+  import SearchToolbox from './toolbox/SearchToolbox.svelte';
+  import ParametersToolbox from './toolbox/ParametersToolbox.svelte';
   import SyncToolbox from './toolbox/SyncToolbox.svelte';
+  import TestToolbox from './toolbox/TestToolbox.svelte';
+
+  import type { EmmmDiagnostic } from './editor/Linter';
+  import { Debug } from './Debug';
 
   let left = $state<HTMLElement>(),
       middle = $state<HTMLElement>(),
@@ -35,9 +35,14 @@
       libraryHandle = $state<EditorHandleOut>(),
       cssHandle = $state<EditorHandleOut>();
 
+  $effect(() => {
+    Interface.sourceEditor = sourceHandle;
+  });
+
   let status = Interface.status,
       parseData = Interface.parseData,
-      progress = Interface.progress;
+      progress = Interface.progress,
+      inverted = Interface.invertedPreview;
 
   let source = Interface.source,
       library = Interface.library,
@@ -46,7 +51,6 @@
   let libConfig = $state<emmm.Configuration>();
 
   function onParseLibrary(doc: EmmmParseData) {
-    console.log('parse library');
     libConfig = doc.data.context.config;
     if (Interface.activeEditor !== libraryHandle)
       setTimeout(() => sourceHandle?.reparse(), 0);
@@ -61,44 +65,16 @@
     onCursorPositionChanged(...h.getCursorPosition());
   }
 
-  function onParse(doc: EmmmParseData) {
-    console.log('parse source');
+  function onParseSource(doc: EmmmParseData) {
     parsedStatus = `parsed in ${doc.parseTime.toFixed(0)}ms`;
     Interface.parseData.set({...doc});
-    setTimeout(() => Interface.render(), 0);
+    Interface.requestRender();
+
+    if (!Interface.activeEditor)
+      Interface.activeEditor = sourceHandle;
   }
 
-  const problemListHeader = new SvelteMap<string, ListColumn>([
-    ['file', {name: 'file', type: 'text', vAlign: 'top', width: '5%'}],
-    ['type', {name: 'T', type: 'text', vAlign: 'top', width: '5%'}],
-    ['code', {name: '#', type: 'text', vAlign: 'top', width: '5%'}],
-    ['line', {name: 'line', type: 'text', vAlign: 'top', width: '5%'}],
-    ['column', {name: 'column', type: 'text', vAlign: 'top', width: '5%'}],
-    ['length', {name: 'length', type: 'text', vAlign: 'top', width: '5%'}],
-    ['msg', {name: 'message', type: 'text'}]
-  ]);
-  let problemListHandleOut: ListViewHandleOut | undefined = $state();
-
-  Interface.parseData.subscribe((pd) => {
-    problemListHandleOut?.reset(pd!.data.messages.map((x) => {
-      const source = x.location.source;
-      return {
-        cols: {
-          file: {type: 'text', content: source.name},
-          type: {type: 'text', content: {
-            [emmm.MessageSeverity.Warning]: '⚠️',
-            [emmm.MessageSeverity.Error]: '❌',
-            [emmm.MessageSeverity.Info]: 'ℹ️'
-          }[x.severity]},
-          code: {type: 'text', content: `${x.code}`},
-          line: {type: 'text', content: `${source.getRowCol(x.location.start)[0] + 1}`},
-          column: {type: 'text', content: `${source.getRowCol(x.location.start)[1] + 1}`},
-          length: {type: 'text', content: `${(x.location.actualEnd ?? x.location.end) - x.location.start + 1}`},
-          msg: {type: 'text', content: x.info},
-        }
-      }
-    }));
-  });
+  let diagnostics: EmmmDiagnostic[] = $state([]);
 </script>
 
 <div class="vlayout fill">
@@ -109,17 +85,20 @@
 <!-- tools view -->
 <div class="pane" style="width: 300px;" bind:this={left}>
   <TabView>
-    <TabPage name='Weixin'>
-      <WeixinToolbox />
-    </TabPage>
-    <TabPage name="Parameters">
-      <ParametersToolbox />
-    </TabPage>
-    <TabPage name='Sync'>
+    <TabPage id='File' header="File">
       <SyncToolbox />
     </TabPage>
-    <TabPage name='Search'>
+    <TabPage id='Weixin' header="Weixin">
+      <WeixinToolbox />
+    </TabPage>
+    <TabPage id="Parameters" header="Parameters">
+      <ParametersToolbox />
+    </TabPage>
+    <TabPage id='Search' header="Search">
       <SearchToolbox />
+    </TabPage>
+    <TabPage id='Eggs' header="Eggs">
+      <TestToolbox />
     </TabPage>
   </TabView>
 </div>
@@ -131,14 +110,16 @@
 <!-- source view -->
 <div class="pane flexgrow" bind:this={middle}>
   <TabView>
-    <TabPage name="Source"
+    <TabPage id="Source" header="Source"
         onActivate={() => sourceHandle?.focus?.()}>
-      <EmmmContext {onParse}
+      <EmmmContext onParse={onParseSource}
           provideDescriptor={() => ({name: '<Source>'})}
           provideContext={() => libConfig
-            ? new emmm.ParseContext(emmm.Configuration.from(libConfig))
+            ? new emmm.ParseContext(emmm.Configuration.from(libConfig, true))
             : undefined
-      }>
+          }
+          onLint={(d) => diagnostics = d}
+      >
         <Editor bind:text={$source}
           onFocus={() => {
             updateCursorPosition(sourceHandle);
@@ -148,7 +129,7 @@
           bind:hout={sourceHandle} />
       </EmmmContext>
     </TabPage>
-    <TabPage name="Library"
+    <TabPage id="Library" header="Library"
         onActivate={() => libraryHandle?.focus?.()}>
       <EmmmContext onParse={onParseLibrary}
           provideDescriptor={() => ({name: '<Library>'})}>
@@ -161,7 +142,7 @@
           bind:hout={libraryHandle} />
       </EmmmContext>
     </TabPage>
-    <TabPage name="Stylesheet">
+    <TabPage id="Stylesheet" header="Stylesheet">
       <GenericContext extension={[
         syntaxHighlighting(defaultHighlightStyle),
         bracketMatching(),
@@ -173,9 +154,7 @@
             Interface.activeEditor = cssHandle;
           }}
           {onCursorPositionChanged}
-          onChange={() => {
-            Interface.render();
-          }}
+          onChange={() => Interface.requestRender()}
           bind:hout={cssHandle} />
       </GenericContext>
     </TabPage>
@@ -183,18 +162,18 @@
 </div>
 
 <div style="width: 5px;" class="hcenter">
-  <Resizer first={right} second={middle} vertical={true} reverse={true} />
+  <Resizer first={bottom!} second={middle} vertical={true} reverse={true} />
 </div>
 
 <!-- preview -->
 <div class="pane" bind:this={right} style="width: 500px;">
   <TabView>
-    <TabPage name="Preview" active={true}>
-      <iframe bind:this={Interface.frame} title="preview"
+    <TabPage id="Preview" header="Preview" active={true}>
+      <iframe bind:this={Interface.frame} class:inverted={$inverted} title="preview"
         sandbox="allow-same-origin">
       </iframe>
     </TabPage>
-    <TabPage name="AST">
+    <TabPage id="AST" header="AST" lazy={true}>
       <div class="vlayout fill">
         <div class="ast">
           <ASTViewer node={strip ? $parseData?.data.toStripped().root : $parseData?.data.root} />
@@ -210,7 +189,7 @@
         }}>trace</button>
       </div>
     </TabPage>
-    <TabPage name="HTML">
+    <TabPage id="HTML" header="AST">
       <textarea class="fill">{Interface.renderedDocument?.documentElement.outerHTML}</textarea>
     </TabPage>
   </TabView>
@@ -218,11 +197,48 @@
 </div>
 
 <div style="height: 5px;" class="vcenter">
-  <Resizer first={bottom} reverse={true} />
+  <Resizer first={bottom!} reverse={true} />
 </div>
-
 <div class="pane" style="height: 100px" bind:this={bottom}>
-  <ListView header={problemListHeader} bind:hout={problemListHandleOut}/>
+  <ListView style='height: 100%' items={diagnostics}
+    columns={[
+      ['file',    { header: 'file',    width: 'minmax(max-content, 5em)' }],
+      ['type',    { header: '',        width: '3em' }],
+      ['line',    { header: 'line',    width: '4em' }],
+      ['column',  { header: 'col',     width: '4em' }],
+      ['message', { header: 'message', width: 'auto' }],
+    ]}
+    onClickItem={(x) => {
+      if (x.location.source.name == '<Source>')
+        Interface.sourceEditor?.setSelections([{ from: x.from, to: x.to }]);
+    }}
+  >
+    {#snippet file(d)}
+      {d.location.source.name}
+    {/snippet}
+  {#snippet type(d)}
+      {#if d.severity == 'error'}
+        <CircleXIcon color="red" strokeWidth="2px"/>
+      {:else if d.severity == 'hint'}
+        <InfoIcon/>
+      {:else if d.severity == 'info'}
+        <InfoIcon/>
+      {:else if d.severity == 'warning'}
+        <TriangleAlertIcon color="red" strokeWidth="2px" />
+      {:else}
+        {Debug.never(d.severity)}
+      {/if}
+    {/snippet}
+    {#snippet line(d)}
+      {d.row + 1}
+    {/snippet}
+    {#snippet column(d)}
+      {d.col + 1}
+    {/snippet}
+    {#snippet message(d)}
+      {d.message}
+    {/snippet}
+  </ListView>
 </div>
 
 <div class="pane">
@@ -257,7 +273,7 @@
 </div>
 
 
-<style>
+<style lang='scss'>
   label {
     font-size: 85%;
   }
@@ -284,6 +300,12 @@
     position: sticky;
     width: 100%;
     height: 100%;
+
+    &.inverted {
+      @media (prefers-color-scheme: dark) {
+        filter: invert(100%);
+      }
+    }
   }
 
   .ast {
@@ -296,10 +318,17 @@
 
   .status {
     font-size: 85%;
-    border: 1px solid pink;
     border-radius: 3px;
-    background-color: lightpink;
     padding: 0 10px;
+
+    @media (prefers-color-scheme: light) {
+      border: 1px solid pink;
+      background-color: lightpink;
+    }
+    @media (prefers-color-scheme: dark) {
+      border: 1px solid rgb(118, 81, 147);
+      background-color: rgb(66, 53, 79);
+    }
   }
 
   .status span {

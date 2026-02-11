@@ -488,7 +488,7 @@ ul.gallery > li {
   /* border: 1px solid; */
   scroll-snap-align: center;
   overflow-y: scroll;
-  /* max-height: 60vh; */
+  max-height: 60vh;
 }
 
 ul.gallery > li > :first-child {

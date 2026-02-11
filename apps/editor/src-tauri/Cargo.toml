@@ -1,6 +1,6 @@
 [package]
 name = "kfgui"
-version = "0.1.1"
+version = "0.1.6"
 description = "GUI frontend for the emmm markup language"
 authors = ["The Dissidents"]
 edition = "2024"
@@ -37,4 +37,6 @@ tokio = "1.47.1"
 zip = "7.2.0"
 anyhow = { version = "1.0.100", features = ["backtrace"] }
 fancy-regex = "0.17.0"
+tauri-plugin-shell = "2.3.5"
+tauri-plugin-os = "2.3.2"
 

@@ -3,7 +3,7 @@ import { Configuration, SimpleScanner, ParseContext, DebugLevel, DefaultConfigur
 import { debug } from "../../src/debug";
 
 function parse(src: string) {
-    const config = Configuration.from(DefaultConfiguration);
+    const config = Configuration.from(DefaultConfiguration, false);
     return new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
 }
 

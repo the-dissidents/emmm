@@ -6,7 +6,7 @@ import { BlockModifierDefinition, InlineModifierDefinition, ModifierSlotType } f
 import { debug, DebugLevel } from "../src/debug";
 import { Configuration, ParseContext } from "../src/parser-config";
 
-const TestConfig = Configuration.from(BuiltinConfiguration);
+const TestConfig = Configuration.from(BuiltinConfiguration, false);
 TestConfig.blockModifiers.add(
     new BlockModifierDefinition('normal', ModifierSlotType.Normal)
 );
@@ -16,7 +16,7 @@ TestConfig.inlineModifiers.add(
 );
 
 function parse(src: string) {
-    const config = Configuration.from(TestConfig);
+    const config = Configuration.from(TestConfig, false);
     let doc = new ParseContext(config).parse(new SimpleScanner(src), ).toStripped();
     return doc;
 }

@@ -34,7 +34,7 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
         emmm.setDebugLevel(emmm.DebugLevel.Warning);
         const start = performance.now();
         const context = state.facet(emmmContextProvider)()
-            ?? new emmm.ParseContext(emmm.Configuration.from(CustomConfig));
+            ?? new emmm.ParseContext(emmm.Configuration.from(CustomConfig, false));
 
         let inspector: EmmmInspectorData | null = null;
         const scanner = new emmm.SimpleScanner(
@@ -45,7 +45,7 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
                 callback(cxt, position) {
                     inspector = {
                         position,
-                        config: emmm.Configuration.from(cxt.config),
+                        config: emmm.Configuration.from(cxt.config, false),
                         variables: new Map(cxt.variables)
                     };
                 },
