@@ -1,7 +1,7 @@
 <script lang="ts">
   import { deriveColorsFrom } from "$lib/ColorTheme";
   import { Interface } from "$lib/Interface.svelte";
-  import Colorpicker from "$lib/ui/Colorpicker.svelte";
+  import { Colorpicker } from "@the_dissidents/svelte-ui";
 
   let autoColor = $state(true);
 

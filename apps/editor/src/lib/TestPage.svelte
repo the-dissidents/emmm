@@ -1,19 +1,16 @@
 <script lang="ts">
   import * as emmm from '@the_dissidents/libemmm';
+  import { TabView, TabPage, Resizer, ListView } from '@the_dissidents/svelte-ui';
+  import { CircleXIcon, InfoIcon, TriangleAlertIcon } from '@lucide/svelte';
   import { css } from '@codemirror/lang-css';
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 
   import Editor, { type EditorHandleOut } from './editor/Editor.svelte';
-  import Resizer from './ui/Resizer.svelte';
-  import TabView from './ui/TabView.svelte';
-  import TabPage from './ui/TabPage.svelte';
 
-  import ListView, { type ListColumn, type ListViewHandleOut } from './ui/ListView.svelte';
-  import { SvelteMap } from 'svelte/reactivity';
   import { Interface } from './Interface.svelte';
   import EmmmContext from './editor/EmmmContext.svelte';
   import GenericContext from './editor/GenericContext.svelte';
-  import type { EmmmParseData } from './editor/ParseData';4
+  import type { EmmmParseData } from './editor/ParseData';
   import ASTViewer from './emmm/ASTViewer.svelte';
   import { Memorized } from './config/Memorized.svelte';
 
@@ -24,6 +21,7 @@
   import TestToolbox from './toolbox/TestToolbox.svelte';
 
   import type { EmmmDiagnostic } from './editor/Linter';
+  import { Debug } from './Debug';
 
   let left = $state<HTMLElement>(),
       middle = $state<HTMLElement>(),
@@ -75,36 +73,7 @@
       Interface.activeEditor = sourceHandle;
   }
 
-  const problemListHeader = new SvelteMap<string, ListColumn>([
-    ['file', {name: 'file', type: 'text', vAlign: 'top', width: '5%'}],
-    ['type', {name: 'T', type: 'text', vAlign: 'top', width: '5%'}],
-    ['line', {name: 'line', type: 'text', vAlign: 'top', width: '5%'}],
-    ['column', {name: 'column', type: 'text', vAlign: 'top', width: '5%'}],
-    ['length', {name: 'length', type: 'text', vAlign: 'top', width: '5%'}],
-    ['msg', {name: 'message', type: 'text'}]
-  ]);
-  let problemListHandleOut: ListViewHandleOut | undefined = $state();
-
-  function onLint(d: EmmmDiagnostic[]) {
-    problemListHandleOut?.reset(d.map((x) => {
-      const source = x.location.source;
-      return {
-        cols: {
-          type: {type: 'text', content: {
-            warning: '⚠️',
-            error: '❌',
-            hint: '💡',
-            info: 'ℹ️'
-          }[x.severity]},
-          file: {type: 'text', content: source.name},
-          line: {type: 'text', content: `${source.getRowCol(x.from)[0] + 1}`},
-          column: {type: 'text', content: `${source.getRowCol(x.from)[1] + 1}`},
-          length: {type: 'text', content: `${x.to - x.from}`},
-          msg: {type: 'text', content: x.message},
-        }
-      };
-    }));
-  }
+  let diagnostics: EmmmDiagnostic[] = $state([]);
 </script>
 
 <div class="vlayout fill">
@@ -115,19 +84,19 @@
 <!-- tools view -->
 <div class="pane" style="width: 300px;" bind:this={left}>
   <TabView>
-    <TabPage name='File'>
+    <TabPage id='File' header="File">
       <SyncToolbox />
     </TabPage>
-    <TabPage name='Weixin'>
+    <TabPage id='Weixin' header="Weixin">
       <WeixinToolbox />
     </TabPage>
-    <TabPage name="Parameters">
+    <TabPage id="Parameters" header="Parameters">
       <ParametersToolbox />
     </TabPage>
-    <TabPage name='Search'>
+    <TabPage id='Search' header="Search">
       <SearchToolbox />
     </TabPage>
-    <TabPage name='Eggs'>
+    <TabPage id='Eggs' header="Eggs">
       <TestToolbox />
     </TabPage>
   </TabView>
@@ -140,7 +109,7 @@
 <!-- source view -->
 <div class="pane flexgrow" bind:this={middle}>
   <TabView>
-    <TabPage name="Source"
+    <TabPage id="Source" header="Source"
         onActivate={() => sourceHandle?.focus?.()}>
       <EmmmContext onParse={onParseSource}
           provideDescriptor={() => ({name: '<Source>'})}
@@ -148,7 +117,7 @@
             ? new emmm.ParseContext(emmm.Configuration.from(libConfig, true))
             : undefined
           }
-          {onLint}
+          onLint={(d) => diagnostics = d}
       >
         <Editor bind:text={$source}
           onFocus={() => {
@@ -159,7 +128,7 @@
           bind:hout={sourceHandle} />
       </EmmmContext>
     </TabPage>
-    <TabPage name="Library"
+    <TabPage id="Library" header="Library"
         onActivate={() => libraryHandle?.focus?.()}>
       <EmmmContext onParse={onParseLibrary}
           provideDescriptor={() => ({name: '<Library>'})}>
@@ -172,7 +141,7 @@
           bind:hout={libraryHandle} />
       </EmmmContext>
     </TabPage>
-    <TabPage name="Stylesheet">
+    <TabPage id="Stylesheet" header="Stylesheet">
       <GenericContext extension={[
         syntaxHighlighting(defaultHighlightStyle),
         bracketMatching(),
@@ -192,18 +161,18 @@
 </div>
 
 <div style="width: 5px;" class="hcenter">
-  <Resizer first={right} second={middle} vertical={true} reverse={true} />
+  <Resizer first={bottom!} second={middle} vertical={true} reverse={true} />
 </div>
 
 <!-- preview -->
 <div class="pane" bind:this={right} style="width: 500px;">
   <TabView>
-    <TabPage name="Preview" active={true}>
+    <TabPage id="Preview" header="Preview" active={true}>
       <iframe bind:this={Interface.frame} title="preview"
         sandbox="allow-same-origin">
       </iframe>
     </TabPage>
-    <TabPage name="AST" removeIfInactive={true}>
+    <TabPage id="AST" header="AST" lazy={true}>
       <div class="vlayout fill">
         <div class="ast">
           <ASTViewer node={strip ? $parseData?.data.toStripped().root : $parseData?.data.root} />
@@ -219,7 +188,7 @@
         }}>trace</button>
       </div>
     </TabPage>
-    <TabPage name="HTML">
+    <TabPage id="HTML" header="AST">
       <textarea class="fill">{Interface.renderedDocument?.documentElement.outerHTML}</textarea>
     </TabPage>
   </TabView>
@@ -227,11 +196,48 @@
 </div>
 
 <div style="height: 5px;" class="vcenter">
-  <Resizer first={bottom} reverse={true} />
+  <Resizer first={bottom!} reverse={true} />
 </div>
-
 <div class="pane" style="height: 100px" bind:this={bottom}>
-  <ListView header={problemListHeader} bind:hout={problemListHandleOut}/>
+  <ListView style='height: 100%' items={diagnostics}
+    columns={[
+      ['file',    { header: 'file',    width: 'minmax(max-content, 5em)' }],
+      ['type',    { header: '',        width: '3em' }],
+      ['line',    { header: 'line',    width: '4em' }],
+      ['column',  { header: 'col',     width: '4em' }],
+      ['message', { header: 'message', width: 'auto' }],
+    ]}
+    onClickItem={(x) => {
+      if (x.location.source.name == '<Source>')
+        Interface.sourceEditor?.setSelections([{ from: x.from, to: x.to }]);
+    }}
+  >
+    {#snippet file(d)}
+      {d.location.source.name}
+    {/snippet}
+  {#snippet type(d)}
+      {#if d.severity == 'error'}
+        <CircleXIcon color="red" strokeWidth="2px"/>
+      {:else if d.severity == 'hint'}
+        <InfoIcon/>
+      {:else if d.severity == 'info'}
+        <InfoIcon/>
+      {:else if d.severity == 'warning'}
+        <TriangleAlertIcon color="red" strokeWidth="2px" />
+      {:else}
+        {Debug.never(d.severity)}
+      {/if}
+    {/snippet}
+    {#snippet line(d)}
+      {d.row + 1}
+    {/snippet}
+    {#snippet column(d)}
+      {d.col + 1}
+    {/snippet}
+    {#snippet message(d)}
+      {d.message}
+    {/snippet}
+  </ListView>
 </div>
 
 <div class="pane">

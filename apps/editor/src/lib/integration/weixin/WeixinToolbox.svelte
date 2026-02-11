@@ -1,6 +1,5 @@
 <script lang="ts">
-  import ListView, { type ListButtonCell, type ListCell, type ListColumn, type ListItem, type ListViewHandleOut } from '../../ui/ListView.svelte';
-  import { assert } from "../../Debug";
+  import { assert, Debug } from "../../Debug";
   import { Weixin } from './API';
   import { Interface } from '../../Interface.svelte';
   import { getIP, GetIPMethod } from '../../Util';
@@ -9,7 +8,8 @@
 
   import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
   import * as dialog from '@tauri-apps/plugin-dialog';
-  import { SvelteMap } from 'svelte/reactivity';
+  import { ListView, Tooltip } from "@the_dissidents/svelte-ui";
+  import { CheckIcon, CircleArrowUpIcon, CircleXIcon, GlobeIcon, LoaderIcon, TriangleAlertIcon } from "@lucide/svelte";
 
   let publicIP = $state('');
   let appid = Weixin.appid;
@@ -18,22 +18,12 @@
 
   let progress = Interface.progress;
 
-  const imgListHeader = new SvelteMap<string, ListColumn>([
-    ['refresh', {name: '', type: 'button', width: '15%'}],
-    ['status', {name: '', type: 'text', width: '10%'}],
-    ['name', {name: 'name', type: 'text',
-      contentStyle: 'text-overflow: ellipsis; white-space: nowrap; overflow: hidden;'}],
-  ]);
-  let imgListHandleOut: ListViewHandleOut | undefined = $state();
-
-  type ImgStatus = 'ok' | 'notUploaded' | 'error' | 'pending';
+  type ImgStatus = 'uploaded' | 'external' | 'notUploaded' | 'invalid' | 'error' | 'pending';
   type Img = {
-    indicator: { type: 'text', content: string, alt: string },
-    refresh: ListButtonCell | undefined,
     status: ImgStatus,
     url: URL
   };
-  let sourceImgs: Img[] = [];
+  let sourceImgs: Img[] = $state([]);
 
   async function uploadImg(img: Img) {
     Interface.status.set(`compressing: ${img.url.href}`);
@@ -49,9 +39,7 @@
       Interface.status.set(`done`);
     } catch (e) {
       Interface.status.set(`error when uploading ${img.url.href}: ${e}`);
-      img.status = 'notUploaded';
-      img.indicator.content = '⚠️';
-      img.indicator.alt = 'this image is loaded, but an error occurred when trying to upload it';
+      img.status = 'error';
       throw e;
     }
   }
@@ -75,27 +63,11 @@
     img.status = 'pending';
     const realhref = img.url.href;
     if (Weixin.smallImageCache.has(realhref)) {
-      img.status = 'ok';
-      img.indicator.content = '🟢';
-      img.indicator.alt = 'already uploaded';
-      img.refresh = {
-        type: 'button',
-        text: 'refresh',
-        onClick: () => uploadImg(img),
-      };
+      img.status = 'uploaded';
     } else if (img.url.protocol !== 'file:') {
-      img.status = 'ok';
-      img.indicator.content = '⚪';
-      img.indicator.alt = 'no need to upload this image';
-      img.refresh = {
-        type: 'button',
-        text: 'force',
-        onClick: () => uploadImg(img),
-      };
+      img.status = 'external';
     } else {
       img.status = 'notUploaded';
-      img.indicator.content = '🟡';
-      img.indicator.alt = 'loaded but not uploaded yet';
     }
   }
 
@@ -103,29 +75,19 @@
     let doc = Interface.frame?.contentDocument;
     assert(doc !== undefined && doc !== null);
     sourceImgs = [];
-    let items: ListItem[] = [...doc.querySelectorAll('img')].map((x) => {
+    [...doc.querySelectorAll('img')].map((x) => {
       const url = new URL(x.dataset.originalSrc ?? x.src);
       let img: Img = {
         status: 'pending',
-        indicator: { type: 'text' as const, content: '', alt: '' },
-        refresh: undefined,
         url: url
       };
       sourceImgs.push(img);
       if (x.complete && x.naturalWidth > 0) {
         updateImg(img);
       } else if (x.complete) {
-        img.status = 'error';
-        img.indicator.content = '🔴';
-        img.indicator.alt = 'this image failed to load!';
+        img.status = 'invalid';
       }
-      let name = {
-        type: 'text',
-        content: url.href.split('/').at(-1)!
-      } satisfies ListCell;
-      return {cols: { refresh: img.refresh, status: img.indicator, name }};
     });
-    imgListHandleOut!.reset(items);
   });
 </script>
 
@@ -159,10 +121,12 @@
     <td>
       <input type="text" style="width: 100%" disabled value={$stableToken} /><br/>
       <button class="veryimportant" style="width: 100%"
-        onclick={() => {
-          Weixin.fetchToken().catch((x) => {
-            dialog.message(`${x}`, { kind: 'error' });
-          });
+        onclick={async () => {
+          try {
+            await Weixin.fetchToken();
+          } catch (x) {
+            await dialog.message(`${x}`, { kind: 'error' });
+          }
         }}>retrieve token</button>
     </td>
   </tr>
@@ -196,7 +160,60 @@
 
 <h5>Images</h5>
 <button onclick={() => uploadAll()} class="veryimportant">upload images</button>
-<ListView header={imgListHeader} bind:hout={imgListHandleOut} style="min-height: 300px">
+
+<ListView style="min-height: 300px; flex-grow: 1;"
+  items={sourceImgs}
+  columns={[
+    ['button', { header: 'action', align: 'end' }],
+    ['status', { header: '' }],
+    ['name', { header: 'name', ellipsis: true }],
+  ]}
+>
+  {#snippet name(item)}
+    {item.url.href.split('/').at(-1)!}
+  {/snippet}
+  {#snippet button(item)}
+    {#if item.status == 'external'}
+      <button onclick={() => uploadImg(item)}>
+        force
+      </button>
+    {:else if item.status == 'notUploaded'}
+      <button onclick={() => uploadImg(item)}>
+        upload
+      </button>
+    {:else if item.status == 'uploaded'}
+      <button onclick={() => uploadImg(item)}>
+        refresh
+      </button>
+    {/if}
+  {/snippet}
+  {#snippet status(item)}
+    {#if item.status == 'error'}
+      <Tooltip position='right' text="this image is loaded, but an error occurred when trying to upload it">
+        <span><TriangleAlertIcon/></span>
+      </Tooltip>
+    {:else if item.status == 'invalid'}
+      <Tooltip position='right' text="this image failed to load!">
+        <span><CircleXIcon/></span>
+      </Tooltip>
+    {:else if item.status == 'external'}
+      <Tooltip position='right' text="no need to upload this image">
+        <span><GlobeIcon/></span>
+      </Tooltip>
+    {:else if item.status == 'notUploaded'}
+      <Tooltip position='right' text="loaded but not uploaded yet">
+        <span><CircleArrowUpIcon/></span>
+      </Tooltip>
+    {:else if item.status == 'uploaded'}
+      <Tooltip position='right' text="sucessfully uploaded">
+        <span><CheckIcon/></span>
+      </Tooltip>
+    {:else if item.status == 'pending'}
+      <LoaderIcon/>
+    {:else}
+      {Debug.never(item.status)}
+    {/if}
+  {/snippet}
 </ListView>
 
 </div>

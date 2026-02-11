@@ -5,6 +5,7 @@
   import { Memorized } from '$lib/config/Memorized.svelte';
   import { getVersion } from '@tauri-apps/api/app';
   import { arch, platform, version } from '@tauri-apps/plugin-os';
+  import { Banner } from '@the_dissidents/svelte-ui';
 
   const currentWindow = getCurrentWindow();
 
@@ -29,8 +30,18 @@
 
     await Memorized.save();
   });
+
+  let errorBanner = $state(false);
+  window.addEventListener('error', () => {
+    errorBanner = true;
+  });
+  window.addEventListener('unhandledrejection', () => {
+    errorBanner = true;
+  });
 </script>
 
+<Banner style='error' bind:open={errorBanner}
+  text="Internal error: please contact the developers"/>
 
 <main class="container vlayout fill">
   <div id="titlebar" data-tauri-drag-region>

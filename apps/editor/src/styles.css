@@ -1,18 +1,5 @@
 :root {
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-
-  color: #0f0f0f;
-  background-color: #f6f6f6;
   box-sizing: border-box;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
 }
 
 html, body {
@@ -25,7 +12,7 @@ html, body {
   -moz-user-select: none; -ms-user-select: none;
 }
 
-input, button {
+/* input, button {
   font-size: 0.75rem;
 }
 
@@ -75,27 +62,12 @@ label:has(input[type='checkbox'].button) {
 
   &:not([disabled]):hover {
     filter: brightness(95%);
-    /* background-color: rgb(241, 241, 241); */
   }
 
   &:has(input[type='checkbox'].button:checked) {
     background-color: lightblue;
   }
-}
-
-.veryimportant {
-  font-size: 0.8rem;
-  &:not([disabled]) {
-    background-color: var(--uchu-pink-1);
-    color: var(--uchu-red-9);
-  }
-  padding-block: 0.5em;
-}
-
-.important {
-  font-size: 0.8rem;
-  padding-block: 0.5em;
-}
+} */
 
 table.config {
   width: 100%;
@@ -148,21 +120,4 @@ table.config tr > td:nth-child(1) {
   height: 100%;
   max-height: 100%;
   max-width: 100%;
-}
-
-h5 {
-  margin: 12px 1px 3px 1px;
-  padding: 0;
-  color: #555;
-  font-size: 0.8rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  /* border-bottom: 1px solid gray; */
-}
-
-hr {
-  border-top: none;
-  border-left: none;
-  border-right: none;
-  border-bottom: 1px solid gray;
 }

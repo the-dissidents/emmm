@@ -1,6 +1,6 @@
 {
   "name": "kfgui",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "",
   "type": "module",
   "scripts": {
@@ -20,6 +20,7 @@
     "@codemirror/lint": "^6.9.3",
     "@codemirror/state": "^6.5.4",
     "@codemirror/view": "^6.39.12",
+    "@lucide/svelte": "^0.563.1",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
     "@tauri-apps/plugin-dialog": "^2.6.0",
@@ -31,6 +32,7 @@
     "@the_dissidents/dom-css-inliner": "workspace:*",
     "@the_dissidents/libemmm": "workspace:*",
     "@the_dissidents/minimal-jsx-runtime": "workspace:*",
+    "@the_dissidents/svelte-ui": "file:.yalc/@the_dissidents/svelte-ui",
     "@types/wcwidth": "^1.0.2",
     "colorjs.io": "^0.6.1",
     "mime": "^4.1.0",
@@ -43,8 +45,10 @@
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "@tauri-apps/cli": "^2.10.0",
     "rollup-plugin-visualizer": "^6.0.5",
+    "sass-embedded": "^1.97.3",
     "svelte": "^5.50.0",
     "svelte-check": "^4.3.6",
+    "svelte-preprocess": "^6.0.3",
     "typescript": "~5.9.3",
     "vite": "^7.3.1"
   }

@@ -5,7 +5,9 @@ import { getLintRules } from "$lib/emmm/Linting";
 import { getReplacement } from "$lib/details/Replace";
 
 export type EmmmDiagnostic = Diagnostic & {
-    location: emmm.LocationRange
+    location: emmm.LocationRange,
+    row: number,
+    col: number,
 };
 
 export const emmmLinter = (onLint?: (d: EmmmDiagnostic[]) => void) => linter((view) => {
@@ -13,8 +15,10 @@ export const emmmLinter = (onLint?: (d: EmmmDiagnostic[]) => void) => linter((vi
     if (!doc) return [];
     let msgs: EmmmDiagnostic[] = [];
     for (const msg of doc.data.messages) {
+        const source = msg.location.source;
+        const [row, col] = source.getRowCol(msg.location.start);
         msgs.push({
-            location: msg.location,
+            location: msg.location, row, col,
             from: msg.location.start, to: msg.location.end,
             severity: ({
                 [emmm.MessageSeverity.Info]: 'info',
@@ -35,6 +39,8 @@ export const emmmLinter = (onLint?: (d: EmmmDiagnostic[]) => void) => linter((vi
         return 'continue';
     });
 
+
+    const source = doc.data.root.source;
     outer: for (const rule of rules) {
         for (const text of texts) {
             for (const match of text.content.matchAll(rule.pattern)) {
@@ -42,6 +48,7 @@ export const emmmLinter = (onLint?: (d: EmmmDiagnostic[]) => void) => linter((vi
                 if (msgs.length > 100) break outer;
                 const start = text.location.start + match.index;
                 const end = start + match[0].length;
+                const [row, col] = source.getRowCol(start);
 
                 const insert = rule.replacement
                     ? getReplacement(match, rule.replacement)
@@ -52,6 +59,7 @@ export const emmmLinter = (onLint?: (d: EmmmDiagnostic[]) => void) => linter((vi
                         source: text.location.source,
                         start, end
                     },
+                    row, col,
                     from: start, to: end,
                     severity: 'warning',
                     message: rule.description ?? 'No description given',
