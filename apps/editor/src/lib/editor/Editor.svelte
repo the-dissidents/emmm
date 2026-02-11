@@ -10,13 +10,27 @@
   function getEditorContext(): EditorContext | undefined {
     return getContext(key);
   }
+
+  const themeChangeEffect = StateEffect.define<'dark' | 'light'>();
+
+  const isDarkThemeObserver = StateField.define<boolean>({
+    create() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    },
+    update(value, transaction: Transaction){
+      const effect = transaction.effects.find((x) => x.is(themeChangeEffect));
+      if (effect)
+        return effect.value == 'dark';
+      return value;
+    }
+  });
 </script>
 
 <script lang="ts">
   import { getContext, onMount, setContext } from "svelte";
   import { drawSelection, dropCursor, EditorView, highlightActiveLine, highlightSpecialChars, highlightWhitespace, keymap, lineNumbers } from "@codemirror/view";
   import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
-  import { EditorSelection, EditorState, type Extension, type TransactionSpec } from "@codemirror/state";
+  import { EditorSelection, EditorState, StateEffect, StateField, Transaction, type Extension, type TransactionSpec } from "@codemirror/state";
   import { hook } from "$lib/details/Hook.svelte";
   import { emmmForceReparseEffect } from "./ParseData";
   import { forEachDiagnostic, type Diagnostic } from "@codemirror/lint";
@@ -89,25 +103,35 @@
       state: EditorState.create({
         doc: text,
         extensions: [
-            lineNumbers(),
-            highlightSpecialChars(),
-            // highlightActiveLineGutter(),
-            history(),
-            drawSelection(),
-            dropCursor(),
-            // closeBrackets(),
-            highlightWhitespace(),
-            highlightActiveLine(),
-            // highlightSelectionMatches(),
-            EditorView.lineWrapping,
-            EditorState.tabSize.of(4),
-            EditorState.allowMultipleSelections.of(true),
-            keymap.of([...defaultKeymap, indentWithTab, ...historyKeymap]),
-            context?.extensions ?? [],
-            exts
+          isDarkThemeObserver.extension,
+          EditorView.darkTheme.from(isDarkThemeObserver),
+          lineNumbers(),
+          highlightSpecialChars(),
+          // highlightActiveLineGutter(),
+          history(),
+          drawSelection(),
+          dropCursor(),
+          // closeBrackets(),
+          highlightWhitespace(),
+          highlightActiveLine(),
+          // highlightSelectionMatches(),
+          EditorView.lineWrapping,
+          EditorState.tabSize.of(4),
+          EditorState.allowMultipleSelections.of(true),
+          keymap.of([...defaultKeymap, indentWithTab, ...historyKeymap]),
+          context?.extensions ?? [],
+          exts
         ],
       })
     });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+        const newColorScheme = event.matches ? "dark" : "light";
+        view.dispatch({
+          effects: [ themeChangeEffect.of(newColorScheme) ]
+        });
+    });
+
     hout = {
       diagnostics() {
         const result: Diagnostic[] = [];
@@ -175,7 +199,6 @@
     justify-content: center;
     overflow: auto;
     height: 100%;
-    border: 1px solid whitesmoke;
     border-radius: 3px;
     box-sizing: border-box;
   }

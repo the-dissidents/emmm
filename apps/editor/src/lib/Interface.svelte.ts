@@ -45,9 +45,8 @@ export const Interface = $state({
     stylesheet: Memorized.$('stylesheet', z.string(), testStyles),
     source: Memorized.$('source', z.string(), testString),
     library: Memorized.$('library', z.string(), testLib),
-    pasteBehavior: Memorized.$('pasteBehavior', z.union([
-        z.literal('plain'), z.literal('html')
-    ]), 'html'),
+
+    invertedPreview: Memorized.$('invertedPreview', z.boolean(), false),
 
     activeEditor: undefined as EditorHandleOut | undefined,
     sourceEditor: undefined as EditorHandleOut | undefined,

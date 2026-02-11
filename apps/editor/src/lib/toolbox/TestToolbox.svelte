@@ -6,6 +6,8 @@
 
   const hasTTS = platform() == 'macos';
 
+  let inverted = Interface.invertedPreview;
+
   let voices: string[] = $state([]);
   // let selected: string = $state('');
 
@@ -43,4 +45,11 @@
 
       await say(chosen, text.substring(sel.from, sel.to));
     }}>t2</button>
+
+  <br><br>
+
+  <label>
+    <input type="checkbox" class="button" bind:checked={$inverted}>
+    Fake button
+  </label>
 {/if}

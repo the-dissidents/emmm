@@ -3,20 +3,56 @@ import { EditorView } from "@codemirror/view";
 export const emmmTheme = [
     EditorView.baseTheme({
         "&": {
-            color: "black",
-            backgroundColor: "white",
             width: '100%',
             maxWidth: '60em',
             lineHeight: '120%',
-            boxShadow: '1px 2px 5px 0px #9E9E9E',
-            border: '1px solid lightcoral',
             "&.cm-focused": {
                 outline: 'none'
             }
         },
+        "&light": {
+            color: "black",
+            backgroundColor: "white",
+            boxShadow: '1px 2px 5px 0px #9E9E9E',
+            border: '1px solid #f0a299',
+        },
+        "&dark": {
+            color: "white",
+            backgroundColor: "#222",
+            border: '1px solid #8d6262',
+            boxShadow: 'none',
+        },
+        ".cm-gutters": {
+            fontSize: '85%',
+            fontFamily: 'Roboto Mono, Menlo, Consolas, 等线, monospace',
+            padding: '0 5px 0 10px',
+            // use margin to pad here instead
+            marginRight: "15px",
+            justifyContent: "right",
+            minWidth: '50px',
+            border: "none",
+            backgroundColor: "#f0a299",
+            color: "lavenderblush",
+        },
+        "&dark .cm-gutters": {
+            backgroundColor: "#8d6262",
+            color: "lavenderblush",
+        },
         ".cm-content": {
             caretColor: "black",
             fontFamily: 'Roboto Mono, Menlo, Consolas, 等线, monospace',
+        },
+        "&light .cm-activeLine": {
+            backgroundColor: "#f0a29922",
+        },
+        "&dark .cm-activeLine": {
+            backgroundColor: "#3a3a3a66",
+        },
+        "&light .cm-selectionBackground": {
+            backgroundColor: "#f0a29966",
+        },
+        "&dark .cm-selectionBackground": {
+            backgroundColor: "#006aff66 !important",
         },
         ".cm-line": {
             padding: '0 15px 0 0',
@@ -50,30 +86,13 @@ export const emmmTheme = [
         "&.cm-focused .cm-selectionBackground, ::selection": {
             backgroundColor: "#074"
         },
-        ".cm-gutters": {
-            fontSize: '85%',
-            fontFamily: 'Roboto Mono, Menlo, Consolas, 等线, monospace',
-            backgroundColor: "#f0a299",
-            color: "lavenderblush",
-            padding: '0 5px 0 10px',
-            // use margin to pad here instead
-            marginRight: "15px",
-            justifyContent: "right",
-            minWidth: '50px',
-            border: "none"
-        },
-        ".cm-gutterElement:nth-child(even)": {
-            // TODO: change background color (needs to extend, how?)
-            // backgroundColor: "lightpink",
-        },
-        ".cm-lineNumbers .cm-gutterElement": {
-            // TODO: vertically center text
-        },
         ".cm-highlightSpace": {
             backgroundImage: "radial-gradient(circle at 50% 55%, #fff 15%, transparent 5%)"
         },
-    }),
-    EditorView.baseTheme({
+        "&dark .cm-highlightSpace": {
+            backgroundImage: "radial-gradient(circle at 50% 55%, #222 15%, transparent 5%)"
+        },
+
         ".em-pre": {
             fontFamily: 'Courier',
             wordBreak: 'break-all'
@@ -117,15 +136,14 @@ export const emmmTheme = [
             wordBreak: 'break-all'
         },
         ":where(.em-role-heading)": {
-            color: 'darkred',
+            color: 'Crimson',
             fontWeight: 'bold'
         },
         ".em-role-comment": {
             color: 'darkgreen',
             fontStyle: 'italic'
         },
-    }),
-    EditorView.baseTheme({
+
         ".fu-structure-container": {
             height: '100%',
             textAlign: 'right'

@@ -41,7 +41,8 @@
 
   let status = Interface.status,
       parseData = Interface.parseData,
-      progress = Interface.progress;
+      progress = Interface.progress,
+      inverted = Interface.invertedPreview;
 
   let source = Interface.source,
       library = Interface.library,
@@ -168,7 +169,7 @@
 <div class="pane" bind:this={right} style="width: 500px;">
   <TabView>
     <TabPage id="Preview" header="Preview" active={true}>
-      <iframe bind:this={Interface.frame} title="preview"
+      <iframe bind:this={Interface.frame} class:inverted={$inverted} title="preview"
         sandbox="allow-same-origin">
       </iframe>
     </TabPage>
@@ -272,7 +273,7 @@
 </div>
 
 
-<style>
+<style lang='scss'>
   label {
     font-size: 85%;
   }
@@ -299,6 +300,12 @@
     position: sticky;
     width: 100%;
     height: 100%;
+
+    &.inverted {
+      @media (prefers-color-scheme: dark) {
+        filter: invert(100%);
+      }
+    }
   }
 
   .ast {
@@ -311,10 +318,17 @@
 
   .status {
     font-size: 85%;
-    border: 1px solid pink;
     border-radius: 3px;
-    background-color: lightpink;
     padding: 0 10px;
+
+    @media (prefers-color-scheme: light) {
+      border: 1px solid pink;
+      background-color: lightpink;
+    }
+    @media (prefers-color-scheme: dark) {
+      border: 1px solid rgb(118, 81, 147);
+      background-color: rgb(66, 53, 79);
+    }
   }
 
   .status span {

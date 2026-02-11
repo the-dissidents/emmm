@@ -9,7 +9,6 @@
   import { htmlToEmmm } from "$lib/integration/weixin/Importer";
 
   let progress = Interface.progress;
-  let pasteBehavior = Interface.pasteBehavior;
 
   const libraryUrl = Memorized.$('librarySyncUrl', z.string(), 'https://raw.githubusercontent.com/the-dissidents/emmm/refs/heads/main/apps/editor/src/template/testlib.txt');
 

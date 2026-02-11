@@ -55,10 +55,10 @@
   // $shadow-dark:   rgba(128, 128, 128, 0.5),
 
   $tab-accent-light: rgb(235, 135, 188),
-  // $tab-accent-dark:  slategray,
+  $tab-accent-dark:  slategray,
 
   $list-header-light:    rgb(237, 202, 210),
-  $list-header-dark:     rgb(237, 202, 210),
+  $list-header-dark:     rgb(64, 90, 90),
   $list-border-light:    thistle,
   $list-border-dark:     uchu.$yin-7,
   $list-selection-light: thistle,
@@ -71,8 +71,14 @@
 .veryimportant {
   font-size: 0.8rem;
   &:not([disabled]) {
-    background-color: uchu.$pink-1;
-    color: uchu.$red-9;
+    @media (prefers-color-scheme: light) {
+      background-color: uchu.$pink-1;
+      color: uchu.$red-9;
+    }
+    @media (prefers-color-scheme: dark) {
+      background-color: uchu.$pink-9;
+      color: uchu.$pink-1;
+    }
   }
   padding-block: 0.5em;
 }

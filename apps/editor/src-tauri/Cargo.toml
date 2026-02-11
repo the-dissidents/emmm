@@ -1,6 +1,6 @@
 [package]
 name = "kfgui"
-version = "0.1.5"
+version = "0.1.6"
 description = "GUI frontend for the emmm markup language"
 authors = ["The Dissidents"]
 edition = "2024"
