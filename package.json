@@ -7,13 +7,13 @@
         "preinstall": "npx only-allow pnpm",
         "format": "prettier --write --cache .",
         "lint": "oxlint .",
-        "dev:pkgs": "pnpm -r --sort --parallel --filter='./packages/*' dev",
-        "dev": "pnpm concurrently -k \"pnpm run dev:pkgs\" \"pnpm --filter='kfgui' tauri dev\"",
+        "dev:pkgs": "pnpm -r --sort --parallel --filter=\"./packages/*\" dev",
+        "dev": "pnpm concurrently -k \"pnpm run dev:pkgs\" \"pnpm --filter=kfgui tauri dev\"",
         "build:pkgs": "pnpm -r --filter='./packages/*' build",
-        "build": "pnpm run build:pkgs && pnpm --filter='kfgui' tauri build",
+        "build": "pnpm run build:pkgs && pnpm --filter=kfgui tauri build",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
-    "packageManager": "pnpm@10.17.1",
+    "packageManager": "pnpm@10.28.2",
     "devDependencies": {
         "concurrently": "^9.2.1",
         "eslint": "^9.39.2",
