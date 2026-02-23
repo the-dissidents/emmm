@@ -89,6 +89,10 @@ table.config tr > td:nth-child(1) {
   flex-direction: column;
   min-height: 0;
   min-width: 0;
+
+  & > * {
+    flex-shrink: 0;
+  }
 }
 .vcenter {
   display: flex;
