@@ -84,7 +84,7 @@ sup.note.invalid {
   color: red;
 }
 
-section.notes-global {}
+/* section.notes-global {} */
 
 section.note {
   display: flex;
@@ -512,7 +512,7 @@ ul.gallery > li > :first-child {
 
 .ratings thead tr.title th {
   line-height: 2.5;
-  font-size: 120%;
+  font-size: 110%;
   & .author::before {
     content: '〔'
   }
