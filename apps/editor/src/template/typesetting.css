@@ -8,7 +8,7 @@ body {
 }
 
 section {
-  white-space: pre-wrap;
+  /* white-space: pre-wrap; */
 }
 
 section.article-container {
@@ -114,7 +114,6 @@ section.note .note-name * {
 
 p {
   margin-block: 0 1.5em;
-  text-align: justify;
 }
 
 p.attribution {
@@ -506,13 +505,16 @@ ul.gallery > li > :first-child {
   max-width: 500px;
   border-collapse: collapse;
   table-layout: fixed;
-  font-family: Arial, '黑体-简';
   margin-bottom: 1lh;
+  font-weight: normal;
 }
 
 .ratings thead tr.title th {
   line-height: 2.5;
   font-size: 110%;
+  & .author {
+    font-size: 90%;
+  }
   & .author::before {
     content: '〔'
   }
@@ -528,13 +530,15 @@ ul.gallery > li > :first-child {
 }
 
 .ratings th {
-  border: 2px solid var(--text-color);
+  border: 1.5px solid var(--text-color);
   background-color: transparent;
+  /* font-weight: normal; */
 }
 
 .ratings td {
-  border: 2px solid var(--text-color);
+  border: 1.5px solid var(--text-color);
   background-color: transparent;
+  font-weight: normal;
 }
 
 .ratings tbody th {
@@ -547,10 +551,9 @@ ul.gallery > li > :first-child {
 .ratings tbody td {
   white-space: pre-wrap;
   line-height: 90%;
-  font-size: 120%;
+  font-size: 110%;
   height: 2em;
   padding: 15px;
-  /*color: var(--commentary-color);*/
 }
 
 .ratings tfoot td {
@@ -561,7 +564,6 @@ ul.gallery > li > :first-child {
 
 .ratings tfoot span {
   font-size: 100%;
-  font-weight: bold;
   padding: 3px;
 }
 
