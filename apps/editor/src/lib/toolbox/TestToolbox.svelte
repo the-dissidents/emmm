@@ -12,7 +12,8 @@
   // let selected: string = $state('');
 
   (async () => {
-    voices = await getVoices();
+    if (hasTTS)
+      voices = await getVoices();
   })();
 </script>
 
@@ -45,11 +46,11 @@
 
       await say(chosen, text.substring(sel.from, sel.to));
     }}>t2</button>
-
-  <br><br>
-
-  <label>
-    <input type="checkbox" class="button" bind:checked={$inverted}>
-    Fake button
-  </label>
 {/if}
+
+<br><br>
+
+<label>
+  <input type="checkbox" class="button" bind:checked={$inverted}>
+  Fake button
+</label>
