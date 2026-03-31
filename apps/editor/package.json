@@ -32,7 +32,7 @@
     "@the_dissidents/dom-css-inliner": "workspace:*",
     "@the_dissidents/libemmm": "workspace:*",
     "@the_dissidents/minimal-jsx-runtime": "workspace:*",
-    "@the_dissidents/svelte-ui": "file:.yalc/@the_dissidents/svelte-ui",
+    "@the_dissidents/svelte-ui": "^0.0.4",
     "@types/wcwidth": "^1.0.2",
     "colorjs.io": "^0.6.1",
     "mime": "^4.1.0",

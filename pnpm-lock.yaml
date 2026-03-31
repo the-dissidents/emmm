@@ -81,8 +81,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/minimal-jsx-runtime
       '@the_dissidents/svelte-ui':
-        specifier: file:.yalc/@the_dissidents/svelte-ui
-        version: file:apps/editor/.yalc/@the_dissidents/svelte-ui(svelte@5.50.0)
+        specifier: ^0.0.4
+        version: 0.0.4(svelte@5.50.0)
       '@types/wcwidth':
         specifier: ^1.0.2
         version: 1.0.2
@@ -1005,8 +1005,8 @@ packages:
   '@tauri-apps/plugin-shell@2.3.5':
     resolution: {integrity: sha512-jewtULhiQ7lI7+owCKAjc8tYLJr92U16bPOeAa472LHJdgaibLP83NcfAF2e+wkEcA53FxKQAZ7byDzs2eeizg==}
 
-  '@the_dissidents/svelte-ui@file:apps/editor/.yalc/@the_dissidents/svelte-ui':
-    resolution: {directory: apps/editor/.yalc/@the_dissidents/svelte-ui, type: directory}
+  '@the_dissidents/svelte-ui@0.0.4':
+    resolution: {integrity: sha512-hT6NnB8wagKaF1moDZUCkaLf2fqMS99/pyK3IyrBkVUEvhB3tqE1hRVi2QtzKPxbejXpxdS/8IGlpOd72pEqfA==}
     peerDependencies:
       svelte: ^5.0.0
 
@@ -2985,7 +2985,7 @@ snapshots:
     dependencies:
       '@tauri-apps/api': 2.10.1
 
-  '@the_dissidents/svelte-ui@file:apps/editor/.yalc/@the_dissidents/svelte-ui(svelte@5.50.0)':
+  '@the_dissidents/svelte-ui@0.0.4(svelte@5.50.0)':
     dependencies:
       '@lucide/svelte': 0.563.1(svelte@5.50.0)
       colorjs.io: 0.6.1
