@@ -76,16 +76,20 @@
     assert(doc !== undefined && doc !== null);
     sourceImgs = [];
     [...doc.querySelectorAll('img')].map((x) => {
-      const url = new URL(x.dataset.originalSrc ?? x.src);
-      let img: Img = {
-        status: 'pending',
-        url: url
-      };
-      sourceImgs.push(img);
-      if (x.complete && x.naturalWidth > 0) {
-        updateImg(img);
-      } else if (x.complete) {
-        img.status = 'invalid';
+      try {
+        const url = new URL(x.dataset.originalSrc ?? x.src);
+        let img: Img = {
+          status: 'pending',
+          url: url
+        };
+        sourceImgs.push(img);
+        if (x.complete && x.naturalWidth > 0) {
+          updateImg(img);
+        } else if (x.complete) {
+          img.status = 'invalid';
+        }
+      } catch (_) {
+
       }
     });
   });

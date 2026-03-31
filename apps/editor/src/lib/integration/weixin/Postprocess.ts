@@ -64,25 +64,28 @@ export async function postprocess(doc: Document, win: Window) {
             try {
                 const url = new URL(anchor.href);
                 if (url.host != 'mp.weixin.qq.com')
-                    (elem as HTMLAnchorElement).href = '';
+                    anchor.href = '';
             } catch (_) {
-                (elem as HTMLAnchorElement).href = '';
+                anchor.href = '';
             }
         }
 
-        // subtitle images URLs to uploaded versions
+        // substitute images URLs to uploaded versions
         else if (elem.tagName == 'IMG') {
-            // console.log(elem);
             const img = elem as HTMLImageElement;
-            const url = new URL(img.dataset.originalSrc ?? img.src);
 
-            const realhref = url.href;
-            const cached = Weixin.smallImageCache.get(realhref);
-            if (cached) {
-                img.src = cached;
-                img.dataset.originalSrc = undefined;
-            } else if (url.protocol == 'file:') {
-                notCached++;
+            try {
+                const url = new URL(img.dataset.originalSrc ?? img.src);
+                const realhref = url.href;
+                const cached = Weixin.smallImageCache.get(realhref);
+                if (cached) {
+                    img.src = cached;
+                    img.dataset.originalSrc = undefined;
+                } else if (url.protocol == 'file:') {
+                    notCached++;
+                }
+            } catch (_) {
+                img.src = '';
             }
         }
     });

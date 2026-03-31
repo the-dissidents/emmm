@@ -272,7 +272,6 @@
 
 </div>
 
-
 <style lang='scss'>
   label {
     font-size: 85%;
