@@ -38,30 +38,30 @@ export const QuoteBlocks = [quoteBlock, epitaphBlock, calloutBlock, detailBlock,
 
 export const QuoteBlockRenderersHTML = [
     [quoteBlock, async (node, cxt) =>
-        <blockquote>
+        <blockquote data-id={cxt.state.addSourceMap(node.location)}>
             {await cxt.state.render(node.content, cxt)}
         </blockquote>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
     [epitaphBlock, async (node, cxt) =>
-        <blockquote class='epitaph'>
+        <blockquote class='epitaph' data-id={cxt.state.addSourceMap(node.location)}>
             {await cxt.state.render(node.content, cxt)}
         </blockquote>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
     [detailBlock, async (node, cxt) =>
-        <div class='detail'>
+        <div class='detail' data-id={cxt.state.addSourceMap(node.location)}>
             {await cxt.state.render(node.content, cxt)}
         </div>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
     [calloutBlock, async (node, cxt) =>
-        <aside>
+        <aside data-id={cxt.state.addSourceMap(node.location)}>
             {await cxt.state.render(node.content, cxt)}
         </aside>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
     [attributionBlock, async (node, cxt) => {
         if (!node.state)
-            return cxt.state.invalidBlock(node, 'bad format');
+            return cxt.state.invalidBlock(node, 'bad format', cxt);
         let para = node.content[0] as ParagraphNode;
-        return <p class='attribution'>
+        return <p class='attribution' data-id={cxt.state.addSourceMap(para.location)}>
             {await cxt.state.render(para.content, cxt)}
         </p>;
     }] satisfies BlockRendererDefiniton<HTMLRenderType, boolean>

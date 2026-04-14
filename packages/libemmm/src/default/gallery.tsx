@@ -13,7 +13,7 @@ export const GalleryBlockRendererHTML = [GalleryBlock,
             ? node.content[0].content
             : node.content;
 
-        return <ul class='gallery'>
+        return <ul class='gallery' data-id={cxt.state.addSourceMap(node.location)}>
             {await Promise.all(content.map(async (x) => <li>
                 {await cxt.state.render([x], cxt)}
             </li>))}

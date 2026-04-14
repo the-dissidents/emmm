@@ -40,6 +40,7 @@
      * Fires when the text is edited. Changing `text` by code will not trigger this event.
      */
     onChange?(text: string): void;
+    onScroll?(e: Event, view: EditorView): void;
     onCursorPositionChanged?(pos: number, l: number, c: number): void;
     onFocus?(): void;
     onBlur?(): void;
@@ -57,9 +58,9 @@
   export interface EditorHandleOut {
     focus(): void;
     diagnostics(): Diagnostic[],
+    resolvePosition(pos: number): [l: number, c: number];
     getCursorPosition(): [pos: number, l: number, c: number];
     getText(): string;
-    setText(x: string): void;
     getSelections(): Selection[];
     setSelections(s: Selection[]): void;
     update(c: TransactionSpec): void;
@@ -67,14 +68,13 @@
   }
 
   let {
-    onChange: onTextChange, onCursorPositionChanged, onFocus, onBlur,
+    onChange: onTextChange, onCursorPositionChanged, onFocus, onBlur, onScroll,
     text = $bindable(''),
     hout = $bindable(),
   }: Props = $props();
 
   let editorContainer: HTMLDivElement;
   let view: EditorView;
-  let shouldChange = true;
 
   const exts = [
     EditorView.updateListener.of((update) => {
@@ -89,11 +89,15 @@
         update.view.hasFocus ? onFocus?.() : onBlur?.();
       }
       if (update.docChanged) {
-        shouldChange = false;
         text = update.view.state.doc.toString();
         onTextChange?.(text);
       }
     }),
+    EditorView.domEventHandlers({
+      "scroll"(event, view) {
+        onScroll?.(event, view);
+      },
+    })
   ];
 
   onMount(() => {
@@ -141,6 +145,10 @@
       focus() {
           view.focus();
       },
+      resolvePosition(pos) {
+        const line = view.state.doc.lineAt(pos);
+        return [line.number, pos - line.from];
+      },
       getCursorPosition() {
         const pos = view.state.selection.main.head;
         const line = view.state.doc.lineAt(pos);
@@ -148,15 +156,6 @@
       },
       getText() {
         return text;
-      },
-      setText(x: string) {
-        // view.dispatch({changes: [{
-        //   from: 0, to: view.state.doc.length,
-        //   insert: x
-        // }]});
-        // shouldChange = false;
-        // text = x;
-        // onTextChange?.(text);
       },
       getSelections() {
         return view.state.selection.ranges.map((x) => ({ from: x.from, to: x.to }));

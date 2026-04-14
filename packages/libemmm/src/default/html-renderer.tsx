@@ -41,40 +41,57 @@ export type HTMLPostprocessPlugin =
     (cxt: RenderContext<HTMLRenderType>, output: Document)
         => void | Promise<void>;
 
+export type HTMLSourceMapEntry = {
+    id: string,
+    start: number,
+    end: number,
+};
+
 export class HTMLRenderState {
     title: string = '';
     stylesheet = ''; // FIXME: very unsafe!
     cssVariables = new Map<string, string>;
 
-    invalidBlock(node: BlockEntity, msg: string) {
+    sourceMap: HTMLSourceMapEntry[] = [];
+
+    #currentId = 0;
+    addSourceMap(loc: {start: number, end: number}) {
+        this.#currentId++;
+        this.sourceMap.push({ id: `${this.#currentId}`, start: loc.start, end: loc.end });
+        return this.#currentId;
+    }
+
+    invalidBlock(node: BlockEntity, msg: string, cxt: RenderContext<HTMLRenderType>) {
         let name = NodeType[node.type];
         if (node.type === NodeType.BlockModifier)
             name += ` (${node.mod.name})`;
         // TODO: include details
-        return <details class='invalid'>
-                <summary>Invalid {name}</summary>
-                <i>{msg}</i>
-                <pre>{debugPrint.node(node)}</pre>
-               </details>;
+        return <details class='invalid'
+                data-id={cxt.state.addSourceMap(node.location)}>
+            <summary>Invalid {name}</summary>
+            <i>{msg}</i>
+            <pre>{debugPrint.node(node)}</pre>
+        </details>;
     }
 
-    invalidInline(node: InlineEntity, msg: string) {
+    invalidInline(node: InlineEntity, msg: string, cxt: RenderContext<HTMLRenderType>) {
         let name = NodeType[node.type];
         if (node.type === NodeType.InlineModifier)
             name += ` (${node.mod.name})`;
         // TODO: include details
-        return <details class='invalid'>
-                <summary>Invalid {name}</summary>
-                <i>{msg}</i>
-                <pre>{debugPrint.node(node)}</pre>
-               </details>;
+        return <details class='invalid'
+                data-id={cxt.state.addSourceMap(node.location)}>
+            <summary>Invalid {name}</summary>
+            <i>{msg}</i>
+            <pre>{debugPrint.node(node)}</pre>
+        </details>;
     }
 
     async render(elems: (BlockEntity | InlineEntity)[], cxt: RenderContext<HTMLRenderType>) {
         const document = cxt.config.options.window.document;
         useDocument(document);
 
-        let fragment = document.createDocumentFragment();
+        const fragment = document.createDocumentFragment();
         (await Promise.all(elems.flatMap((x) => cxt.renderEntity(x))))
             .flat()
             .forEach((x) => fragment.appendChild(x));
@@ -109,13 +126,13 @@ export function createHTMLRenderConfiguration(window: Window) {
         );
         doc.body.append(
             <section class="article-container">
-            <section class="article-body">
-            {(await Promise.all(cxt.config.options.headerPlugins.map((x) => x(cxt))))
-                .filter((x) => x !== undefined)}
-            {await Promise.all(results)}
-            {(await Promise.all(cxt.config.options.footerPlugins.map((x) => x(cxt))))
-                .filter((x) => x !== undefined)}
-            </section>
+                <section class="article-body">
+                {(await Promise.all(cxt.config.options.headerPlugins.map((x) => x(cxt))))
+                    .filter((x) => x !== undefined)}
+                {await Promise.all(results)}
+                {(await Promise.all(cxt.config.options.footerPlugins.map((x) => x(cxt))))
+                    .filter((x) => x !== undefined)}
+                </section>
             </section>
         );
         for (const p of cxt.config.options.postprocessPlugins) {
@@ -125,7 +142,9 @@ export function createHTMLRenderConfiguration(window: Window) {
     });
 
     htmlConfig.paragraphRenderer = async(node, cxt) =>
-        <p>{await Promise.all(node.content.flatMap((x) => cxt.renderEntity(x)))}</p>;
+        <p data-id={cxt.state.addSourceMap(node.location)}>
+            {await Promise.all(node.content.flatMap((x) => cxt.renderEntity(x)))}
+        </p>;
 
     htmlConfig.textRenderer = (node, cxt) => {
         const document = cxt.config.options.window.document;
@@ -148,11 +167,11 @@ export function createHTMLRenderConfiguration(window: Window) {
     }
 
     htmlConfig.undefinedBlockRenderer = (node, cxt) => {
-        return cxt.state.invalidBlock(node, `No renderer defined! for ${node.mod.name}`);
+        return cxt.state.invalidBlock(node, `No renderer defined! for ${node.mod.name}`, cxt);
     }
 
     htmlConfig.undefinedInlineRenderer = (node, cxt) => {
-        return cxt.state.invalidInline(node, `No renderer defined! for ${node.mod.name}`);
+        return cxt.state.invalidInline(node, `No renderer defined! for ${node.mod.name}`, cxt);
     }
 
     htmlConfig.addBlockRenderer(

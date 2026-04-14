@@ -31,15 +31,21 @@ export const BulletBlocks = [bulletItemBlock, orderedListItemBlock, subItemBlock
 
 export const BulletBlockRenderersHTML = [
     [bulletItemBlock, async (node, cxt) =>
-        <li class='bullet'>{await cxt.state.render(node.content, cxt)}</li>
+        <li class='bullet' data-id={cxt.state.addSourceMap(node.location)}>
+            {await cxt.state.render(node.content, cxt)}
+        </li>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
     [subItemBlock, async (node, cxt) =>
-        <div class='subitem'>{await cxt.state.render(node.content, cxt)}</div>
+        <div class='subitem' data-id={cxt.state.addSourceMap(node.location)}>
+            {await cxt.state.render(node.content, cxt)}
+        </div>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>,
     [orderedListItemBlock, async (node, cxt) =>
         node.state === undefined
-            ? cxt.state.invalidBlock(node, 'bad format')
-            : <li class='ordered' data-value={node.state}>
+            ? cxt.state.invalidBlock(node, 'bad format', cxt)
+            : <li class='ordered'
+                    data-value={node.state}
+                    data-id={cxt.state.addSourceMap(node.location)}>
                 {await cxt.state.render(node.content, cxt)}
               </li>
     ] satisfies BlockRendererDefiniton<HTMLRenderType, number>

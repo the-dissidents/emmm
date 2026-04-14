@@ -65,7 +65,7 @@ export class SimpleScanner implements Scanner {
     }
 }
 
-// The scanner of any implementation should be capable of handling UTF-8 
+// The scanner of any implementation should be capable of handling UTF-8
 // strings at least as well as Typescript.
 export interface Scanner {
     readonly source: Source;
@@ -73,7 +73,7 @@ export interface Scanner {
     position(): number;
     isEOF(): boolean;
 
-    /** Sources can have inspectors in them, which are positions that trigger a callback when encounterede. This function returns the inspectors that lie between the current position and where this function was previously called (or the beginning for the first call). */
+    /** Sources can have inspectors in them, which are positions that trigger a callback when encountered. This function returns the inspectors that lie between the current position and where this function was previously called (or the beginning for the first call). */
     inspectors(): Inspector[];
 
     /** return true if sees str immediately */

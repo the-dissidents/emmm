@@ -117,7 +117,7 @@
   {@render ast(node)}
 {/if}
 
-<style>
+<style lang='scss'>
   details {
     font-size: 0.8rem;
 
@@ -129,10 +129,6 @@
     & summary {
       font-family: monospace;
       font-weight: bold;
-
-      &:hover {
-        background-color: gainsboro;
-      }
     }
 
     &.inline {

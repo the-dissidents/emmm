@@ -31,10 +31,22 @@ let progress = writable<number | undefined>();
 import testStyles from '../template/typesetting.css?raw';
 import testString from '../template/testsource.txt?raw';
 import testLib from '../template/testlib.txt?raw';
+import { Debug } from "./Debug";
 
 export const defaultSource = testString;
 
 let renderTimer: any;
+
+function getId(n: Node | null) {
+    while (n) {
+        if (n instanceof HTMLElement) {
+            if (n.dataset.id !== undefined)
+                return n.dataset.id;
+        }
+        n = n?.parentElement;
+    }
+    return undefined;
+}
 
 export const Interface = $state({
     get status() { return status; },
@@ -47,12 +59,14 @@ export const Interface = $state({
     library: Memorized.$('library', z.string(), testLib),
 
     invertedPreview: Memorized.$('invertedPreview', z.boolean(), false),
+    syncScrolling: Memorized.$('syncScrolling', z.boolean(), true),
 
     activeEditor: undefined as EditorHandleOut | undefined,
     sourceEditor: undefined as EditorHandleOut | undefined,
 
     frame: undefined as HTMLIFrameElement | undefined,
     renderedDocument: null as Document | null,
+    sourceMap: [] as emmm.HTMLSourceMapEntry[],
 
     colors: {
         theme: Color.getColor('white'),
@@ -72,6 +86,50 @@ export const Interface = $state({
             }, t);
     },
 
+    scrollToSource(pos: number, select: boolean) {
+        Debug.assert(!!this.frame);
+
+        const doc = this.frame.contentDocument!;
+        const window = this.frame.contentWindow!;
+
+        const ranges = this.sourceMap
+            .filter((x) => x.start <= pos && x.end >= pos);
+        if (ranges.length == 0) {
+            if (select)
+                doc.getSelection()!.removeAllRanges();
+            return;
+        }
+
+        let mostSpecific = ranges[0];
+        for (const r of ranges)
+            if (r.end - r.start < mostSpecific.end - mostSpecific.start)
+                mostSpecific = r;
+
+        const elem = doc.querySelector(`[data-id="${CSS.escape(mostSpecific.id)}"]`);
+        Debug.assert(!!elem);
+
+        const lx = pos; //sourceHandle!.resolvePosition(pos)[0];
+        const l1 = mostSpecific.start; //sourceHandle!.resolvePosition(mostSpecific.start)[0];
+        const l2 = mostSpecific.end; //sourceHandle!.resolvePosition(mostSpecific.end)[0];
+
+        if (l2 > l1) {
+            const rect = elem.getBoundingClientRect();
+            const y = (lx - l1) / (l2 - l1) * rect.height
+                + rect.top + window.scrollY - window.innerHeight / 2;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+        } else {
+            elem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        if (select) {
+            const selection = doc.getSelection()!;
+            selection.removeAllRanges();
+            const range = doc.createRange();
+            range.selectNodeContents(elem);
+            selection.addRange(range);
+        }
+    },
+
     async render() {
         const pd = get(parseData)?.data;
         if (!pd || !this.frame) return;
@@ -81,25 +139,37 @@ export const Interface = $state({
             if (!url.startsWith('file:')) return undefined;
             return convertFileSrc(url.substring(5));
         };
-        let state = new emmm.HTMLRenderState();
+        const state = new emmm.HTMLRenderState();
         state.cssVariables = getCssVariablesFromColors(this.colors, 'srgb');
         state.stylesheet = this.stylesheet.get();
         this.renderedDocument = await renderConfig.render(pd, state);
+        this.sourceMap = state.sourceMap;
+
         const sx = this.frame.contentWindow!.scrollX;
         const sy = this.frame.contentWindow!.scrollY;
         this.frame.srcdoc = this.renderedDocument.documentElement.outerHTML;
-        // FIXME: this does not work
-        this.frame.contentWindow!.document.addEventListener(
-            'DOMContentLoaded', () => {
-                // console.log('DOMContentLoaded');
-                this.onFrameDOMLoaded.dispatch();
-            });
-        // this works
         this.frame.addEventListener(
             'load', () => {
-                // console.log('window load');
                 this.frame!.contentWindow!.scrollTo(sx, sy);
                 this.onFrameLoaded.dispatch();
             }, { once: true });
+
+        // you can't listen to things inside the iframe
+
+        // this.frame.contentWindow!.document.addEventListener(
+        //     'DOMContentLoaded', () => {
+        //         this.onFrameDOMLoaded.dispatch();
+        //     });
+
+        // const doc = this.frame.contentDocument!;
+        // doc.addEventListener('selectionchange', () => {
+        //     const sel = doc.getSelection()!;
+        //     const n = sel.anchorNode;
+        //     const id = getId(n);
+        //     if (id === undefined) return;
+        //     const entry = this.sourceMap.find((x) => x.id == id);
+        //     if (!entry) return;
+        //     this.sourceEditor?.setSelections([{ from: entry.start, to: entry.end }]);
+        // });
     }
 });

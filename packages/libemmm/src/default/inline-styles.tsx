@@ -26,18 +26,28 @@ export const InlineStyles = [emphasisInline, keywordInline, highlightInline, com
 
 export const InlineStyleRenderersHTML = [
     [emphasisInline, async (node, cxt) =>
-        <em>{await cxt.state.render(node.content, cxt)}</em>
+        <em data-id={cxt.state.addSourceMap(node.location)}>
+            {await cxt.state.render(node.content, cxt)}
+        </em>
     ] satisfies InlineRendererDefiniton<HTMLRenderType>,
     [keywordInline, async (node, cxt) =>
-        <b>{await cxt.state.render(node.content, cxt)}</b>
+        <b data-id={cxt.state.addSourceMap(node.location)}>
+            {await cxt.state.render(node.content, cxt)}
+        </b>
     ] satisfies InlineRendererDefiniton<HTMLRenderType>,
     [highlightInline, async (node, cxt) =>
-        <mark>{await cxt.state.render(node.content, cxt)}</mark>
+        <mark data-id={cxt.state.addSourceMap(node.location)}>
+            {await cxt.state.render(node.content, cxt)}
+        </mark>
     ] satisfies InlineRendererDefiniton<HTMLRenderType>,
     [commentaryInline, async (node, cxt) =>
-        <span class='commentary'>{await cxt.state.render(node.content, cxt)}</span>
+        <span class='commentary' data-id={cxt.state.addSourceMap(node.location)}>
+            {await cxt.state.render(node.content, cxt)}
+        </span>
     ] satisfies InlineRendererDefiniton<HTMLRenderType>,
     [sequenceInline, async (node, cxt) =>
-        <span class='seq'>{await cxt.state.render(node.content, cxt)}</span>
+        <span class='seq' data-id={cxt.state.addSourceMap(node.location)}>
+            {await cxt.state.render(node.content, cxt)}
+        </span>
     ] satisfies InlineRendererDefiniton<HTMLRenderType>
 ];

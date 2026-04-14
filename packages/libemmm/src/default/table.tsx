@@ -124,7 +124,7 @@ export const TableInlines = [tableCellInline];
 export const TableBlockRenderers = [
     [tableBlock, async (node, cxt) => {
         const t = node.state;
-        if (!t) return cxt.state.invalidBlock(node, 'bad format');
+        if (!t) return cxt.state.invalidBlock(node, 'bad format', cxt);
         return <table>
             <thead>{await cxt.state.render(t.header, cxt)}</thead>
             <tbody>{await cxt.state.render(t.body, cxt)}</tbody>

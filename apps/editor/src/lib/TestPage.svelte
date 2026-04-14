@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as emmm from '@the_dissidents/libemmm';
   import { TabView, TabPage, Resizer, ListView } from '@the_dissidents/svelte-ui';
-  import { CircleXIcon, InfoIcon, TriangleAlertIcon } from '@lucide/svelte';
+  import { CircleXIcon, InfoIcon, TriangleAlertIcon, X } from '@lucide/svelte';
   import { css } from '@codemirror/lang-css';
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 
@@ -42,7 +42,8 @@
   let status = Interface.status,
       parseData = Interface.parseData,
       progress = Interface.progress,
-      inverted = Interface.invertedPreview;
+      inverted = Interface.invertedPreview,
+      syncScrolling = Interface.syncScrolling;
 
   let source = Interface.source,
       library = Interface.library,
@@ -56,8 +57,11 @@
       setTimeout(() => sourceHandle?.reparse(), 0);
   }
 
-  function onCursorPositionChanged(_: number, l: number, c: number) {
+  function onCursorPositionChanged(pos: number, l: number, c: number) {
     posStatus = `line ${l}, col ${c}`;
+    if (Interface.activeEditor === sourceHandle) {
+      Interface.scrollToSource(pos, true);
+    }
   }
 
   function updateCursorPosition(h?: EditorHandleOut) {
@@ -125,6 +129,14 @@
             updateCursorPosition(sourceHandle);
             Interface.activeEditor = sourceHandle;
           }}
+          onScroll={(_, view) => {
+            if (!$syncScrolling) return;
+
+            const rect = view.scrollDOM.getBoundingClientRect();
+            const pos = view.posAtCoords({ x: 0, y: rect.top + rect.height / 2 });
+            if (pos === null) return;
+            Interface.scrollToSource(pos, false);
+          }}
           {onCursorPositionChanged}
           bind:hout={sourceHandle} />
       </EmmmContext>
@@ -169,9 +181,18 @@
 <div class="pane" bind:this={right} style="width: 500px;">
   <TabView>
     <TabPage id="Preview" header="Preview" active={true}>
-      <iframe bind:this={Interface.frame} class:inverted={$inverted} title="preview"
-        sandbox="allow-same-origin">
-      </iframe>
+      <div class="vlayout fill">
+        <fieldset>
+          <label>
+            <input type='checkbox' class="button" bind:checked={$syncScrolling}>
+            Automatic synchronized scrolling
+          </label>
+        </fieldset>
+        <iframe bind:this={Interface.frame}
+          class={{inverted: $inverted, flexgrow: true}}  title="preview"
+          sandbox="allow-same-origin">
+        </iframe>
+      </div>
     </TabPage>
     <TabPage id="AST" header="AST" lazy={true}>
       <div class="vlayout fill">
@@ -189,7 +210,7 @@
         }}>trace</button>
       </div>
     </TabPage>
-    <TabPage id="HTML" header="AST">
+    <TabPage id="HTML" header="HTML">
       <textarea class="fill">{Interface.renderedDocument?.documentElement.outerHTML}</textarea>
     </TabPage>
   </TabView>
@@ -279,7 +300,10 @@
 
   .pane {
     padding: 2px;
-    box-sizing: border-box;
+  }
+
+  fieldset {
+    padding-bottom: 5px;
   }
 
   textarea {
@@ -297,8 +321,6 @@
     border-radius: 3px;
     box-sizing: border-box;
     position: sticky;
-    width: 100%;
-    height: 100%;
 
     &.inverted {
       @media (prefers-color-scheme: dark) {
@@ -310,7 +332,7 @@
   .ast {
     flex-grow: 1;
     overflow-y: scroll;
-    background-color: white;
+    // background-color: white;
     border-radius: 3px;
     padding: 5px;
   }

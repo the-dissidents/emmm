@@ -128,19 +128,21 @@ export const HeadingBlockRenderersHTML = [
             const tag = 'h' + node.state.level;
             const para = node.content[0] as ParagraphNode;
             const element = cxt.config.options.window.document.createElement(tag);
+            // TODO: data-id
             element.appendChild(await cxt.state.render(para.content, cxt));
             return element;
         }
-        return cxt.state.invalidBlock(node, 'Bad format');
+        return cxt.state.invalidBlock(node, 'Bad format', cxt);
     }] satisfies BlockRendererDefiniton<HTMLRenderType, HeadingData>,
     [implicitHeadingBlock, (node, cxt) => {
         if (node.state !== undefined) {
             const tag = 'h' + node.state.level;
             const element = cxt.config.options.window.document.createElement(tag);
+            // TODO: data-id
             element.className = 'implicit';
             return element;
         }
-        return cxt.state.invalidBlock(node, 'Bad format');
+        return cxt.state.invalidBlock(node, 'Bad format', cxt);
     }] satisfies BlockRendererDefiniton<HTMLRenderType, HeadingData>,
 
     [numberedHeadingBlock, async (node, cxt) => {
@@ -151,12 +153,13 @@ export const HeadingBlockRenderersHTML = [
             element.appendChild(<span class='heading-number'>{node.state.name}</span>);
             if (node.content.length > 0) {
                 const para = node.content[0] as ParagraphNode;
-                element.appendChild(<span class='heading-content'>
-                    {await cxt.state.render(para.content, cxt)}
-                </span>);
+                element.appendChild(
+                    <span class='heading-content' data-id={cxt.state.addSourceMap(para.location)}>
+                        {await cxt.state.render(para.content, cxt)}
+                    </span>);
             }
             return element;
         }
-        return cxt.state.invalidBlock(node, 'Bad format');
+        return cxt.state.invalidBlock(node, 'Bad format', cxt);
     }] satisfies BlockRendererDefiniton<HTMLRenderType, HeadingData>,
 ];

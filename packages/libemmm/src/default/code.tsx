@@ -12,10 +12,14 @@ export const CodeInline = new InlineModifierDefinition(
 
 export const CodeBlockRendererHTML =
     [CodeBlock, async (node, cxt) =>
-        <pre><code>{await cxt.state.render(node.content, cxt)}</code></pre>
+        <pre><code data-id={cxt.state.addSourceMap(node.location)}>
+            {await cxt.state.render(node.content, cxt)}
+        </code></pre>
     ] satisfies BlockRendererDefiniton<HTMLRenderType>;
 
 export const CodeInlineRendererHTML =
     [CodeInline, async (node, cxt) =>
-        <span><code>{await cxt.state.render(node.content, cxt)}</code></span>
+        <span><code data-id={cxt.state.addSourceMap(node.location)}>
+            {await cxt.state.render(node.content, cxt)}
+        </code></span>
     ] satisfies InlineRendererDefiniton<HTMLRenderType>;

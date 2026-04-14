@@ -6,7 +6,7 @@ export * from './modifier';
 export * from './scanner';
 // export * from './module';
 
-export * from './parser';
+export type { Parser } from './parser';
 export * from './parser-config';
 export * from './renderer';
 export * as messages from './messages';

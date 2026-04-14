@@ -170,6 +170,7 @@ export const NoteInlines = [noteInline, noteMarkerInline];
 export const NoteSystems = [notePositionSystem, noteRenumberingSystem];
 
 async function makeNoteHTML(def: NoteDefinition, cxt: RenderContext<HTMLRenderType>) {
+    // TODO: data-id
     return <section class='note' id={`note-id-${def.id}`}>
         <div class='note-name'>
             <p><a href={`#notemarker-id-${def.id}`}>{def.name}</a></p>
@@ -183,22 +184,23 @@ async function makeNoteHTML(def: NoteDefinition, cxt: RenderContext<HTMLRenderTy
 export const NoteInlineRenderersHTML = [
     [noteMarkerInline, (node, cxt) => {
         if (node.state === undefined)
-            return cxt.state.invalidInline(node, 'bad format');
+            return cxt.state.invalidInline(node, 'bad format', cxt);
         // find node definition
         const defs = cxt.parsedDocument.context.get(notes)!.definitions;
         const note = defs.findIndex((x) => /*x.position >= node.start &&*/ x.name == node.state);
-        return <sup class='note' id={`notemarker-id-${note}`}>
-                 {note < 0
-                    ? `Not found: ${node.state}`
-                    : <a href={`#note-id-${note}`}>{node.state}</a>}
-               </sup>;
+        return <sup class='note' id={`notemarker-id-${note}`}
+                data-id={cxt.state.addSourceMap(node.location)}>
+            {note < 0
+                ? `Not found: ${node.state}`
+                : <a href={`#note-id-${note}`}>{node.state}</a>}
+        </sup>;
     }] satisfies InlineRendererDefiniton<HTMLRenderType, string>,
 ];
 
 export const NoteBlockRenderersHTML = [
     [noteBlock, (node, cxt) => {
         if (node.state === undefined)
-            return cxt.state.invalidBlock(node, 'bad format');
+            return cxt.state.invalidBlock(node, 'bad format', cxt);
         const defs = cxt.parsedDocument.context.get(notes)!;
         const system = defs.systems.get(node.state.system) ?? defs.defaultSystem;
         if (system.position != 'preserve') return [];

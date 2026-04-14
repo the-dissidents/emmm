@@ -80,16 +80,16 @@ export const MiscBlocks = [styleBlock, breakBlock, linkBlock, imageBlock];
 export const MiscInlineRenderersHTML = [
     [rubyInline, async (node, cxt) =>
         node.state === undefined
-            ? cxt.state.invalidInline(node, 'bad format')
-            : <ruby>
+            ? cxt.state.invalidInline(node, 'bad format', cxt)
+            : <ruby data-id={cxt.state.addSourceMap(node.location)}>
                 {await cxt.state.render(node.content, cxt)}
                 <rt>{node.state}</rt>
               </ruby>
     ] satisfies InlineRendererDefiniton<HTMLRenderType, string>,
     [linkInline, async (node, cxt) =>
         node.state === undefined
-            ? cxt.state.invalidInline(node, 'bad format')
-            : <a href={encodeURI(node.state)}>
+            ? cxt.state.invalidInline(node, 'bad format', cxt)
+            : <a href={encodeURI(node.state)} data-id={cxt.state.addSourceMap(node.location)}>
                 {await cxt.state.render(node.content, cxt)}
               </a>
     ] satisfies InlineRendererDefiniton<HTMLRenderType, string>,
@@ -100,39 +100,40 @@ export const MiscInlineRenderersHTML = [
 export const MiscBlockRenderersHTML = [
     [styleBlock, async (node, cxt) =>
         node.state === undefined
-            ? cxt.state.invalidBlock(node, 'bad format')
-            : <div class={`emmmstyle-${node.state}`} style="display:contents">
+            ? cxt.state.invalidBlock(node, 'bad format', cxt)
+            : <div class={`emmmstyle-${node.state}`} style="display:contents"
+                    data-id={cxt.state.addSourceMap(node.location)}>
                 {await cxt.state.render(node.content, cxt)}
               </div>
     ] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
     [breakBlock, () => <hr/>] satisfies BlockRendererDefiniton<HTMLRenderType>,
     [linkBlock, async (node, cxt) => {
         if (node.state === undefined)
-            return cxt.state.invalidBlock(node, 'bad format');
+            return cxt.state.invalidBlock(node, 'bad format', cxt);
         const content = await cxt.state.render(node.content, cxt);
-        return <a href={encodeURI(node.state)}>
+        return <a href={encodeURI(node.state)}  data-id={cxt.state.addSourceMap(node.location)}>
             {content.childElementCount > 0 ? content : node.state}
         </a>;
     }
     ] satisfies BlockRendererDefiniton<HTMLRenderType, string>,
     [imageBlock, async (node, cxt) => {
         if (node.state === undefined)
-            return cxt.state.invalidBlock(node, 'bad format');
+            return cxt.state.invalidBlock(node, 'bad format', cxt);
         let transformed: string | undefined;
         try {
             transformed = await cxt.config.options.transformAsset(node.state);
         } catch {
-            return cxt.state.invalidBlock(node, 'unable to transform asset');
+            return cxt.state.invalidBlock(node, 'unable to transform asset', cxt);
         }
-        return <figure>
-                 {transformed
-                    ? <img src={transformed} data-original-src={node.state} />
-                    : <img src={node.state} />}
-                 {node.content.length > 0
-                    ? <figcaption>
-                        {await cxt.state.render((node.content[0] as ParagraphNode).content, cxt)}
-                      </figcaption>
-                    : []}
-               </figure>;
+        return <figure data-id={cxt.state.addSourceMap(node.location)}>
+            {transformed
+                ? <img src={transformed} data-original-src={node.state} />
+                : <img src={node.state} />}
+            {node.content.length > 0
+                ? <figcaption>
+                    {await cxt.state.render((node.content[0] as ParagraphNode).content, cxt)}
+                </figcaption>
+                : []}
+        </figure>;
     }] satisfies BlockRendererDefiniton<HTMLRenderType, string>
 ];
