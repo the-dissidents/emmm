@@ -59,7 +59,7 @@ export const Interface = $state({
     library: Memorized.$('library', z.string(), testLib),
 
     invertedPreview: Memorized.$('invertedPreview', z.boolean(), false),
-    syncScrolling: Memorized.$('syncScrolling', z.boolean(), true),
+    syncScrolling: Memorized.$('syncScrolling', z.boolean(), false),
 
     activeEditor: undefined as EditorHandleOut | undefined,
     sourceEditor: undefined as EditorHandleOut | undefined,
