@@ -22,6 +22,7 @@
 
   import type { EmmmDiagnostic } from './editor/Linter';
   import { Debug } from './Debug';
+  import { DebouncedTask } from './details/DebouncedTask';
 
   let left = $state<HTMLElement>(),
       middle = $state<HTMLElement>(),
@@ -60,7 +61,7 @@
   function onCursorPositionChanged(pos: number, l: number, c: number) {
     posStatus = `line ${l}, col ${c}`;
     if (Interface.activeEditor === sourceHandle) {
-      Interface.scrollToSource(pos, true);
+      scrollToSource.start(pos, false);
     }
   }
 
@@ -79,6 +80,9 @@
   }
 
   let diagnostics: EmmmDiagnostic[] = $state([]);
+
+  const scrollToSource = new DebouncedTask(
+    (pos: number, select: boolean) => Interface.scrollToSource(pos, select), 500);
 </script>
 
 <div class="vlayout fill">
@@ -136,7 +140,7 @@
             const rect = view.scrollDOM.getBoundingClientRect();
             const pos = view.posAtCoords({ x: 0, y: rect.top + rect.height / 2 });
             if (pos === null) return;
-            Interface.scrollToSource(pos, false);
+            scrollToSource.start(pos, false);
           }}
           {onCursorPositionChanged} />
       </EmmmContext>
