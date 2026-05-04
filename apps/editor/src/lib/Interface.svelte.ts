@@ -6,7 +6,7 @@ import * as emmm from '@the_dissidents/libemmm';
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { CustomHTMLRenderer } from "./emmm/Custom";
 import type { EmmmParseData } from "./editor/ParseData";
-import type { EditorHandleOut } from "./editor/Editor.svelte";
+import type Editor from "./editor/Editor.svelte";
 import { Memorized } from "./config/Memorized.svelte";
 
 import * as z from "zod/v4-mini";
@@ -61,8 +61,8 @@ export const Interface = $state({
     invertedPreview: Memorized.$('invertedPreview', z.boolean(), false),
     syncScrolling: Memorized.$('syncScrolling', z.boolean(), false),
 
-    activeEditor: undefined as EditorHandleOut | undefined,
-    sourceEditor: undefined as EditorHandleOut | undefined,
+    activeEditor: undefined as Editor | undefined,
+    sourceEditor: undefined as Editor | undefined,
 
     frame: undefined as HTMLIFrameElement | undefined,
     renderedDocument: null as Document | null,

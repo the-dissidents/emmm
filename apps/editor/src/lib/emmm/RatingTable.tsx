@@ -30,7 +30,7 @@ export const ratingHeaderSystem = new emmm.SystemModifierDefinition(
     'ratings-header', emmm.ModifierSlotType.None,
 {
     prepareExpand(node, cxt) {
-        let { msgs, args, nodes } = 
+        let { msgs, args, nodes } =
             emmm.helper.bindArgs(node, ['value']);
         if (msgs) return msgs;
 
@@ -69,10 +69,10 @@ function parseRatings(
     const stddev = Math.sqrt([...map]
         .map((x) => x[1])
         .reduce((a, b) => a + (b - avg) * (b - avg) / map.size, 0));
-    
+
     node.state = {
-        title: args!.key, 
-        author: args!.dir, 
+        title: args!.key,
+        author: args!.dir,
         group: args!.g,
         ratings: map, avg, stddev
     };
@@ -115,12 +115,12 @@ export const overallTableBlock = new emmm.BlockModifierDefinition<{
 
 const TABLE_COLUMNS = 4;
 
-export const ratingTableRenderer: 
+export const ratingTableRenderer:
 emmm.BlockRendererDefiniton<emmm.HTMLRenderType, RatingTableData> = [
     ratingTableBlock,
     (node, cxt) => {
         if (!node.state)
-            return cxt.state.invalidBlock(node, 'bad format');
+            return cxt.state.invalidBlock(node, 'bad format', cxt);
         const { title, author, ratings, avg, stddev } = node.state;
         const head = title && cxt.parsedDocument.context.get(rating)!.showHeader
           ? <thead>
@@ -131,7 +131,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, RatingTableData> = [
                 <tr class='info'><th colspan={TABLE_COLUMNS}>*本评分表为0－4星制，×代表0星。</th></tr>
             </thead>
           : [];
-        
+
         const articleAuthor = cxt.parsedDocument.context.variables.get('AUTHOR');
         let authorRating: [string, number] | undefined;
         if (articleAuthor && ratings.has(articleAuthor)) {
@@ -179,7 +179,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, RatingTableData> = [
     }
 ];
 
-export const overallTableRenderer: 
+export const overallTableRenderer:
 emmm.BlockRendererDefiniton<emmm.HTMLRenderType, {
     title: string,
     group: string
@@ -187,7 +187,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, {
     overallTableBlock,
     (node, cxt) => {
         if (!node.state)
-            return cxt.state.invalidBlock(node, 'bad format');
+            return cxt.state.invalidBlock(node, 'bad format', cxt);
 
         const members = new Set<string>();
         const all = cxt.parsedDocument.context.get(rating)!.data
@@ -196,7 +196,7 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, {
         for (const entry of all)
             for (const member of entry.ratings.keys())
                 members.add(member);
-        
+
         const columns = [...members].sort((a, b) => a.localeCompare(b));
         const colgroups: Node[] = [];
         colgroups.push(<col class="title" />);
@@ -215,8 +215,8 @@ emmm.BlockRendererDefiniton<emmm.HTMLRenderType, {
             const cells: Node[] = [];
             cells.push(<th class='title' scope='row'>
                 {entry.title}
-                {entry.author 
-                    ? [<br/>, <span class='author'>{entry.author}</span>] 
+                {entry.author
+                    ? [<br/>, <span class='author'>{entry.author}</span>]
                     : []}
             </th>);
             cells.push(<td class='avg'>{entry.avg.toFixed(2)}</td>);

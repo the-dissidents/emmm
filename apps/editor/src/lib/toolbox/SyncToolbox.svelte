@@ -162,7 +162,5 @@
 >Start a new document</button>
 
 <style>
-  button {
 
-  }
 </style>

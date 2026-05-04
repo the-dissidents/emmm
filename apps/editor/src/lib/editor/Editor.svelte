@@ -4,6 +4,7 @@
   }
 
   const key = Symbol('EditorContext');
+
   export function setEditorContext(ctx: EditorContext) {
     setContext(key, ctx);
   }
@@ -48,29 +49,15 @@
      * Changing this will reset cursor positions etc.
      */
     text?: string,
-    hout?: EditorHandleOut
   }
 
   export type Selection = {
     from: number, to: number
   };
 
-  export interface EditorHandleOut {
-    focus(): void;
-    diagnostics(): Diagnostic[],
-    resolvePosition(pos: number): [l: number, c: number];
-    getCursorPosition(): [pos: number, l: number, c: number];
-    getText(): string;
-    getSelections(): Selection[];
-    setSelections(s: Selection[]): void;
-    update(c: TransactionSpec): void;
-    reparse(): void;
-  }
-
   let {
     onChange: onTextChange, onCursorPositionChanged, onFocus, onBlur, onScroll,
     text = $bindable(''),
-    hout = $bindable(),
   }: Props = $props();
 
   let editorContainer: HTMLDivElement;
@@ -100,6 +87,54 @@
     })
   ];
 
+  export function diagnostics() {
+    const result: Diagnostic[] = [];
+    forEachDiagnostic(view.state, (d) => result.push(d));
+    return result;
+  }
+
+  export function focus() {
+    view.focus();
+  }
+
+  export function resolvePosition(pos: number): [number, number] {
+    const line = view.state.doc.lineAt(pos);
+    return [line.number, pos - line.from];
+  }
+
+  export function getCursorPosition(): [number, number, number] {
+    const pos = view.state.selection.main.head;
+    const line = view.state.doc.lineAt(pos);
+    return [pos, line.number, pos - line.from];
+  }
+
+  export function getText() {
+    return text;
+  }
+
+  export function getSelections() {
+    return view.state.selection.ranges.map((x) => ({ from: x.from, to: x.to }));
+  }
+
+  export function setSelections(s: Selection[]) {
+    view.dispatch({
+      selection: s.length > 0
+        ? EditorSelection.create(s.map((x) => EditorSelection.range(x.from, x.to)))
+        : EditorSelection.cursor(view.state.selection.main.head),
+      scrollIntoView: true,
+    });
+  }
+
+  export function update(spec: TransactionSpec) {
+    view.dispatch(spec);
+  }
+
+  export function reparse() {
+    view.dispatch({
+      effects: emmmForceReparseEffect.of(null)
+    });
+  }
+
   onMount(() => {
     const context = getEditorContext();
     view = new EditorView({
@@ -111,14 +146,11 @@
           EditorView.darkTheme.from(isDarkThemeObserver),
           lineNumbers(),
           highlightSpecialChars(),
-          // highlightActiveLineGutter(),
           history(),
           drawSelection(),
           dropCursor(),
-          // closeBrackets(),
           highlightWhitespace(),
           highlightActiveLine(),
-          // highlightSelectionMatches(),
           EditorView.lineWrapping,
           EditorState.tabSize.of(4),
           EditorState.allowMultipleSelections.of(true),
@@ -135,48 +167,6 @@
           effects: [ themeChangeEffect.of(newColorScheme) ]
         });
     });
-
-    hout = {
-      diagnostics() {
-        const result: Diagnostic[] = [];
-        forEachDiagnostic(view.state, (d) => result.push(d));
-        return result;
-      },
-      focus() {
-          view.focus();
-      },
-      resolvePosition(pos) {
-        const line = view.state.doc.lineAt(pos);
-        return [line.number, pos - line.from];
-      },
-      getCursorPosition() {
-        const pos = view.state.selection.main.head;
-        const line = view.state.doc.lineAt(pos);
-        return [pos, line.number, pos - line.from];
-      },
-      getText() {
-        return text;
-      },
-      getSelections() {
-        return view.state.selection.ranges.map((x) => ({ from: x.from, to: x.to }));
-      },
-      setSelections(s) {
-        view.dispatch({
-          selection: s.length > 0
-            ? EditorSelection.create(s.map((x) => EditorSelection.range(x.from, x.to)))
-            : EditorSelection.cursor(view.state.selection.main.head),
-          scrollIntoView: true,
-        });
-      },
-      update(spec) {
-        view.dispatch(spec);
-      },
-      reparse() {
-        view.dispatch({
-          effects: emmmForceReparseEffect.of(null)
-        });
-      }
-    };
     hook(() => text, (x) => {
       const value = view.state.doc.toString();
       if (value == x) return;

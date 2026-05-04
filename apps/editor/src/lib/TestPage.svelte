@@ -5,7 +5,7 @@
   import { css } from '@codemirror/lang-css';
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 
-  import Editor, { type EditorHandleOut } from './editor/Editor.svelte';
+  import Editor from './editor/Editor.svelte';
 
   import { Interface } from './Interface.svelte';
   import EmmmContext from './editor/EmmmContext.svelte';
@@ -31,9 +31,9 @@
   let strip = $state(false);
   let parsedStatus = $state('');
   let posStatus = $state('line ?, col ?');
-  let sourceHandle = $state<EditorHandleOut>(),
-      libraryHandle = $state<EditorHandleOut>(),
-      cssHandle = $state<EditorHandleOut>();
+  let sourceHandle = $state<Editor>(),
+      libraryHandle = $state<Editor>(),
+      cssHandle = $state<Editor>();
 
   $effect(() => {
     Interface.sourceEditor = sourceHandle;
@@ -64,9 +64,9 @@
     }
   }
 
-  function updateCursorPosition(h?: EditorHandleOut) {
+  function updateCursorPosition(h?: Editor) {
     if (!h?.getCursorPosition) return;
-    onCursorPositionChanged(...h.getCursorPosition());
+    onCursorPositionChanged(...(h.getCursorPosition()));
   }
 
   function onParseSource(doc: EmmmParseData) {
@@ -125,6 +125,7 @@
           onLint={(d) => diagnostics = d}
       >
         <Editor bind:text={$source}
+          bind:this={sourceHandle}
           onFocus={() => {
             updateCursorPosition(sourceHandle);
             Interface.activeEditor = sourceHandle;
@@ -137,8 +138,7 @@
             if (pos === null) return;
             Interface.scrollToSource(pos, false);
           }}
-          {onCursorPositionChanged}
-          bind:hout={sourceHandle} />
+          {onCursorPositionChanged} />
       </EmmmContext>
     </TabPage>
     <TabPage id="Library" header="Library"
@@ -146,12 +146,12 @@
       <EmmmContext onParse={onParseLibrary}
           provideDescriptor={() => ({name: '<Library>'})}>
         <Editor bind:text={$library}
+          bind:this={libraryHandle}
           onFocus={() => {
             updateCursorPosition(libraryHandle);
             Interface.activeEditor = libraryHandle;
           }}
-          {onCursorPositionChanged}
-          bind:hout={libraryHandle} />
+          {onCursorPositionChanged} />
       </EmmmContext>
     </TabPage>
     <TabPage id="Stylesheet" header="Stylesheet">
@@ -161,13 +161,13 @@
         css()
       ]}>
         <Editor bind:text={$stylesheet}
+          bind:this={cssHandle}
           onFocus={() => {
             updateCursorPosition(cssHandle);
             Interface.activeEditor = cssHandle;
           }}
           {onCursorPositionChanged}
-          onChange={() => Interface.requestRender()}
-          bind:hout={cssHandle} />
+          onChange={() => Interface.requestRender()} />
       </GenericContext>
     </TabPage>
   </TabView>

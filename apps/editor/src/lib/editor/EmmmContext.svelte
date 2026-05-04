@@ -20,6 +20,7 @@
 
   setEditorContext({
     extensions: [
+      // svelte-ignore state_referenced_locally
       emmmLanguageSupport(provideContext, provideDescriptor, onLint),
       EditorView.updateListener.of((update) => {
         const doc = update.state.field(emmmDocument);

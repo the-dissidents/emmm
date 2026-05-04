@@ -11,7 +11,8 @@
     let { extension, children }: Props = $props();
 
     setEditorContext({
-        extensions: extension
+      // svelte-ignore state_referenced_locally
+      extensions: extension
     });
 </script>
 
