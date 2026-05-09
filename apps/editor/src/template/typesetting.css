@@ -101,6 +101,10 @@ section.note .note-name a::after {
   content: ']';
 }
 
+section.note:has(+ section.note) p {
+  margin-bottom: 5px;
+}
+
 section.note .note-name p {
   padding-right: 5px;
 }
@@ -131,6 +135,7 @@ blockquote {
 :is(h2, h3, h4, h5, h6) {
   margin-block: 2em 1em;
   /* text-wrap: balance; */
+  line-height: 1.5;
 }
 
 h1 {
@@ -327,7 +332,7 @@ mark {
 }
 
 .emmmstyle-test + h2 {
-  margin: 0 0 1em 0 !important;
+  margin: 0.3em 0 1em 0 !important;
   padding: 0;
 }
 
@@ -468,6 +473,22 @@ figure figcaption {
 
 /* tables */
 
+table {
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid var(--commentary-color);
+  padding: 0.2em 0.7em;
+  text-align: start;
+}
+
+table p {
+  margin: 0.5em 0;
+  padding: 0;
+  line-height: 1.75;
+}
+
 
 /* gallery (carousel) */
 
@@ -505,6 +526,7 @@ ul.gallery > li > :first-child {
   max-width: 500px;
   border-collapse: collapse;
   table-layout: fixed;
+  /* font-family: Arial, '黑体-简'; */
   margin-bottom: 1lh;
   font-weight: normal;
 }
@@ -554,6 +576,7 @@ ul.gallery > li > :first-child {
   font-size: 110%;
   height: 2em;
   padding: 15px;
+  /*color: var(--commentary-color);*/
 }
 
 .ratings tfoot td {

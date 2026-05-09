@@ -52,7 +52,7 @@ export function htmlToEmmm(htmlString: string): string {
         case 'h6': return `###### ${content}\n\n`;
 
         // Paragraphs
-        case 'p':
+        case 'p': case 'li':
           // Heuristic: remove empty paragraphs or those containing only whitespace
           const trimmed = content.trim();
           if (!trimmed) return '';
