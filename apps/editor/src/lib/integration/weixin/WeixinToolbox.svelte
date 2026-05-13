@@ -95,7 +95,7 @@
   });
 </script>
 
-<div class="vlayout contain">
+<div class="vlayout vfill">
 
 <h5>Connections & Credentials</h5>
 <table class="config"><tbody>
@@ -223,10 +223,6 @@
 </div>
 
 <style>
-  .contain {
-    height: 100%;
-    max-height: 100%;
-  }
   button {
     margin-bottom: 5px;
   }

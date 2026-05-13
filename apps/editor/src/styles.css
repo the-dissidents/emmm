@@ -33,9 +33,9 @@ table.config tr > td:nth-child(1) {
   min-height: 0;
   min-width: 0;
 
-  & > * {
+  /* & > * {
     flex-shrink: 0;
-  }
+  } */
 }
 .vcenter {
   display: flex;
@@ -62,9 +62,7 @@ table.config tr > td:nth-child(1) {
   flex: 0 1;
 }
 
-.fill {
-  width: 100%;
+.vfill {
   height: 100%;
   max-height: 100%;
-  max-width: 100%;
 }

@@ -43,7 +43,7 @@
 <Banner style='error' bind:open={errorBanner}
   text="Internal error: please contact the developers"/>
 
-<main class="container vlayout fill">
+<main class="container vlayout">
   <div id="titlebar" data-tauri-drag-region>
   </div>
   <div class="page vlayout flexgrow">
@@ -59,6 +59,9 @@
   }
 
   .container {
+    display: flex;
+    flex-direction: column;
+
     margin: 0;
     padding: 0;
     height: 100vh;

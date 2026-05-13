@@ -85,7 +85,7 @@
     (pos: number, select: boolean) => Interface.scrollToSource(pos, select), 500);
 </script>
 
-<div class="vlayout fill">
+<div class="vlayout flexgrow">
 
 <!-- main area -->
 <div class="hlayout flexgrow">
@@ -178,14 +178,14 @@
 </div>
 
 <div style="width: 5px;" class="hcenter">
-  <Resizer first={bottom!} second={middle} vertical={true} reverse={true} />
+  <Resizer first={right!} second={middle} vertical={true} reverse={true} />
 </div>
 
 <!-- preview -->
 <div class="pane" bind:this={right} style="width: 500px;">
   <TabView>
     <TabPage id="Preview" header="Preview" active={true}>
-      <div class="vlayout fill">
+      <div class="vlayout vfill">
         <fieldset>
           <label>
             <input type='checkbox' class="button" bind:checked={$syncScrolling}>
@@ -199,10 +199,11 @@
       </div>
     </TabPage>
     <TabPage id="AST" header="AST" lazy={true}>
-      <div class="vlayout fill">
+      <div class="vlayout vfill">
         <div class="ast">
           <ASTViewer node={strip ? $parseData?.data.toStripped().root : $parseData?.data.root} />
         </div>
+        <hr>
         <label>
           <input type="checkbox" bind:checked={strip} />
           only show transformed (stripped) AST
@@ -215,7 +216,7 @@
       </div>
     </TabPage>
     <TabPage id="HTML" header="HTML">
-      <textarea class="fill">{Interface.renderedDocument?.documentElement.outerHTML}</textarea>
+      <textarea class="vfill">{Interface.renderedDocument?.documentElement.outerHTML}</textarea>
     </TabPage>
   </TabView>
 </div>

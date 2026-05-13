@@ -77,7 +77,7 @@
   }
 </script>
 
-<div class="vlayout contain">
+<div class="vlayout vfill">
 
 <h5>Search & Replace</h5>
 
