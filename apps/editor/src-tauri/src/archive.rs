@@ -142,7 +142,7 @@ pub async fn unarchive(
             } else {
                 log::debug!("failed to resolve asset: {id}");
 
-                caps[0].to_string()
+                "invalid-".to_string() + &caps[0]
             }
         });
 
