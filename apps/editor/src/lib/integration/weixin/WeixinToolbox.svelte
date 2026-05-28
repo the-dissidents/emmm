@@ -189,6 +189,10 @@
       <button onclick={() => uploadImg(item)}>
         refresh
       </button>
+    {:else if item.status == 'error'}
+      <button onclick={() => uploadImg(item)}>
+        retry
+      </button>
     {/if}
   {/snippet}
   {#snippet status(item)}
