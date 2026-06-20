@@ -63,7 +63,7 @@ export const emmmWrapIndent = ViewPlugin.fromClass(class {
     update(update: ViewUpdate) {
         const prev = update.startState.facet(emmmStructure);
         const current = update.state.facet(emmmStructure);
-        if (current && (current !== prev || update.viewportChanged))
+        if (current && (current !== prev || update.viewportChanged) && !update.view.composing)
             this.decorations = this.makeDecorations(update.view);
     }
 }, {

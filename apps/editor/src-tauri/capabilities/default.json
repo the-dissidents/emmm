@@ -14,6 +14,14 @@
     "core:window:allow-start-dragging",
     "core:window:allow-set-title",
     "opener:default",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        {
+          "path": "**"
+        }
+      ]
+    },
     "fs:default",
     "fs:allow-appconfig-read-recursive",
     "fs:allow-appconfig-write-recursive",

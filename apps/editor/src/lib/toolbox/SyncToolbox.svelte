@@ -7,6 +7,8 @@
   import * as dialog from '@tauri-apps/plugin-dialog';
   import { RustAPI } from "$lib/RustAPI";
   import { htmlToEmmm } from "$lib/integration/weixin/Importer";
+  import { openPath } from "@tauri-apps/plugin-opener";
+  import { appLogDir } from "@tauri-apps/api/path";
 
   let progress = Interface.progress;
 
@@ -161,6 +163,9 @@
   }}
 >Start a new document</button>
 
-<style>
+<h5>Debug</h5>
 
-</style>
+<button onclick={async () => {
+  console.log(await appLogDir());
+  openPath(await appLogDir());
+}}>Open log folder</button>

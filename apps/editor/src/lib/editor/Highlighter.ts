@@ -136,7 +136,7 @@ export const emmmHighlighter = ViewPlugin.fromClass(class {
     update(update: ViewUpdate) {
         const prev = update.startState.field(emmmDocument);
         const doc = update.state.field(emmmDocument);
-        if (doc && doc !== prev) this.make(doc);
+        if (doc && doc !== prev && !update.view.composing) this.make(doc);
     }
 }, {
     decorations: v => v.decorations
