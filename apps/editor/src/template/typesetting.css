@@ -35,8 +35,8 @@ span.wide {
   letter-spacing: 2px;
 }
 
-*+span.wide {
-  padding-inline-start: 2px;
+span.wide {
+  padding-inline: 1px;
 }
 
 /* meta elements */
@@ -151,6 +151,11 @@ h2 {
 }
 
 h3 {
+  font-size: 125%;
+  font-weight: normal;
+}
+
+h4 {
   font-size: 100%;
   font-weight: bold;
 }
@@ -192,7 +197,7 @@ header h1 {
   }
 
   .subtitle {
-    font-size: 90%;
+    font-size: 90% !important;
   }
 }
 
@@ -555,12 +560,16 @@ ul.gallery > li > :first-child {
   border: 1.5px solid var(--text-color);
   background-color: transparent;
   /* font-weight: normal; */
+
+  text-align: center;
 }
 
 .ratings td {
   border: 1.5px solid var(--text-color);
   background-color: transparent;
   font-weight: normal;
+
+  text-align: center;
 }
 
 .ratings tbody th {
@@ -618,7 +627,6 @@ ul.gallery > li > :first-child {
 }
 
 .overall {
-  text-align: center;
   /* max-width: 500px; */
   border-collapse: collapse;
   table-layout: fixed;
@@ -628,11 +636,13 @@ ul.gallery > li > :first-child {
 }
 
 .overall :is(th, td) {
+  text-align: center;
   background-color: #FFF !important;
   color: black !important;
   padding: 5px 10px;
   min-width: 5ic;
   white-space: nowrap;
+  border: none;
 }
 
 .overall .corner {
