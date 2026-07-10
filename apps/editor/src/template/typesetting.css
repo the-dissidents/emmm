@@ -129,19 +129,20 @@ blockquote {
   padding-right: 1.5em;
   margin: 0;
   text-align: justify;
-  /* border-left: 2px black solid; */
 }
 
 :is(h2, h3, h4, h5, h6) {
   margin-block: 2em 1em;
-  /* text-wrap: balance; */
   line-height: 1.5;
+  letter-spacing: 0;
+  text-align: start;
 }
 
 h1 {
   font-size: 150%;
   font-weight: bold;
   margin-block: 2em 2em;
+  letter-spacing: 0;
 }
 
 h2 {
