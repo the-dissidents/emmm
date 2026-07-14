@@ -3,8 +3,6 @@ import { DOMUtil } from "$lib/Util";
 import { Weixin } from "./API";
 
 import { inlineCss } from "@the_dissidents/dom-css-inliner";
-import * as htmlToImage from 'html-to-image';
-import * as fs from "@tauri-apps/plugin-fs";
 import { path } from "@tauri-apps/api";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { Debug } from "$lib/Debug";
@@ -40,14 +38,10 @@ async function toCanvas(e: HTMLElement, width: number, height: number) {
 }
 
 async function prerenderElement(e: HTMLElement, width: number, _height: number) {
-    // const img = await htmlToImage.toBlob(e, { width, height });
-    // if (!img) return null;
     const id = crypto.randomUUID();
     const file = await path.join(await path.tempDir(), `prerender-${id}.png`);
-    // await fs.writeFile(file, await img.bytes());
-    // console.log(file);
     try {
-        await RustAPI.prerenderHTML(e.outerHTML, file, width * devicePixelRatio, devicePixelRatio);
+        await RustAPI.prerenderHTML(e.outerHTML, file, width, devicePixelRatio);
     } catch (e) {
         console.warn(e);
         return null;

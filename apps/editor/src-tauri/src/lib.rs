@@ -1,13 +1,14 @@
 use std::{fs, panic};
 
-use hyper_render::Config;
 use serde::Serialize;
 
 mod archive;
 mod compress;
+mod render;
 
 use archive::{archive, unarchive};
 use compress::compress_image;
+use render::prerender_to_png;
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
@@ -92,17 +93,6 @@ pub fn run() {
 
 #[tauri::command]
 async fn prerender_html(html: String, file: String, width: u32, scale: f32) -> Result<(), String> {
-    let png = match hyper_render::render_to_png(
-        &html,
-        Config::new()
-            .width(width)
-            .scale(scale)
-            .auto_height(true)
-            .transparent()
-    ) {
-        Ok(v) => v,
-        Err(e) => return Err(e.to_string())
-    };
-    fs::write(file, png)
-        .map_err(|e| e.to_string())
+    let png = prerender_to_png(&html, width, scale).map_err(|e| e.to_string())?;
+    fs::write(file, png).map_err(|e| e.to_string())
 }
