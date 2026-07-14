@@ -1,8 +1,20 @@
 import { calculateSpecificity, compareSpecificity, Specificity } from "./specificity.js";
 
+const DEFAULT_INHERITED_PROPERTIES = [
+    'border-collapse', 'border-spacing', 'caption-side', 'color', 'cursor',
+    'direction', 'empty-cells', 'font-family', 'font-size', 'font-style',
+    'font-variant', 'font-weight', 'font-size-adjust', 'font-stretch', 'font',
+    'letter-spacing', 'line-height', 'list-style-image', 'list-style-position',
+    'list-style-type', 'list-style', 'orphans', 'quotes', 'tab-size',
+    'text-align', 'text-align-last', 'text-decoration-color', 'text-indent',
+    'text-justify', 'text-shadow', 'text-transform', 'visibility', 'white-space',
+    'widows', 'word-break', 'word-spacing', 'word-wrap',
+];
+
 export type InlineCssOptions = {
     removeStyleTags?: boolean,
     removeClasses?: boolean,
+    simulateInheritance?: boolean | string[],
 }
 
 export function inlineCss(doc: Document, options: InlineCssOptions = {}) {
@@ -26,7 +38,8 @@ export function inlineCss(doc: Document, options: InlineCssOptions = {}) {
         });
     });
 
-    doc.body.querySelectorAll<HTMLElement>('*').forEach(element => {
+    const allElements = [doc.body, ...Array.from(doc.body.querySelectorAll<HTMLElement>('*'))];
+    allElements.forEach(element => {
         const matchingRules: Rule[] = 
             allRules.filter(x => element.matches(x.rule.selectorText));
 
@@ -52,6 +65,25 @@ export function inlineCss(doc: Document, options: InlineCssOptions = {}) {
             element.style.setProperty(prop, value, priority);
         });
     });
+
+    if (options.simulateInheritance) {
+        const inheritedProps = Array.isArray(options.simulateInheritance)
+            ? options.simulateInheritance
+            : DEFAULT_INHERITED_PROPERTIES;
+
+        for (const el of allElements) {
+            if (el === doc.body) continue;
+            const parent = el.parentElement!;
+            const parentComputed = getComputedStyle(parent);
+            for (const prop of inheritedProps) {
+                if (el.style.getPropertyValue(prop) === '') {
+                    if (parent.style.getPropertyValue(prop) !== '') {
+                        el.style.setProperty(prop, parentComputed.getPropertyValue(prop), '');
+                    }
+                }
+            }
+        }
+    }
 
     if (options.removeStyleTags)
         doc.querySelectorAll('style').forEach(

@@ -1,5 +1,6 @@
-use std::panic;
+use std::{fs, panic};
 
+use hyper_render::Config;
 use serde::Serialize;
 
 mod archive;
@@ -82,7 +83,26 @@ pub fn run() {
             compress_image,
             archive,
             unarchive,
+            prerender_html,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+
+#[tauri::command]
+async fn prerender_html(html: String, file: String, width: u32, scale: f32) -> Result<(), String> {
+    let png = match hyper_render::render_to_png(
+        &html,
+        Config::new()
+            .width(width)
+            .scale(scale)
+            .auto_height(true)
+            .transparent()
+    ) {
+        Ok(v) => v,
+        Err(e) => return Err(e.to_string())
+    };
+    fs::write(file, png)
+        .map_err(|e| e.to_string())
 }

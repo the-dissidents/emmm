@@ -10,6 +10,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { Debug } from "$lib/Debug";
 import { findBoundingRect } from "$lib/details/BoundingRect";
 import { elementToImage } from "$lib/details/ElementToCanvas";
+import { RustAPI } from "$lib/RustAPI";
 
 const CONVERT_TO_SECTION = new Set([
     'address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'fieldset',
@@ -38,31 +39,36 @@ async function toCanvas(e: HTMLElement, width: number, height: number) {
     return await canvas.convertToBlob();
 }
 
-async function prerenderElement(e: HTMLElement, width: number, height: number) {
-    const canvas = await toCanvas(e, width, height);
+async function prerenderElement(e: HTMLElement, width: number, _height: number) {
+    // const img = await htmlToImage.toBlob(e, { width, height });
+    // if (!img) return null;
     const id = crypto.randomUUID();
     const file = await path.join(await path.tempDir(), `prerender-${id}.png`);
-    await fs.writeFile(file, await canvas.bytes());
-    console.log(file);
+    // await fs.writeFile(file, await img.bytes());
+    // console.log(file);
+    try {
+        await RustAPI.prerenderHTML(e.outerHTML, file, width * devicePixelRatio, devicePixelRatio);
+    } catch (e) {
+        console.warn(e);
+        return null;
+    }
     return file;
 }
 
 export async function prerender(doc: Document, progress?: (n: number) => void) {
     const toPrerender = doc.body.querySelectorAll<HTMLElement>('[data-prerender]');
     if (!toPrerender.length) return { success: 0, total: 0 };
-
-    toPrerender.forEach((v, i) => {
-        v.dataset.prerenderId = `${i}`;
-    });
+    toPrerender.forEach((v, i) => v.dataset.prerenderId = `${i}`);
 
     const copy = doc.cloneNode(true) as Document;
-    inlineCss(copy, { removeStyleTags: true, removeClasses: true });
+    inlineCss(copy, { removeStyleTags: true, removeClasses: true, simulateInheritance: true });
 
     progress?.(0);
     let i = 0, success = 0;
     for (const elem of toPrerender) {
-        const inlined = copy.querySelector(`[data-prerender][data-prerender-id="${i}"]`);
+        const inlined = copy.querySelector(`[data-prerender-id="${i}"]`);
         Debug.assert(!!inlined);
+        console.log(inlined);
         i++;
 
         const rect = findBoundingRect(elem);
@@ -70,7 +76,6 @@ export async function prerender(doc: Document, progress?: (n: number) => void) {
             console.log('element has no size:', elem);
             continue;
         }
-        console.log(rect);
 
         const file = await prerenderElement(inlined as HTMLElement, rect.width, rect.height);
         if (!file) {

@@ -39,3 +39,4 @@ tokio = "1.47.1"
 zip = "7.2.0"
 anyhow = { version = "1.0.100", features = ["backtrace"] }
 fancy-regex = "0.17.0"
+hyper-render = "0.2.2"

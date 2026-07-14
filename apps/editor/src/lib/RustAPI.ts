@@ -54,6 +54,10 @@ function createChannel(handler: {[key in BackendEventKey]?: BackendEventHandler<
 }
 
 export const RustAPI = {
+    async prerenderHTML(html: string, file: string, width: number, scale: number) {
+        await invoke('prerender_html', { html, file, width: Math.ceil(width), scale });
+    },
+
     async archive(source: string, path: string, onProgress?: (x: number) => void) {
         const channel = new Channel<{ progress: number }>();
         channel.onmessage = ({ progress }) => onProgress?.(progress);
