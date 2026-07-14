@@ -35,6 +35,7 @@
     "@the_dissidents/svelte-ui": "^0.0.7",
     "@types/wcwidth": "^1.0.2",
     "colorjs.io": "^0.6.1",
+    "html-to-image": "^1.11.13",
     "mime": "^4.1.0",
     "wcwidth": "^1.0.1",
     "zod": "^4.3.6"

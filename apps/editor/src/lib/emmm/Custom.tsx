@@ -4,15 +4,16 @@ import { initRatings, overallTableBlock, overallTableRenderer, ratingHeaderSyste
 import { ratingEntryBlock } from './RatingEntry';
 import { basicFieldSystems, categorySystem, endBlock, endRenderer, getEmmmMetadata, infoFieldSystem, initHeader, publishedSystem } from './Header';
 import { lintRuleSystem } from './Linting';
+import { prerenderBlock, prerenderRenderer } from './Prerender';
 
 const custom = emmm.Configuration.from(emmm.DefaultConfiguration, false);
 custom.kernel.collapseWhitespaces = true;
 custom.initializers.push(initHeader, initRatings);
 custom.systemModifiers.add(infoFieldSystem, publishedSystem, categorySystem, ...basicFieldSystems, ratingHeaderSystem, lintRuleSystem);
-custom.blockModifiers.add(ratingTableBlock, ratingHiddenBlock, overallTableBlock, endBlock, ratingEntryBlock);
+custom.blockModifiers.add(ratingTableBlock, ratingHiddenBlock, overallTableBlock, endBlock, ratingEntryBlock, prerenderBlock);
 
 const render = emmm.createHTMLRenderConfiguration(window);
-render.addBlockRenderer(ratingTableRenderer, overallTableRenderer, endRenderer);
+render.addBlockRenderer(ratingTableRenderer, overallTableRenderer, endRenderer, prerenderRenderer);
 
 export function renderText(text: string) {
     let result: Node[] = [];
@@ -58,41 +59,41 @@ render.options.headerPlugins.push(async (cxt) => {
     return <header>
         { metadata.posterUrl &&
             <figure>
-            <img src={await cxt.config.options.transformAsset(metadata.posterUrl)}
-                 data-original-src={metadata.posterUrl} />
+                <img src={await cxt.config.options.transformAsset(metadata.posterUrl)}
+                    data-original-src={metadata.posterUrl} />
             </figure> }
 
-      <h1 class="titles">
-        <div class="title">{metadata.title}</div>
-        { metadata.subtitle &&
-          <div class='subtitle'>{metadata.subtitle}</div> }
-      </h1>
+        <h1 class="titles">
+            <div class="title">{metadata.title}</div>
+            { metadata.subtitle &&
+            <div class='subtitle'>{metadata.subtitle}</div> }
+        </h1>
 
-      <div class='metadata'>
-        { metadata.originalTitle &&
-          <p>
-              <span class='key'>原标题：</span>
-              <span class='originalTitle'>{metadata.originalTitle}</span>
-          </p> }
-        { metadata.originalUrl &&
-          <p>
-              <span class='key'>原文链接：</span>
-              <span class='originalUrl'>{metadata.originalUrl}</span>
-          </p> }
-      </div>
+        <div class='metadata'>
+            { metadata.originalTitle &&
+            <p>
+                <span class='key'>原标题：</span>
+                <span class='originalTitle'>{metadata.originalTitle}</span>
+            </p> }
+            { metadata.originalUrl &&
+            <p>
+                <span class='key'>原文链接：</span>
+                <span class='originalUrl'>{metadata.originalUrl}</span>
+            </p> }
+        </div>
 
-      <div class='metadata'>
-        { metadata.fields.map(([k, v]) =>
-          <p>
-              <span class='key'>{k}</span> / <span class='field'>{v}</span>
-          </p>) }
-      </div>
+        <div class='metadata'>
+            { metadata.fields.map(([k, v]) =>
+            <p>
+                <span class='key'>{k}</span> / <span class='field'>{v}</span>
+            </p>) }
+        </div>
 
-      <aside class='ttr'><p>
-        全文 {(Math.round(metadata.wordCount / 50) * 50).toString()} 字，阅读时间 {(metadata.wordCount / 400).toFixed(0)} 分钟
-      </p></aside>
+        <aside class='ttr'><p>
+            全文 {(Math.round(metadata.wordCount / 50) * 50).toString()} 字，阅读时间 {(metadata.wordCount / 400).toFixed(0)} 分钟
+        </p></aside>
 
-      <hr />
+        <hr />
     </header>
 })
 

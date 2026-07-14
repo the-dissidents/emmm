@@ -86,6 +86,7 @@ export abstract class Memorized<S, Orig = S> {
         (memorizedData[key] as Memorized<S, Orig>) = this;
     }
 
+    /** should be the `JSON.stringify` result of your zod type's `._zod.def` */
     protected abstract get type(): string;
     protected abstract serialize(): S;
     protected abstract deserialize(value: unknown): void;

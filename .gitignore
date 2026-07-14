@@ -7,3 +7,4 @@ target/
 .yalc/
 experiment/
 opencode.json
+agent-documents/
