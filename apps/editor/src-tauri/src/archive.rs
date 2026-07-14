@@ -13,6 +13,7 @@ pub struct Progress {
     progress: f64,
 }
 
+#[allow(clippy::cast_precision_loss)]
 #[tauri::command]
 pub async fn archive(
     channel: Channel<Progress>, source: String, path: String
@@ -95,6 +96,7 @@ pub async fn archive(
     .map_err(|e| e.to_string())
 }
 
+#[allow(clippy::cast_precision_loss)]
 #[tauri::command]
 pub async fn unarchive(
     channel: Channel<Progress>, path: String, output: String
