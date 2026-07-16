@@ -54,6 +54,10 @@ function createChannel(handler: {[key in BackendEventKey]?: BackendEventHandler<
 }
 
 export const RustAPI = {
+    async initFonts() {
+        await invoke('init_font_registry');
+    },
+
     async prerenderHTML(html: string, file: string, width: number, scale: number) {
         await invoke('prerender_html', { html, file, width: Math.ceil(width), scale });
     },

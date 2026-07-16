@@ -8,15 +8,25 @@ use blitz_traits::shell::{ColorScheme, Viewport};
 use image::codecs::png::PngEncoder;
 use image::ImageEncoder;
 
+use crate::font_registry::FontRegistry;
+
 #[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::cast_sign_loss)]
-pub fn prerender_to_png(html: &str, width: u32, scale: f32) -> Result<Vec<u8>> {
+pub fn prerender_to_png(
+    html: &str,
+    width: u32,
+    scale: f32,
+    font_registry: &FontRegistry,
+) -> Result<Vec<u8>> {
     let phys_width = (f64::from(width) * f64::from(scale)) as u32;
     let phys_height = (10_000f64 * f64::from(scale)) as u32;
     let viewport = Viewport::new(phys_width, phys_height, scale, ColorScheme::Light);
 
+    let font_ctx = font_registry.create_font_context();
+
     let doc_config = DocumentConfig {
         viewport: Some(viewport),
+        font_ctx: Some(font_ctx),
         ..Default::default()
     };
 

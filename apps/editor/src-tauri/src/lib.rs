@@ -1,13 +1,15 @@
-use std::{fs, panic};
+use std::{fs, panic, sync::{Arc, Mutex}};
 
 use serde::Serialize;
 
 mod archive;
 mod compress;
+mod font_registry;
 mod render;
 
 use archive::{archive, unarchive};
 use compress::compress_image;
+use font_registry::{FontRegistry, init_font_registry};
 use render::prerender_to_png;
 
 #[derive(Clone, Serialize)]
@@ -64,7 +66,12 @@ pub fn run() {
                         message
                     ));
                 })
-                .filter(|metadata| !metadata.target().starts_with("tao::"))
+                .filter(|metadata|
+                       !metadata.target().starts_with("tao::")
+                    && !metadata.target().starts_with("html5ever::")
+                    && !metadata.target().starts_with("style::")
+                    && !metadata.target().starts_with("selectors::")
+                    && metadata.level() >= log::Level::Debug)
                 .clear_targets()
                 .target(tauri_plugin_log::Target::new(
                     tauri_plugin_log::TargetKind::Stderr,
@@ -80,11 +87,13 @@ pub fn run() {
                 .max_file_size(5_000_000)
                 .build(),
         )
+        .manage(Arc::new(Mutex::new(Option::<FontRegistry>::None)))
         .invoke_handler(tauri::generate_handler![
             compress_image,
             archive,
             unarchive,
             prerender_html,
+            init_font_registry,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -92,7 +101,18 @@ pub fn run() {
 
 
 #[tauri::command]
-async fn prerender_html(html: String, file: String, width: u32, scale: f32) -> Result<(), String> {
-    let png = prerender_to_png(&html, width, scale).map_err(|e| e.to_string())?;
-    fs::write(file, png).map_err(|e| e.to_string())
+async fn prerender_html(
+    html: String,
+    file: String,
+    width: u32,
+    scale: f32,
+    font_registry_state: tauri::State<'_, Arc<Mutex<Option<FontRegistry>>>>,
+) -> Result<(), String> {
+    let value = font_registry_state.lock().unwrap();
+    if let Some(font_registry) = value.as_ref() {
+        let png = prerender_to_png(&html, width, scale, font_registry).map_err(|e| e.to_string())?;
+        fs::write(file, png).map_err(|e| e.to_string())
+    } else {
+        Err("font registry not initialized".to_string())
+    }
 }
