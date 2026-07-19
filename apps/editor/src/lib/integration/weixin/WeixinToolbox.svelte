@@ -35,7 +35,7 @@
           url.href += '.' + file.ext;
       Interface.status.set(`uploading: ${url.href}`);
       await Weixin.uploadSmallImage(file.blob, url.href, img.url.href, true);
-      updateImg(img);
+      updateImgStatus(img);
       Interface.status.set(`done`);
     } catch (e) {
       Interface.status.set(`error when uploading ${img.url.href}: ${e}`);
@@ -59,7 +59,7 @@
     Interface.status.set(`uploaded ${total} image${total == 1 ? '' : 's'}`);
   }
 
-  function updateImg(img: Img) {
+  function updateImgStatus(img: Img) {
     img.status = 'pending';
     const realhref = img.url.href;
     if (Weixin.smallImageCache.has(realhref)) {
@@ -71,7 +71,7 @@
     }
   }
 
-  Interface.onFrameLoaded.bind(() => {
+  function updateImgList() {
     let doc = Interface.frame?.contentDocument;
     assert(doc !== undefined && doc !== null);
     sourceImgs = [];
@@ -84,7 +84,7 @@
         };
         sourceImgs.push(img);
         if (x.complete && x.naturalWidth > 0) {
-          updateImg(img);
+          updateImgStatus(img);
         } else if (x.complete) {
           img.status = 'invalid';
         }
@@ -92,7 +92,9 @@
 
       }
     });
-  });
+  }
+
+  Interface.onFrameLoaded.bind(() => updateImgList());
 </script>
 
 <div class="vlayout vfill">
@@ -150,6 +152,8 @@
       Interface.status.set(`Prerendered ${success} image[s]`);
     else
       Interface.status.set(`Prerendered ${success} image[s], ${total - success} failed`);
+
+    updateImgList();
   } catch (e) {
     console.log(e);
   }

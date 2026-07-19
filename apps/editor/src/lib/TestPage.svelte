@@ -194,7 +194,7 @@
         </fieldset>
         <iframe bind:this={Interface.frame}
           class={{inverted: $inverted, flexgrow: true}}  title="preview"
-          sandbox="allow-same-origin">
+          sandbox="allow-same-origin allow-scripts">
         </iframe>
       </div>
     </TabPage>

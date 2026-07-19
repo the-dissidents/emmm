@@ -72,15 +72,20 @@ export async function prerender(doc: Document, progress?: (n: number) => void) {
             continue;
         }
 
-        const img = doc.createElement('img');
-        img.src = convertFileSrc(file);
-        img.dataset.originalSrc = file;
-        img.dataset.prerendered = '';
-        img.style.width = '100%';
-
-        elem.parentElement!.replaceChild(img, elem);
+        await new Promise<void>((resolve) => {
+            const img = doc.createElement('img');
+            elem.parentElement!.replaceChild(img, elem);
+            img.onload = () => {
+                success++;
+                resolve();
+            };
+            img.onerror = () => resolve();
+            img.src = convertFileSrc(file);
+            img.dataset.originalSrc = 'file:' + file;
+            img.dataset.prerendered = '';
+            img.style.width = '100%';
+        });
         progress?.(i / toPrerender.length);
-        success++;
     };
     return { success, total: toPrerender.length };
 }
