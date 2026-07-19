@@ -20,7 +20,7 @@ describe('default/headings', () => {
     test('simple', async () => {
         let doc = parse(`[.heading 1] Head\n\n[.implicit-heading 6]\n\nBody\n[.heading 6] Head\n\nBody\n\n[.implicit-heading 1]`);
         expect.soft(doc.messages).toMatchObject([]);
-        expect.soft(await render(doc)).includes(`<h1>Head</h1><h6 class="implicit"></h6><p>Body</p><h6>Head</h6><p>Body</p><h1 class="implicit"></h1>`);
+        expect.soft(await render(doc)).includes(`<h1>Head</h1><h6 class="implicit"></h6><p data-id="1">Body</p><h6>Head</h6><p data-id="2">Body</p><h1 class="implicit"></h1>`);
     });
     test('explicit: infer', async () => {
         let doc = parse(`[.heading 1] aaa\n\n[.heading 2] bbb\n\n[.heading] ccc`);

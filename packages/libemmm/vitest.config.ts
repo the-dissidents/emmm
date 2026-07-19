@@ -9,12 +9,15 @@ export default defineConfig({
     coverage: {
         provider: 'istanbul',
         exclude: [
-            'src/debug.ts', 
-            'src/temp.ts', 
-            'src/typing-helper.ts', 
+            'src/debug.ts',
+            'src/temp.ts',
+            'src/typing-helper.ts',
             ...coverageConfigDefaults.exclude
         ],
         enabled: true
-    }
+    },
+    chaiConfig: {
+      truncateThreshold: 500, // 0 means no truncation
+    },
   }
 })

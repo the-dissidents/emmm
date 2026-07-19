@@ -1,12 +1,14 @@
-use std::panic;
+use std::{panic, sync::{Arc, Mutex}};
 
 use serde::Serialize;
 
 mod archive;
 mod compress;
+mod font_registry;
 
 use archive::{archive, unarchive};
 use compress::compress_image;
+use font_registry::{FontRegistry, init_font_registry, pack_fonts};
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
@@ -62,7 +64,12 @@ pub fn run() {
                         message
                     ));
                 })
-                .filter(|metadata| !metadata.target().starts_with("tao::"))
+                .filter(|metadata|
+                       !metadata.target().starts_with("tao::")
+                    && !metadata.target().starts_with("html5ever::")
+                    && !metadata.target().starts_with("style::")
+                    && !metadata.target().starts_with("selectors::")
+                    && metadata.level() >= log::Level::Debug)
                 .clear_targets()
                 .target(tauri_plugin_log::Target::new(
                     tauri_plugin_log::TargetKind::Stderr,
@@ -78,10 +85,13 @@ pub fn run() {
                 .max_file_size(5_000_000)
                 .build(),
         )
+        .manage(Arc::new(Mutex::new(Option::<FontRegistry>::None)))
         .invoke_handler(tauri::generate_handler![
             compress_image,
             archive,
             unarchive,
+            init_font_registry,
+            pack_fonts,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

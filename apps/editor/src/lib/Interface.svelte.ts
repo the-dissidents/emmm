@@ -106,7 +106,7 @@ export const Interface = $state({
                 mostSpecific = r;
 
         const elem = doc.querySelector(`[data-id="${CSS.escape(mostSpecific.id)}"]`);
-        Debug.assert(!!elem);
+        if (!elem) return;
 
         const lx = pos; //sourceHandle!.resolvePosition(pos)[0];
         const l1 = mostSpecific.start; //sourceHandle!.resolvePosition(mostSpecific.start)[0];

@@ -3,7 +3,7 @@
   import { Weixin } from './API';
   import { Interface } from '../../Interface.svelte';
   import { getIP, GetIPMethod } from '../../Util';
-  import { postprocess } from "./Postprocess";
+  import { postprocess, prerender } from "./Postprocess";
   import { RustAPI } from "$lib/RustAPI";
 
   import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
@@ -137,6 +137,23 @@
 </tbody></table>
 
 <h5>Publish</h5>
+<button onclick={async () => {
+  const doc = Interface.frame?.contentDocument;
+  const win = Interface.frame?.contentWindow;
+  if (!doc || !win) return;
+
+  try {
+    const { success, total } = await prerender(doc, (n) => Interface.progress.set(n));
+    if (total == 0)
+      Interface.status.set(`Nothing to prerender`);
+    else if (success == total)
+      Interface.status.set(`Prerendered ${success} image[s]`);
+    else
+      Interface.status.set(`Prerendered ${success} image[s], ${total - success} failed`);
+  } catch (e) {
+    console.log(e);
+  }
+}} class='veryimportant'>prerender</button>
 <button onclick={async () => {
   const doc = Interface.frame?.contentDocument;
   const win = Interface.frame?.contentWindow;

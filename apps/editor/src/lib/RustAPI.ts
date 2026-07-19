@@ -53,7 +53,34 @@ function createChannel(handler: {[key in BackendEventKey]?: BackendEventHandler<
     return channel;
 }
 
+export type PackedFont = {
+    family: string,
+    weight: number,
+    style: string,
+    data: Uint8ClampedArray<ArrayBuffer>
+};
+
 export const RustAPI = {
+    async initFonts() {
+        await invoke('init_font_registry');
+    },
+
+    async packFonts(families: string[]): Promise<PackedFont[]> {
+        const buf = await invoke<ArrayBuffer>('pack_fonts', { families });
+        const reader = new BinaryReader(buf);
+        const count = reader.readU32();
+        const fonts: PackedFont[] = [];
+        for (let i = 0; i < count; i++) {
+            const family = reader.readString();
+            const weight = reader.readF64();
+            const style = reader.readString();
+            const length = reader.readU32();
+            const data = reader.readU8ClampedArray(length);
+            fonts.push({ family, weight, style, data });
+        }
+        return fonts;
+    },
+
     async archive(source: string, path: string, onProgress?: (x: number) => void) {
         const channel = new Channel<{ progress: number }>();
         channel.onmessage = ({ progress }) => onProgress?.(progress);

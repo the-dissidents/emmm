@@ -1,7 +1,14 @@
 import { renderText } from "$lib/emmm/Custom";
 import { DOMUtil } from "$lib/Util";
-import { inlineCss } from "@the_dissidents/dom-css-inliner";
 import { Weixin } from "./API";
+
+import { inlineCss } from "@the_dissidents/dom-css-inliner";
+import { path } from "@tauri-apps/api";
+import { convertFileSrc } from "@tauri-apps/api/core";
+import * as fs from "@tauri-apps/plugin-fs";
+import { Debug } from "$lib/Debug";
+import { findBoundingRect } from "$lib/details/BoundingRect";
+import { toCanvas } from "$lib/details/ElementToCanvas";
 
 const CONVERT_TO_SECTION = new Set([
     'address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'fieldset',
@@ -20,7 +27,67 @@ const PRESERVE = new Set([
     'p', 'span', 'section', 'img', 'a', 'hr', 'br', 'sub', 'sup',
 ]);
 
-export async function postprocess(doc: Document, win: Window) {
+async function prerenderElement(e: HTMLElement, width: number, height: number) {
+    const id = crypto.randomUUID();
+    const file = await path.join(await path.tempDir(), `prerender-${id}.png`);
+    try {
+        const blob = await toCanvas(e, width, height, devicePixelRatio);
+        await fs.writeFile(file, new Uint8Array(await blob.arrayBuffer()));
+    } catch (e) {
+        console.warn(e);
+        return null;
+    }
+    return file;
+}
+
+export async function prerender(doc: Document, progress?: (n: number) => void) {
+    const toPrerender = doc.body.querySelectorAll<HTMLElement>('[data-prerender]');
+    if (!toPrerender.length) return { success: 0, total: 0 };
+    toPrerender.forEach((v, i) => v.dataset.prerenderId = `${i}`);
+
+    const copy = doc.cloneNode(true) as Document;
+    inlineCss(copy, {
+        removeStyleTags: true,
+        removeClasses: true,
+        filter: (el) => el.matches('[data-prerender]')
+    });
+
+    progress?.(0);
+    let i = 0, success = 0;
+    for (const elem of toPrerender) {
+        const inlined = copy.querySelector(`[data-prerender-id="${i}"]`);
+        Debug.assert(!!inlined);
+        console.log(inlined.outerHTML);
+        i++;
+
+        const rect = findBoundingRect(elem);
+        if (!rect) {
+            console.log('element has no size:', elem);
+            continue;
+        }
+
+        const file = await prerenderElement(inlined as HTMLElement, rect.width, rect.height);
+        if (!file) {
+            console.log('failed to prerender', inlined);
+            continue;
+        }
+
+        const img = doc.createElement('img');
+        img.src = convertFileSrc(file);
+        img.dataset.originalSrc = file;
+        img.dataset.prerendered = '';
+        img.style.width = '100%';
+
+        elem.parentElement!.replaceChild(img, elem);
+        progress?.(i / toPrerender.length);
+        success++;
+    };
+    return { success, total: toPrerender.length };
+}
+
+export async function postprocess(
+    doc: Document, win: Window,
+) {
     let befores = new Map<string, string>();
     let afters = new Map<string, string>();
     // prepare ::before/::after data
