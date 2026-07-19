@@ -1,16 +1,14 @@
-use std::{fs, panic, sync::{Arc, Mutex}};
+use std::{panic, sync::{Arc, Mutex}};
 
 use serde::Serialize;
 
 mod archive;
 mod compress;
 mod font_registry;
-mod render;
 
 use archive::{archive, unarchive};
 use compress::compress_image;
-use font_registry::{FontRegistry, init_font_registry};
-use render::prerender_to_png;
+use font_registry::{FontRegistry, init_font_registry, pack_fonts};
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
@@ -92,27 +90,9 @@ pub fn run() {
             compress_image,
             archive,
             unarchive,
-            prerender_html,
             init_font_registry,
+            pack_fonts,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-
-#[tauri::command]
-async fn prerender_html(
-    html: String,
-    file: String,
-    width: u32,
-    scale: f32,
-    font_registry_state: tauri::State<'_, Arc<Mutex<Option<FontRegistry>>>>,
-) -> Result<(), String> {
-    let value = font_registry_state.lock().unwrap();
-    if let Some(font_registry) = value.as_ref() {
-        let png = prerender_to_png(&html, width, scale, font_registry).map_err(|e| e.to_string())?;
-        fs::write(file, png).map_err(|e| e.to_string())
-    } else {
-        Err("font registry not initialized".to_string())
-    }
 }

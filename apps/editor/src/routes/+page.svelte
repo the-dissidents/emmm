@@ -36,11 +36,14 @@
     errorBanner = true;
   });
 
+  let hide = $state(true);
+
   async function init() {
     const v = await getVersion();
     await currentWindow.setTitle(`emmui ${v} (${arch()}/${platform()}${version()})`);
 
     await RustAPI.initFonts();
+    hide = false;
   }
 </script>
 
@@ -58,20 +61,24 @@
   </div>
 {/await}
 
-  <div id="titlebar" data-tauri-drag-region>
-  </div>
-  <div class="page vlayout flexgrow">
+  <div id="titlebar" data-tauri-drag-region></div>
+
+  <div class="page vlayout flexgrow" class:hide={hide}>
     <TestPage></TestPage>
   </div>
 </main>
 
 <style lang="scss">
+  .hide {
+    display: none;
+  }
+
   .loading {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
     display: flex;
     align-items: center;
-    z-index: 999;
+    z-index: 9999;
 
     text-align: center;
 

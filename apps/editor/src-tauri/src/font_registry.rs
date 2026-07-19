@@ -1,12 +1,11 @@
-use std::{collections::HashSet, sync::Mutex};
+use std::{collections::{HashMap, HashSet}, path::PathBuf, sync::Mutex};
 use std::sync::Arc;
 
-use blitz_dom::FontContext;
 use font_kit::source::SystemSource;
 use font_kit::handle::Handle;
-use fontique::{Blob, FontInfoOverride};
 use tauri::State;
 use tauri::async_runtime;
+use tauri::ipc::Response;
 
 pub struct FontRegistry {
     entries: Vec<FontEntry>,
@@ -36,25 +35,41 @@ impl From<font_kit::properties::Style> for FontEntryStyle {
     }
 }
 
+impl FontEntryStyle {
+    fn css_name(self) -> &'static str {
+        match self {
+            FontEntryStyle::Normal => "normal",
+            FontEntryStyle::Italic => "italic",
+            FontEntryStyle::Oblique => "oblique",
+        }
+    }
+}
+
+fn write_string(buf: &mut Vec<u8>, s: &str) {
+    buf.extend(u32::try_from(s.len()).unwrap().to_le_bytes());
+    buf.extend(s.as_bytes());
+}
+
 impl FontRegistry {
     pub fn discover() -> Self {
-        let existing = Self::existing_families();
-        log::info!("{} existing families", existing.len());
-
         let source = SystemSource::new();
         let all_families = source.all_families().unwrap_or_default();
         let mut entries = Vec::new();
+        let mut file_cache: HashMap<PathBuf, Arc<Vec<u8>>> = HashMap::new();
 
         for family_name in all_families {
-            if existing.contains(&family_name.to_lowercase()) { continue; }
             let Ok(handle) =
                 source.select_family_by_name(&family_name) else { continue; };
 
             for font_handle in handle.fonts() {
                 let (bytes, _index) = match font_handle {
                     Handle::Path { path, font_index } => {
-                        if let Ok(data) = std::fs::read(path) {
-                            (Arc::new(data), font_index)
+                        if let Some(data) = file_cache.get(path) {
+                            (data.clone(), font_index)
+                        } else if let Ok(data) = std::fs::read(path) {
+                            let data = Arc::new(data);
+                            file_cache.insert(path.clone(), data.clone());
+                            (data, font_index)
                         } else {
                             log::warn!("failed to read font file of {family_name} at {}", path.display());
                             continue;
@@ -82,7 +97,7 @@ impl FontRegistry {
         }
 
         log::info!(
-            "discovered {} missing font faces across {} families",
+            "discovered {} font faces across {} families",
             entries.len(),
             entries.iter().map(|e| &e.family_name).collect::<HashSet<_>>().len()
         );
@@ -90,33 +105,34 @@ impl FontRegistry {
         FontRegistry { entries }
     }
 
-    pub fn create_font_context(&self) -> FontContext {
-        let mut font_ctx = FontContext::default();
-        for entry in &self.entries {
-            let blob = Blob::new(entry.bytes.clone());
-            let style = match entry.style {
-                FontEntryStyle::Normal => fontique::FontStyle::Normal,
-                FontEntryStyle::Italic => fontique::FontStyle::Italic,
-                FontEntryStyle::Oblique => fontique::FontStyle::Oblique(None),
-            };
-            let info_override = FontInfoOverride {
-                family_name: Some(&entry.family_name),
-                weight: Some(fontique::FontWeight::new(entry.weight)),
-                style: Some(style),
-                ..Default::default()
-            };
-            font_ctx.collection.register_fonts(blob, Some(info_override));
-        }
-        font_ctx
-    }
+    /// Packs the data of all font faces whose family matches one of `families`
+    /// (case-insensitively) into a binary buffer:
+    /// `count:u32, [family:str, weight:f64, style:str, len:u32, data:[u8]]*`
+    /// where `str` is `len:u32, utf8-bytes`. Faces sharing the same underlying
+    /// file (e.g. TrueType collections) are only emitted once per family.
+    #[allow(clippy::missing_panics_doc)]
+    pub fn pack_fonts(&self, families: &[String]) -> Vec<u8> {
+        let wanted: HashSet<String> =
+            families.iter().map(|f| f.to_lowercase()).collect();
+        let mut seen: HashSet<(String, *const u8)> = HashSet::new();
+        let matched: Vec<&FontEntry> = self.entries.iter()
+            .filter(|e| {
+                let family = e.family_name.to_lowercase();
+                wanted.contains(&family)
+                    && seen.insert((family, e.bytes.as_ptr()))
+            })
+            .collect();
 
-    fn existing_families() -> HashSet<String> {
-        let mut font_ctx = FontContext::default();
-        font_ctx
-            .collection
-            .family_names()
-            .map(str::to_lowercase)
-            .collect()
+        let mut buf: Vec<u8> = Vec::new();
+        buf.extend(u32::try_from(matched.len()).unwrap().to_le_bytes());
+        for entry in matched {
+            write_string(&mut buf, &entry.family_name);
+            buf.extend(f64::from(entry.weight).to_le_bytes());
+            write_string(&mut buf, entry.style.css_name());
+            buf.extend(u32::try_from(entry.bytes.len()).unwrap().to_le_bytes());
+            buf.extend(entry.bytes.iter());
+        }
+        buf
     }
 }
 
@@ -131,4 +147,17 @@ pub async fn init_font_registry(
         let mut value = state.lock().unwrap();
         *value = Some(r);
     })
+}
+
+#[tauri::command]
+#[allow(clippy::needless_pass_by_value)]
+pub fn pack_fonts(
+    families: Vec<String>,
+    state: State<'_, Arc<Mutex<Option<FontRegistry>>>>,
+) -> Result<Response, String> {
+    let value = state.lock().unwrap();
+    let Some(registry) = value.as_ref() else {
+        return Err("font registry not initialized".to_string());
+    };
+    Ok(Response::new(registry.pack_fonts(&families)))
 }

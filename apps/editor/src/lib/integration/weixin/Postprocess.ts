@@ -5,10 +5,10 @@ import { Weixin } from "./API";
 import { inlineCss } from "@the_dissidents/dom-css-inliner";
 import { path } from "@tauri-apps/api";
 import { convertFileSrc } from "@tauri-apps/api/core";
+import * as fs from "@tauri-apps/plugin-fs";
 import { Debug } from "$lib/Debug";
 import { findBoundingRect } from "$lib/details/BoundingRect";
-import { elementToImage } from "$lib/details/ElementToCanvas";
-import { RustAPI } from "$lib/RustAPI";
+import { toCanvas } from "$lib/details/ElementToCanvas";
 
 const CONVERT_TO_SECTION = new Set([
     'address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'fieldset',
@@ -27,21 +27,12 @@ const PRESERVE = new Set([
     'p', 'span', 'section', 'img', 'a', 'hr', 'br', 'sub', 'sup',
 ]);
 
-async function toCanvas(e: HTMLElement, width: number, height: number) {
-    const canvas = new OffscreenCanvas(width, height);
-    const ctx = canvas.getContext('2d');
-    Debug.assert(!!ctx);
-
-    const i = await elementToImage(e, width, height);
-    ctx.drawImage(i, 0, 0);
-    return await canvas.convertToBlob();
-}
-
-async function prerenderElement(e: HTMLElement, width: number, _height: number) {
+async function prerenderElement(e: HTMLElement, width: number, height: number) {
     const id = crypto.randomUUID();
     const file = await path.join(await path.tempDir(), `prerender-${id}.png`);
     try {
-        await RustAPI.prerenderHTML(e.outerHTML, file, width, devicePixelRatio);
+        const blob = await toCanvas(e, width, height, devicePixelRatio);
+        await fs.writeFile(file, new Uint8Array(await blob.arrayBuffer()));
     } catch (e) {
         console.warn(e);
         return null;
@@ -55,14 +46,18 @@ export async function prerender(doc: Document, progress?: (n: number) => void) {
     toPrerender.forEach((v, i) => v.dataset.prerenderId = `${i}`);
 
     const copy = doc.cloneNode(true) as Document;
-    inlineCss(copy, { removeStyleTags: true, removeClasses: true, simulateInheritance: true });
+    inlineCss(copy, {
+        removeStyleTags: true,
+        removeClasses: true,
+        filter: (el) => el.matches('[data-prerender]')
+    });
 
     progress?.(0);
     let i = 0, success = 0;
     for (const elem of toPrerender) {
         const inlined = copy.querySelector(`[data-prerender-id="${i}"]`);
         Debug.assert(!!inlined);
-        console.log(inlined);
+        console.log(inlined.outerHTML);
         i++;
 
         const rect = findBoundingRect(elem);
@@ -82,6 +77,7 @@ export async function prerender(doc: Document, progress?: (n: number) => void) {
         img.dataset.originalSrc = file;
         img.dataset.prerendered = '';
         img.style.width = '100%';
+
         elem.parentElement!.replaceChild(img, elem);
         progress?.(i / toPrerender.length);
         success++;
