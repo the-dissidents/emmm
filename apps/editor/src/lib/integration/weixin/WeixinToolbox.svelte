@@ -1,6 +1,6 @@
 <script lang="ts">
   import { assert, Debug } from "../../Debug";
-  import { Weixin } from './API';
+  import { Weixin } from './API.svelte';
   import { Interface } from '../../Interface.svelte';
   import { getIP, GetIPMethod } from '../../Util';
   import { postprocess, prerender } from "./Postprocess";

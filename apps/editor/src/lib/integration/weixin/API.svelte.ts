@@ -1,5 +1,4 @@
-import { get, readonly, writable, type Readable } from "svelte/store";
-import { Settings } from "$lib/Settings";
+import { get, readonly, toStore, writable, type Readable } from "svelte/store";
 import { fetch } from '@tauri-apps/plugin-http';
 import { RequestFailedError } from "$lib/Util";
 import { assert } from "$lib/Debug";
@@ -8,6 +7,20 @@ import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { Memorized } from "$lib/config/Memorized.svelte";
 
 import * as z from "zod/v4-mini";
+
+const accountDataDef = z.object({
+    appid: z.string(),
+    secret: z.string(),
+    smallImageCache: z.array(z.tuple([z.string(), z.string()])),
+    assetCache: z.array(z.tuple([z.string(), z.string()])),
+});
+type AccountData = z.infer<typeof accountDataDef>;
+
+const accounts = Memorized.$dict('weixinAccounts', z.string(), accountDataDef);
+
+function initAccountData(): AccountData {
+    return { appid: '', secret: '', smallImageCache: [], assetCache: [] };
+}
 
 export type WeixinAssetType = 'image' | 'video' | 'voice';
 
@@ -132,67 +145,78 @@ export class WeixinAPIError extends Error {
     }
 }
 
-let appid = Memorized.$('weixinAppId', z.string(), '');
-let secret = Memorized.$('weixinAppSecret', z.string(), '');
-let stableToken = writable('');
-let expireTime = new Date();
+export class WeixinClient {
+    private readonly data: AccountData;
+    readonly #stableToken = writable('');
+    #expireTime = new Date(0);
+    #smallImageCache = new Map<string, string>();
+    #assetCache = new Map<string, string>();
+    autoFetchToken = false;
 
-let smallImageCache = new Map<string, string>();
-let assetCache = new Map<string, string>();
+    readonly appid;
+    readonly secret;
 
-Settings.onInitialized(() => {
-    smallImageCache = new Map(Settings.get('weixinSmallImageCache'));
-    assetCache = new Map(Settings.get('weixinAssetCache'));
-});
+    constructor(readonly name = 'default') {
+        const account = accounts.item(name);
+        let entry = account.get();
+        if (!entry) {
+            entry = initAccountData();
+            account.set(entry);
+        }
+        this.#smallImageCache = new Map(entry.smallImageCache);
+        this.#assetCache = new Map(entry.assetCache);
+        this.data = entry;
 
-export const Weixin = {
-    autoFetchToken: false,
+        this.appid = account.toNonoptional().field('appid');
+        this.secret = account.toNonoptional().field('secret');
+    }
 
-    get appid() {
-        return appid;
-    },
-    get secret() {
-        return secret;
-    },
+    #syncCache() {
+        this.data.smallImageCache = [...this.#smallImageCache.entries()];
+        this.data.assetCache = [...this.#assetCache.entries()];
+        accounts.item(this.name).set(this.data);
+    }
+
     get stableToken(): Readable<string> {
-        return readonly(stableToken);
-    },
+        return readonly(this.#stableToken);
+    }
+
     get tokenOk(): boolean {
-        return stableToken && expireTime.getTime() > Date.now();
-    },
-    /**
-     * @param forced If true, forces the fetching of the token. Note this does NOT force Weixin to update its token.
-     * @returns The fetched stable token.
-     */
+        return get(this.#stableToken) !== '' && this.#expireTime.getTime() > Date.now();
+    }
+
+    get smallImageCache(): ReadonlyMap<string, string> {
+        return this.#smallImageCache;
+    }
+
     async fetchToken(forced = false) {
         if (!forced && this.tokenOk)
-            return get(stableToken);
-        if (!get(appid) || !get(secret))
+            return get(this.#stableToken);
+        if (!get(this.appid) || !get(this.secret))
             throw new WeixinBadCredentialError();
         const r = await fetch('https://api.weixin.qq.com/cgi-bin/stable_token', {
             method: 'POST',
             body: JSON.stringify({
                 "grant_type": "client_credential",
-                "appid": get(appid),
-                "secret": get(secret)
+                "appid": this.appid.get(),
+                "secret": this.secret.get()
             })
         });
         if (!r.ok) throw new RequestFailedError(r);
         let json = await r.json();
         if (json.errcode) throw new WeixinAPIError(json);
         const token = json.access_token as string;
-        stableToken.set(token);
-        // slightly reduce the lifetime to avoid invalid tokens
-        expireTime = new Date(Date.now() + (<number>json.expires_in - 10) * 1000);
+        this.#stableToken.set(token);
+        this.#expireTime = new Date(Date.now() + (<number>json.expires_in - 10) * 1000);
         return token;
-    },
+    }
 
     async getAssets(type: WeixinAssetType, from: number, count = 20) {
         if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
             throw new WeixinInvalidTokenError();
         const r = await fetch(
             'https://api.weixin.qq.com/cgi-bin/material/batchget_material?'
-            + new URLSearchParams({access_token: get(stableToken)}),
+            + new URLSearchParams({access_token: get(this.#stableToken)}),
         {
             method: 'POST',
             body: JSON.stringify({
@@ -213,14 +237,14 @@ export const Weixin = {
             internalUrl: x.url as string
         }));
         return { total, assets };
-    },
+    }
 
     async getDrafts(from: number, count = 20) {
         if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
             throw new WeixinInvalidTokenError();
         const r = await fetch(
             'https://api.weixin.qq.com/cgi-bin/draft/batchget?'
-            + new URLSearchParams({access_token: get(stableToken)}),
+            + new URLSearchParams({access_token: get(this.#stableToken)}),
         {
             method: 'POST',
             body: JSON.stringify({
@@ -240,14 +264,14 @@ export const Weixin = {
         }));
         console.log(from, count, json, drafts);
         return { total, drafts };
-    },
+    }
 
     async writeDraftArticle(id: string, index: number, article: WeixinDraftArticle) {
         if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
             throw new WeixinInvalidTokenError();
         const r = await fetch(
             'https://api.weixin.qq.com/cgi-bin/draft/update?'
-            + new URLSearchParams({access_token: get(stableToken)}),
+            + new URLSearchParams({access_token: get(this.#stableToken)}),
         {
             method: 'POST',
             body: JSON.stringify({
@@ -260,11 +284,11 @@ export const Weixin = {
         let json = await r.json();
         if (json.errcode) throw new WeixinAPIError(json);
         return true;
-    },
+    }
 
     async downloadAsset(id: string, name: string, force = false) {
-        if (!force && assetCache.has(id))
-            return assetCache.get(id)!;
+        if (!force && this.#assetCache.has(id))
+            return this.#assetCache.get(id)!;
         if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
             throw new WeixinInvalidTokenError();
 
@@ -273,7 +297,7 @@ export const Weixin = {
         try {
             const r = await fetch(
                 'https://api.weixin.qq.com/cgi-bin/material/get_material?'
-                + new URLSearchParams({access_token: get(stableToken)}),
+                + new URLSearchParams({access_token: get(this.#stableToken)}),
             {
                 method: 'POST',
                 body: JSON.stringify({ "media_id": id })
@@ -288,23 +312,14 @@ export const Weixin = {
         } catch (_) {
             path = '';
         }
-        assetCache.set(id, path);
-        Settings.set('weixinAssetCache', [...assetCache.entries()]);
+        this.#assetCache.set(id, path);
+        this.#syncCache();
         return path;
-    },
+    }
 
-    get smallImageCache(): ReadonlyMap<string, string> {
-        return smallImageCache;
-    },
-    /**
-     * @param blob Image data. PNG and JPEGs are supported.
-     * @param name We cache the uploaded URL by this name. Subsequent calls with that name will simply return that URL unless `force` is set to true. This name is also used in the FormData as a filename, and to ensure Weixin recognizes the format, you should end it with a correct extension. (TODO: should be handled better)
-     * @param [force=false] Force re-upload of the image even if it is in the cache.
-     * @returns Generated URL of the uploaded image, starting with `http://mmbiz.qpic.cn/mmbiz/`. Note that it cannot be used outside pages published in Weixin.
-     */
     async uploadSmallImage(blob: Blob, name: string, key: string, force = false) {
-        if (!force && smallImageCache.has(name))
-            return smallImageCache.get(name)!;
+        if (!force && this.#smallImageCache.has(name))
+            return this.#smallImageCache.get(name)!;
 
         if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
             throw new WeixinInvalidTokenError();
@@ -312,7 +327,7 @@ export const Weixin = {
         form.append('media', blob, name);
         const r = await fetch(
             'https://api.weixin.qq.com/cgi-bin/media/uploadimg?'
-            + new URLSearchParams({access_token: get(stableToken)}),
+            + new URLSearchParams({access_token: get(this.#stableToken)}),
         {
             method: 'POST',
             body: form
@@ -321,8 +336,10 @@ export const Weixin = {
         let json = await r.json();
         if (json.errcode) throw new WeixinAPIError(json);
         const url = json.url as string;
-        smallImageCache.set(key, url);
-        Settings.set('weixinSmallImageCache', [...smallImageCache.entries()]);
+        this.#smallImageCache.set(key, url);
+        this.#syncCache();
         return url;
     }
 }
+
+export const Weixin = new WeixinClient();

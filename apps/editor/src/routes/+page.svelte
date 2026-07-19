@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { Settings } from '$lib/Settings';
   import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
   import TestPage from '../lib/TestPage.svelte';
   import { Memorized } from '$lib/config/Memorized.svelte';
@@ -9,21 +8,22 @@
   import { RustAPI } from '$lib/RustAPI';
   import { fly } from 'svelte/transition';
 
+  import * as z from "zod/v4-mini";
+
   const currentWindow = getCurrentWindow();
 
-  Memorized.init();
+  const windowW = Memorized.$('windowW', z.number(), 1400);
+  const windowH = Memorized.$('windowH', z.number(), 900);
 
-  Settings.init().then(() => {
-    currentWindow.setSize(new LogicalSize(
-      Settings.get('windowW'),
-      Settings.get('windowH')));
+  Memorized.init().then(() => {
+    currentWindow.setSize(new LogicalSize($windowW, $windowH));
   });
 
   currentWindow.onCloseRequested(async () => {
     const factor = await currentWindow.scaleFactor();
     const size = (await currentWindow.innerSize()).toLogical(factor);
-    await Settings.set('windowW', size.width);
-    await Settings.set('windowH', size.height);
+    $windowW = size.width;
+    $windowH = size.height;
 
     await Memorized.save();
   });

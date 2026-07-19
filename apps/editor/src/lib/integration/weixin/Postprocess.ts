@@ -1,6 +1,6 @@
 import { renderText } from "$lib/emmm/Custom";
 import { DOMUtil } from "$lib/Util";
-import { Weixin } from "./API";
+import { Weixin } from "./API.svelte";
 
 import { inlineCss } from "@the_dissidents/dom-css-inliner";
 import { path } from "@tauri-apps/api";
