@@ -1,6 +1,5 @@
 import { renderText } from "$lib/emmm/Custom";
 import { DOMUtil } from "$lib/Util";
-import { Weixin } from "./API.svelte";
 
 import { inlineCss } from "@the_dissidents/dom-css-inliner";
 import { path } from "@tauri-apps/api";
@@ -9,6 +8,7 @@ import * as fs from "@tauri-apps/plugin-fs";
 import { Debug } from "$lib/Debug";
 import { findBoundingRect } from "$lib/details/BoundingRect";
 import { toCanvas } from "$lib/details/ElementToCanvas";
+import { WeixinClient } from "./API.svelte";
 
 const CONVERT_TO_SECTION = new Set([
     'address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'fieldset',
@@ -149,7 +149,7 @@ export async function postprocess(
             try {
                 const url = new URL(img.dataset.originalSrc ?? img.src);
                 const realhref = url.href;
-                const cached = Weixin.smallImageCache.get(realhref);
+                const cached = WeixinClient.smallImageCache.get(realhref);
                 if (cached) {
                     img.src = cached;
                     img.dataset.originalSrc = undefined;

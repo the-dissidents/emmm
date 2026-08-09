@@ -110,3 +110,9 @@ export async function readUrl(url: URL) {
     if (!r.ok) throw new RequestFailedError(r);
     return await r.blob();
 }
+
+/** T must not be a function type */
+export function unwrap<T>(x: T | (() => T)) {
+    if (typeof x === 'function') return (x as () => T)();
+    return x;
+}

@@ -1,7 +1,7 @@
 import { get, readonly, toStore, writable, type Readable } from "svelte/store";
 import { fetch } from '@tauri-apps/plugin-http';
 import { RequestFailedError } from "$lib/Util";
-import { assert } from "$lib/Debug";
+import { assert, Debug } from "$lib/Debug";
 import { BaseDirectory, writeFile } from "@tauri-apps/plugin-fs";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { Memorized } from "$lib/config/Memorized.svelte";
@@ -11,16 +11,12 @@ import * as z from "zod/v4-mini";
 const accountDataDef = z.object({
     appid: z.string(),
     secret: z.string(),
-    smallImageCache: z.array(z.tuple([z.string(), z.string()])),
     assetCache: z.array(z.tuple([z.string(), z.string()])),
 });
 type AccountData = z.infer<typeof accountDataDef>;
 
 const accounts = Memorized.$dict('weixinAccounts', z.string(), accountDataDef);
-
-function initAccountData(): AccountData {
-    return { appid: '', secret: '', smallImageCache: [], assetCache: [] };
-}
+const smallImageCache = Memorized.$dict('weixinSmallImageCache', z.string(), z.string());
 
 export type WeixinAssetType = 'image' | 'video' | 'voice';
 
@@ -145,36 +141,71 @@ export class WeixinAPIError extends Error {
     }
 }
 
+function initAccountData(): AccountData {
+    return { appid: '', secret: '', assetCache: [] };
+}
+
 export class WeixinClient {
-    private readonly data: AccountData;
+    readonly #data: AccountData;
     readonly #stableToken = writable('');
+
+    #name: string;
     #expireTime = new Date(0);
-    #smallImageCache = new Map<string, string>();
     #assetCache = new Map<string, string>();
     autoFetchToken = false;
 
-    readonly appid;
-    readonly secret;
+    static getNames() {
+        console.log([...accounts.get().keys()]);
+        return [...accounts.get().keys()];
+    }
 
-    constructor(readonly name = 'default') {
-        const account = accounts.item(name);
-        let entry = account.get();
+    constructor(name = 'default') {
+        this.#name = name;
+
+        let entry = accounts.getItem(this.#name);
         if (!entry) {
             entry = initAccountData();
-            account.set(entry);
+            accounts.setItem(this.#name, entry);
         }
-        this.#smallImageCache = new Map(entry.smallImageCache);
         this.#assetCache = new Map(entry.assetCache);
-        this.data = entry;
+        this.#data = entry;
+    }
 
-        this.appid = account.toNonoptional().field('appid');
-        this.secret = account.toNonoptional().field('secret');
+    get appid() {
+        return this.#data.appid;
+    }
+
+    set appid(v: string) {
+        this.#data.appid = v;
+        this.#syncCache();
+    }
+
+    get secret() {
+        return this.#data.secret;
+    }
+
+    set secret(v: string) {
+        this.#data.secret = v;
+        this.#syncCache();
+    }
+
+    get name() {
+        return this.#name;
+    }
+
+    rename(to: string) {
+        const map = accounts.get();
+        const old = this.#name;
+        Debug.assert(!map.has(to));
+        map.set(to, this.#data);
+        this.#name = to;
+        map.delete(old);
+        accounts.set(map);
     }
 
     #syncCache() {
-        this.data.smallImageCache = [...this.#smallImageCache.entries()];
-        this.data.assetCache = [...this.#assetCache.entries()];
-        accounts.item(this.name).set(this.data);
+        this.#data.assetCache = [...this.#assetCache.entries()];
+        accounts.setItem(this.name, this.#data);
     }
 
     get stableToken(): Readable<string> {
@@ -185,21 +216,21 @@ export class WeixinClient {
         return get(this.#stableToken) !== '' && this.#expireTime.getTime() > Date.now();
     }
 
-    get smallImageCache(): ReadonlyMap<string, string> {
-        return this.#smallImageCache;
+    static get smallImageCache(): ReadonlyMap<string, string> {
+        return smallImageCache.get();
     }
 
     async fetchToken(forced = false) {
         if (!forced && this.tokenOk)
             return get(this.#stableToken);
-        if (!get(this.appid) || !get(this.secret))
+        if (!this.appid || !this.secret)
             throw new WeixinBadCredentialError();
         const r = await fetch('https://api.weixin.qq.com/cgi-bin/stable_token', {
             method: 'POST',
             body: JSON.stringify({
                 "grant_type": "client_credential",
-                "appid": this.appid.get(),
-                "secret": this.secret.get()
+                "appid": this.appid,
+                "secret": this.secret
             })
         });
         if (!r.ok) throw new RequestFailedError(r);
@@ -318,8 +349,8 @@ export class WeixinClient {
     }
 
     async uploadSmallImage(blob: Blob, name: string, key: string, force = false) {
-        if (!force && this.#smallImageCache.has(name))
-            return this.#smallImageCache.get(name)!;
+        if (!force && smallImageCache.get().has(name))
+            return smallImageCache.getItem(name)!;
 
         if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
             throw new WeixinInvalidTokenError();
@@ -336,10 +367,7 @@ export class WeixinClient {
         let json = await r.json();
         if (json.errcode) throw new WeixinAPIError(json);
         const url = json.url as string;
-        this.#smallImageCache.set(key, url);
-        this.#syncCache();
+        smallImageCache.setItem(key, url);
         return url;
     }
 }
-
-export const Weixin = new WeixinClient();

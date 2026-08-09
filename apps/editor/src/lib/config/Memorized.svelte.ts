@@ -16,56 +16,11 @@ async function ensureConfigDirectoryExists() {
         await fs.mkdir(configDir, {recursive: true});
 }
 
-interface StoreBase<Orig> {
-    subscribe(subscription: (value: Orig) => void): (() => void);
-    get(): Orig;
-    set(value: Orig): void;
-    markChanged(): void;
-}
-
 abstract class Store<Orig> {
     abstract subscribe(subscription: (value: Orig) => void): (() => void);
     abstract get(): Orig;
     abstract set(value: Orig): void;
     abstract markChanged(): void;
-
-    field<Name extends keyof Orig>(name: Name): Store<Orig[Name]> {
-        return new AnonymousStore({
-            subscribe: (subscription: (value: Orig[Name]) => void): (() => void) => {
-                const s = (v: Orig) => subscription(v[name]);
-                return this.subscribe(s);
-            },
-            get: () => this.get()[name],
-            set: (value: Orig[Name]) => {
-                this.get()[name] = value;
-                this.markChanged();
-            },
-            markChanged: () => this.markChanged()
-        });
-    }
-
-    toNonoptional() {
-        return this as Store<Orig extends undefined ? never : Orig>;
-    }
-}
-
-export class AnonymousStore<Orig> extends Store<Orig> {
-    subscribe(subscription: (value: Orig) => void): (() => void) {
-        return this.base.subscribe(subscription);
-    }
-    get(): Orig {
-        return this.base.get();
-    }
-    set(value: Orig): void {
-        return this.base.set(value);
-    }
-    markChanged(): void {
-        this.base.markChanged();
-    }
-
-    constructor(private base: StoreBase<Orig>) {
-        super();
-    }
 }
 
 export abstract class Memorized<S, Orig = S> extends Store<Orig> {
@@ -231,27 +186,21 @@ export class DictMemorized<
         this.#typeid = JSON.stringify(this.zout._zod.def);
     }
 
+    getItem(k: z.infer<TKey>) {
+        return this.value.get(k);
+    }
+
+    setItem(k: z.infer<TKey>, v: z.infer<T>) {
+        this.value.set(k, v);
+        this.markChanged();
+    }
+
     protected override get type() {
         return this.#typeid;
     }
 
     protected override serialize() {
         return [...this.value.entries()];
-    }
-
-    item(key: z.infer<TKey>) {
-        return new AnonymousStore({
-            subscribe: (subscription: (value?: z.infer<T>) => void): (() => void) => {
-                const s = (v: Map<z.infer<TKey>, z.infer<T>>) => subscription(v.get(key));
-                return this.subscribe(s);
-            },
-            get: () => this.value.get(key),
-            set: (value: z.infer<T>) => {
-                this.value.set(key, value);
-                this.markChanged();
-            },
-            markChanged: () => this.markChanged()
-        });
     }
 
     protected override deserialize(value: unknown) {

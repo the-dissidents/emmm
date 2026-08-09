@@ -1,6 +1,6 @@
 <script lang="ts">
   import { assert, Debug } from "../../Debug";
-  import { Weixin } from './API.svelte';
+  import { WeixinClient } from './API.svelte';
   import { Interface } from '../../Interface.svelte';
   import { getIP, GetIPMethod } from '../../Util';
   import { postprocess, prerender } from "./Postprocess";
@@ -10,13 +10,16 @@
   import * as dialog from '@tauri-apps/plugin-dialog';
   import { ListView, Tooltip } from "@the_dissidents/svelte-ui";
   import { CheckIcon, CircleArrowUpIcon, CircleXIcon, GlobeIcon, LoaderIcon, TriangleAlertIcon } from "@lucide/svelte";
+  import AccountManager from "./AccountManager.svelte";
+  import { Memorized } from "$lib/config/Memorized.svelte";
 
   let publicIP = $state('');
-  let appid = Weixin.appid;
-  let secret = Weixin.secret;
-  let stableToken = Weixin.stableToken;
 
+  let account = $state(new WeixinClient());
+  let token = $derived(account.stableToken);
   let progress = Interface.progress;
+
+  Memorized.onInitialize(() => account = new WeixinClient());
 
   type ImgStatus = 'uploaded' | 'external' | 'notUploaded' | 'invalid' | 'error' | 'pending';
   type Img = {
@@ -34,7 +37,7 @@
       if (!url.href.toLowerCase().endsWith('.' + file.ext))
           url.href += '.' + file.ext;
       Interface.status.set(`uploading: ${url.href}`);
-      await Weixin.uploadSmallImage(file.blob, url.href, img.url.href, true);
+      await account.uploadSmallImage(file.blob, url.href, img.url.href, true);
       updateImgStatus(img);
       Interface.status.set(`done`);
     } catch (e) {
@@ -62,7 +65,7 @@
   function updateImgStatus(img: Img) {
     img.status = 'pending';
     const realhref = img.url.href;
-    if (Weixin.smallImageCache.has(realhref)) {
+    if (WeixinClient.smallImageCache.has(realhref)) {
       img.status = 'uploaded';
     } else if (img.url.protocol !== 'file:') {
       img.status = 'external';
@@ -100,6 +103,9 @@
 <div class="vlayout vfill">
 
 <h5>Connections & Credentials</h5>
+
+<AccountManager bind:account={account}/>
+
 <table class="config"><tbody>
   <tr>
     <td>public ip</td>
@@ -109,27 +115,13 @@
     </td>
   </tr>
   <tr>
-    <td>appid</td>
-    <td class='hlayout'>
-      <input type="text" class="flexgrow" value={$appid}
-        oninput={(x) => $appid = x.currentTarget.value} />
-    </td>
-  </tr>
-  <tr>
-    <td>secret</td>
-    <td class='hlayout'>
-      <input type="text" class="flexgrow" bind:value={$secret}
-        oninput={(x) => $secret = x.currentTarget.value} />
-    </td>
-  </tr>
-  <tr>
     <td>stable token</td>
     <td>
-      <input type="text" style="width: 100%" disabled value={$stableToken} /><br/>
+      <input type="text" style="width: 100%" disabled value={$token} /><br/>
       <button class="veryimportant" style="width: 100%"
         onclick={async () => {
           try {
-            await Weixin.fetchToken();
+            await account.fetchToken();
           } catch (x) {
             await dialog.message(`${x}`, { kind: 'error' });
           }

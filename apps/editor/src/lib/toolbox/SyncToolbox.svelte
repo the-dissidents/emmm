@@ -8,7 +8,7 @@
   import { RustAPI } from "$lib/RustAPI";
   import { htmlToEmmm } from "$lib/integration/weixin/Importer";
   import { openPath } from "@tauri-apps/plugin-opener";
-  import { appLogDir } from "@tauri-apps/api/path";
+  import { appConfigDir, appLogDir } from "@tauri-apps/api/path";
 
   let progress = Interface.progress;
 
@@ -169,3 +169,8 @@
   console.log(await appLogDir());
   openPath(await appLogDir());
 }}>Open log folder</button>
+
+<button onclick={async () => {
+  console.log(await appConfigDir());
+  openPath(await appConfigDir());
+}}>Open config folder</button>

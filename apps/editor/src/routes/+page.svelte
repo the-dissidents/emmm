@@ -26,6 +26,7 @@
     $windowH = size.height;
 
     await Memorized.save();
+    console.log('saved memorized');
   });
 
   let errorBanner = $state(false);
@@ -42,7 +43,7 @@
     const v = await getVersion();
     await currentWindow.setTitle(`emmui ${v} (${arch()}/${platform()}${version()})`);
 
-    await RustAPI.initFonts();
+    // await RustAPI.initFonts();
     hide = false;
   }
 </script>
