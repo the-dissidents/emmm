@@ -1,20 +1,38 @@
 import * as Color from 'colorjs.io/fn';
+import * as z from "zod/v4-mini";
+import * as sass from "sass";
 
-export type ArticleColors = {
-    theme: Color.PlainColorObject;
-    text: Color.PlainColorObject;
-    commentary: Color.PlainColorObject;
-    link: Color.PlainColorObject;
-    highlight: Color.PlainColorObject;
-};
+export const ZColor = z.codec(z.string(), z.custom<Color.PlainColorObject>(),
+{
+    decode: (x, _cxt) => {
+        try {
+            return Color.getColor(x);
+        } catch {
+            console.warn('error parsing color', x);
+            return Color.getColor('white');
+        }
+    },
+    encode: (x) => Color.serialize(x)
+});
 
-export function getCssVariablesFromColors(
+export const ZArticleColors = z.object({
+    theme: ZColor,
+    text: ZColor,
+    commentary: ZColor,
+    link: ZColor,
+    highlight: ZColor,
+});
+
+export type ArticleColors = z.infer<typeof ZArticleColors>;
+
+export function getSassVariablesFromColors(
     t: ArticleColors,
-    to: string | undefined = 'srgb'
-) {
-    let f = to
-        ? (x: Color.PlainColorObject) => Color.serialize(Color.toGamut(x, to))
-        : (x: Color.PlainColorObject) => Color.serialize(x);
+): Map<string, sass.SassColor> {
+    function f(x: Color.PlainColorObject) {
+        const { alpha, coords: [red, green, blue] } = Color.toGamut(x, 'srgb');
+        return new sass.SassColor({ space: 'srgb', red, green, blue, alpha });
+    }
+
     return new Map([
         ['theme-color', f(t.theme)],
         ['text-color', f(t.text)],

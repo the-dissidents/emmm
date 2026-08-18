@@ -1,10 +1,8 @@
 import { get, writable } from "svelte/store"
-import { getCssVariablesFromColors, type ArticleColors } from "./ColorTheme";
+import { ZArticleColors } from "./ColorTheme";
 import * as Color from "colorjs.io/fn";
 
 import * as emmm from '@the_dissidents/libemmm';
-import { convertFileSrc } from "@tauri-apps/api/core";
-import { CustomHTMLRenderer } from "./emmm/Custom";
 import type { EmmmParseData } from "./editor/ParseData";
 import type Editor from "./editor/Editor.svelte";
 import { Memorized } from "./config/Memorized.svelte";
@@ -28,12 +26,14 @@ let status = writable<string>('ok');
 let parseData = writable<EmmmParseData | undefined>();
 let progress = writable<number | undefined>();
 
-import testStyles from '../template/typesetting.css?raw';
-import testString from '../template/testsource.txt?raw';
-import testLib from '../template/testlib.txt?raw';
-import { Debug } from "./Debug";
+import defaultStyles from '../template/stylesheet.scss?raw';
+import _defaultSource from '../template/testsource.txt?raw';
+import defaultLibrary from '../template/testlib.txt?raw';
 
-export const defaultSource = testString;
+import { Debug } from "./Debug";
+import { renderDocument } from "./Document.svelte";
+
+export const defaultSource = _defaultSource;
 
 let renderTimer: any;
 
@@ -54,9 +54,9 @@ export const Interface = $state({
 
     get progress() { return progress; },
 
-    stylesheet: Memorized.$('stylesheet', z.string(), testStyles),
-    source: Memorized.$('source', z.string(), testString),
-    library: Memorized.$('library', z.string(), testLib),
+    stylesheet: Memorized.$('stylesheet', z.string(), defaultStyles),
+    source: Memorized.$('source', z.string(), defaultSource),
+    library: Memorized.$('library', z.string(), defaultLibrary),
 
     invertedPreview: Memorized.$('invertedPreview', z.boolean(), false),
     syncScrolling: Memorized.$('syncScrolling', z.boolean(), false),
@@ -68,13 +68,16 @@ export const Interface = $state({
     renderedDocument: null as Document | null,
     sourceMap: [] as emmm.HTMLSourceMapEntry[],
 
-    colors: {
+    colors: Memorized.$('colorParams', ZArticleColors, {
         theme: Color.getColor('white'),
         text: Color.getColor('black'),
         commentary: Color.getColor('indianred'),
         link: Color.getColor('MediumVioletRed'),
         highlight: Color.getColor('yellow')
-    } satisfies ArticleColors,
+    }),
+
+    backgroundImage: Memorized.$('backgroundImage', z.string(), ''),
+
     onFrameDOMLoaded: new EventHost(),
     onFrameLoaded: new EventHost(),
 
@@ -133,17 +136,19 @@ export const Interface = $state({
     async render() {
         const pd = get(parseData)?.data;
         if (!pd || !this.frame) return;
-        let renderConfig = emmm.RenderConfiguration.from(CustomHTMLRenderer);
-        renderConfig.options.transformAsset = (url) => {
-            // FIXME: shaky
-            if (!url.startsWith('file:')) return undefined;
-            return convertFileSrc(url.substring(5));
-        };
-        const state = new emmm.HTMLRenderState();
-        state.cssVariables = getCssVariablesFromColors(this.colors, 'srgb');
-        state.stylesheet = this.stylesheet.get();
-        this.renderedDocument = await renderConfig.render(pd, state);
-        this.sourceMap = state.sourceMap;
+
+        const result = await renderDocument(pd, {
+            sass: this.stylesheet.get(),
+            colors: this.colors.get(),
+            backgroundImage: this.backgroundImage.get(),
+        });
+
+        if (result.type !== 'ok') {
+            return;
+        }
+
+        this.renderedDocument = result.doc
+        this.sourceMap = result.map;
 
         const sx = this.frame.contentWindow!.scrollX;
         const sy = this.frame.contentWindow!.scrollY;
@@ -154,22 +159,15 @@ export const Interface = $state({
                 this.onFrameLoaded.dispatch();
             }, { once: true });
 
-        // you can't listen to things inside the iframe
-
-        // this.frame.contentWindow!.document.addEventListener(
-        //     'DOMContentLoaded', () => {
-        //         this.onFrameDOMLoaded.dispatch();
-        //     });
-
-        // const doc = this.frame.contentDocument!;
-        // doc.addEventListener('selectionchange', () => {
-        //     const sel = doc.getSelection()!;
-        //     const n = sel.anchorNode;
-        //     const id = getId(n);
-        //     if (id === undefined) return;
-        //     const entry = this.sourceMap.find((x) => x.id == id);
-        //     if (!entry) return;
-        //     this.sourceEditor?.setSelections([{ from: entry.start, to: entry.end }]);
-        // });
+        const doc = this.frame.contentDocument!;
+        doc.addEventListener('selectionchange', () => {
+            const sel = doc.getSelection()!;
+            const n = sel.anchorNode;
+            const id = getId(n);
+            if (id === undefined) return;
+            const entry = this.sourceMap.find((x) => x.id == id);
+            if (!entry) return;
+            this.sourceEditor?.setSelections([{ from: entry.start, to: entry.end }]);
+        });
     }
 });

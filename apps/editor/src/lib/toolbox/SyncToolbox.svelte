@@ -9,15 +9,16 @@
   import { htmlToEmmm } from "$lib/integration/weixin/Importer";
   import { openPath } from "@tauri-apps/plugin-opener";
   import { appConfigDir, appLogDir } from "@tauri-apps/api/path";
+  import { compileStyles } from "$lib/Document.svelte";
 
   let progress = Interface.progress;
 
   const libraryUrl = Memorized.$('librarySyncUrl', z.string(), 'https://raw.githubusercontent.com/the-dissidents/emmm/refs/heads/main/apps/editor/src/template/testlib.txt');
 
-  const cssUrl = Memorized.$('cssSyncUrl', z.string(), 'https://raw.githubusercontent.com/the-dissidents/emmm/refs/heads/main/apps/editor/src/template/typesetting.css');
+  const stylesUrl = Memorized.$('stylesSyncUrl', z.string(), 'https://raw.githubusercontent.com/the-dissidents/emmm/refs/heads/main/apps/editor/src/template/stylesheet.scss');
 
   async function updateAll() {
-    const total = ($libraryUrl ? 1 : 0) + ($cssUrl ? 1 : 0);
+    const total = ($libraryUrl ? 1 : 0) + ($stylesUrl ? 1 : 0);
     if (total == 0) {
       Interface.status.set('no sync URL provided');
       return;
@@ -33,9 +34,9 @@
       $progress += 1 / total;
     }
 
-    if ($cssUrl) {
+    if ($stylesUrl) {
       try {
-        Interface.stylesheet.set(await (await fetch($cssUrl)).text());
+        Interface.stylesheet.set(await (await fetch($stylesUrl)).text());
       } catch (e) {
         await dialog.message(`error updating stylesheet: ${e}`, { kind: 'error' });
       }
@@ -100,7 +101,7 @@
   <tr>
     <td>stylesheet</td>
     <td class='hlayout'>
-      <input type="text" class="flexgrow" bind:value={$cssUrl} />
+      <input type="text" class="flexgrow" bind:value={$stylesUrl} />
     </td>
   </tr>
 </tbody></table>
@@ -174,3 +175,14 @@
   console.log(await appConfigDir());
   openPath(await appConfigDir());
 }}>Open config folder</button>
+
+<button onclick={() => {
+  const result = compileStyles({
+    sass: Interface.stylesheet.get(),
+    colors: Interface.colors.get(),
+    backgroundImage: Interface.backgroundImage.get()
+  });
+  console.log(result);
+}}>
+  Sass
+</button>

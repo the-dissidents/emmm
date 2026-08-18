@@ -5,7 +5,8 @@ import { getLintRules } from "$lib/emmm/Linting";
 import { getReplacement } from "$lib/details/Replace";
 
 export type EmmmDiagnostic = Diagnostic & {
-    location: emmm.LocationRange,
+    source: string
+    location?: emmm.LocationRange,
     row: number,
     col: number,
 };
@@ -18,6 +19,7 @@ export const emmmLinter = (onLint?: (d: EmmmDiagnostic[]) => void) => linter((vi
         const source = msg.location.source;
         const [row, col] = source.getRowCol(msg.location.start);
         msgs.push({
+            source: msg.location.source.name,
             location: msg.location, row, col,
             from: msg.location.start, to: msg.location.end,
             severity: ({
@@ -55,6 +57,7 @@ export const emmmLinter = (onLint?: (d: EmmmDiagnostic[]) => void) => linter((vi
                     : undefined;
 
                 msgs.push({
+                    source: text.location.source.name,
                     location: {
                         source: text.location.source,
                         start, end

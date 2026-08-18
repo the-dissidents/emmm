@@ -23,8 +23,8 @@ abstract class Store<Orig> {
     abstract markChanged(): void;
 }
 
-export abstract class Memorized<S, Orig = S> extends Store<Orig> {
-    protected subscriptions = new Set<(value: Orig) => void>();
+export abstract class Memorized<Serialized, Original = Serialized> extends Store<Original> {
+    protected subscriptions = new Set<(value: Original) => void>();
 
     static $<T extends z.core.$ZodType>(key: string, ztype: T, initial: z.infer<T>) {
         if (key in memorizedData) {
@@ -104,28 +104,28 @@ export abstract class Memorized<S, Orig = S> extends Store<Orig> {
 
     protected constructor(
         protected key: string,
-        protected value: Orig,
+        protected value: Original,
     ) {
         super();
-        (memorizedData[key] as Memorized<S, Orig>) = this;
+        (memorizedData[key] as Memorized<Serialized, Original>) = this;
     }
 
     /** should be the JSON stringify result of the `._zod.def` of your stored object's zod type */
     protected abstract get type(): string;
-    protected abstract serialize(): S;
+    protected abstract serialize(): Serialized;
     protected abstract deserialize(value: unknown): void;
 
-    override subscribe(subscription: (value: Orig) => void): (() => void) {
+    override subscribe(subscription: (value: Original) => void): (() => void) {
         this.subscriptions.add(subscription);
         subscription(this.get());
         return () => this.subscriptions.delete(subscription);
     }
 
-    override get(): Orig {
+    override get(): Original {
         return this.value;
     }
 
-    override set(value: Orig) {
+    override set(value: Original) {
         this.value = value;
         this.markChanged();
     }
@@ -135,13 +135,13 @@ export abstract class Memorized<S, Orig = S> extends Store<Orig> {
     }
 }
 
-export class SimpleMemorized<T extends z.core.$ZodType> extends Memorized<z.infer<T>> {
+export class SimpleMemorized<T extends z.core.$ZodType> extends Memorized<z.input<T>, z.output<T>> {
     #typeid: string;
 
     constructor(
         key: string,
         protected ztype: T,
-        value: z.infer<T>
+        value: z.output<T>
     ) {
         super(key, value);
         this.#typeid = JSON.stringify(ztype._zod.def);
@@ -151,8 +151,8 @@ export class SimpleMemorized<T extends z.core.$ZodType> extends Memorized<z.infe
         return this.#typeid;
     }
 
-    protected override serialize(): z.infer<T> {
-        return this.value;
+    protected override serialize(): z.input<T> {
+        return z.encode(this.ztype, this.value);
     }
 
     protected override deserialize(value: unknown) {

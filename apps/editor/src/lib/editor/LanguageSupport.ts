@@ -1,5 +1,5 @@
 import { emmmAutocompletion } from "./Autocompletion";
-import { emmmLinter, type EmmmDiagnostic } from "./Linter";
+import { emmmLinter, type EmmmDiagnostic } from "./EmmmLinter";
 import { emmmContextProvider, emmmDocument, emmmSourceDescriptorProvider, type ContextProvider, type DescriptorProvider } from "./ParseData";
 import { emmmTheme } from "./Theme";
 import { emmmWrapIndent } from "./WrapIndent";

@@ -4,7 +4,7 @@
   import type { Snippet } from "svelte";
   import { emmmDocument, type ContextProvider, type DescriptorProvider, type EmmmParseData } from "./ParseData";
   import { emmmLanguageSupport } from "./LanguageSupport";
-  import { type EmmmDiagnostic } from "./Linter";
+  import { type EmmmDiagnostic } from "./EmmmLinter";
 
   interface Props {
     provideContext?: ContextProvider;

@@ -13,8 +13,8 @@ section {
 
 section.article-container {
   display: inline-block;
-  background-color: var(--theme-color);
-  color: var(--text-color);
+  background-color: param(theme-color);
+  color: param(text-color);
   justify-content: center;
   box-sizing: border-box;
   display: flex;
@@ -75,7 +75,7 @@ sup.note a::after {
 }
 
 sup.note a {
-  color: var(--link-color);
+  color: param(link-color);
   text-decoration: none;
   margin-inline: 2px;
 }
@@ -88,7 +88,7 @@ sup.note.invalid {
 
 section.note {
   display: flex;
-  color: var(--note-color);
+  color: param(note-color);
   font-size: 85%;
   line-height: 1.7;
 }
@@ -110,7 +110,7 @@ section.note .note-name p {
 }
 
 section.note .note-name * {
-  color: var(--link-color);
+  color: param(link-color);
   text-decoration: none;
 }
 
@@ -176,7 +176,7 @@ h4 {
   text-align: center;
   & .heading-number {
     display: inline-block;
-    /* background-color: var(--highlight-color); */
+    /* background-color: param(highlight-color); */
     border-radius: 0.5lh;
     min-width: 1lh;
     padding: 0 0.5em;
@@ -215,7 +215,7 @@ header .originalUrl {
 }
 
 header .key {
-  color: var(--commentary-color);
+  color: param(commentary-color);
 }
 
 aside:is(.ttr, .the-end) {
@@ -240,7 +240,7 @@ aside:is(.ttr, .the-end)+hr {
   font-size: 13px;
   text-align: right;
   line-height: 1.7;
-  color: var(--commentary-color);
+  color: param(commentary-color);
 }
 
 .metadata {
@@ -312,19 +312,29 @@ span code {
 
 span.commentary {
   font-size: 85%;
-  color: var(--commentary-color);
+  color: param(commentary-color);
   letter-spacing: 0.5px;
   margin-inline: 2px;
 }
 
 mark {
-  background-color: var(--highlight-color);
-  color: var(--text-color);
+  background-color: param(highlight-color);
+  color: param(text-color);
 }
 
 .seq {
   word-break: break-all;
-  color: var(--link-color);
+  color: param(link-color);
+}
+
+.emmmstyle-uni p {
+  font-family: 'Unifont';
+  font-size: 40px;
+  padding: 0;
+  margin: 0 0 30px 0;
+  border-bottom: 1px solid black;
+  /* text-align: justify; */
+  text-align-last: justify;
 }
 
 .emmmstyle-test figure {
@@ -352,7 +362,7 @@ mark {
 
 .emmmstyle-speaker-a p {
   padding-right: 3em;
-  color: var(--link-color);
+  color: param(link-color);
 }
 
 .emmmstyle-speaker-b p {
@@ -405,7 +415,7 @@ mark {
 hr {
   margin-block: 6em;
   height: 0px;
-  border-top: 1px dashed var(--separator-color);
+  border-top: 1px dashed param(separator-color);
   border-left: none;
   border-right: none;
   border-bottom: none;
@@ -426,7 +436,7 @@ figure img {
 figure figcaption {
   text-align: right;
   font-size: 85%;
-  color: var(--commentary-color);
+  color: param(commentary-color);
   letter-spacing: 0.5px;
 }
 
@@ -435,7 +445,7 @@ figure figcaption {
   padding: 0;
   margin-top: 0.5em;
   margin-bottom: 0.5em;
-  border: 1px solid var(--commentary-color);
+  border: 1px solid param(commentary-color);
 }
 
 .emmmstyle-gallery figure>img {
@@ -487,7 +497,7 @@ table {
 }
 
 th, td {
-  border: 1px solid var(--commentary-color);
+  border: 1px solid param(commentary-color);
   padding: 0.2em 0.7em;
   text-align: start;
 }
@@ -565,7 +575,7 @@ ul.gallery > li > :first-child {
 }
 
 .ratings th {
-  border: 1.5px solid var(--text-color);
+  border: 1.5px solid param(text-color);
   background-color: transparent;
   /* font-weight: normal; */
 
@@ -573,7 +583,7 @@ ul.gallery > li > :first-child {
 }
 
 .ratings td {
-  border: 1.5px solid var(--text-color);
+  border: 1.5px solid param(text-color);
   background-color: transparent;
   font-weight: normal;
 
@@ -593,7 +603,7 @@ ul.gallery > li > :first-child {
   font-size: 110%;
   height: 2em;
   padding: 15px;
-  /*color: var(--commentary-color);*/
+  /*color: param(commentary-color);*/
 }
 
 .ratings tfoot td {

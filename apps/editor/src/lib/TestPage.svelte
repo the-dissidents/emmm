@@ -2,7 +2,7 @@
   import * as emmm from '@the_dissidents/libemmm';
   import { TabView, TabPage, Resizer, ListView } from '@the_dissidents/svelte-ui';
   import { CircleXIcon, InfoIcon, TriangleAlertIcon, X } from '@lucide/svelte';
-  import { css } from '@codemirror/lang-css';
+  import { sass as sassLang } from '@codemirror/lang-sass';
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 
   import Editor from './editor/Editor.svelte';
@@ -20,9 +20,12 @@
   import SyncToolbox from './toolbox/SyncToolbox.svelte';
   import TestToolbox from './toolbox/TestToolbox.svelte';
 
-  import type { EmmmDiagnostic } from './editor/Linter';
+  import type { EmmmDiagnostic } from './editor/EmmmLinter';
   import { Debug } from './Debug';
   import { DebouncedTask } from './details/DebouncedTask';
+
+  import * as sass from 'sass';
+  import { sassLinter } from './editor/SassLinter';
 
   let left = $state<HTMLElement>(),
       middle = $state<HTMLElement>(),
@@ -79,7 +82,8 @@
       Interface.activeEditor = sourceHandle;
   }
 
-  let diagnostics: EmmmDiagnostic[] = $state([]);
+  let emmmDiag: EmmmDiagnostic[] = $state([]);
+  let sassDiag: EmmmDiagnostic[] = $state([]);
 
   const scrollToSource = new DebouncedTask(
     (pos: number, select: boolean) => Interface.scrollToSource(pos, select), 500);
@@ -126,7 +130,7 @@
             ? new emmm.ParseContext(emmm.Configuration.from(libConfig, true))
             : undefined
           }
-          onLint={(d) => diagnostics = d}
+          onLint={(d) => emmmDiag = d}
       >
         <Editor bind:text={$source}
           bind:this={sourceHandle}
@@ -162,7 +166,8 @@
       <GenericContext extension={[
         syntaxHighlighting(defaultHighlightStyle),
         bracketMatching(),
-        css()
+        sassLang(),
+        sassLinter((m) => sassDiag = m),
       ]}>
         <Editor bind:text={$stylesheet}
           bind:this={cssHandle}
@@ -193,7 +198,7 @@
           </label>
         </fieldset>
         <iframe bind:this={Interface.frame}
-          class={{inverted: $inverted, flexgrow: true}}  title="preview"
+          class={{inverted: $inverted, flexgrow: true}} title="preview"
           sandbox="allow-same-origin allow-scripts">
         </iframe>
       </div>
@@ -226,7 +231,7 @@
   <Resizer first={bottom!} reverse={true} />
 </div>
 <div class="pane" style="height: 100px" bind:this={bottom}>
-  <ListView style='height: 100%' items={diagnostics}
+  <ListView style='height: 100%' items={[...sassDiag, ...emmmDiag]}
     columns={[
       ['file',    { header: 'file',    width: 'minmax(max-content, 5em)' }],
       ['type',    { header: '',        width: '3em' }],
@@ -235,14 +240,14 @@
       ['message', { header: 'message', width: 'auto' }],
     ]}
     onClickItem={(x) => {
-      if (x.location.source.name == '<Source>')
+      if (x.source == '<Source>')
         Interface.sourceEditor?.setSelections([{ from: x.from, to: x.to }]);
     }}
   >
     {#snippet file(d)}
-      {d.location.source.name}
+      {d.source}
     {/snippet}
-  {#snippet type(d)}
+    {#snippet type(d)}
       {#if d.severity == 'error'}
         <CircleXIcon color="red" strokeWidth="2px"/>
       {:else if d.severity == 'hint'}
