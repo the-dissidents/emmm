@@ -8,6 +8,8 @@
 
   import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
   import * as dialog from '@tauri-apps/plugin-dialog';
+  import * as z from 'zod/v4-mini';
+
   import { ListView, Tooltip } from "@the_dissidents/svelte-ui";
   import { CheckIcon, CircleArrowUpIcon, CircleXIcon, GlobeIcon, LoaderIcon, TriangleAlertIcon } from "@lucide/svelte";
   import AccountManager from "./AccountManager.svelte";
@@ -15,13 +17,15 @@
 
   let publicIP = $state('');
 
+  let accountName = Memorized.$('weixin-account-name', z.string(), 'default');
   let account = $state(new WeixinClient());
   let token = $derived(account.stableToken);
 
   let progress = Interface.progress;
   const backgroundImage = Interface.backgroundImage;
 
-  Memorized.onInitialize(() => account = new WeixinClient());
+  Memorized.onInitialize(() =>
+    account = new WeixinClient($accountName));
 
   type ImgStatus = 'uploaded' | 'external' | 'notUploaded' | 'invalid' | 'error' | 'pending';
   type Img = {
@@ -111,9 +115,11 @@
 
 <div class="vlayout vfill">
 
-<h5>Connections & Credentials</h5>
-
-<AccountManager bind:account={account}/>
+<h5>Credentials</h5>
+<AccountManager
+  bind:account={account}
+  onChange={(a) => $accountName = a.name}
+/>
 
 <table class="config"><tbody>
   <tr>

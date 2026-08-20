@@ -195,6 +195,12 @@ export class DictMemorized<
         this.markChanged();
     }
 
+    deleteItem(k: z.infer<TKey>) {
+        const ok = this.value.delete(k);
+        if (ok) this.markChanged();
+        return ok;
+    }
+
     protected override get type() {
         return this.#typeid;
     }

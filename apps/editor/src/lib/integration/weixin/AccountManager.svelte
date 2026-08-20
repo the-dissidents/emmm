@@ -1,15 +1,16 @@
 <script lang="ts">
-  import { ConfigRow, ConfigTable, Popup, showInputPopup } from "@the_dissidents/svelte-ui";
+  import { ConfigRow, ConfigTable, Popup, showConfirmationPopup, showInputPopup } from "@the_dissidents/svelte-ui";
   import { WeixinClient } from "./API.svelte";
-  import { PencilIcon, UserPlusIcon } from "@lucide/svelte";
+  import { PencilIcon, Trash2Icon, UserPlusIcon } from "@lucide/svelte";
   import { hook } from "$lib/details/Hook.svelte";
   import { Memorized } from "$lib/config/Memorized.svelte";
 
   interface Props {
-    account: WeixinClient
+    account: WeixinClient,
+    onChange?: (a: WeixinClient) => void
   }
 
-  let { account = $bindable() }: Props = $props();
+  let { account = $bindable(), onChange }: Props = $props();
 
   let div = $state<HTMLElement>();
   let popup = $state<Popup>();
@@ -25,17 +26,17 @@
 </script>
 
 <div class="hlayout" bind:this={div}>
-  {#key change}
-    <select class="flexgrow"
-        value={account.name}
-        onchange={(e) => {
-          account = new WeixinClient(e.currentTarget.value);
-        }}>
-      {#each WeixinClient.getNames() as name}
-        <option value={name}>{name}</option>
-      {/each}
-    </select>
-  {/key}
+{#key change}
+  <select class="flexgrow"
+      value={account.name}
+      onchange={(e) => {
+        account = new WeixinClient(e.currentTarget.value);
+        onChange?.(account);
+      }}>
+    {#each WeixinClient.getNames() as name}
+      <option value={name}>{name}</option>
+    {/each}
+  </select>
   <button onclick={() => {
     popup?.open(div!.getBoundingClientRect());
   }}>
@@ -47,11 +48,22 @@
     });
     if (!name) return;
     account = new WeixinClient(name);
+    onChange?.(account);
     change++;
     popup?.open({...div!.getBoundingClientRect()});
   }}>
     <UserPlusIcon />
   </button>
+  <button onclick={async (e) => {
+    if (!await showConfirmationPopup(e.currentTarget, "delete account?")) return;
+    const newName = WeixinClient.getNames().find((x) => x != account.name) ?? 'default';
+    account.deleteAndSwitch(newName);
+    onChange?.(account);
+    change++;
+  }} disabled={WeixinClient.getNames().length <= 1}>
+    <Trash2Icon />
+  </button>
+{/key}
 </div>
 
 <Popup bind:this={popup} position="bottom" maxWidth="none">
@@ -62,8 +74,13 @@
         class:invalid={invalid}
         bind:value={nameInput}
         onchange={() => {
-          if (invalid) nameInput = account.name;
-          else account.rename(nameInput);
+          if (invalid) {
+            nameInput = account.name;
+          } else {
+            account.rename(nameInput);
+            onChange?.(account);
+            change++;
+          }
         }}
       />
       <hr>
@@ -83,5 +100,8 @@
 <style>
   .hlayout {
     min-height: auto;
+  }
+  .invalid {
+    background-color: pink;
   }
 </style>

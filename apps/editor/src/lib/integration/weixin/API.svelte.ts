@@ -146,7 +146,7 @@ function initAccountData(): AccountData {
 }
 
 export class WeixinClient {
-    readonly #data: AccountData;
+    #data: AccountData;
     readonly #stableToken = writable('');
 
     #name: string;
@@ -155,7 +155,6 @@ export class WeixinClient {
     autoFetchToken = false;
 
     static getNames() {
-        console.log([...accounts.get().keys()]);
         return [...accounts.get().keys()];
     }
 
@@ -201,6 +200,19 @@ export class WeixinClient {
         this.#name = to;
         map.delete(old);
         accounts.set(map);
+    }
+
+    deleteAndSwitch(to: string) {
+        accounts.deleteItem(this.name);
+        this.#name = to;
+
+        let entry = accounts.getItem(to);
+        if (!entry) {
+            entry = initAccountData();
+            accounts.setItem(to, entry);
+        }
+        this.#assetCache = new Map(entry.assetCache);
+        this.#data = entry;
     }
 
     #syncCache() {
