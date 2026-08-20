@@ -29,7 +29,7 @@ export function getSassVariablesFromColors(
     t: ArticleColors,
 ): Map<string, sass.SassColor> {
     function f(x: Color.PlainColorObject) {
-        const { alpha, coords: [red, green, blue] } = Color.toGamut(x, 'srgb');
+        const { alpha, coords: [red, green, blue] } = Color.to(x, 'srgb', { inGamut: true });
         return new sass.SassColor({ space: 'srgb', red, green, blue, alpha });
     }
 

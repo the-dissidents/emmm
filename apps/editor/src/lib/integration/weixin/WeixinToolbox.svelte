@@ -17,7 +17,9 @@
 
   let account = $state(new WeixinClient());
   let token = $derived(account.stableToken);
+
   let progress = Interface.progress;
+  const backgroundImage = Interface.backgroundImage;
 
   Memorized.onInitialize(() => account = new WeixinClient());
 
@@ -78,6 +80,13 @@
     let doc = Interface.frame?.contentDocument;
     assert(doc !== undefined && doc !== null);
     sourceImgs = [];
+
+    if ($backgroundImage) {
+      const url = new URL($backgroundImage);
+      const status = WeixinClient.smallImageCache.has(url.href) ? 'uploaded' : 'notUploaded';
+      sourceImgs.push({ status, url });
+    }
+
     [...doc.querySelectorAll('img')].map((x) => {
       try {
         const url = new URL(x.dataset.originalSrc ?? x.src);
@@ -181,13 +190,13 @@
 <ListView style="min-height: 300px; flex-grow: 1;"
   items={sourceImgs}
   columns={[
-    ['button', { header: 'action', align: 'end' }],
-    ['status', { header: '' }],
-    ['name', { header: 'name', ellipsis: true }],
+    ['button', { header: '', align: 'end', width: 'auto' }],
+    ['status', { header: '', width: 'auto' }],
+    ['name', { header: 'name', ellipsis: true, width: '1fr' }],
   ]}
 >
   {#snippet name(item)}
-    {item.url.href.split('/').at(-1)!}
+    {decodeURIComponent(item.url.href.split('/').at(-1)!)}
   {/snippet}
   {#snippet button(item)}
     {#if item.status == 'external'}

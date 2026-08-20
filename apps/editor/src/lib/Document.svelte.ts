@@ -21,12 +21,10 @@ export function compileStyles(style: DocumentStyle): string | sass.Exception {
         ? new sass.SassString(
             transformAsset(style.backgroundImage) ?? style.backgroundImage, { quotes: true })
         : sass.sassNull;
-    console.log(vars);
     try {
         const css = sass.compileString(style.sass, { functions: {
             'param($key)': (args) => {
                 const key = args[0].assertString('key').text;
-                console.log(key, vars.get(key));
                 if (vars.has(key)) return vars.get(key)!;
                 if (key == 'background-image') return backgroundImage;
                 return sass.sassNull;

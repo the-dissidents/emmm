@@ -9,6 +9,8 @@ import { Debug } from "$lib/Debug";
 import { findBoundingRect } from "$lib/details/BoundingRect";
 import { toCanvas } from "$lib/details/ElementToCanvas";
 import { WeixinClient } from "./API.svelte";
+import { Interface } from "$lib/Interface.svelte";
+import { compileStyles } from "$lib/Document.svelte";
 
 const CONVERT_TO_SECTION = new Set([
     'address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'fieldset',
@@ -46,6 +48,7 @@ export async function prerender(doc: Document, progress?: (n: number) => void) {
     toPrerender.forEach((v, i) => v.dataset.prerenderId = `${i}`);
 
     const copy = doc.cloneNode(true) as Document;
+
     inlineCss(copy, {
         removeStyleTags: true,
         removeClasses: true,
@@ -161,6 +164,24 @@ export async function postprocess(
             }
         }
     });
+
+    const backgroundImage = Interface.backgroundImage.get();
+    if (backgroundImage) {
+        const href = new URL(backgroundImage).href;
+        const cache = WeixinClient.smallImageCache.get(href);
+        if (!cache) {
+            notCached++;
+        } else {
+            console.log('bkg img cache', cache);
+            const result = compileStyles({
+                sass: Interface.stylesheet.get(),
+                colors: Interface.colors.get(),
+                backgroundImage: cache
+            });
+            Debug.assert(typeof result == 'string');
+            copy.head.getElementsByTagName('style')[0].textContent = result;
+        }
+    }
 
     inlineCss(copy, { removeStyleTags: true, removeClasses: true });
 
