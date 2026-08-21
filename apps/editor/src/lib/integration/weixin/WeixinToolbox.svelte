@@ -152,7 +152,7 @@
   if (!doc || !win) return;
 
   try {
-    const { success, total } = await prerender(doc, (n) => Interface.progress.set(n));
+    const { success, total } = await prerender(win, doc, (n) => Interface.progress.set(n));
     if (total == 0)
       Interface.status.set(`Nothing to prerender`);
     else if (success == total)

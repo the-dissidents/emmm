@@ -2,9 +2,6 @@ import { assert } from "./Debug";
 import { fetch } from '@tauri-apps/plugin-http';
 import { readFile } from "@tauri-apps/plugin-fs";
 import mime from 'mime/lite';
-import { RustAPI } from "./RustAPI";
-import { path } from "@tauri-apps/api";
-import * as fs from "@tauri-apps/plugin-fs";
 
 export class RequestFailedError extends Error {
     status: number;
@@ -42,6 +39,16 @@ export async function getIP(method: GetIPMethod) {
 }
 
 export const DOMUtil = {
+    isHtmlElementCrossRealm(obj: Element): obj is HTMLElement {
+        return !!(
+            obj &&
+            typeof obj === 'object' &&
+            obj.nodeType === 1 &&
+            obj.ownerDocument &&
+            typeof obj.nodeName === 'string'
+        );
+    },
+
     pathOf(el: Element) {
         const path: string[] = [];
         while (true) {

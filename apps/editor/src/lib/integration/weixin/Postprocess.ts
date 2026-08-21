@@ -42,8 +42,25 @@ async function prerenderElement(e: HTMLElement, width: number, height: number) {
     return file;
 }
 
-export async function prerender(doc: Document, progress?: (n: number) => void) {
-    const toPrerender = doc.body.querySelectorAll<HTMLElement>('[data-prerender]');
+function findPrerenderRoots(win: Window, root: Element): HTMLElement[] {
+    const result: HTMLElement[] = [];
+
+    for (const child of root.children) {
+        if (!DOMUtil.isHtmlElementCrossRealm(child)) continue;
+        const style = win.getComputedStyle(child);
+        if (style.getPropertyValue('--emmm-prerender').trim()) {
+            result.push(child);
+            continue;
+        }
+
+        result.push(...findPrerenderRoots(win, child));
+    }
+
+    return result;
+}
+
+export async function prerender(win: Window, doc: Document, progress?: (n: number) => void) {
+    const toPrerender = findPrerenderRoots(win, doc.body);
     if (!toPrerender.length) return { success: 0, total: 0 };
     toPrerender.forEach((v, i) => v.dataset.prerenderId = `${i}`);
 
@@ -52,7 +69,7 @@ export async function prerender(doc: Document, progress?: (n: number) => void) {
     inlineCss(copy, {
         removeStyleTags: true,
         removeClasses: true,
-        filter: (el) => el.matches('[data-prerender]')
+        filter: (el) => 'prerenderId' in el.dataset
     });
 
     progress?.(0);

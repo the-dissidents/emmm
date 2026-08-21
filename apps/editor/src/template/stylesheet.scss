@@ -20,6 +20,12 @@ section.article-container {
   display: flex;
   flex-flow: row;
   padding: 25px 0px;
+
+  @if param(background-image) {
+    background-image: url(param(background-image));
+    background-size: 100%;
+    background-position: 0% 0%;
+  }
 }
 
 section.article-body {

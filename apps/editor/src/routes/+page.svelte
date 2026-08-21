@@ -43,7 +43,7 @@
     const v = await getVersion();
     await currentWindow.setTitle(`emmui ${v} (${arch()}/${platform()}${version()})`);
 
-    // await RustAPI.initFonts();
+    await RustAPI.initFonts();
     hide = false;
   }
 </script>

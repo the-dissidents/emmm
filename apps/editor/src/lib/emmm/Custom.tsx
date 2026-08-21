@@ -4,16 +4,15 @@ import { initRatings, overallTableBlock, overallTableRenderer, ratingHeaderSyste
 import { ratingEntryBlock } from './RatingEntry';
 import { basicFieldSystems, categorySystem, endBlock, endRenderer, getEmmmMetadata, infoFieldSystem, initHeader, publishedSystem } from './Header';
 import { lintRuleSystem } from './Linting';
-import { prerenderBlock, prerenderRenderer } from './Prerender';
 
 const custom = emmm.Configuration.from(emmm.DefaultConfiguration, false);
 custom.kernel.collapseWhitespaces = true;
 custom.initializers.push(initHeader, initRatings);
 custom.systemModifiers.add(infoFieldSystem, publishedSystem, categorySystem, ...basicFieldSystems, ratingHeaderSystem, lintRuleSystem);
-custom.blockModifiers.add(ratingTableBlock, ratingHiddenBlock, overallTableBlock, endBlock, ratingEntryBlock, prerenderBlock);
+custom.blockModifiers.add(ratingTableBlock, ratingHiddenBlock, overallTableBlock, endBlock, ratingEntryBlock);
 
 const render = emmm.createHTMLRenderConfiguration(window);
-render.addBlockRenderer(ratingTableRenderer, overallTableRenderer, endRenderer, prerenderRenderer);
+render.addBlockRenderer(ratingTableRenderer, overallTableRenderer, endRenderer);
 
 export function renderText(text: string) {
     let result: Node[] = [];
