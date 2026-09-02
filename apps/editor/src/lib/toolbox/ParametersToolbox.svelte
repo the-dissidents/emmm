@@ -37,6 +37,14 @@ automatically derive the rest
         oninput={doDeriveColors} />
     </div>
   </ConfigRow>
+
+  <ConfigRow name='Commentary'>
+    <div class="hlayout">
+      <Colorpicker bind:color={$colors.commentary} mode='hsl'
+        oninput={doDeriveColors} />
+    </div>
+  </ConfigRow>
+
   <ConfigRow name='Link'>
     <div class="hlayout">
       <Colorpicker bind:color={$colors.link} mode='hsl'

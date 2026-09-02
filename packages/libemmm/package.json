@@ -1,6 +1,6 @@
 {
     "name": "@the_dissidents/libemmm",
-    "version": "0.0.13",
+    "version": "0.0.14",
     "description": "Parser and language server for the emmm markup language",
     "author": "the_dissidents",
     "license": "GPL-2.0-only",

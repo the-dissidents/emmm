@@ -1,11 +1,14 @@
-# emmm
+<h1 align="center">
+emmm
+<img alt="image" src="https://img.shields.io/github/v/release/the-dissidents/emmm?include_prereleases&label=emmui">
+</h1>
 
 > *Legible, simple, consistent and extensible*
 
 This is the monorepo for `emmm`, a better markup language for typesetting articles.
 
-- `app/editor` – GUI editor and publisher. See [there](./apps/editor/README.md) for more instructions.
-- `packages/libemmm` – the parser and language server for the language. See [there](packages/libemmm/README.md) for an overview of the language.
+- `app/editor` – the GUI editor and publisher `emmui`. See [there](./apps/editor/README.md) for more instructions.
+- `packages/libemmm` – parser for the language. See [there](packages/libemmm/README.md) for an overview of the language.
 - `packages/minimal-jsx-runtime` - a private little wrapper for using JSX the above projects
 - `packages/dom-css-inliner` - a CSS inliner based on DOM and CSSOM APIs
 
@@ -38,7 +41,7 @@ Make sure you have [Rust](https://rust-lang.org/tools/install/) and [Node.js](ht
    ```
 
 4. To build an executable bundle, run:
-   
+
    ```bash
    pnpm build
    ```
