@@ -5,10 +5,12 @@ use serde::Serialize;
 mod archive;
 mod compress;
 mod font_registry;
+mod hash;
 
 use archive::{archive, unarchive};
 use compress::compress_image;
 use font_registry::{FontRegistry, init_font_registry, pack_fonts};
+use hash::hash_image;
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
@@ -69,7 +71,7 @@ pub fn run() {
                     && !metadata.target().starts_with("html5ever::")
                     && !metadata.target().starts_with("style::")
                     && !metadata.target().starts_with("selectors::")
-                    && metadata.level() >= log::Level::Debug)
+                    && metadata.level() <= log::Level::Debug)
                 .clear_targets()
                 .target(tauri_plugin_log::Target::new(
                     tauri_plugin_log::TargetKind::Stderr,
@@ -88,6 +90,7 @@ pub fn run() {
         .manage(Arc::new(Mutex::new(Option::<FontRegistry>::None)))
         .invoke_handler(tauri::generate_handler![
             compress_image,
+            hash_image,
             archive,
             unarchive,
             init_font_registry,

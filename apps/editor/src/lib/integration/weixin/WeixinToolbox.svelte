@@ -4,7 +4,7 @@
   import { Interface } from '../../Interface.svelte';
   import { getIP, GetIPMethod } from '../../Util';
   import { postprocess, prerender } from "./Postprocess";
-  import { RustAPI } from "$lib/RustAPI";
+  import { RustAPI, type PerceptualHash } from "$lib/RustAPI";
 
   import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
   import * as dialog from '@tauri-apps/plugin-dialog';
@@ -24,27 +24,28 @@
   let progress = Interface.progress;
   const backgroundImage = Interface.backgroundImage;
 
-  Memorized.onInitialize(() =>
-    account = new WeixinClient($accountName));
+  Memorized.onInitialize(() => account = new WeixinClient($accountName));
 
   type ImgStatus = 'uploaded' | 'external' | 'notUploaded' | 'invalid' | 'error' | 'pending';
   type Img = {
     status: ImgStatus,
+    hash?: PerceptualHash,
     url: URL
   };
   let sourceImgs: Img[] = $state([]);
 
   async function uploadImg(img: Img) {
+    Debug.assert(!!img.hash);
+
     Interface.status.set(`compressing: ${img.url.href}`);
     try {
       const file = await RustAPI.compressImage(img.url, 1024 * 1024);
-      console.log(file);
       const url = new URL(img.url);
       if (!url.href.toLowerCase().endsWith('.' + file.ext))
           url.href += '.' + file.ext;
-      Interface.status.set(`uploading: ${url.href}`);
-      await account.uploadSmallImage(file.blob, url.href, img.url.href, true);
-      updateImgStatus(img);
+      Interface.status.set(`uploading: ${url.pathname}`);
+      await account.uploadSmallImage(file.blob, url.href, img.hash, true);
+      await updateImgStatus(img);
       Interface.status.set(`done`);
     } catch (e) {
       Interface.status.set(`error when uploading ${img.url.href}: ${e}`);
@@ -68,10 +69,10 @@
     Interface.status.set(`uploaded ${total} image${total == 1 ? '' : 's'}`);
   }
 
-  function updateImgStatus(img: Img) {
+  async function updateImgStatus(img: Img) {
     img.status = 'pending';
-    const realhref = img.url.href;
-    if (WeixinClient.getSmallImageCacheUrl(realhref)) {
+    img.hash = await RustAPI.hashImage(img.url);
+    if (await WeixinClient.getSmallImageCacheUrl(img.hash)) {
       img.status = 'uploaded';
     } else if (img.url.protocol !== 'file:') {
       img.status = 'external';
@@ -80,34 +81,34 @@
     }
   }
 
-  function updateImgList() {
+  async function updateImgList() {
     let doc = Interface.frame?.contentDocument;
     assert(doc !== undefined && doc !== null);
     sourceImgs = [];
 
+    const promises: Promise<void>[] = [];
+
     if ($backgroundImage) {
-      const url = new URL($backgroundImage);
-      const status = WeixinClient.getSmallImageCacheUrl(url.href) ? 'uploaded' : 'notUploaded';
-      sourceImgs.push({ status, url });
+      const img: Img = $state({ status: 'pending', url: new URL($backgroundImage) });
+      promises.push(updateImgStatus(img));
+      sourceImgs.push(img);
     }
 
-    [...doc.querySelectorAll('img')].map((x) => {
+    for (const x of [...doc.querySelectorAll('img')]) {
       try {
         const url = new URL(x.dataset.originalSrc ?? x.src);
-        let img: Img = {
-          status: 'pending',
-          url: url
-        };
+        let img: Img = $state({ status: 'pending', url });
         sourceImgs.push(img);
         if (x.complete && x.naturalWidth > 0) {
-          updateImgStatus(img);
+          promises.push(updateImgStatus(img));
         } else if (x.complete) {
           img.status = 'invalid';
         }
       } catch (_) {
 
       }
-    });
+    }
+    await Promise.allSettled(promises);
   }
 
   Interface.onFrameLoaded.bind(() => updateImgList());
@@ -160,7 +161,7 @@
     else
       Interface.status.set(`Prerendered ${success} image[s], ${total - success} failed`);
 
-    updateImgList();
+    void updateImgList();
   } catch (e) {
     console.log(e);
   }
@@ -245,7 +246,9 @@
         <span><CheckIcon/></span>
       </Tooltip>
     {:else if item.status == 'pending'}
-      <LoaderIcon/>
+      <Tooltip position='right' text="pending">
+        <span><LoaderIcon/></span>
+      </Tooltip>
     {:else}
       {Debug.never(item.status)}
     {/if}

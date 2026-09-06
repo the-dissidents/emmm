@@ -60,6 +60,8 @@ export type PackedFont = {
     data: Uint8ClampedArray<ArrayBuffer>
 };
 
+export type PerceptualHash = string & { __brand: 'PerceptualHash' };
+
 export const RustAPI = {
     async initFonts() {
         await invoke('init_font_registry');
@@ -94,16 +96,7 @@ export const RustAPI = {
     },
 
     async compressImage(url: URL, maxSize: number) {
-        let filepath = decodeURIComponent(url.pathname);
-        if (url.protocol !== 'file:') {
-            let file = new File([await readUrl(url)], url.href,
-                { type: mime.getType(url.href) ?? undefined });
-            // save to local
-            filepath = await path.join(
-                await path.tempDir(),
-                crypto.randomUUID() + await path.extname(filepath));
-            await fs.writeFile(filepath, file.stream());
-        }
+        let filepath = await localPathOf(url);
 
         const buf = await invoke<ArrayBuffer>('compress_image', {
             path: filepath, maxSize,
@@ -119,5 +112,26 @@ export const RustAPI = {
             blob: new Blob([data], { type }),
             ext, mime: type
         };
+    },
+
+    async hashImage(url: URL) {
+        const filepath = await localPathOf(url);
+        console.log(filepath);
+        return await invoke<string>('hash_image', { path: filepath }) as PerceptualHash;
     }
+}
+
+async function localPathOf(url: URL) {
+    console.log(url);
+    let filepath = decodeURIComponent(url.pathname);
+    if (url.protocol !== 'file:') {
+        let file = new File([await readUrl(url)], url.href,
+            { type: mime.getType(url.href) ?? undefined });
+        // save to local
+        filepath = await path.join(
+            await path.tempDir(),
+            crypto.randomUUID() + await path.extname(filepath));
+        await fs.writeFile(filepath, file.stream());
+    }
+    return filepath;
 }

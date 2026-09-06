@@ -5,6 +5,7 @@ import { assert, Debug } from "$lib/Debug";
 import { BaseDirectory, writeFile } from "@tauri-apps/plugin-fs";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { Memorized } from "$lib/config/Memorized.svelte";
+import { RustAPI, type PerceptualHash } from "$lib/RustAPI";
 
 import * as z from "zod/v4-mini";
 
@@ -16,7 +17,7 @@ const accountDataDef = z.object({
 type AccountData = z.infer<typeof accountDataDef>;
 
 const accounts = Memorized.$dict('weixinAccounts', z.string(), accountDataDef);
-const smallImageCache = Memorized.$dict('weixinSmallImageCache', z.string(), z.string());
+const smallImageCache = Memorized.$dict('weixinSmallImageCacheV2', z.string(), z.string());
 
 export type WeixinAssetType = 'image' | 'video' | 'voice';
 
@@ -356,13 +357,13 @@ export class WeixinClient {
         return path;
     }
 
-    static getSmallImageCacheUrl(key: string) {
-        return smallImageCache.getItem(key);
+    static async getSmallImageCacheUrl(hash: PerceptualHash) {
+        return smallImageCache.getItem(hash);
     }
 
     async uploadSmallImage(blob: Blob, name: string, key: string, force = false) {
-        if (!force && smallImageCache.get().has(name))
-            return smallImageCache.getItem(name)!;
+        if (!force && smallImageCache.get().has(key))
+            return smallImageCache.getItem(key)!;
 
         if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
             throw new WeixinInvalidTokenError();
@@ -379,7 +380,7 @@ export class WeixinClient {
         let json = await r.json();
         if (json.errcode) throw new WeixinAPIError(json);
         const url = json.url as string;
-        smallImageCache.setItem(key, url);
+        if (key !== null) smallImageCache.setItem(key, url);
         return url;
     }
 }

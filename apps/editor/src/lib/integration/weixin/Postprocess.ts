@@ -11,6 +11,7 @@ import { toCanvas } from "$lib/details/ElementToCanvas";
 import { WeixinClient } from "./API.svelte";
 import { Interface } from "$lib/Interface.svelte";
 import { compileStyles } from "$lib/Document.svelte";
+import { RustAPI } from "$lib/RustAPI";
 
 const CONVERT_TO_SECTION = new Set([
     'address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'fieldset',
@@ -133,7 +134,7 @@ export async function postprocess(
 
     let copy = doc.cloneNode(true) as Document;
     let notCached = 0;
-    copy.body.querySelectorAll('*').forEach((elem) => {
+    for (const elem of [...copy.body.querySelectorAll('*')]) {
         // inline all ::before and ::after
         const path = DOMUtil.pathOf(elem);
         let before = befores.get(path);
@@ -168,8 +169,8 @@ export async function postprocess(
 
             try {
                 const url = new URL(img.dataset.originalSrc ?? img.src);
-                const realhref = url.href;
-                const cached = WeixinClient.getSmallImageCacheUrl(realhref);
+                const hash = await RustAPI.hashImage(url);
+                const cached = await WeixinClient.getSmallImageCacheUrl(hash);
                 if (cached) {
                     img.src = cached;
                     img.dataset.originalSrc = undefined;
@@ -180,12 +181,12 @@ export async function postprocess(
                 img.src = '';
             }
         }
-    });
+    }
 
     const backgroundImage = Interface.backgroundImage.get();
     if (backgroundImage) {
-        const href = new URL(backgroundImage).href;
-        const cache = WeixinClient.getSmallImageCacheUrl(href);
+        const hash = await RustAPI.hashImage(new URL(backgroundImage));
+        const cache = await WeixinClient.getSmallImageCacheUrl(hash);
         if (!cache) {
             notCached++;
         } else {
