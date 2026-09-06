@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
-  import TestPage from '../lib/TestPage.svelte';
+  import Main from '../lib/Main.svelte';
   import { Memorized } from '$lib/config/Memorized.svelte';
   import { getVersion } from '@tauri-apps/api/app';
   import { arch, platform, version } from '@tauri-apps/plugin-os';
@@ -65,7 +65,7 @@
   <div id="titlebar" data-tauri-drag-region></div>
 
   <div class="page vlayout flexgrow" class:hide={hide}>
-    <TestPage></TestPage>
+    <Main></Main>
   </div>
 </main>
 

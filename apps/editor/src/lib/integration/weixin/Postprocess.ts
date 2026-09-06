@@ -169,7 +169,7 @@ export async function postprocess(
             try {
                 const url = new URL(img.dataset.originalSrc ?? img.src);
                 const realhref = url.href;
-                const cached = WeixinClient.smallImageCache.get(realhref);
+                const cached = WeixinClient.getSmallImageCacheUrl(realhref);
                 if (cached) {
                     img.src = cached;
                     img.dataset.originalSrc = undefined;
@@ -185,7 +185,7 @@ export async function postprocess(
     const backgroundImage = Interface.backgroundImage.get();
     if (backgroundImage) {
         const href = new URL(backgroundImage).href;
-        const cache = WeixinClient.smallImageCache.get(href);
+        const cache = WeixinClient.getSmallImageCacheUrl(href);
         if (!cache) {
             notCached++;
         } else {

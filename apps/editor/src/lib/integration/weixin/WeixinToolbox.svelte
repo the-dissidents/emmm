@@ -71,7 +71,7 @@
   function updateImgStatus(img: Img) {
     img.status = 'pending';
     const realhref = img.url.href;
-    if (WeixinClient.smallImageCache.has(realhref)) {
+    if (WeixinClient.getSmallImageCacheUrl(realhref)) {
       img.status = 'uploaded';
     } else if (img.url.protocol !== 'file:') {
       img.status = 'external';
@@ -87,7 +87,7 @@
 
     if ($backgroundImage) {
       const url = new URL($backgroundImage);
-      const status = WeixinClient.smallImageCache.has(url.href) ? 'uploaded' : 'notUploaded';
+      const status = WeixinClient.getSmallImageCacheUrl(url.href) ? 'uploaded' : 'notUploaded';
       sourceImgs.push({ status, url });
     }
 

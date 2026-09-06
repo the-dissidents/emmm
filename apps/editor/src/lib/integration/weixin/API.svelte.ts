@@ -228,10 +228,6 @@ export class WeixinClient {
         return get(this.#stableToken) !== '' && this.#expireTime.getTime() > Date.now();
     }
 
-    static get smallImageCache(): ReadonlyMap<string, string> {
-        return smallImageCache.get();
-    }
-
     async fetchToken(forced = false) {
         if (!forced && this.tokenOk)
             return get(this.#stableToken);
@@ -358,6 +354,10 @@ export class WeixinClient {
         this.#assetCache.set(id, path);
         this.#syncCache();
         return path;
+    }
+
+    static getSmallImageCacheUrl(key: string) {
+        return smallImageCache.getItem(key);
     }
 
     async uploadSmallImage(blob: Blob, name: string, key: string, force = false) {
