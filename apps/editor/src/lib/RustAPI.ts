@@ -60,7 +60,7 @@ export type PackedFont = {
     data: Uint8ClampedArray<ArrayBuffer>
 };
 
-export type PerceptualHash = string & { __brand: 'PerceptualHash' };
+export type FileHash = string & { __brand: 'FileHash' };
 
 export const RustAPI = {
     async initFonts() {
@@ -114,10 +114,10 @@ export const RustAPI = {
         };
     },
 
-    async hashImage(url: URL) {
+    async hashFile(url: URL) {
         const filepath = await localPathOf(url);
         console.log(filepath);
-        return await invoke<string>('hash_image', { path: filepath }) as PerceptualHash;
+        return await invoke<string>('hash_file', { path: filepath }) as FileHash;
     }
 }
 

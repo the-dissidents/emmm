@@ -4,7 +4,7 @@
   import { Interface } from '../../Interface.svelte';
   import { getIP, GetIPMethod } from '../../Util';
   import { postprocess, prerender } from "./Postprocess";
-  import { RustAPI, type PerceptualHash } from "$lib/RustAPI";
+  import { RustAPI, type FileHash } from "$lib/RustAPI";
 
   import * as clipboard from '@tauri-apps/plugin-clipboard-manager';
   import * as dialog from '@tauri-apps/plugin-dialog';
@@ -29,7 +29,7 @@
   type ImgStatus = 'uploaded' | 'external' | 'notUploaded' | 'invalid' | 'error' | 'pending';
   type Img = {
     status: ImgStatus,
-    hash?: PerceptualHash,
+    hash?: FileHash,
     url: URL
   };
   let sourceImgs: Img[] = $state([]);
@@ -71,7 +71,7 @@
 
   async function updateImgStatus(img: Img) {
     img.status = 'pending';
-    img.hash = await RustAPI.hashImage(img.url);
+    img.hash = await RustAPI.hashFile(img.url);
     if (await WeixinClient.getSmallImageCacheUrl(img.hash)) {
       img.status = 'uploaded';
     } else if (img.url.protocol !== 'file:') {

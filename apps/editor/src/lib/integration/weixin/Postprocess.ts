@@ -169,7 +169,7 @@ export async function postprocess(
 
             try {
                 const url = new URL(img.dataset.originalSrc ?? img.src);
-                const hash = await RustAPI.hashImage(url);
+                const hash = await RustAPI.hashFile(url);
                 const cached = await WeixinClient.getSmallImageCacheUrl(hash);
                 if (cached) {
                     img.src = cached;
@@ -185,7 +185,7 @@ export async function postprocess(
 
     const backgroundImage = Interface.backgroundImage.get();
     if (backgroundImage) {
-        const hash = await RustAPI.hashImage(new URL(backgroundImage));
+        const hash = await RustAPI.hashFile(new URL(backgroundImage));
         const cache = await WeixinClient.getSmallImageCacheUrl(hash);
         if (!cache) {
             notCached++;

@@ -5,7 +5,7 @@ import { assert, Debug } from "$lib/Debug";
 import { BaseDirectory, writeFile } from "@tauri-apps/plugin-fs";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { Memorized } from "$lib/config/Memorized.svelte";
-import { RustAPI, type PerceptualHash } from "$lib/RustAPI";
+import { RustAPI, type FileHash } from "$lib/RustAPI";
 
 import * as z from "zod/v4-mini";
 
@@ -357,7 +357,7 @@ export class WeixinClient {
         return path;
     }
 
-    static async getSmallImageCacheUrl(hash: PerceptualHash) {
+    static async getSmallImageCacheUrl(hash: FileHash) {
         return smallImageCache.getItem(hash);
     }
 

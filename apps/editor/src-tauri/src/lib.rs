@@ -10,7 +10,7 @@ mod hash;
 use archive::{archive, unarchive};
 use compress::compress_image;
 use font_registry::{FontRegistry, init_font_registry, pack_fonts};
-use hash::hash_image;
+use hash::hash_file;
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
@@ -90,7 +90,7 @@ pub fn run() {
         .manage(Arc::new(Mutex::new(Option::<FontRegistry>::None)))
         .invoke_handler(tauri::generate_handler![
             compress_image,
-            hash_image,
+            hash_file,
             archive,
             unarchive,
             init_font_registry,
