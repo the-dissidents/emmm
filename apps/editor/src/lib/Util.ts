@@ -123,3 +123,5 @@ export function unwrap<T>(x: T | (() => T)) {
     if (typeof x === 'function') return (x as () => T)();
     return x;
 }
+
+export type ProgressReporter = (v: number, total: number) => void;

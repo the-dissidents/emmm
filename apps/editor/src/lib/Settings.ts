@@ -2,6 +2,7 @@ import { path } from "@tauri-apps/api";
 import { BaseDirectory } from "@tauri-apps/plugin-fs";
 import * as fs from "@tauri-apps/plugin-fs"
 import { assert } from "./Debug";
+import { guardAsync } from "./Interface.svelte";
 
 const configPath = 'config.json';
 
@@ -32,14 +33,11 @@ async function saveSettings() {
     if (!await fs.exists(configDir))
         await fs.mkdir(configDir, {recursive: true});
 
-    try {
+    guardAsync(async () => {
         await fs.writeTextFile(configPath,
             JSON.stringify(configData), {baseDir: BaseDirectory.AppConfig});
         console.log('saved config');
-    } catch (e) {
-        // fail silently
-        console.error('error saving config:', e);
-    }
+    }, 'error saving config');
 }
 
 export const Settings = {

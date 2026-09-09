@@ -1,5 +1,5 @@
 import { renderText } from "$lib/emmm/Custom";
-import { DOMUtil } from "$lib/Util";
+import { DOMUtil, type ProgressReporter } from "$lib/Util";
 
 import { inlineCss } from "@the_dissidents/dom-css-inliner";
 import { path } from "@tauri-apps/api";
@@ -60,7 +60,7 @@ function findPrerenderRoots(win: Window, root: Element): HTMLElement[] {
     return result;
 }
 
-export async function prerender(win: Window, doc: Document, progress?: (n: number) => void) {
+export async function prerender(win: Window, doc: Document, progress?: ProgressReporter) {
     const toPrerender = findPrerenderRoots(win, doc.body);
     if (!toPrerender.length) return { success: 0, total: 0 };
     toPrerender.forEach((v, i) => v.dataset.prerenderId = `${i}`);
@@ -73,7 +73,7 @@ export async function prerender(win: Window, doc: Document, progress?: (n: numbe
         filter: (el) => 'prerenderId' in el.dataset
     });
 
-    progress?.(0);
+    progress?.(0, toPrerender.length);
     let i = 0, success = 0;
     for (const elem of toPrerender) {
         const inlined = copy.querySelector(`[data-prerender-id="${i}"]`);
@@ -106,7 +106,7 @@ export async function prerender(win: Window, doc: Document, progress?: (n: numbe
             img.dataset.prerendered = '';
             img.style.width = '100%';
         });
-        progress?.(i / toPrerender.length);
+        progress?.(i, toPrerender.length);
     };
     return { success, total: toPrerender.length };
 }

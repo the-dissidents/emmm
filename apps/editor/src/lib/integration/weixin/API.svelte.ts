@@ -1,11 +1,11 @@
-import { get, readonly, toStore, writable, type Readable } from "svelte/store";
+import { get, readonly, writable, type Readable } from "svelte/store";
 import { fetch } from '@tauri-apps/plugin-http';
 import { RequestFailedError } from "$lib/Util";
 import { assert, Debug } from "$lib/Debug";
 import { BaseDirectory, writeFile } from "@tauri-apps/plugin-fs";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { Memorized } from "$lib/config/Memorized.svelte";
-import { RustAPI, type FileHash } from "$lib/RustAPI";
+import { type FileHash } from "$lib/RustAPI";
 
 import * as z from "zod/v4-mini";
 

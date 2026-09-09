@@ -1,8 +1,8 @@
 <script lang="ts">
   import { assert, Debug } from "../../Debug";
   import { WeixinClient } from './API.svelte';
-  import { Interface } from '../../Interface.svelte';
-  import { getIP, GetIPMethod } from '../../Util';
+  import { guardAsync, Interface } from '../../Interface.svelte';
+  import { getIP, GetIPMethod, type ProgressReporter } from '../../Util';
   import { postprocess, prerender } from "./Postprocess";
   import { RustAPI, type FileHash } from "$lib/RustAPI";
 
@@ -10,7 +10,7 @@
   import * as dialog from '@tauri-apps/plugin-dialog';
   import * as z from 'zod/v4-mini';
 
-  import { ListView, Tooltip } from "@the_dissidents/svelte-ui";
+  import { ConfigRow, ConfigTable, ListView, Tooltip } from "@the_dissidents/svelte-ui";
   import { CheckIcon, CircleArrowUpIcon, CircleXIcon, GlobeIcon, LoaderIcon, TriangleAlertIcon } from "@lucide/svelte";
   import AccountManager from "./AccountManager.svelte";
   import { Memorized } from "$lib/config/Memorized.svelte";
@@ -34,11 +34,13 @@
   };
   let sourceImgs: Img[] = $state([]);
 
-  async function uploadImg(img: Img) {
-    Debug.assert(!!img.hash);
+  const defaultReporter: ProgressReporter = (x, total) => $progress = x / total;
 
+  async function uploadImg(img: Img) {
     Interface.status.set(`compressing: ${img.url.href}`);
-    try {
+
+    await guardAsync(async () => {
+      Debug.assert(!!img.hash);
       const file = await RustAPI.compressImage(img.url, 1024 * 1024);
       const url = new URL(img.url);
       if (!url.href.toLowerCase().endsWith('.' + file.ext))
@@ -47,31 +49,29 @@
       await account.uploadSmallImage(file.blob, url.href, img.hash, true);
       await updateImgStatus(img);
       Interface.status.set(`done`);
-    } catch (e) {
-      Interface.status.set(`error when uploading ${img.url.href}: ${e}`);
-      img.status = 'error';
-      throw e;
-    }
+    }, `error when uploading ${img.url.href}`);
   }
 
-  async function uploadAll() {
+  async function uploadAllImages(report: ProgressReporter = defaultReporter) {
     const total = sourceImgs.filter((x) => x.status == 'notUploaded').length;
     if (total == 0) return;
 
-    $progress = 0;
+    let p = 0;
+    report(0, total);
     for (const img of sourceImgs) {
       if (img.status == 'notUploaded') {
         await uploadImg(img);
-        $progress += 1 / total;
+        p++;
+        report(p, total);
       }
     }
-    $progress = undefined;
     Interface.status.set(`uploaded ${total} image${total == 1 ? '' : 's'}`);
   }
 
   async function updateImgStatus(img: Img) {
     img.status = 'pending';
-    img.hash = await RustAPI.hashFile(img.url);
+    if (!img.hash)
+      img.hash = await RustAPI.hashFile(img.url);
     if (await WeixinClient.getSmallImageCacheUrl(img.hash)) {
       img.status = 'uploaded';
     } else if (img.url.protocol !== 'file:') {
@@ -111,7 +111,47 @@
     await Promise.allSettled(promises);
   }
 
+  async function doPrerender(report: ProgressReporter = defaultReporter) {
+    const doc = Interface.frame?.contentDocument;
+    const win = Interface.frame?.contentWindow;
+    if (!doc || !win) return;
+
+    const result = await guardAsync(() => prerender(win, doc, report),
+      'error during prerender', undefined);
+    if (result) {
+      const { success, total } = result;
+      if (total == 0)
+        Interface.status.set(`Nothing to prerender`);
+      else if (success == total)
+        Interface.status.set(`Prerendered ${success} image[s]`);
+      else
+        Interface.status.set(`Prerendered ${success} image[s], ${total - success} failed`);
+    }
+    void updateImgList();
+  }
+
+  async function copyResult(html = true) {
+    const doc = Interface.frame?.contentDocument;
+    const win = Interface.frame?.contentWindow;
+    if (!doc || !win) return;
+    const {result, notCached} = await postprocess(doc, win);
+    await (html ? clipboard.writeHtml(result) : clipboard.writeText(result))
+    if (notCached > 0) {
+      Interface.status.set(`warning: ${notCached} local image[s] not uploaded`);
+    } else {
+      Interface.status.set(`successfully copied for Weixin`);
+    }
+  }
+
   Interface.onFrameLoaded.bind(() => updateImgList());
+
+  let mode = Memorized.$('weixin-mode', z.enum(['manual', 'automatic']), 'manual');
+
+  async function doAuto(report: ProgressReporter = defaultReporter) {
+    await doPrerender(report);
+    await uploadAllImages(report);
+    await copyResult();
+  }
 </script>
 
 <div class="vlayout vfill">
@@ -147,52 +187,36 @@
 </tbody></table>
 
 <h5>Publish</h5>
-<button onclick={async () => {
-  const doc = Interface.frame?.contentDocument;
-  const win = Interface.frame?.contentWindow;
-  if (!doc || !win) return;
 
-  try {
-    const { success, total } = await prerender(win, doc, (n) => Interface.progress.set(n));
-    if (total == 0)
-      Interface.status.set(`Nothing to prerender`);
-    else if (success == total)
-      Interface.status.set(`Prerendered ${success} image[s]`);
-    else
-      Interface.status.set(`Prerendered ${success} image[s], ${total - success} failed`);
+<ConfigTable>
+  <ConfigRow name="mode">
+    <label>
+      <input type='checkbox' class="button"
+        bind:checked={() => $mode == 'automatic', (x) => $mode = x ? 'automatic' : 'manual'}>
+      {$mode}
+    </label>
+  </ConfigRow>
+</ConfigTable>
 
-    void updateImgList();
-  } catch (e) {
-    console.log(e);
-  }
-}} class='veryimportant'>prerender</button>
-<button onclick={async () => {
-  const doc = Interface.frame?.contentDocument;
-  const win = Interface.frame?.contentWindow;
-  if (!doc || !win) return;
-  const {result, notCached} = await postprocess(doc, win);
-  await clipboard.writeHtml(result);
-  if (notCached > 0) {
-    Interface.status.set(`warning: ${notCached} local image[s] not uploaded`);
-  } else {
-    Interface.status.set(`successfully copied for Weixin`);
-  }
-}} class='veryimportant'>copy rendered result for Weixin</button>
-<button onclick={async () => {
-  const doc = Interface.frame?.contentDocument;
-  const win = Interface.frame?.contentWindow;
-  if (!doc || !win) return;
-  const {result, notCached} = await postprocess(doc, win);
-  await clipboard.writeText(result);
-  if (notCached > 0) {
-    Interface.status.set(`warning: ${notCached} local image[s] not uploaded`);
-  } else {
-    Interface.status.set(`successfully copied HTML as text`);
-  }
-}} class="important">copy rendered result as text</button>
+{#if $mode == 'manual'}
 
-<h5>Images</h5>
-<button onclick={() => uploadAll()} class="veryimportant">upload images</button>
+<button onclick={() => doPrerender()} class='veryimportant'>prerender</button>
+<button onclick={() => copyResult(true)} class='veryimportant'>
+  copy rendered result for Weixin
+</button>
+<button onclick={() => copyResult(false)} class="important">
+  copy rendered result as text
+</button>
+<hr>
+<button onclick={() => uploadAllImages()} class="veryimportant">upload images</button>
+
+{:else}
+
+<button onclick={() => doAuto()} class='veryimportant'>
+  render and copy article for Weixin
+</button>
+
+{/if}
 
 <ListView style="min-height: 300px; flex-grow: 1;"
   items={sourceImgs}
@@ -216,7 +240,7 @@
       </button>
     {:else if item.status == 'uploaded'}
       <button onclick={() => uploadImg(item)}>
-        refresh
+        reupload
       </button>
     {:else if item.status == 'error'}
       <button onclick={() => uploadImg(item)}>
@@ -260,6 +284,15 @@
 <style>
   button {
     margin-bottom: 5px;
+  }
+
+  hr {
+    margin-block: 5px;
+    padding: 0;
+  }
+
+  label {
+    width: 100%;
   }
 </style>
 

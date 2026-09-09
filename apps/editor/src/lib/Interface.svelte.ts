@@ -48,6 +48,37 @@ function getId(n: Node | null) {
     return undefined;
 }
 
+
+export async function guardAsync(x: () => Promise<void>, msg: string): Promise<void>;
+export async function guardAsync<T>(x: () => Promise<T>, msg: string, fallback: T): Promise<T>;
+
+export async function guardAsync<T>(x: () => Promise<T>, msg: string, fallback?: T) {
+    try {
+        return await x();
+    } catch (x) {
+        Interface.status.set(`${msg}: ${String(x)}`);
+        console.info('guard:', msg, x);
+        return fallback;
+    };
+}
+
+type EnforceNotPromise<T extends () => unknown> =
+    ReturnType<T> extends Promise<unknown> ? never : T;
+
+export function guard<T extends () => void>(x: EnforceNotPromise<T>, msg: string): void;
+export function guard<T extends () => unknown>(
+    x: EnforceNotPromise<T>, msg: string, fallback: ReturnType<T>): ReturnType<T>;
+
+export function guard<T>(x: () => T, msg: string, fallback?: T) {
+    try {
+        return x();
+    } catch (x) {
+        Interface.status.set(`${msg}: ${String(x)}`);
+        console.info('guard:', msg, x);
+        return fallback;
+    };
+}
+
 export const Interface = $state({
     get status() { return status; },
     get parseData() { return parseData; },
