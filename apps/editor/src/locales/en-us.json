@@ -1,0 +1,148 @@
+{
+  "loading": {
+    "system-fonts": "Loading system fonts"
+  },
+  "banner": {
+    "internal-error": "Internal error: please contact the developers"
+  },
+  "tab": {
+    "file": "File",
+    "weixin": "Weixin",
+    "parameters": "Parameters",
+    "search": "Search",
+    "eggs": "Eggs",
+    "source": "Source",
+    "library": "Library",
+    "stylesheet": "Stylesheet",
+    "preview": "Preview",
+    "ast": "AST",
+    "html": "HTML"
+  },
+  "main": {
+    "sync-scrolling": "Automatic synchronized scrolling",
+    "show-stripped-ast": "only show transformed (stripped) AST",
+    "trace": "trace",
+    "save": "save",
+    "saved": "saved",
+    "column-file": "file",
+    "column-line": "line",
+    "column-col": "col",
+    "column-message": "message",
+    "cursor-position": "line {l}, col {c}",
+    "parsed-in": "parsed in {ms}ms"
+  },
+  "sync": {
+    "title": "Synchronization",
+    "library": "library",
+    "stylesheet": "stylesheet",
+    "update-all": "Update all",
+    "archive-title": "Archive",
+    "save-archive": "Save as archive",
+    "import-archive": "Import archive",
+    "external-sources": "External sources",
+    "insert-from-clipboard": "Insert from clipboard",
+    "new-document": "Start a new document",
+    "debug": "Debug",
+    "open-log-folder": "Open log folder",
+    "open-config-folder": "Open config folder",
+    "sass": "Sass",
+    "archive-filter": "Archive",
+    "save-path": "save path",
+    "archive-path": "archive path",
+    "extract-assets-to": "extract assets to",
+    "no-html": "No HTML found in the clipboard",
+    "confirm-clear": "Are you sure to clear any current existing document?",
+    "msg": {
+      "no-sync-url": "no sync URL provided",
+      "error-updating-library": "error updating library: {error}",
+      "error-updating-stylesheet": "error updating stylesheet: {error}",
+      "updated": "updated",
+      "archived": "archived to {path}",
+      "error-archiving": "error when archiving: {error}",
+      "extracted": "extracted assets from archive to {path}",
+      "error-unarchiving": "error when unarchiving: {error}"
+    }
+  },
+  "search": {
+    "title": "Search & Replace",
+    "pattern": "pattern",
+    "replacement": "replace by",
+    "case-sensitive": "case sensitive",
+    "use-regex": "use regex",
+    "use-escape": "use escape characters in replacement expression",
+    "find-next": "Find next",
+    "find-all": "Find all",
+    "replace-next": "Replace next",
+    "replace-all": "Replace all",
+    "msg": {
+      "empty": "search pattern is empty!",
+      "replaced": "replaced {count} occurrence{s}",
+      "found": "found {count} occurrence{s}",
+      "nothing": "found nothing"
+    }
+  },
+  "parameters": {
+    "theme-color": "Theme color",
+    "derive-rest": "automatically derive the rest",
+    "text": "Text",
+    "commentary": "Commentary",
+    "link": "Link",
+    "highlight": "Highlight",
+    "background": "Background",
+    "image": "Image",
+    "image-filter": "image"
+  },
+  "weixin": {
+    "credentials": "Credentials",
+    "public-ip": "public ip",
+    "get": "get",
+    "stable-token": "stable token",
+    "retrieve-token": "retrieve token",
+    "publish": "Publish",
+    "mode": "mode",
+    "prerender": "prerender",
+    "copy-weixin": "copy rendered result for Weixin",
+    "copy-text": "copy rendered result as text",
+    "upload-images": "upload images",
+    "render-and-copy": "render and copy article for Weixin",
+    "name": "name",
+    "force": "force",
+    "upload": "upload",
+    "reupload": "reupload",
+    "retry": "retry",
+    "tooltip": {
+      "error": "this image is loaded, but an error occurred when trying to upload it",
+      "invalid": "this image failed to load!",
+      "external": "no need to upload this image",
+      "not-uploaded": "loaded but not uploaded yet",
+      "uploaded": "successfully uploaded",
+      "pending": "pending"
+    },
+    "msg": {
+      "compressing": "compressing: {url}",
+      "uploading": "uploading: {path}",
+      "done": "done",
+      "error-uploading": "error when uploading {url}",
+      "uploaded-images": "uploaded {count} image{s}",
+      "error-prerender": "error during prerender",
+      "nothing-to-prerender": "Nothing to prerender",
+      "prerendered": "Prerendered {success} image[s]",
+      "prerendered-failed": "Prerendered {success} image[s], {failed} failed",
+      "warning-not-uploaded": "warning: {count} local image[s] not uploaded",
+      "copied-weixin": "successfully copied for Weixin"
+    }
+  },
+  "account": {
+    "account-name": "Account name",
+    "delete-account": "delete account?",
+    "name": "name",
+    "appid": "appid",
+    "secret": "secret"
+  },
+  "eggs": {
+    "i-mean-it": "I mean it!",
+    "nothing-here": "There’s nothing to see here!",
+    "t2": "t2",
+    "fake-button": "Fake button"
+  }
+}

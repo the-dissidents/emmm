@@ -3,6 +3,7 @@
   import { getVoices, say } from "$lib/integration/easter/Eggs";
   import { Interface } from "$lib/Interface.svelte";
   import { platform } from '@tauri-apps/plugin-os';
+  import { _, locale, locales } from 'svelte-i18n';
 
   const hasTTS = platform() == 'macos';
 
@@ -18,9 +19,9 @@
 </script>
 
 <h5>
-  I mean it!
+  {$_('eggs.i-mean-it')}
   <br>
-  There’s nothing to see here!
+  {$_('eggs.nothing-here')}
 </h5>
 
 {#if hasTTS}
@@ -45,12 +46,20 @@
         chosen = english[Math.floor(Math.random() * english.length)];
 
       await say(chosen, text.substring(sel.from, sel.to));
-    }}>t2</button>
+    }}>{$_('eggs.t2')}</button>
 {/if}
 
 <br><br>
 
 <label>
   <input type="checkbox" class="button" bind:checked={$inverted}>
-  Fake button
+  {$_('eggs.fake-button')}
 </label>
+
+<br><br>
+
+<select bind:value={$locale}>
+  {#each $locales as l}
+    <option value={l}>{l}</option>
+  {/each}
+</select>

@@ -10,6 +10,7 @@
   import { openPath } from "@tauri-apps/plugin-opener";
   import { appConfigDir, appLogDir } from "@tauri-apps/api/path";
   import { compileStyles } from "$lib/Document.svelte";
+  import { _ } from 'svelte-i18n';
 
   let progress = Interface.progress;
 
@@ -20,7 +21,7 @@
   async function updateAll() {
     const total = ($libraryUrl ? 1 : 0) + ($stylesUrl ? 1 : 0);
     if (total == 0) {
-      Interface.status.set('no sync URL provided');
+      Interface.status.set($_('sync.msg.no-sync-url'));
       return;
     }
 
@@ -29,7 +30,7 @@
       try {
         Interface.library.set(await (await fetch($libraryUrl)).text());
       } catch (e) {
-        await dialog.message(`error updating library: ${e}`, { kind: 'error' });
+        await dialog.message($_('sync.msg.error-updating-library', { values: { error: String(e) } }), { kind: 'error' });
       }
       $progress += 1 / total;
     }
@@ -38,28 +39,28 @@
       try {
         Interface.stylesheet.set(await (await fetch($stylesUrl)).text());
       } catch (e) {
-        await dialog.message(`error updating stylesheet: ${e}`, { kind: 'error' });
+        await dialog.message($_('sync.msg.error-updating-stylesheet', { values: { error: String(e) } }), { kind: 'error' });
       }
       $progress += 1 / total;
     }
 
-    Interface.status.set('updated');
+    Interface.status.set($_('sync.msg.updated'));
     $progress = undefined;
   }
 
   async function archive() {
     const path = await dialog.save({
-      filters: [{ name: 'Archive', extensions: ['zip'] }],
-      title: 'save path'
+      filters: [{ name: $_('sync.archive-filter'), extensions: ['zip'] }],
+      title: $_('sync.save-path')
     });
     if (path === null) return;
 
     try {
       $progress = 0;
       await RustAPI.archive(Interface.source.get(), path, (x) => $progress = x);
-      Interface.status.set(`archived to ${path}`);
+      Interface.status.set($_('sync.msg.archived', { values: { path } }));
     } catch (e) {
-      Interface.status.set(`error when archiving: ${e}`);
+      Interface.status.set($_('sync.msg.error-archiving', { values: { error: String(e) } }));
     } finally {
       $progress = undefined;
     }
@@ -67,48 +68,48 @@
 
   async function unarchive() {
     const path = await dialog.open({
-      filters: [{ name: 'Archive', extensions: ['zip'] }],
-      title: 'archive path'
+      filters: [{ name: $_('sync.archive-filter'), extensions: ['zip'] }],
+      title: $_('sync.archive-path')
     });
     if (path === null) return;
 
     const assetFolder = await dialog.open({
       directory: true,
-      title: 'extract assets to',
+      title: $_('sync.extract-assets-to'),
     });
     if (assetFolder === null) return;
 
     try {
       $progress = 0;
       Interface.source.set(await RustAPI.unarchive(path, assetFolder, (x) => $progress = x));
-      Interface.status.set(`extracted assets from archive to ${assetFolder}`);
+      Interface.status.set($_('sync.msg.extracted', { values: { path: assetFolder } }));
     } catch (e) {
-      Interface.status.set(`error when unarchiving: ${e}`);
+      Interface.status.set($_('sync.msg.error-unarchiving', { values: { error: String(e) } }));
     } finally {
       $progress = undefined;
     }
   }
 </script>
 
-<h5>Synchronization</h5>
+<h5>{$_('sync.title')}</h5>
 <table class="config"><tbody>
   <tr>
-    <td>library</td>
+    <td>{$_('sync.library')}</td>
     <td class='hlayout'>
       <input type="text" class="flexgrow" bind:value={$libraryUrl} />
     </td>
   </tr>
   <tr>
-    <td>stylesheet</td>
+    <td>{$_('sync.stylesheet')}</td>
     <td class='hlayout'>
       <input type="text" class="flexgrow" bind:value={$stylesUrl} />
     </td>
   </tr>
 </tbody></table>
-<button class="veryimportant" onclick={updateAll}>Update all</button>
-<h5>Archive</h5>
-<button class="veryimportant" onclick={archive}>Save as archive</button>
-<button class="important" onclick={unarchive}>Import archive</button>
+<button class="veryimportant" onclick={updateAll}>{$_('sync.update-all')}</button>
+<h5>{$_('sync.archive-title')}</h5>
+<button class="veryimportant" onclick={archive}>{$_('sync.save-archive')}</button>
+<button class="important" onclick={unarchive}>{$_('sync.import-archive')}</button>
 
 <!-- <h5>Pasting behavior</h5>
 
@@ -126,7 +127,7 @@
 
 </div> -->
 
-<h5>External sources</h5>
+<h5>{$_('sync.external-sources')}</h5>
 <button class='veryimportant'
   disabled={Interface.sourceEditor !== Interface.activeEditor}
   onclick={async () => {
@@ -139,7 +140,7 @@
       }
     }
     if (!result) {
-      await dialog.message('No HTML found in the clipboard', { kind: 'error' });
+      await dialog.message($_('sync.no-html'), { kind: 'error' });
       return;
     }
 
@@ -153,28 +154,28 @@
       }
     });
   }}
->Insert from clipboard</button>
+>{$_('sync.insert-from-clipboard')}</button>
 
 <button class='important'
   onclick={async () => {
-    if (!await dialog.confirm('Are you sure to clear any current existing document?'))
+    if (!await dialog.confirm($_('sync.confirm-clear')))
       return;
     Interface.source.set(defaultSource);
     Interface.sourceEditor?.focus();
   }}
->Start a new document</button>
+>{$_('sync.new-document')}</button>
 
-<h5>Debug</h5>
+<h5>{$_('sync.debug')}</h5>
 
 <button onclick={async () => {
   console.log(await appLogDir());
   openPath(await appLogDir());
-}}>Open log folder</button>
+}}>{$_('sync.open-log-folder')}</button>
 
 <button onclick={async () => {
   console.log(await appConfigDir());
   openPath(await appConfigDir());
-}}>Open config folder</button>
+}}>{$_('sync.open-config-folder')}</button>
 
 <button onclick={() => {
   const result = compileStyles({
@@ -184,5 +185,5 @@
   });
   console.log(result);
 }}>
-  Sass
+  {$_('sync.sass')}
 </button>

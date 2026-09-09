@@ -7,6 +7,7 @@
   import { Memorized } from "$lib/config/Memorized.svelte";
   import * as z from "zod/v4-mini";
   import { getReplacement } from "$lib/details/Replace";
+  import { _ } from 'svelte-i18n';
 
   let searchPattern = $state('');
   let replacement = $state('');
@@ -24,7 +25,7 @@
     }
 
     if (searchPattern === '') {
-      Interface.status.set('search pattern is empty!');
+      Interface.status.set($_('search.msg.empty'));
       return;
     }
 
@@ -60,17 +61,17 @@
     }
     if (changes.length > 0) {
       Interface.status.set(
-        `replaced ${changes.length} occurrence${changes.length !== 1 ? 's' : ''}`);
+        $_('search.msg.replaced', { values: { count: changes.length, s: changes.length !== 1 ? 's' : '' } }));
       Interface.activeEditor.update({
         changes: ChangeSet.of(changes, text.length)
       });
     } else if (ranges.length > 0) {
       Interface.status.set(
-        `found ${ranges.length} occurrence${ranges.length !== 1 ? 's' : ''}`);
+        $_('search.msg.found', { values: { count: ranges.length, s: ranges.length !== 1 ? 's' : '' } }));
     } else if (start > 0) {
       work(action, all, 0);
     } else {
-      Interface.status.set(`found nothing`);
+      Interface.status.set($_('search.msg.nothing'));
       Interface.activeEditor.setSelections([]);
     }
     Interface.activeEditor.focus();
@@ -79,34 +80,34 @@
 
 <div class="vlayout vfill">
 
-<h5>Search & Replace</h5>
+<h5>{$_('search.title')}</h5>
 
-<input type="text" placeholder="pattern" bind:value={searchPattern} />
-<input type="text" placeholder="replace by" bind:value={replacement} />
+<input type="text" placeholder={$_('search.pattern')} bind:value={searchPattern} />
+<input type="text" placeholder={$_('search.replacement')} bind:value={replacement} />
 
 <label>
   <input type="checkbox" bind:checked={$caseSensitive} />
-  case sensitive
+  {$_('search.case-sensitive')}
 </label>
 
 <label>
   <input type="checkbox" bind:checked={$useRegex} />
-  use regex
+  {$_('search.use-regex')}
 </label>
 
 <label>
   <input type="checkbox" bind:checked={$useEscape} />
-  use escape characters in replacement expression
+  {$_('search.use-escape')}
 </label>
 
 <div class="hlayout">
-  <button onclick={() => work('select', false)}>Find next</button>
-  <button onclick={() => work('select', true)}>Find all</button>
+  <button onclick={() => work('select', false)}>{$_('search.find-next')}</button>
+  <button onclick={() => work('select', true)}>{$_('search.find-all')}</button>
 </div>
 
 <div class="hlayout">
-  <button onclick={() => work('replace', false)}>Replace next</button>
-  <button onclick={() => work('replace', true)}>Replace all</button>
+  <button onclick={() => work('replace', false)}>{$_('search.replace-next')}</button>
+  <button onclick={() => work('replace', true)}>{$_('search.replace-all')}</button>
 </div>
 
 </div>

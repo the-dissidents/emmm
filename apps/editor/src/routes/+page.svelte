@@ -7,6 +7,7 @@
   import { Banner } from '@the_dissidents/svelte-ui';
   import { RustAPI } from '$lib/RustAPI';
   import { fly } from 'svelte/transition';
+  import { _ } from 'svelte-i18n';
 
   import * as z from "zod/v4-mini";
 
@@ -49,7 +50,7 @@
 </script>
 
 <Banner style='error' bind:open={errorBanner}
-  text="Internal error: please contact the developers"/>
+  text={$_('banner.internal-error')}/>
 
 <main class="container vlayout">
 
@@ -57,7 +58,7 @@
   <div class="loading" out:fly>
     <div class="text">
       <div class="logo">emmui</div>
-      <div>Loading system fonts</div>
+      <div>{$_('loading.system-fonts')}</div>
     </div>
   </div>
 {/await}

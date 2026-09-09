@@ -4,6 +4,7 @@
   import { CircleXIcon, InfoIcon, TriangleAlertIcon, X } from '@lucide/svelte';
   import { sass as sassLang } from '@codemirror/lang-sass';
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
+  import { _ } from 'svelte-i18n';
 
   import Editor from './editor/Editor.svelte';
 
@@ -34,7 +35,7 @@
 
   let strip = $state(false);
   let parsedStatus = $state('');
-  let posStatus = $state('line ?, col ?');
+  let posStatus = $state('');
   let sourceHandle = $state<Editor>(),
       libraryHandle = $state<Editor>(),
       cssHandle = $state<Editor>();
@@ -62,7 +63,7 @@
   }
 
   function onCursorPositionChanged(pos: number, l: number, c: number) {
-    posStatus = `line ${l}, col ${c}`;
+    posStatus = $_('main.cursor-position', { values: { l, c } });
     if (Interface.activeEditor === sourceHandle) {
       scrollToSource.start(pos, false);
     }
@@ -74,7 +75,7 @@
   }
 
   function onParseSource(doc: EmmmParseData) {
-    parsedStatus = `parsed in ${doc.parseTime.toFixed(0)}ms`;
+    parsedStatus = $_('main.parsed-in', { values: { ms: doc.parseTime.toFixed(0) } });
     Interface.parseData.set({...doc});
     Interface.requestRender();
 
@@ -97,19 +98,19 @@
 <!-- tools view -->
 <div class="pane" style="width: 300px;" bind:this={left}>
   <TabView>
-    <TabPage id='File' header="File">
+    <TabPage id='File' header={$_('tab.file')}>
       <SyncToolbox />
     </TabPage>
-    <TabPage id='Weixin' header="Weixin">
+    <TabPage id='Weixin' header={$_('tab.weixin')}>
       <WeixinToolbox />
     </TabPage>
-    <TabPage id="Parameters" header="Parameters">
+    <TabPage id="Parameters" header={$_('tab.parameters')}>
       <ParametersToolbox />
     </TabPage>
-    <TabPage id='Search' header="Search">
+    <TabPage id='Search' header={$_('tab.search')}>
       <SearchToolbox />
     </TabPage>
-    <TabPage id='Eggs' header="Eggs">
+    <TabPage id='Eggs' header={$_('tab.eggs')}>
       <TestToolbox />
     </TabPage>
   </TabView>
@@ -122,7 +123,7 @@
 <!-- source view -->
 <div class="pane flexgrow" bind:this={middle}>
   <TabView>
-    <TabPage id="Source" header="Source"
+    <TabPage id="Source" header={$_('tab.source')}
         onActivate={() => sourceHandle?.focus?.()}>
       <EmmmContext onParse={onParseSource}
           provideDescriptor={() => ({name: '<Source>'})}
@@ -149,7 +150,7 @@
           {onCursorPositionChanged} />
       </EmmmContext>
     </TabPage>
-    <TabPage id="Library" header="Library"
+    <TabPage id="Library" header={$_('tab.library')}
         onActivate={() => libraryHandle?.focus?.()}>
       <EmmmContext onParse={onParseLibrary}
           provideDescriptor={() => ({name: '<Library>'})}>
@@ -162,7 +163,7 @@
           {onCursorPositionChanged} />
       </EmmmContext>
     </TabPage>
-    <TabPage id="Stylesheet" header="Stylesheet">
+    <TabPage id="Stylesheet" header={$_('tab.stylesheet')}>
       <GenericContext extension={[
         syntaxHighlighting(defaultHighlightStyle),
         bracketMatching(),
@@ -189,12 +190,12 @@
 <!-- preview -->
 <div class="pane" bind:this={right} style="width: 500px;">
   <TabView>
-    <TabPage id="Preview" header="Preview" active={true}>
+    <TabPage id="Preview" header={$_('tab.preview')} active={true}>
       <div class="vlayout vfill">
         <fieldset>
           <label>
             <input type='checkbox' class="button" bind:checked={$syncScrolling}>
-            Automatic synchronized scrolling
+            {$_('main.sync-scrolling')}
           </label>
         </fieldset>
         <iframe bind:this={Interface.frame}
@@ -203,7 +204,7 @@
         </iframe>
       </div>
     </TabPage>
-    <TabPage id="AST" header="AST" lazy={true}>
+    <TabPage id="AST" header={$_('tab.ast')} lazy={true}>
       <div class="vlayout vfill">
         <div class="ast">
           <ASTViewer node={strip ? $parseData?.data.toStripped().root : $parseData?.data.root} />
@@ -211,16 +212,16 @@
         <hr>
         <label>
           <input type="checkbox" bind:checked={strip} />
-          only show transformed (stripped) AST
+          {$_('main.show-stripped-ast')}
         </label>
         <button onclick={() => {
           emmm.setDebugLevel(emmm.DebugLevel.Trace);
           new emmm.ParseContext(libConfig!).parse(new emmm.SimpleScanner($source));
           emmm.setDebugLevel(emmm.DebugLevel.Error);
-        }}>trace</button>
+        }}>{$_('main.trace')}</button>
       </div>
     </TabPage>
-    <TabPage id="HTML" header="HTML">
+    <TabPage id="HTML" header={$_('tab.html')}>
       <textarea class="vfill">{Interface.renderedDocument?.documentElement.outerHTML}</textarea>
     </TabPage>
   </TabView>
@@ -233,11 +234,11 @@
 <div class="pane" style="height: 100px" bind:this={bottom}>
   <ListView style='height: 100%' items={[...sassDiag, ...emmmDiag]}
     columns={[
-      ['file',    { header: 'file',    width: 'minmax(max-content, 5em)' }],
+      ['file',    { header: $_('main.column-file'),    width: 'minmax(max-content, 5em)' }],
       ['type',    { header: '',        width: '3em' }],
-      ['line',    { header: 'line',    width: '4em' }],
-      ['column',  { header: 'col',     width: '4em' }],
-      ['message', { header: 'message', width: 'auto' }],
+      ['line',    { header: $_('main.column-line'),    width: '4em' }],
+      ['column',  { header: $_('main.column-col'),     width: '4em' }],
+      ['message', { header: $_('main.column-message'), width: 'auto' }],
     ]}
     onClickItem={(x) => {
       if (x.source == '<Source>')
@@ -294,9 +295,9 @@
     <hr/>
     <button onclick={async () => {
       await Memorized.save();
-      status.set('saved');
+      status.set($_('main.saved'));
     }}>
-      save
+      {$_('main.save')}
     </button>
   </div>
 </div>

@@ -14,6 +14,7 @@
   import { CheckIcon, CircleArrowUpIcon, CircleXIcon, GlobeIcon, LoaderIcon, TriangleAlertIcon } from "@lucide/svelte";
   import AccountManager from "./AccountManager.svelte";
   import { Memorized } from "$lib/config/Memorized.svelte";
+  import { _ } from 'svelte-i18n';
 
   let publicIP = $state('');
 
@@ -37,7 +38,7 @@
   const defaultReporter: ProgressReporter = (x, total) => $progress = x / total;
 
   async function uploadImg(img: Img) {
-    Interface.status.set(`compressing: ${img.url.href}`);
+    Interface.status.set($_('weixin.msg.compressing', { values: { url: img.url.href } }));
 
     await guardAsync(async () => {
       Debug.assert(!!img.hash);
@@ -45,11 +46,11 @@
       const url = new URL(img.url);
       if (!url.href.toLowerCase().endsWith('.' + file.ext))
           url.href += '.' + file.ext;
-      Interface.status.set(`uploading: ${url.pathname}`);
+      Interface.status.set($_('weixin.msg.uploading', { values: { path: url.pathname } }));
       await account.uploadSmallImage(file.blob, url.href, img.hash, true);
       await updateImgStatus(img);
-      Interface.status.set(`done`);
-    }, `error when uploading ${img.url.href}`);
+      Interface.status.set($_('weixin.msg.done'));
+    }, $_('weixin.msg.error-uploading', { values: { url: img.url.href } }));
   }
 
   async function uploadAllImages(report: ProgressReporter = defaultReporter) {
@@ -65,7 +66,8 @@
         report(p, total);
       }
     }
-    Interface.status.set(`uploaded ${total} image${total == 1 ? '' : 's'}`);
+    Interface.status.set(
+      $_('weixin.msg.uploaded-images', { values: { count: total, s: total == 1 ? '' : 's' } }));
   }
 
   async function updateImgStatus(img: Img) {
@@ -117,15 +119,15 @@
     if (!doc || !win) return;
 
     const result = await guardAsync(() => prerender(win, doc, report),
-      'error during prerender', undefined);
+      $_('weixin.msg.error-prerender'), undefined);
     if (result) {
       const { success, total } = result;
       if (total == 0)
-        Interface.status.set(`Nothing to prerender`);
+        Interface.status.set($_('weixin.msg.nothing-to-prerender'));
       else if (success == total)
-        Interface.status.set(`Prerendered ${success} image[s]`);
+        Interface.status.set($_('weixin.msg.prerendered', { values: { success } }));
       else
-        Interface.status.set(`Prerendered ${success} image[s], ${total - success} failed`);
+        Interface.status.set($_('weixin.msg.prerendered-failed', { values: { success, failed: total - success } }));
     }
     void updateImgList();
   }
@@ -137,9 +139,9 @@
     const {result, notCached} = await postprocess(doc, win);
     await (html ? clipboard.writeHtml(result) : clipboard.writeText(result))
     if (notCached > 0) {
-      Interface.status.set(`warning: ${notCached} local image[s] not uploaded`);
+      Interface.status.set($_('weixin.msg.warning-not-uploaded', { values: { count: notCached } }));
     } else {
-      Interface.status.set(`successfully copied for Weixin`);
+      Interface.status.set($_('weixin.msg.copied-weixin'));
     }
   }
 
@@ -156,7 +158,7 @@
 
 <div class="vlayout vfill">
 
-<h5>Credentials</h5>
+<h5>{$_('weixin.credentials')}</h5>
 <AccountManager
   bind:account={account}
   onChange={(a) => $accountName = a.name}
@@ -164,14 +166,14 @@
 
 <table class="config"><tbody>
   <tr>
-    <td>public ip</td>
+    <td>{$_('weixin.public-ip')}</td>
     <td class='hlayout'>
       <input type="text" class="flexgrow" bind:value={publicIP} />
-      <button onclick={async () => publicIP = await getIP(GetIPMethod.ipinfo)}>get</button>
+      <button onclick={async () => publicIP = await getIP(GetIPMethod.ipinfo)}>{$_('weixin.get')}</button>
     </td>
   </tr>
   <tr>
-    <td>stable token</td>
+    <td>{$_('weixin.stable-token')}</td>
     <td>
       <input type="text" style="width: 100%" disabled value={$token} /><br/>
       <button class="veryimportant" style="width: 100%"
@@ -181,15 +183,15 @@
           } catch (x) {
             await dialog.message(`${x}`, { kind: 'error' });
           }
-        }}>retrieve token</button>
+        }}>{$_('weixin.retrieve-token')}</button>
     </td>
   </tr>
 </tbody></table>
 
-<h5>Publish</h5>
+<h5>{$_('weixin.publish')}</h5>
 
 <ConfigTable>
-  <ConfigRow name="mode">
+  <ConfigRow name={$_('weixin.mode')}>
     <label>
       <input type='checkbox' class="button"
         bind:checked={() => $mode == 'automatic', (x) => $mode = x ? 'automatic' : 'manual'}>
@@ -200,20 +202,20 @@
 
 {#if $mode == 'manual'}
 
-<button onclick={() => doPrerender()} class='veryimportant'>prerender</button>
+<button onclick={() => doPrerender()} class='veryimportant'>{$_('weixin.prerender')}</button>
 <button onclick={() => copyResult(true)} class='veryimportant'>
-  copy rendered result for Weixin
+  {$_('weixin.copy-weixin')}
 </button>
 <button onclick={() => copyResult(false)} class="important">
-  copy rendered result as text
+  {$_('weixin.copy-text')}
 </button>
 <hr>
-<button onclick={() => uploadAllImages()} class="veryimportant">upload images</button>
+<button onclick={() => uploadAllImages()} class="veryimportant">{$_('weixin.upload-images')}</button>
 
 {:else}
 
 <button onclick={() => doAuto()} class='veryimportant'>
-  render and copy article for Weixin
+  {$_('weixin.render-and-copy')}
 </button>
 
 {/if}
@@ -223,7 +225,7 @@
   columns={[
     ['button', { header: '', align: 'end', width: 'auto' }],
     ['status', { header: '', width: 'auto' }],
-    ['name', { header: 'name', ellipsis: true, width: '1fr' }],
+    ['name', { header: $_('weixin.name'), ellipsis: true, width: '1fr' }],
   ]}
 >
   {#snippet name(item)}
@@ -232,45 +234,45 @@
   {#snippet button(item)}
     {#if item.status == 'external'}
       <button onclick={() => uploadImg(item)}>
-        force
+        {$_('weixin.force')}
       </button>
     {:else if item.status == 'notUploaded'}
       <button onclick={() => uploadImg(item)}>
-        upload
+        {$_('weixin.upload')}
       </button>
     {:else if item.status == 'uploaded'}
       <button onclick={() => uploadImg(item)}>
-        reupload
+        {$_('weixin.reupload')}
       </button>
     {:else if item.status == 'error'}
       <button onclick={() => uploadImg(item)}>
-        retry
+        {$_('weixin.retry')}
       </button>
     {/if}
   {/snippet}
   {#snippet status(item)}
     {#if item.status == 'error'}
-      <Tooltip position='right' text="this image is loaded, but an error occurred when trying to upload it">
+      <Tooltip position='right' text={$_('weixin.tooltip.error')}>
         <span><TriangleAlertIcon/></span>
       </Tooltip>
     {:else if item.status == 'invalid'}
-      <Tooltip position='right' text="this image failed to load!">
+      <Tooltip position='right' text={$_('weixin.tooltip.invalid')}>
         <span><CircleXIcon/></span>
       </Tooltip>
     {:else if item.status == 'external'}
-      <Tooltip position='right' text="no need to upload this image">
+      <Tooltip position='right' text={$_('weixin.tooltip.external')}>
         <span><GlobeIcon/></span>
       </Tooltip>
     {:else if item.status == 'notUploaded'}
-      <Tooltip position='right' text="loaded but not uploaded yet">
+      <Tooltip position='right' text={$_('weixin.tooltip.not-uploaded')}>
         <span><CircleArrowUpIcon/></span>
       </Tooltip>
     {:else if item.status == 'uploaded'}
-      <Tooltip position='right' text="sucessfully uploaded">
+      <Tooltip position='right' text={$_('weixin.tooltip.uploaded')}>
         <span><CheckIcon/></span>
       </Tooltip>
     {:else if item.status == 'pending'}
-      <Tooltip position='right' text="pending">
+      <Tooltip position='right' text={$_('weixin.tooltip.pending')}>
         <span><LoaderIcon/></span>
       </Tooltip>
     {:else}

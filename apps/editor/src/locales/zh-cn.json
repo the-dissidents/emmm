@@ -1,0 +1,148 @@
+{
+  "loading": {
+    "system-fonts": "正在加载系统字体"
+  },
+  "banner": {
+    "internal-error": "内部错误：请联系开发者"
+  },
+  "tab": {
+    "file": "文件",
+    "weixin": "微信",
+    "parameters": "参数",
+    "search": "查找",
+    "eggs": "彩蛋",
+    "source": "源文件",
+    "library": "库文件",
+    "stylesheet": "样式表",
+    "preview": "预览",
+    "ast": "AST",
+    "html": "HTML"
+  },
+  "main": {
+    "sync-scrolling": "自动同步滚动",
+    "show-stripped-ast": "仅显示转换（去除冗余）后的 AST",
+    "trace": "trace",
+    "save": "保存",
+    "saved": "已保存",
+    "column-file": "文件",
+    "column-line": "行",
+    "column-col": "列",
+    "column-message": "信息",
+    "cursor-position": "第 {l} 行，第 {c} 列",
+    "parsed-in": "用时 {ms}ms 完成解析"
+  },
+  "sync": {
+    "title": "同步",
+    "library": "库文件",
+    "stylesheet": "样式表",
+    "update-all": "全部更新",
+    "archive-title": "归档",
+    "save-archive": "保存为归档",
+    "import-archive": "导入归档",
+    "external-sources": "外部来源",
+    "insert-from-clipboard": "从剪贴板插入",
+    "new-document": "新建文档",
+    "debug": "调试",
+    "open-log-folder": "打开日志文件夹",
+    "open-config-folder": "打开配置文件夹",
+    "sass": "Sass",
+    "archive-filter": "归档",
+    "save-path": "保存路径",
+    "archive-path": "归档路径",
+    "extract-assets-to": "将资源解压到",
+    "no-html": "剪贴板中没有找到 HTML",
+    "confirm-clear": "确定要清空当前文档吗？",
+    "msg": {
+      "no-sync-url": "未提供同步 URL",
+      "error-updating-library": "更新库文件出错：{error}",
+      "error-updating-stylesheet": "更新样式表出错：{error}",
+      "updated": "已更新",
+      "archived": "已归档到 {path}",
+      "error-archiving": "归档时出错：{error}",
+      "extracted": "已将资源从归档解压到 {path}",
+      "error-unarchiving": "解压归档时出错：{error}"
+    }
+  },
+  "search": {
+    "title": "查找与替换",
+    "pattern": "模式",
+    "replacement": "替换为",
+    "case-sensitive": "大小写敏感",
+    "use-regex": "使用正则表达式",
+    "use-escape": "在替换表达式中使用转义字符",
+    "find-next": "查找下一个",
+    "find-all": "查找全部",
+    "replace-next": "替换下一个",
+    "replace-all": "替换全部",
+    "msg": {
+      "empty": "查找模式为空！",
+      "replaced": "已替换 {count} 处匹配",
+      "found": "找到 {count} 处匹配",
+      "nothing": "未找到任何匹配"
+    }
+  },
+  "parameters": {
+    "theme-color": "主题颜色",
+    "derive-rest": "自动推导其余颜色",
+    "text": "正文",
+    "commentary": "注释",
+    "link": "链接",
+    "highlight": "高亮",
+    "background": "背景",
+    "image": "图片",
+    "image-filter": "图片"
+  },
+  "weixin": {
+    "credentials": "凭证",
+    "public-ip": "公网 IP",
+    "get": "获取",
+    "stable-token": "稳定令牌",
+    "retrieve-token": "获取令牌",
+    "publish": "发布",
+    "mode": "模式",
+    "prerender": "预渲染",
+    "copy-weixin": "复制微信渲染结果",
+    "copy-text": "复制纯文本渲染结果",
+    "upload-images": "上传图片",
+    "render-and-copy": "渲染并复制微信文章",
+    "name": "名称",
+    "force": "强制",
+    "upload": "上传",
+    "reupload": "重新上传",
+    "retry": "重试",
+    "tooltip": {
+      "error": "图片已加载，但上传时出错",
+      "invalid": "图片加载失败！",
+      "external": "此图片无需上传",
+      "not-uploaded": "已加载但尚未上传",
+      "uploaded": "上传成功",
+      "pending": "处理中"
+    },
+    "msg": {
+      "compressing": "正在压缩：{url}",
+      "uploading": "正在上传：{path}",
+      "done": "完成",
+      "error-uploading": "上传 {url} 时出错",
+      "uploaded-images": "已上传 {count} 张图片",
+      "error-prerender": "预渲染时出错",
+      "nothing-to-prerender": "没有可预渲染的内容",
+      "prerendered": "已预渲染 {success} 张图片",
+      "prerendered-failed": "已预渲染 {success} 张图片，{failed} 张失败",
+      "warning-not-uploaded": "警告：{count} 张本地图片未上传",
+      "copied-weixin": "已成功复制到微信"
+    }
+  },
+  "account": {
+    "account-name": "账户名称",
+    "delete-account": "删除账户？",
+    "name": "名称",
+    "appid": "appid",
+    "secret": "secret"
+  },
+  "eggs": {
+    "i-mean-it": "我是认真的！",
+    "nothing-here": "这里没什么可看的！",
+    "t2": "t2",
+    "fake-button": "假按钮"
+  }
+}

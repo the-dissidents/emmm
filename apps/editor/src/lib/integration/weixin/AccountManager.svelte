@@ -4,6 +4,7 @@
   import { PencilIcon, Trash2Icon, UserPlusIcon } from "@lucide/svelte";
   import { hook } from "$lib/details/Hook.svelte";
   import { Memorized } from "$lib/config/Memorized.svelte";
+  import { _ } from 'svelte-i18n';
 
   interface Props {
     account: WeixinClient,
@@ -43,7 +44,7 @@
     <PencilIcon />
   </button>
   <button onclick={async (e) => {
-    const name = await showInputPopup(e.currentTarget, "Account name", {
+    const name = await showInputPopup(e.currentTarget, $_('account.account-name'), {
       validate: (name) => name !== '' && !WeixinClient.getNames().includes(name)
     });
     if (!name) return;
@@ -55,7 +56,7 @@
     <UserPlusIcon />
   </button>
   <button onclick={async (e) => {
-    if (!await showConfirmationPopup(e.currentTarget, "delete account?")) return;
+    if (!await showConfirmationPopup(e.currentTarget, $_('account.delete-account'))) return;
     const newName = WeixinClient.getNames().find((x) => x != account.name) ?? 'default';
     account.deleteAndSwitch(newName);
     onChange?.(account);
@@ -69,7 +70,7 @@
 <Popup bind:this={popup} position="bottom" maxWidth="none">
   {#key change}
   <ConfigTable>
-    <ConfigRow name="name">
+    <ConfigRow name={$_('account.name')}>
       <input type="text" class="flexgrow"
         class:invalid={invalid}
         bind:value={nameInput}
@@ -85,11 +86,11 @@
       />
       <hr>
     </ConfigRow>
-    <ConfigRow name="appid">
+    <ConfigRow name={$_('account.appid')}>
       <input type="text" class="flexgrow"
         bind:value={() => account.appid, (x) => account.appid = x} />
     </ConfigRow>
-    <ConfigRow name="secret">
+    <ConfigRow name={$_('account.secret')}>
       <input type="text" class="flexgrow"
         bind:value={() => account.secret, (x) => account.secret = x} />
     </ConfigRow>
