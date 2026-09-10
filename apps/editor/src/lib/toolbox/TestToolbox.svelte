@@ -2,6 +2,7 @@
   import { Debug } from "$lib/Debug";
   import { getVoices, say } from "$lib/integration/easter/Eggs";
   import { Interface } from "$lib/Interface.svelte";
+  import { Workspace } from "$lib/workspace/Workspace.svelte";
   import { platform } from '@tauri-apps/plugin-os';
   import { _, locale, locales } from 'svelte-i18n';
 
@@ -33,9 +34,10 @@
 
   <button
     onclick={async () => {
-      Debug.assert(!!Interface.activeEditor);
-      const text = Interface.activeEditor.getText();
-      const sel = Interface.activeEditor.getSelections().at(0);
+      const editor = Workspace.active?.editor;
+      Debug.assert(!!editor);
+      const text = editor.getText();
+      const sel = editor.getSelections().at(0);
       if (!sel) return;
       const s = text.substring(sel.from, sel.to);
 

@@ -145,7 +145,8 @@
     }
   }
 
-  Interface.onFrameLoaded.bind(() => updateImgList());
+  const me = {};
+  Interface.onFrameLoaded.bind(me, () => updateImgList());
 
   let mode = Memorized.$('weixin-mode', z.enum(['manual', 'automatic']), 'manual');
 

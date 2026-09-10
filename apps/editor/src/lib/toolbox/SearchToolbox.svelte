@@ -2,7 +2,7 @@
   import { ChangeSet, EditorSelection, type ChangeSpec } from "@codemirror/state";
   import type { Selection } from "$lib/editor/Editor.svelte";
   import { Interface } from "../Interface.svelte";
-  import { Debug } from "../Debug";
+  import { Workspace } from "$lib/workspace/Workspace.svelte";
   import { EditorView } from "@codemirror/view";
   import { Memorized } from "$lib/config/Memorized.svelte";
   import * as z from "zod/v4-mini";
@@ -20,21 +20,20 @@
   }
 
   function work(action: 'select' | 'replace', all: boolean, start?: number) {
-    if (!Interface.activeEditor) {
-      return Debug.early('no activeEditor');
-    }
+    const editor = Workspace.active?.editor;
+    if (!editor) return;
 
     if (searchPattern === '') {
       Interface.status.set($_('search.msg.empty'));
       return;
     }
 
-    start ??= all ? 0 : Interface.activeEditor.getSelections().at(0)?.to ?? 0;
+    start ??= all ? 0 : editor.getSelections().at(0)?.to ?? 0;
 
     const pattern = new RegExp(
       $useRegex ? searchPattern : escapeRegexp(searchPattern),
       'ug' + ($caseSensitive ? '' : 'i'));
-    const text = Interface.activeEditor.getText();
+    const text = editor.getText();
     const textSliced = text.slice(start);
 
     const ranges: Selection[] = [];
@@ -51,9 +50,9 @@
     }
 
     if (ranges.length > 0) {
-      Interface.activeEditor.setSelections(ranges);
+      editor.setSelections(ranges);
       if (ranges.length == 1) {
-        Interface.activeEditor.update({
+        editor.update({
           effects: EditorView.scrollIntoView(
             EditorSelection.range(ranges[0].from, ranges[0].to), { y: 'center' })
         });
@@ -62,7 +61,7 @@
     if (changes.length > 0) {
       Interface.status.set(
         $_('search.msg.replaced', { values: { count: changes.length, s: changes.length !== 1 ? 's' : '' } }));
-      Interface.activeEditor.update({
+      editor.update({
         changes: ChangeSet.of(changes, text.length)
       });
     } else if (ranges.length > 0) {
@@ -72,9 +71,9 @@
       work(action, all, 0);
     } else {
       Interface.status.set($_('search.msg.nothing'));
-      Interface.activeEditor.setSelections([]);
+      editor.setSelections([]);
     }
-    Interface.activeEditor.focus();
+    editor.focus();
   }
 </script>
 

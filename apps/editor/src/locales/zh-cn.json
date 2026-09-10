@@ -31,6 +31,18 @@
     "cursor-position": "第 {l} 行，第 {c} 列",
     "parsed-in": "用时 {ms}ms 完成解析"
   },
+  "file": {
+    "new": "新建文档",
+    "open": "打开…",
+    "save": "保存",
+    "save-as": "另存为…",
+    "msg": {
+      "saved": "已保存 {path}",
+      "error-open": "打开文件出错：{error}",
+      "error-save": "保存文件出错：{error}",
+      "confirm-close": "关闭 \"{name}\" 而不保存？"
+    }
+  },
   "sync": {
     "title": "同步",
     "library": "库文件",

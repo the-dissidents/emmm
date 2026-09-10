@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Memorized } from "$lib/config/Memorized.svelte";
-  import { defaultSource, Interface } from "$lib/Interface.svelte";
+  import { Interface } from "$lib/Interface.svelte";
+  import { Workspace } from "$lib/workspace/Workspace.svelte";
   import { fetch } from "@tauri-apps/plugin-http";
   import * as z from "zod/v4-mini";
 
@@ -17,6 +18,66 @@
   const libraryUrl = Memorized.$('librarySyncUrl', z.string(), 'https://raw.githubusercontent.com/the-dissidents/emmm/refs/heads/main/apps/editor/src/template/testlib.txt');
 
   const stylesUrl = Memorized.$('stylesSyncUrl', z.string(), 'https://raw.githubusercontent.com/the-dissidents/emmm/refs/heads/main/apps/editor/src/template/stylesheet.scss');
+
+  function newDocument() {
+    Workspace.newDocument();
+  }
+
+  async function openDocument() {
+    try {
+      await Workspace.open();
+    } catch (e) {
+      Interface.status.set($_('file.msg.error-open', { values: { error: String(e) } }));
+    }
+  }
+
+  async function saveActive() {
+    const doc = Workspace.active;
+    if (!doc) return;
+    try {
+      if (await Workspace.save(doc))
+        Interface.status.set($_('file.msg.saved', { values: { path: doc.filePath ?? doc.name } }));
+    } catch (e) {
+      Interface.status.set($_('file.msg.error-save', { values: { error: String(e) } }));
+    }
+  }
+
+  async function saveAsActive() {
+    const doc = Workspace.active;
+    if (!doc) return;
+    try {
+      if (await Workspace.saveAs(doc))
+        Interface.status.set($_('file.msg.saved', { values: { path: doc.filePath ?? doc.name } }));
+    } catch (e) {
+      Interface.status.set($_('file.msg.error-save', { values: { error: String(e) } }));
+    }
+  }
+
+  async function insertFromClipboard() {
+    let result: string | undefined;
+    for (const item of await navigator.clipboard.read()) {
+      if (item.types.includes('text/html')) {
+        const html = await (await item.getType('text/html')).text();
+        result = htmlToEmmm(html);
+        break;
+      }
+    }
+    if (!result) {
+      await dialog.message($_('sync.no-html'), { kind: 'error' });
+      return;
+    }
+
+    const doc = Workspace.active;
+    if (!doc) return;
+    const loc = doc.editor?.getSelections().at(0);
+    doc.editor?.update({
+      changes: {
+        from: loc?.from ?? 0,
+        to: loc?.to ?? 0,
+        insert: result
+      }
+    });
+  }
 
   async function updateAll() {
     const total = ($libraryUrl ? 1 : 0) + ($stylesUrl ? 1 : 0);
@@ -49,6 +110,9 @@
   }
 
   async function archive() {
+    const doc = Workspace.active;
+    if (!doc) return;
+
     const path = await dialog.save({
       filters: [{ name: $_('sync.archive-filter'), extensions: ['zip'] }],
       title: $_('sync.save-path')
@@ -57,7 +121,7 @@
 
     try {
       $progress = 0;
-      await RustAPI.archive(Interface.source.get(), path, (x) => $progress = x);
+      await RustAPI.archive(doc.source, path, (x) => $progress = x);
       Interface.status.set($_('sync.msg.archived', { values: { path } }));
     } catch (e) {
       Interface.status.set($_('sync.msg.error-archiving', { values: { error: String(e) } }));
@@ -81,7 +145,8 @@
 
     try {
       $progress = 0;
-      Interface.source.set(await RustAPI.unarchive(path, assetFolder, (x) => $progress = x));
+      const source = await RustAPI.unarchive(path, assetFolder, (x) => $progress = x);
+      Workspace.newDocument(source);
       Interface.status.set($_('sync.msg.extracted', { values: { path: assetFolder } }));
     } catch (e) {
       Interface.status.set($_('sync.msg.error-unarchiving', { values: { error: String(e) } }));
@@ -90,6 +155,12 @@
     }
   }
 </script>
+
+<h5>{$_('tab.file')}</h5>
+<button class="veryimportant" onclick={newDocument}>{$_('file.new')}</button>
+<button class="veryimportant" onclick={openDocument}>{$_('file.open')}</button>
+<button class="veryimportant" onclick={saveActive}>{$_('file.save')}</button>
+<button class="important" onclick={saveAsActive}>{$_('file.save-as')}</button>
 
 <h5>{$_('sync.title')}</h5>
 <table class="config"><tbody>
@@ -111,59 +182,11 @@
 <button class="veryimportant" onclick={archive}>{$_('sync.save-archive')}</button>
 <button class="important" onclick={unarchive}>{$_('sync.import-archive')}</button>
 
-<!-- <h5>Pasting behavior</h5>
-
-<div class="vlayout">
-
-<label>
-  <input type="radio" bind:group={$pasteBehavior} value={"html"}>
-  automatically recognize formatting
-</label>
-
-<label>
-  <input type="radio" bind:group={$pasteBehavior} value={"plain"}>
-  paste as plain source text
-</label>
-
-</div> -->
-
 <h5>{$_('sync.external-sources')}</h5>
 <button class='veryimportant'
-  disabled={Interface.sourceEditor !== Interface.activeEditor}
-  onclick={async () => {
-    let result: string | undefined;
-    for (const item of await navigator.clipboard.read()) {
-      if (item.types.includes('text/html')) {
-        const html = await (await item.getType('text/html')).text();
-        result = htmlToEmmm(html);
-        break;
-      }
-    }
-    if (!result) {
-      await dialog.message($_('sync.no-html'), { kind: 'error' });
-      return;
-    }
-
-    const loc = Interface.sourceEditor?.getSelections().at(0);
-
-    Interface.sourceEditor?.update({
-      changes: {
-        from: loc?.from ?? 0,
-        to: loc?.to ?? 0,
-        insert: result
-      }
-    });
-  }}
+  disabled={!Workspace.active}
+  onclick={insertFromClipboard}
 >{$_('sync.insert-from-clipboard')}</button>
-
-<button class='important'
-  onclick={async () => {
-    if (!await dialog.confirm($_('sync.confirm-clear')))
-      return;
-    Interface.source.set(defaultSource);
-    Interface.sourceEditor?.focus();
-  }}
->{$_('sync.new-document')}</button>
 
 <h5>{$_('sync.debug')}</h5>
 
