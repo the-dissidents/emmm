@@ -3,9 +3,16 @@ use std::sync::Arc;
 
 use font_kit::source::SystemSource;
 use font_kit::handle::Handle;
+use serde::Serialize;
 use tauri::State;
 use tauri::async_runtime;
-use tauri::ipc::Response;
+use tauri::ipc::{Channel, Response};
+
+#[derive(Serialize, Clone)]
+pub struct Progress {
+    value: usize,
+    total: usize,
+}
 
 pub struct FontRegistry {
     entries: Vec<FontEntry>,
@@ -51,13 +58,20 @@ fn write_string(buf: &mut Vec<u8>, s: &str) {
 }
 
 impl FontRegistry {
-    pub fn discover() -> Self {
+    #[allow(clippy::cast_precision_loss)]
+    pub fn discover(channel: Channel<Progress>) -> Self {
         let source = SystemSource::new();
         let all_families = source.all_families().unwrap_or_default();
+        let total_families = all_families.len();
         let mut entries = Vec::new();
         let mut file_cache: HashMap<PathBuf, Arc<Vec<u8>>> = HashMap::new();
 
-        for family_name in all_families {
+        for (index, family_name) in all_families.into_iter().enumerate() {
+            channel.send(Progress {
+                value: index + 1,
+                total: total_families,
+            }).expect("error sending message");
+
             let Ok(handle) =
                 source.select_family_by_name(&family_name) else { continue; };
 
@@ -139,9 +153,10 @@ impl FontRegistry {
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)]
 pub async fn init_font_registry(
+    channel: Channel<Progress>,
     state: State<'_, Arc<Mutex<Option<FontRegistry>>>>
 ) -> Result<(), tauri::Error> {
-    async_runtime::spawn_blocking(FontRegistry::discover)
+    async_runtime::spawn_blocking(move || FontRegistry::discover(channel))
     .await
     .map(|r| {
         let mut value = state.lock().unwrap();

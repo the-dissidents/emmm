@@ -39,12 +39,12 @@
   });
 
   let hide = $state(true);
+  let fontProgress = $state(0);
 
   async function init() {
     const v = await getVersion();
     await currentWindow.setTitle(`emmui ${v} (${arch()}/${platform()}${version()})`);
-
-    await RustAPI.initFonts();
+    await RustAPI.initFonts((v, t) => fontProgress = v / t);
     hide = false;
   }
 </script>
@@ -59,6 +59,7 @@
     <div class="text">
       <div class="logo">emmui</div>
       <div>{$_('loading.system-fonts')}</div>
+      <progress class="font-progress" max="1" value={fontProgress}></progress>
     </div>
   </div>
 {/await}
@@ -93,6 +94,14 @@
         font-family: 'Mluvka';
         font-size: 10em;
         padding-bottom: 0.5em;
+      }
+
+      .font-progress {
+        display: block;
+        width: 16em;
+        max-width: 80%;
+        margin: 1em auto 0;
+        accent-color: #000;
       }
     }
   }
