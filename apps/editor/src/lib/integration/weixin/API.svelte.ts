@@ -29,7 +29,7 @@ export type WeixinAsset = {
     internalUrl: string
 };
 
-export type WeixinDraftNewsArticle = {
+export type WeixinNewsArticle = {
     articleType: 'news',
     title: string,
     author: string,
@@ -43,7 +43,7 @@ export type WeixinDraftNewsArticle = {
     commentOpen: boolean,
 };
 
-export type WeixinDraftPictureArticle = {
+export type WeixinPictureArticle = {
     articleType: 'newspic',
     title: string,
     content?: string,
@@ -55,14 +55,31 @@ export type WeixinDraftPictureArticle = {
     imageMediaIDs: number[],
 };
 
-export type WeixinDraftArticle = WeixinDraftNewsArticle | WeixinDraftPictureArticle;
-export type WeixinDraft = {
+export type WeixinArticle = WeixinNewsArticle | WeixinPictureArticle;
+export type WeixinPublication = {
     id: string,
-    articles: WeixinDraftArticle[],
+    articles: WeixinArticle[],
     updateTime: Date,
 };
 
-function parseArticle(json: any): WeixinDraftArticle {
+export enum WeixinPublicationStatus {
+    /** the publication was released successfully */
+    Released = 0,
+    /** the publication is in the process of being released */
+    Releasing = 1,
+    /** the release process has failed for an original publication */
+    FailedOriginal = 2,
+    /** the release process has failed for a non-original publication */
+    FailedNormal = 3,
+    /** the publication did not pass the censorship and has not been released */
+    Censored = 4,
+    /** the publication was deleted by the user after being released */
+    Deleted = 5,
+    /** the publication was banned after being released */
+    Banned = 6,
+}
+
+function parseArticle(json: any): WeixinArticle {
     if (json.article_type == 'news') {
         return {
             articleType: 'news',
@@ -91,7 +108,7 @@ function parseArticle(json: any): WeixinDraftArticle {
     }
 }
 
-function makeArticle(obj: WeixinDraftArticle): any {
+function makeArticle(obj: WeixinArticle): any {
     if (obj.articleType == 'news') {
         return {
             article_type: 'news',
@@ -229,22 +246,40 @@ export class WeixinClient {
         return get(this.#stableToken) !== '' && this.#expireTime.getTime() > Date.now();
     }
 
+    async #rawExec(path: string, body: object, check = true) {
+        if (check && !this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
+            throw new WeixinInvalidTokenError();
+        const t0 = performance.now();
+        const r = await fetch(
+            `https://api.weixin.qq.com/cgi-bin/${path}?`
+            + new URLSearchParams({access_token: get(this.#stableToken)}),
+        {
+            method: 'POST',
+            body: JSON.stringify(body)
+        });
+        console.log(`${path}: ${r.status} in ${(performance.now() - t0).toFixed(0)}ms`);
+        if (!r.ok) throw new RequestFailedError(r);
+        return r;
+    }
+
+    async #exec(path: string, body: object, check = true) {
+        const r = await this.#rawExec(path, body, check);
+        const json = await r.json();
+        if (json.errcode) throw new WeixinAPIError(json);
+        return json;
+    }
+
     async fetchToken(forced = false) {
         if (!forced && this.tokenOk)
             return get(this.#stableToken);
         if (!this.appid || !this.secret)
             throw new WeixinBadCredentialError();
-        const r = await fetch('https://api.weixin.qq.com/cgi-bin/stable_token', {
-            method: 'POST',
-            body: JSON.stringify({
-                "grant_type": "client_credential",
-                "appid": this.appid,
-                "secret": this.secret
-            })
-        });
-        if (!r.ok) throw new RequestFailedError(r);
-        let json = await r.json();
-        if (json.errcode) throw new WeixinAPIError(json);
+
+        const json = await this.#exec('stable_token', {
+            "grant_type": "client_credential",
+            "appid": this.appid,
+            "secret": this.secret
+        }, false);
         const token = json.access_token as string;
         this.#stableToken.set(token);
         this.#expireTime = new Date(Date.now() + (<number>json.expires_in - 10) * 1000);
@@ -252,22 +287,11 @@ export class WeixinClient {
     }
 
     async getAssets(type: WeixinAssetType, from: number, count = 20) {
-        if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
-            throw new WeixinInvalidTokenError();
-        const r = await fetch(
-            'https://api.weixin.qq.com/cgi-bin/material/batchget_material?'
-            + new URLSearchParams({access_token: get(this.#stableToken)}),
-        {
-            method: 'POST',
-            body: JSON.stringify({
-                "type": type as string,
-                "offset": from,
-                "count": count
-            })
+        const json = await this.#exec('material/batchget_material', {
+            "type": type as string,
+            "offset": from,
+            "count": count
         });
-        if (!r.ok) throw new RequestFailedError(r);
-        let json = await r.json();
-        if (json.errcode) throw new WeixinAPIError(json);
         const total = json.total_count as number;
         const assets: WeixinAsset[] = [...json.item].map((x) => ({
             type: type,
@@ -279,51 +303,69 @@ export class WeixinClient {
         return { total, assets };
     }
 
+
+    /**
+     * Read from the list of unpublished drafts.
+     */
     async getDrafts(from: number, count = 20) {
-        if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
-            throw new WeixinInvalidTokenError();
-        const r = await fetch(
-            'https://api.weixin.qq.com/cgi-bin/draft/batchget?'
-            + new URLSearchParams({access_token: get(this.#stableToken)}),
-        {
-            method: 'POST',
-            body: JSON.stringify({
-                "offset": from,
-                "count": count,
-                "no_content": 1
-            })
+        const json = await this.#exec('draft/batchget', {
+            "offset": from,
+            "count": count,
+            "no_content": 1
         });
-        if (!r.ok) throw new RequestFailedError(r);
-        let json = await r.json();
         if (json.errcode) throw new WeixinAPIError(json);
         const total = json.total_count as number;
-        const drafts: WeixinDraft[] = [...json.item].map((x) => ({
+        const drafts: WeixinPublication[] = [...json.item].map((x) => ({
             id: x.media_id as string,
             articles: x.content.news_item.map((y: any) => parseArticle(y)),
             updateTime: new Date(x.update_time * 1000),
         }));
-        console.log(from, count, json, drafts);
         return { total, drafts };
     }
 
-    async writeDraftArticle(id: string, index: number, article: WeixinDraftArticle) {
-        if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
-            throw new WeixinInvalidTokenError();
-        const r = await fetch(
-            'https://api.weixin.qq.com/cgi-bin/draft/update?'
-            + new URLSearchParams({access_token: get(this.#stableToken)}),
-        {
-            method: 'POST',
-            body: JSON.stringify({
-                "media_id": id,
-                "index": index,
-                "articles": makeArticle(article)
-            })
+    /**
+     * Create a draft consisting of one or more articles.
+     * @returns ID of the created draft.
+     */
+    async createDraft(...articles: WeixinArticle[]) {
+        const json = await this.#exec('draft/add', {
+            "articles": articles.map(makeArticle)
         });
-        if (!r.ok) throw new RequestFailedError(r);
-        let json = await r.json();
-        if (json.errcode) throw new WeixinAPIError(json);
+        return json.media_id as string;
+    }
+
+    /**
+     * Update an existing draft.
+     * @param id draft ID
+     * @param index index of the article in the draft to update
+     * @returns `true`.
+     */
+    async updateDraft(id: string, index: number, article: WeixinArticle) {
+        await this.#exec('draft/update', {
+            "media_id": id,
+            "index": index,
+            // despite the name, this should be a single object instead of an array
+            "articles": makeArticle(article)
+        });
         return true;
+    }
+
+    /**
+     * Read from the list of publications.
+     */
+    async getPublications(from: number, count = 20) {
+        const json = await this.#exec('freepublish/batchget', {
+            "offset": from,
+            "count": count,
+            "no_content": 1
+        });
+        const total = json.total_count as number;
+        const items: WeixinPublication[] = [...json.item].map((x) => ({
+            id: x.article_id as string,
+            articles: x.content.news_item.map((y: any) => parseArticle(y)),
+            updateTime: new Date(x.update_time * 1000),
+        }));
+        return { total, items };
     }
 
     async downloadAsset(id: string, name: string, force = false) {
@@ -333,25 +375,13 @@ export class WeixinClient {
             throw new WeixinInvalidTokenError();
 
         console.log('downloadAsset', id, name, force);
-        let path: string;
-        try {
-            const r = await fetch(
-                'https://api.weixin.qq.com/cgi-bin/material/get_material?'
-                + new URLSearchParams({access_token: get(this.#stableToken)}),
-            {
-                method: 'POST',
-                body: JSON.stringify({ "media_id": id })
-            });
-            console.log(r.status, r.statusText);
-            if (!r.ok)
-                throw new RequestFailedError(r);
-            const filename = `${id}-${[...name].filter((x) => /[a-zA-Z0-9.]/.test(x)).join('')}`;
-            await writeFile(filename,
-                new Uint8Array(await r.arrayBuffer()), { baseDir: BaseDirectory.AppLocalData });
-            path = await join(await appLocalDataDir(), filename);
-        } catch (_) {
-            path = '';
-        }
+        const r = await this.#rawExec('material/get_material', { "media_id": id });
+        const filename = `${id}-${[...name].filter((x) => /[a-zA-Z0-9.]/.test(x)).join('')}`;
+        await writeFile(filename,
+            new Uint8Array(await r.arrayBuffer()), { baseDir: BaseDirectory.AppLocalData });
+        const path = await join(await appLocalDataDir(), filename);
+        console.log('downloadAsset done', id, name);
+
         this.#assetCache.set(id, path);
         this.#syncCache();
         return path;

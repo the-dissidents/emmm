@@ -138,7 +138,8 @@
 <div class="pane flexgrow" bind:this={middle}>
   <TabView current={activeTab}>
     {#each Workspace.documents as doc (doc.id)}
-      <TabPage id={doc.id} header={doc.dirty ? `${doc.name} •` : doc.name}
+      <TabPage id={doc.id} reorderable={true}
+          header={doc.dirty ? `${doc.name} •` : doc.name}
           onActivate={() => {
             Workspace.activeId = doc.id;
             Interface.requestRender();
@@ -310,15 +311,6 @@
     <span>
       {parsedStatus}
     </span>
-    <hr/>
-    <button onclick={async () => {
-      const doc = Workspace.active;
-      if (!doc) return;
-      if (await Workspace.save(doc))
-        status.set($_('file.msg.saved', { values: { path: doc.filePath ?? doc.name } }));
-    }}>
-      {$_('main.save')}
-    </button>
   </div>
 </div>
 

@@ -10,7 +10,7 @@
   import * as dialog from '@tauri-apps/plugin-dialog';
   import * as z from 'zod/v4-mini';
 
-  import { ConfigRow, ConfigTable, ListView, Tooltip } from "@the_dissidents/svelte-ui";
+  import { ButtonStrip, ConfigRow, ConfigTable, ListView, StripItem, Tooltip } from "@the_dissidents/svelte-ui";
   import { CheckIcon, CircleArrowUpIcon, CircleXIcon, GlobeIcon, LoaderIcon, TriangleAlertIcon } from "@lucide/svelte";
   import AccountManager from "./AccountManager.svelte";
   import { Memorized } from "$lib/config/Memorized.svelte";
@@ -19,13 +19,13 @@
   let publicIP = $state('');
 
   let accountName = Memorized.$('weixin-account-name', z.string(), 'default');
-  let account = $state(new WeixinClient());
-  let token = $derived(account.stableToken);
+  let client = $state(new WeixinClient());
+  let token = $derived(client.stableToken);
 
   let progress = Interface.progress;
   const backgroundImage = Interface.backgroundImage;
 
-  Memorized.onInitialize(() => account = new WeixinClient($accountName));
+  Memorized.onInitialize(() => client = new WeixinClient($accountName));
 
   type ImgStatus = 'uploaded' | 'external' | 'notUploaded' | 'invalid' | 'error' | 'pending';
   type Img = {
@@ -47,7 +47,7 @@
       if (!url.href.toLowerCase().endsWith('.' + file.ext))
           url.href += '.' + file.ext;
       Interface.status.set($_('weixin.msg.uploading', { values: { path: url.pathname } }));
-      await account.uploadSmallImage(file.blob, url.href, img.hash, true);
+      await client.uploadSmallImage(file.blob, url.href, img.hash, true);
       await updateImgStatus(img);
       Interface.status.set($_('weixin.msg.done'));
     }, $_('weixin.msg.error-uploading', { values: { url: img.url.href } }));
@@ -161,7 +161,7 @@
 
 <h5>{$_('weixin.credentials')}</h5>
 <AccountManager
-  bind:account={account}
+  bind:account={client}
   onChange={(a) => $accountName = a.name}
 />
 
@@ -180,7 +180,7 @@
       <button class="veryimportant" style="width: 100%"
         onclick={async () => {
           try {
-            await account.fetchToken();
+            await client.fetchToken();
           } catch (x) {
             await dialog.message(`${x}`, { kind: 'error' });
           }
@@ -281,6 +281,20 @@
     {/if}
   {/snippet}
 </ListView>
+
+<hr>
+
+<ButtonStrip>
+  <StripItem onclick={async () => {
+    console.log(await client.getAssets('image', 0, 10));
+  }}>assets</StripItem>
+  <StripItem onclick={async () => {
+    console.log(await client.getDrafts(0, 10));
+  }}>drafts</StripItem>
+  <StripItem onclick={async () => {
+    console.log(await client.getPublications(0, 10));
+  }}>publications</StripItem>
+</ButtonStrip>
 
 </div>
 
