@@ -14,7 +14,7 @@
         "build-mac": "pnpm run build:pkgs && pnpm --filter='kfgui' tauri build --target universal-apple-darwin",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
-    "packageManager": "pnpm@11.25.0",
+    "packageManager": "pnpm@12.3.4",
     "devDependencies": {
         "concurrently": "^9.2.1",
         "eslint": "^9.39.2",

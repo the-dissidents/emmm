@@ -150,7 +150,7 @@
           {onCursorPositionChanged} />
       </EmmmContext>
     </TabPage>
-    <TabPage id="Library" header={$_('tab.library')}
+    <TabPage id="Library" header={$_('tab.library')} alignment='end'
         onActivate={() => libraryHandle?.focus?.()}>
       <EmmmContext onParse={onParseLibrary}
           provideDescriptor={() => ({name: '<Library>'})}>
@@ -163,7 +163,7 @@
           {onCursorPositionChanged} />
       </EmmmContext>
     </TabPage>
-    <TabPage id="Stylesheet" header={$_('tab.stylesheet')}>
+    <TabPage id="Stylesheet" header={$_('tab.stylesheet')} alignment='end'>
       <GenericContext extension={[
         syntaxHighlighting(defaultHighlightStyle),
         bracketMatching(),
@@ -190,7 +190,7 @@
 <!-- preview -->
 <div class="pane" bind:this={right} style="width: 500px;">
   <TabView>
-    <TabPage id="Preview" header={$_('tab.preview')} active={true}>
+    <TabPage id="Preview" header={$_('tab.preview')}>
       <div class="vlayout vfill">
         <fieldset>
           <label>
