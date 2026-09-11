@@ -15,6 +15,7 @@
   import AccountManager from "./AccountManager.svelte";
   import { Memorized } from "$lib/config/Memorized.svelte";
   import { _ } from 'svelte-i18n';
+  import { DebouncedTask } from "$lib/details/DebouncedTask";
 
   let publicIP = $state('');
 
@@ -83,7 +84,7 @@
     }
   }
 
-  async function updateImgList() {
+  const updateImgList = new DebouncedTask(async () => {
     let doc = Interface.frame?.contentDocument;
     assert(doc !== undefined && doc !== null);
     sourceImgs = [];
@@ -111,7 +112,7 @@
       }
     }
     await Promise.allSettled(promises);
-  }
+  }, 500);
 
   async function doPrerender(report: ProgressReporter = defaultReporter) {
     const doc = Interface.frame?.contentDocument;
@@ -129,7 +130,7 @@
       else
         Interface.status.set($_('weixin.msg.prerendered-failed', { values: { success, failed: total - success } }));
     }
-    void updateImgList();
+    updateImgList.start();
   }
 
   async function copyResult(html = true) {
@@ -146,7 +147,7 @@
   }
 
   const me = {};
-  Interface.onFrameLoaded.bind(me, () => updateImgList());
+  Interface.onFrameLoaded.bind(me, () => updateImgList.start());
 
   let mode = Memorized.$('weixin-mode', z.enum(['manual', 'automatic']), 'manual');
 

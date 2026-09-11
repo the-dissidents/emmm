@@ -11,6 +11,7 @@
 		"i18n-ally.localesPaths": [
 			"src/locales",
 			"apps/editor/src/locales"
-		]
+		],
+		"i18n-ally.keystyle": "nested"
 	}
 }

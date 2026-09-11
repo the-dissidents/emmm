@@ -9,7 +9,7 @@
   import { RustAPI } from "$lib/RustAPI";
   import { htmlToEmmm } from "$lib/integration/weixin/Importer";
   import { openPath } from "@tauri-apps/plugin-opener";
-  import { appConfigDir, appLogDir } from "@tauri-apps/api/path";
+  import { appConfigDir, appLocalDataDir, appLogDir } from "@tauri-apps/api/path";
   import { compileStyles } from "$lib/Document.svelte";
   import { _ } from 'svelte-i18n';
 
@@ -146,7 +146,8 @@
     try {
       $progress = 0;
       const source = await RustAPI.unarchive(path, assetFolder, (x) => $progress = x);
-      Workspace.newDocument(source);
+      const doc = Workspace.newDocument(source);
+      doc.dirty = true;
       Interface.status.set($_('sync.msg.extracted', { values: { path: assetFolder } }));
     } catch (e) {
       Interface.status.set($_('sync.msg.error-unarchiving', { values: { error: String(e) } }));
@@ -199,6 +200,11 @@
   console.log(await appConfigDir());
   openPath(await appConfigDir());
 }}>{$_('sync.open-config-folder')}</button>
+
+<button onclick={async () => {
+  console.log(await appLocalDataDir());
+  openPath(await appLocalDataDir());
+}}>{$_('sync.open-autosave-folder')}</button>
 
 <button onclick={() => {
   const result = compileStyles({

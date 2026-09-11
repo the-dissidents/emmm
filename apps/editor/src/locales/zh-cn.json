@@ -73,7 +73,8 @@
       "error-archiving": "归档时出错：{error}",
       "extracted": "已将资源从归档解压到 {path}",
       "error-unarchiving": "解压归档时出错：{error}"
-    }
+    },
+    "open-autosave-folder": "打开自动保存文件夹"
   },
   "search": {
     "title": "查找与替换",
@@ -156,5 +157,9 @@
     "nothing-here": "这里没什么可看的！",
     "t2": "t2",
     "fake-button": "假按钮"
+  },
+  "msg": {
+    "autosave-complete": "自动保存完成 {time}",
+    "autosave-failed": "自动保存失败"
   }
 }

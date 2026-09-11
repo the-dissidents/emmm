@@ -31,7 +31,6 @@ class WorkspaceStore {
         const text = await fs.readTextFile(path);
         const doc = new Document(text, basename(path));
         doc.filePath = path;
-        doc.dirty = false;
         this.documents.push(doc);
         this.activeId = doc.id;
         return doc;
@@ -58,6 +57,7 @@ class WorkspaceStore {
         const idx = this.documents.indexOf(doc);
         if (idx < 0) return this.active;
         this.documents.splice(idx, 1);
+        doc.close();
         if (this.activeId !== doc.id) return this.active;
         const next = this.documents[idx] ?? this.documents[idx - 1] ?? null;
         this.activeId = next ? next.id : null;

@@ -14,9 +14,10 @@
   let background = Interface.backgroundImage;
 
   function doDeriveColors() {
+    console.log('changed');
     if ($autoColor) $colors = deriveColorsFrom($colors.theme);
     colors.markChanged();
-    Interface.requestRender(0);
+    Interface.requestRender();
   }
 
   doDeriveColors();
@@ -35,28 +36,28 @@
   <ConfigRow name={$_('parameters.text')}>
     <div class="hlayout">
       <Colorpicker bind:color={$colors.text} mode='hsl'
-        oninput={doDeriveColors} />
+        oninput={doDeriveColors} onchange={doDeriveColors} />
     </div>
   </ConfigRow>
 
   <ConfigRow name={$_('parameters.commentary')}>
     <div class="hlayout">
       <Colorpicker bind:color={$colors.commentary} mode='hsl'
-        oninput={doDeriveColors} />
+        oninput={doDeriveColors} onchange={doDeriveColors} />
     </div>
   </ConfigRow>
 
   <ConfigRow name={$_('parameters.link')}>
     <div class="hlayout">
       <Colorpicker bind:color={$colors.link} mode='hsl'
-        oninput={doDeriveColors} />
+        oninput={doDeriveColors} onchange={doDeriveColors} />
     </div>
   </ConfigRow>
 
   <ConfigRow name={$_('parameters.highlight')}>
     <div class="hlayout">
       <Colorpicker bind:color={$colors.highlight} mode='hsl'
-        oninput={doDeriveColors} />
+        oninput={doDeriveColors} onchange={doDeriveColors} />
     </div>
   </ConfigRow>
 </ConfigTable>

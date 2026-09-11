@@ -73,7 +73,8 @@
       "error-archiving": "error when archiving: {error}",
       "extracted": "extracted assets from archive to {path}",
       "error-unarchiving": "error when unarchiving: {error}"
-    }
+    },
+    "open-autosave-folder": "Open autosave folder"
   },
   "search": {
     "title": "Search & Replace",
@@ -156,5 +157,9 @@
     "nothing-here": "There’s nothing to see here!",
     "t2": "t2",
     "fake-button": "Fake button"
+  },
+  "msg": {
+    "autosave-complete": "autosave complete at {time}",
+    "autosave-failed": "autosave failed"
   }
 }
