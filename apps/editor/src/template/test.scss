@@ -55,15 +55,6 @@ body {
   font-synthesis: none;
 }
 
-/* large structures */
-
-body {
-  font-family: system-ui, sans-serif;
-  background-color: white;
-  line-height: 1.4;
-  letter-spacing: 0px;
-}
-
 section {
   /* white-space: pre-wrap; */
 }
@@ -197,25 +188,24 @@ blockquote {
 }
 
 :is(h2, h3, h4, h5, h6) {
-  margin-block: 2em 1em;
+  // margin-block: 2em 1em;
   line-height: 1.5;
   text-align: start;
 }
 
 :is(h1, h2, h3, h4, h5, h6) * {
   letter-spacing: 0 !important;
+  // font-weight: normal;
 }
 
 h1 {
   font-size: 150%;
-  font-weight: bold;
-  margin-block: 2em 2em;
+  padding-block: 2em 2em;
 }
 
 h2 {
-  font-size: 125%;
-  font-weight: bold;
-  margin-block: 3em 2em;
+  font-size: 135%;
+  padding-block: 2em 1em;
 }
 
 h3 {
@@ -226,6 +216,19 @@ h3 {
 h4 {
   font-size: 100%;
   font-weight: bold;
+}
+
+:is(h1, h2, h3) {
+  color: param(commentary-color);
+  * {
+    font-weight: bold;
+  }
+  margin: 0;
+
+  &:is(h1):not(.implicit) {
+    --emmm-prerender: true;
+    font-family: $heading-font-family;
+  }
 }
 
 .implicit:is(h1, h2, h3, h4, h5, h6) {
@@ -260,15 +263,24 @@ header {
   }
 
   h1 {
-    margin-block: 0 1em;
+    margin: 0;
+    padding-block: 0 20px;
+    line-height: normal;
     white-space: normal;
+    text-align: left;
+    font-family: $heading-font-family;
+    color: param(commentary-color);
 
     div {
+      --emmm-prerender: true;
       white-space: pre-wrap;
+      font-size: 150%;
     }
 
     .subtitle {
-      font-size: 90% !important;
+      margin-top: 0.2em;
+      font-size: 120%;
+      margin: 0;
     }
   }
 
@@ -281,8 +293,13 @@ header {
     text-decoration: underline;
   }
 
-  .key {
-    color: param(commentary-color);
+  .metadata {
+    text-align: left;
+    line-height: normal;
+
+    .key {
+      color: param(commentary-color);
+    }
   }
 }
 
@@ -309,11 +326,6 @@ aside:is(.ttr, .the-end) {
   text-align: right;
   line-height: 1.7;
   color: param(commentary-color);
-}
-
-.metadata {
-  font-size: 13px;
-  line-height: 1.7;
 }
 
 aside.the-end {
@@ -372,6 +384,7 @@ em {
 strong,
 b {
   font-weight: bold;
+  color: param(commentary-color);
 }
 
 span code {
@@ -509,10 +522,15 @@ figure {
   }
 
   figcaption {
+    // --emmm-prerender: true;
     text-align: right;
+    // font-family: "Source Han Serif CN Bold";
+
     font-size: 85%;
+    // font-weight: bold;
     color: param(commentary-color);
     letter-spacing: 0.5px;
+    line-height: normal;
   }
 }
 

@@ -240,7 +240,7 @@
       </div>
     </TabPage>
     <TabPage id="HTML" header={$_('tab.html')}>
-      <textarea class="vfill">{Interface.renderedDocument?.documentElement.outerHTML}</textarea>
+      <textarea class="vfill">{Interface.renderedHTML}</textarea>
     </TabPage>
   </TabView>
 </div>

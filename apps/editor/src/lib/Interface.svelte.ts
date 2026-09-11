@@ -13,6 +13,7 @@ import { Debug } from "./Debug";
 import { renderDocument } from "./Document.svelte";
 import { Workspace } from "./workspace/Workspace.svelte";
 import { EventHost } from "@the_dissidents/svelte-ui";
+import { processDocument, type Options } from "@the_dissidents/mojikit";
 
 let status = writable<string>('ok');
 let progress = writable<number | undefined>();
@@ -60,6 +61,36 @@ export function guard<T>(x: () => T, msg: string, fallback?: T) {
     };
 }
 
+const mojikitOpts: Options = {
+    rulesets: [
+        {
+            heuristic: /[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef\u{20000}-\u{2fa1f}\u{30000}-\u{3134a}“”‘’—·⸺⋯…\d\.\[\]]/u,
+            tagName: "mjk-chs",
+            squeezeLeft: /[“‘《〈（「『]/,
+            squeezeRight: /[”’〉》）」』，。、：；？！]/,
+            squeezeMiddle: /·/,
+            noBreakBefore: /[”’〉》）」』，。、：；？！—·⸺⋯－]/,
+            noBreakAfter: /[“‘《〈（「『—·⸺⋯－]/,
+            addClass: /[—·⸺⋯－…]/,
+            weight: 4,
+        }, {
+            heuristic: /[\u0021-\u007e\u00a1-\u00ff\p{Script=Latin}“”‘’ ]/u,
+            tagName: "mjk-lat",
+            // addClass: /[“”‘’]/, // only problematic ones
+            weight: 2,
+        }
+    ],
+    classnames: {
+        ambiguous: 'ambig',
+        squeezeLeft: 'sql',
+        squeezeRight: 'sqr',
+        squeezeMiddle: 'sqm',
+        quarter: 'q',
+    },
+    halfDetectionWindow: 10,
+    weightDecay: 0.5,
+};
+
 export const Interface = $state({
     get status() { return status; },
     get progress() { return progress; },
@@ -73,7 +104,7 @@ export const Interface = $state({
     libConfig: undefined as emmm.Configuration | undefined,
 
     frame: undefined as HTMLIFrameElement | undefined,
-    renderedDocument: null as Document | null,
+    renderedHTML: null as string | null,
     sourceMap: [] as emmm.HTMLSourceMapEntry[],
 
     colors: Memorized.$('colorParams', ZArticleColors, {
@@ -144,25 +175,21 @@ export const Interface = $state({
     async render() {
         const pd = Workspace.active?.parseData?.data;
         if (!pd || !this.frame) return;
-
         const editor = Workspace.active?.editor;
-
         const result = await renderDocument(pd, {
             sass: this.stylesheet.get(),
             colors: this.colors.get(),
             backgroundImage: this.backgroundImage.get(),
         });
+        if (result.type !== 'ok') return;
 
-        if (result.type !== 'ok') {
-            return;
-        }
-
-        this.renderedDocument = result.doc
+        processDocument(result.doc, mojikitOpts);
+        this.renderedHTML = result.doc.documentElement.outerHTML;
         this.sourceMap = result.map;
 
         const sx = this.frame.contentWindow!.scrollX;
         const sy = this.frame.contentWindow!.scrollY;
-        this.frame.srcdoc = this.renderedDocument.documentElement.outerHTML;
+        this.frame.srcdoc = this.renderedHTML;
         this.frame.addEventListener(
             'load', () => {
                 this.frame!.contentWindow!.scrollTo(sx, sy);

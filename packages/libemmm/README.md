@@ -60,7 +60,7 @@ The construct `[.foo]` or `[.foo args]` (called the **head** of the modifier) si
 
 Most block modifiers accept block-level entities as **content**. They will always try to find the content, even when it's separated from the head by multiple newlines. Block modifiers can be nested, or if there isn't a nesting modifier anymore, the content will be a Paragraph.
 
-By default, a block modifier's scope is limited to *the immediately following block*, unless a pair of brackets (`:--` and `--:`) is used to group blocks together.
+By default, a block modifier's scope is limited to *the immediately following block*, unless a pair of brackets (`<<<` and `>>>`) is used to group blocks together.
 
 Examples:
 
@@ -87,19 +87,19 @@ This paragraph is NOT under foo, [.foo] but this immediately starts a new one un
 [.foo] This is a paragraph inside foo inside foo, since the outer foo hadn't encountered any block before the parser met the inner foo, which became the content of the outer one.
 
 [.foo]
-:--
+<<<
 Use brackets to group together multiple blocks:
 
 This is still in foo.
 
 [.foo] This foo is also in foo.
 
-[.foo] :--
+[.foo] <<<
 You can have nested brackets. Not exactly beautiful looking, though.
 
 Note that closing brackets have to be on its own line, but the opening ones do not. On the other hand, you must have a newline after a closing bracket.
---:
---:
+>>>
+>>>
 ```
 
 You can also use the brackets without a modifier. However, this has little effect.
@@ -116,13 +116,13 @@ Examples, supposing the modifier `[.pre]` accepts a preformatted block:
 However, like in a normal paragraph, a blank line creates a new block so this is no longer in the pre. Use brackets if you don't want that:
 
 [.pre]
-:--
+<<<
 export { DebugLevel } from './debug';
 
 export function setDebugLevel(level: DebugLevel) {
     debug.level = level;
 }
---:
+>>>
 ```
 
 ##### 1.2.3. Empty content or no content
@@ -217,10 +217,10 @@ After expanding, the new entities are reparsed as if they're part of the origina
 > The AST definiton specifies that `SystemModifierNode`s can appear as either block-level or inline-level entities. The reason behind this is that we may want them to appear inside `[-define-inline]` definitions and thus expanding into inline entities:
 > ```
 > [-define-inline foo]
-> :--
+> <<<
 > [-var xyz=123]
 > xyz is now 123
-> --:
+> >>>
 > ```
 > However, in parsing they are treated only as block-level modifiers, meaning that it's not supported to use them inline *directly*. Also note that inside `[-define-inline]` definitions they are still technically distinct blocks, only transformed into inline entities at expand time. **This is indeed awkward. We will change it if we think of a better approach.**
 
@@ -353,10 +353,10 @@ Suppose the variables are "x" = "y", "y" = "1":
 > ```
 > [-define-block p|(0)]
 > [-define-block q]
-> :--
+> <<<
 > [.slot]
 > [.slot 0]
-> --:
+> >>>
 >
 > This expands to nothing but defines the block modifier q:
 > [.p] 123
@@ -421,7 +421,7 @@ For strange edge cases of the basic syntax and the built-in configuration, see t
 > Note: 'suggestions' are currently not being implemented
 
 |Code|Error|Suggestions|
-|---:|-----|-|
+|->>>|-----|-|
 |  1 | Syntax error: expecting <...>
 |  2 | Undefined modifier <...> | *did you mean ... ?*
 |    | | *did you forget to escape?*
@@ -437,7 +437,7 @@ For strange edge cases of the basic syntax and the built-in configuration, see t
 | 12 | A definition cannot be at once normal and preformatted
 
 |Code|Warning|Suggestions|
-|---:|-------|-|
+|->>>|-------|-|
 |  1 |Unnecessary newline(s)| *remove*
 |  ~~2~~ | ~~Block should begin in a new line to avoid confusion~~| ~~*add a line break*~~
 |  3 | Content should begin in a new line to avoid confusion | *add a line break*

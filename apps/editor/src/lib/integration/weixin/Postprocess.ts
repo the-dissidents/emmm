@@ -21,7 +21,8 @@ const CONVERT_TO_SECTION = new Set([
 
 const CONVERT_TO_SPAN = new Set([
     'abbr', 'acronym', 'b', 'bdo', 'big', 'cite', 'code', 'dfn', 'em', 'i',
-    'kbd', 'output', 'q', 'samp', 'small', 'strong',  'time', 'tt', 'var'
+    'kbd', 'output', 'q', 'samp', 'small', 'strong',  'time', 'tt', 'var',
+    'mjk-chs', 'mjk-lat'
 ]);
 
 const PRESERVE = new Set([
