@@ -16,7 +16,7 @@ export function emmmLanguageSupport(
 ) {
     return [
         emmmContextProvider.of(() => (context?.() ?? undefined)),
-        emmmSourceDescriptorProvider.of(() => (descriptor?.() ?? undefined)),
+        emmmSourceDescriptorProvider.of(() => (descriptor?.() ?? { name: '<unnamed>' })),
         emmmDocument.extension,
         emmmAutocompletion,
         emmmStructureExt,

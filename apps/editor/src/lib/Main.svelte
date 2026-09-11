@@ -250,7 +250,8 @@
   <Resizer first={bottom!} reverse={true} />
 </div>
 <div class="pane" style="height: 100px" bind:this={bottom}>
-  <ListView style='height: 100%' items={[...sassDiag, ...(Workspace.active?.diagnostics ?? [])]}
+  <ListView style='height: 100%'
+    items={[...sassDiag, ...(Workspace.active?.diagnostics ?? [])]}
     columns={[
       ['file',    { header: $_('main.column-file'),    width: 'minmax(max-content, 5em)' }],
       ['type',    { header: '',        width: '3em' }],

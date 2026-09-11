@@ -15,7 +15,7 @@ export type EmmmParseData = {
 };
 
 export type ContextProvider = () => (emmm.ParseContext | undefined);
-export type DescriptorProvider = () => (emmm.SourceDescriptor | undefined);
+export type DescriptorProvider = () => emmm.SourceDescriptor;
 
 export const emmmContextProvider =
     Facet.define<ContextProvider, ContextProvider>({
@@ -23,8 +23,8 @@ export const emmmContextProvider =
     });
 
 export const emmmSourceDescriptorProvider =
-    Facet.define<DescriptorProvider, emmm.SourceDescriptor>({
-        combine: (values) => values.at(-1)?.() ?? { name: '<unnamed>' },
+    Facet.define<DescriptorProvider, DescriptorProvider>({
+        combine: (values) => values.at(-1) ?? (() => ({ name: '<unnamed>' })),
     });
 
 export const emmmForceReparseEffect = StateEffect.define();
@@ -39,7 +39,7 @@ export const emmmDocument = StateField.define<EmmmParseData | undefined>({
         let inspector: EmmmInspectorData | null = null;
         const scanner = new emmm.SimpleScanner(
             state.doc.toString(),
-            state.facet(emmmSourceDescriptorProvider),
+            state.facet(emmmSourceDescriptorProvider)(),
             [{
                 position: state.selection.main.head,
                 callback(cxt, position) {
