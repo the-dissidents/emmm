@@ -25,7 +25,7 @@
 
   async function openDocument() {
     try {
-      await Workspace.open();
+      await Workspace.openDialog();
     } catch (e) {
       Interface.status.set($_('file.msg.error-open', { values: { error: String(e) } }));
     }
@@ -162,6 +162,8 @@
 <button class="veryimportant" onclick={openDocument}>{$_('file.open')}</button>
 <button class="veryimportant" onclick={saveActive}>{$_('file.save')}</button>
 <button class="important" onclick={saveAsActive}>{$_('file.save-as')}</button>
+
+<button onclick={() => Memorized.save()}>{$_('file.save-system-config')}</button>
 
 <h5>{$_('sync.title')}</h5>
 <table class="config"><tbody>

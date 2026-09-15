@@ -16,7 +16,8 @@
     "stylesheet": "Stylesheet",
     "preview": "Preview",
     "ast": "AST",
-    "html": "HTML"
+    "html": "HTML",
+    "workspace": "Workspace"
   },
   "main": {
     "sync-scrolling": "Automatic synchronized scrolling",
@@ -41,7 +42,8 @@
       "error-open": "error opening file: {error}",
       "error-save": "error saving file: {error}",
       "confirm-close": "close \"{name}\" without saving?"
-    }
+    },
+    "save-system-config": "save system config"
   },
   "sync": {
     "title": "Synchronization",

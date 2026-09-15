@@ -16,7 +16,8 @@
     "stylesheet": "样式表",
     "preview": "预览",
     "ast": "AST",
-    "html": "HTML"
+    "html": "HTML",
+    "workspace": "项目管理"
   },
   "main": {
     "sync-scrolling": "自动同步滚动",
@@ -41,7 +42,8 @@
       "error-open": "打开文件出错：{error}",
       "error-save": "保存文件出错：{error}",
       "confirm-close": "关闭 \"{name}\" 而不保存？"
-    }
+    },
+    "save-system-config": "保存系统配置"
   },
   "sync": {
     "title": "同步",

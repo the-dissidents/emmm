@@ -29,6 +29,7 @@
   import { DebouncedTask } from './details/DebouncedTask';
 
   import { sassLinter } from './editor/SassLinter';
+  import WorkspaceToolbox from './toolbox/WorkspaceToolbox.svelte';
 
   if (Workspace.documents.length === 0)
     Workspace.newDocument();
@@ -42,16 +43,8 @@
   let parsedStatus = $state('');
   let posStatus = $state('');
 
-  let activeTab = $state<string | undefined>(Workspace.activeId ?? undefined);
-
   let libraryHandle = $state<Editor>(),
       cssHandle = $state<Editor>();
-
-  $effect(() => {
-    const id = Workspace.activeId;
-    if (id && id !== untrack(() => activeTab))
-      activeTab = id;
-  });
 
   let status = Interface.status,
       progress = Interface.progress,
@@ -96,12 +89,19 @@
     if (doc.dirty && !(await dialog.confirm(
       $_('file.msg.confirm-close', { values: { name: doc.name } }))))
       return;
-    const next = Workspace.close(doc);
-    if (next) activeTab = next.id;
+    Workspace.close(doc);
   }
 
   const scrollToSource = new DebouncedTask(
     (pos: number, select: boolean) => Interface.scrollToSource(pos, select), 500);
+
+  let activeTab = $state('');
+
+  const me = {};
+  Workspace.onActiveChanged.bind(me, () => {
+    if (Workspace.activeId)
+      activeTab = Workspace.activeId;
+  });
 </script>
 
 <div class="vlayout flexgrow">
@@ -114,6 +114,9 @@
   <TabView>
     <TabPage id='File' header={$_('tab.file')}>
       <FileToolbox />
+    </TabPage>
+    <TabPage id='Workspace' header={$_('tab.workspace')}>
+      <WorkspaceToolbox />
     </TabPage>
     <TabPage id='Weixin' header={$_('tab.weixin')}>
       <WeixinToolbox />
@@ -141,7 +144,7 @@
       <TabPage id={doc.id} reorderable={true}
           header={doc.dirty ? `${doc.name} •` : doc.name}
           onActivate={() => {
-            Workspace.activeId = doc.id;
+            Workspace.setActive(doc.id);
             Interface.requestRender();
             doc.editor?.focus?.();
           }}
@@ -155,7 +158,7 @@
           <Editor bind:text={doc.source}
             bind:this={doc.editor}
             onFocus={() => {
-              Workspace.activeId = doc.id;
+              Workspace.setActive(doc.id);
               updateCursorPosition(doc.editor);
             }}
             onChange={() => doc.dirty = true}

@@ -100,6 +100,7 @@ export const Interface = $state({
 
     invertedPreview: Memorized.$('invertedPreview', z.boolean(), false),
     syncScrolling: Memorized.$('syncScrolling', z.boolean(), false),
+    useMojikit: Memorized.$('useMojikit', z.boolean(), true),
 
     libConfig: undefined as emmm.Configuration | undefined,
 
@@ -183,7 +184,8 @@ export const Interface = $state({
         });
         if (result.type !== 'ok') return;
 
-        processDocument(result.doc, mojikitOpts);
+        if (this.useMojikit.get())
+            processDocument(result.doc, mojikitOpts);
         this.renderedHTML = result.doc.documentElement.outerHTML;
         this.sourceMap = result.map;
 

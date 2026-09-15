@@ -55,19 +55,6 @@ body {
   font-synthesis: none;
 }
 
-/* large structures */
-
-body {
-  font-family: system-ui, sans-serif;
-  background-color: white;
-  line-height: 1.4;
-  letter-spacing: 0px;
-}
-
-section {
-  /* white-space: pre-wrap; */
-}
-
 section.article-container {
   display: inline-block;
   background-color: param(theme-color);

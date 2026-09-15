@@ -12,6 +12,7 @@
   let autoColor = Memorized.$('autoColorParams', z.boolean(), false);
   let colors = Interface.colors;
   let background = Interface.backgroundImage;
+  let useMojikit = Interface.useMojikit;
 
   function doDeriveColors() {
     console.log('changed');
@@ -76,3 +77,9 @@
     </div>
   </ConfigRow>
 </ConfigTable>
+
+<h5>高级</h5>
+<label>
+  <input type='checkbox' bind:checked={$useMojikit}>
+  使用 mojikit
+</label>

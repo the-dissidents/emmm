@@ -25,6 +25,24 @@
     "fs:default",
     "fs:allow-appconfig-read-recursive",
     "fs:allow-appconfig-write-recursive",
+    "fs:allow-read-dir",
+    "fs:allow-create",
+    {
+      "identifier": "fs:read-all",
+      "allow": [
+        {
+          "path": "**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:write-all",
+      "allow": [
+        {
+          "path": "**"
+        }
+      ]
+    },
     {
       "identifier": "shell:allow-execute",
       "allow": [
@@ -40,30 +58,6 @@
           "name": "say",
           "cmd": "say",
           "args": true
-        }
-      ]
-    },
-    {
-      "identifier": "fs:allow-create",
-      "allow": [
-        {
-          "path": "**"
-        }
-      ]
-    },
-    {
-      "identifier": "fs:read-all",
-      "allow": [
-        {
-          "path": "**"
-        }
-      ]
-    },
-    {
-      "identifier": "fs:write-all",
-      "allow": [
-        {
-          "path": "**"
         }
       ]
     },
