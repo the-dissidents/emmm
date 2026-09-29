@@ -3,7 +3,7 @@ import { BinaryReader } from "./details/BinaryReader";
 import { path } from "@tauri-apps/api";
 import * as fs from "@tauri-apps/plugin-fs";
 import mime from 'mime/lite';
-import { readUrl, type ProgressReporter } from "./Util";
+import { readUrl } from "./Util";
 
 type BackendEvent = {
     event: 'failed'
@@ -63,12 +63,6 @@ export type PackedFont = {
 export type FileHash = string & { __brand: 'FileHash' };
 
 export const RustAPI = {
-    async initFonts(report?: ProgressReporter) {
-        const channel = new Channel<{ value: number, total: number }>();
-        channel.onmessage = ({ value, total }) => report?.(value, total);
-        await invoke('init_font_registry', { channel });
-    },
-
     async packFonts(families: string[]): Promise<PackedFont[]> {
         const buf = await invoke<ArrayBuffer>('pack_fonts', { families });
         const reader = new BinaryReader(buf);

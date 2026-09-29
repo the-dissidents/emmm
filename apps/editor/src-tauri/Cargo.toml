@@ -40,3 +40,6 @@ zip = "7.2.0"
 anyhow = { version = "1.0.100", features = ["backtrace"] }
 fancy-regex = "0.17.0"
 font-kit = "0.14"
+
+[patch.crates-io]
+font-kit = { git = "https://github.com/the-dissidents/font-kit.git", branch = "fix/coretext-path" }

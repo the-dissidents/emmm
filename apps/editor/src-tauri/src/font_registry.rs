@@ -1,28 +1,44 @@
-use std::{collections::{HashMap, HashSet}, path::PathBuf, sync::Mutex};
+use std::{collections::HashMap, path::PathBuf, sync::Mutex};
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use font_kit::source::SystemSource;
 use font_kit::handle::Handle;
-use serde::Serialize;
 use tauri::State;
 use tauri::async_runtime;
-use tauri::ipc::{Channel, Response};
-
-#[derive(Serialize, Clone)]
-pub struct Progress {
-    value: usize,
-    total: usize,
-}
+use tauri::ipc::Response;
 
 pub struct FontRegistry {
-    entries: Vec<FontEntry>,
+    cache: HashMap<String, Vec<FontEntry>>,
 }
 
 struct FontEntry {
-    bytes: Arc<Vec<u8>>,
+    handle: Handle,
     family_name: String,
     weight: f32,
     style: FontEntryStyle,
+}
+
+#[derive(Hash, PartialEq, Eq)]
+enum FontKey {
+    Path(PathBuf),
+    Memory(*const u8),
+}
+
+impl FontEntry {
+    fn dedup_key(&self) -> FontKey {
+        match &self.handle {
+            Handle::Path { path, .. } => FontKey::Path(path.clone()),
+            Handle::Memory { bytes, .. } => FontKey::Memory(bytes.as_ptr()),
+        }
+    }
+
+    fn load_bytes(&self) -> Option<Arc<Vec<u8>>> {
+        match &self.handle {
+            Handle::Path { path, .. } => std::fs::read(path).ok().map(Arc::new),
+            Handle::Memory { bytes, .. } => Some(bytes.clone()),
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -58,65 +74,39 @@ fn write_string(buf: &mut Vec<u8>, s: &str) {
 }
 
 impl FontRegistry {
-    #[allow(clippy::cast_precision_loss)]
-    pub fn discover(channel: Channel<Progress>) -> Self {
+    pub fn new() -> Self {
+        FontRegistry { cache: HashMap::new() }
+    }
+
+    fn discover_family(family_name: &str) -> Vec<FontEntry> {
         let source = SystemSource::new();
-        let all_families = source.all_families().unwrap_or_default();
-        let total_families = all_families.len();
+        let Ok(handle) = source.select_family_by_name(family_name) else {
+            return Vec::new();
+        };
+
         let mut entries = Vec::new();
-        let mut file_cache: HashMap<PathBuf, Arc<Vec<u8>>> = HashMap::new();
-
-        for (index, family_name) in all_families.into_iter().enumerate() {
-            channel.send(Progress {
-                value: index + 1,
-                total: total_families,
-            }).expect("error sending message");
-
-            let Ok(handle) =
-                source.select_family_by_name(&family_name) else { continue; };
-
-            for font_handle in handle.fonts() {
-                let (bytes, _index) = match font_handle {
-                    Handle::Path { path, font_index } => {
-                        if let Some(data) = file_cache.get(path) {
-                            (data.clone(), font_index)
-                        } else if let Ok(data) = std::fs::read(path) {
-                            let data = Arc::new(data);
-                            file_cache.insert(path.clone(), data.clone());
-                            (data, font_index)
-                        } else {
-                            log::warn!("failed to read font file of {family_name} at {}", path.display());
-                            continue;
-                        }
-                    }
-                    Handle::Memory { bytes, font_index } => {
-                        (bytes.clone(), font_index)
-                    }
-                };
-                match font_handle.load() {
-                    Ok(font) => {
-                        let props = font.properties();
-                        entries.push(FontEntry {
-                            bytes,
-                            family_name: font.family_name(),
-                            weight: props.weight.0,
-                            style: props.style.into(),
-                        });
-                    }
-                    Err(e) => {
-                        log::warn!("failed to load font face in family {family_name}: {e}");
-                    }
+        for font_handle in handle.fonts() {
+            match font_handle.load() {
+                Ok(font) => {
+                    let props = font.properties();
+                    entries.push(FontEntry {
+                        handle: font_handle.clone(),
+                        family_name: font.family_name(),
+                        weight: props.weight.0,
+                        style: props.style.into(),
+                    });
+                }
+                Err(e) => {
+                    log::warn!("failed to load font face in family {family_name}: {e}");
                 }
             }
         }
+        entries
+    }
 
-        log::info!(
-            "discovered {} font faces across {} families",
-            entries.len(),
-            entries.iter().map(|e| &e.family_name).collect::<HashSet<_>>().len()
-        );
-
-        FontRegistry { entries }
+    fn resolve(&mut self, family_name: &str) {
+        let key = family_name.to_lowercase();
+        self.cache.entry(key).or_insert_with(|| Self::discover_family(family_name));
     }
 
     /// Packs the data of all font faces whose family matches one of `families`
@@ -125,26 +115,40 @@ impl FontRegistry {
     /// where `str` is `len:u32, utf8-bytes`. Faces sharing the same underlying
     /// file (e.g. TrueType collections) are only emitted once per family.
     #[allow(clippy::missing_panics_doc)]
-    pub fn pack_fonts(&self, families: &[String]) -> Vec<u8> {
-        let wanted: HashSet<String> =
-            families.iter().map(|f| f.to_lowercase()).collect();
-        let mut seen: HashSet<(String, *const u8)> = HashSet::new();
-        let matched: Vec<&FontEntry> = self.entries.iter()
-            .filter(|e| {
-                let family = e.family_name.to_lowercase();
-                wanted.contains(&family)
-                    && seen.insert((family, e.bytes.as_ptr()))
-            })
-            .collect();
+    pub fn pack_fonts(&mut self, families: &[String]) -> Vec<u8> {
+        for family in families {
+            self.resolve(family);
+        }
+
+        let mut seen: HashSet<(String, FontKey)> = HashSet::new();
+        let mut matched: Vec<&FontEntry> = Vec::new();
+        for family in families {
+            let key = family.to_lowercase();
+            if let Some(entries) = self.cache.get(&key) {
+                for entry in entries {
+                    if seen.insert((key.clone(), entry.dedup_key())) {
+                        matched.push(entry);
+                    }
+                }
+            }
+        }
+
+        let mut resolved: Vec<(&FontEntry, Arc<Vec<u8>>)> = Vec::with_capacity(matched.len());
+        for entry in matched {
+            match entry.load_bytes() {
+                Some(bytes) => resolved.push((entry, bytes)),
+                None => log::warn!("failed to read font data for {}", entry.family_name),
+            }
+        }
 
         let mut buf: Vec<u8> = Vec::new();
-        buf.extend(u32::try_from(matched.len()).unwrap().to_le_bytes());
-        for entry in matched {
+        buf.extend(u32::try_from(resolved.len()).unwrap().to_le_bytes());
+        for (entry, bytes) in &resolved {
             write_string(&mut buf, &entry.family_name);
             buf.extend(f64::from(entry.weight).to_le_bytes());
             write_string(&mut buf, entry.style.css_name());
-            buf.extend(u32::try_from(entry.bytes.len()).unwrap().to_le_bytes());
-            buf.extend(entry.bytes.iter());
+            buf.extend(u32::try_from(bytes.len()).unwrap().to_le_bytes());
+            buf.extend(bytes.iter());
         }
         buf
     }
@@ -152,27 +156,16 @@ impl FontRegistry {
 
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)]
-pub async fn init_font_registry(
-    channel: Channel<Progress>,
-    state: State<'_, Arc<Mutex<Option<FontRegistry>>>>
-) -> Result<(), tauri::Error> {
-    async_runtime::spawn_blocking(move || FontRegistry::discover(channel))
-    .await
-    .map(|r| {
-        let mut value = state.lock().unwrap();
-        *value = Some(r);
-    })
-}
-
-#[tauri::command]
-#[allow(clippy::needless_pass_by_value)]
-pub fn pack_fonts(
+pub async fn pack_fonts(
     families: Vec<String>,
-    state: State<'_, Arc<Mutex<Option<FontRegistry>>>>,
+    state: State<'_, Arc<Mutex<FontRegistry>>>,
 ) -> Result<Response, String> {
-    let value = state.lock().unwrap();
-    let Some(registry) = value.as_ref() else {
-        return Err("font registry not initialized".to_string());
-    };
-    Ok(Response::new(registry.pack_fonts(&families)))
+    let registry = state.inner().clone();
+    let buf = async_runtime::spawn_blocking(move || {
+        let mut registry = registry.lock().unwrap();
+        registry.pack_fonts(&families)
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    Ok(Response::new(buf))
 }

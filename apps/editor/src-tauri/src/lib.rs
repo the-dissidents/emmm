@@ -1,4 +1,4 @@
-use std::{panic, sync::{Arc, Mutex}};
+use std::{format, panic, sync::{Arc, Mutex}};
 
 use serde::Serialize;
 
@@ -9,7 +9,7 @@ mod hash;
 
 use archive::{archive, unarchive};
 use compress::compress_image;
-use font_registry::{FontRegistry, init_font_registry, pack_fonts};
+use font_registry::{FontRegistry, pack_fonts};
 use hash::hash_file;
 
 #[derive(Clone, Serialize)]
@@ -87,13 +87,12 @@ pub fn run() {
                 .max_file_size(5_000_000)
                 .build(),
         )
-        .manage(Arc::new(Mutex::new(Option::<FontRegistry>::None)))
+        .manage(Arc::new(Mutex::new(FontRegistry::new())))
         .invoke_handler(tauri::generate_handler![
             compress_image,
             hash_file,
             archive,
             unarchive,
-            init_font_registry,
             pack_fonts,
         ])
         .run(tauri::generate_context!())
