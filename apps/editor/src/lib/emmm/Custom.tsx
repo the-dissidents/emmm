@@ -21,7 +21,7 @@ export function renderText(text: string) {
         if (previous.length > 0) {
             result.push(previousWidth == 2
                 ? <span class='wide'>{previous}</span>
-                : new Text(previous));
+                : <span class='narrow'>{previous}</span>);
             previous = '';
         }
     }

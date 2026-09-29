@@ -9,7 +9,7 @@
 (?<=\p{Script=Han})(-)(?=\p{Script=Han})
 
 [-lint desc=两对中文引号或书名号之间不应有其它标点符号（《标点符号用法》4.5.3.5）]
-(?<=[》”]\s*)[\u3000-\u303F|\uFF00-\uFF5A](?=\s*[《“])
+(?<=[》”]\s*)[，、,](?=\s*[《“])
 
 [-lint desc=中文破折号不能以一半的形式出现，你可能想要一个连接号？
 |repl=–]
@@ -187,7 +187,27 @@
 [-block-shorthand \||person|\||()]
 [.concat]
 <<<
-*[/$person]*\
+*[/$person]*[/tab]
+[.slot]
+>>>
+
+[.module drama]
+[-block-shorthand \||person|\||()]
+<<<
+[.style drama-speaker]
+[/$person]
+
+[.style drama-block]
+[.slot]
+>>>
+
+[.module drama2]
+[-block-shorthand \||person|\||()]
+<<<
+[.style drama-speaker]
+[/$person]
+
+[.style drama-block-n]
 [.slot]
 >>>
 

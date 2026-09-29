@@ -4,21 +4,21 @@
   display: inline;
 
   &.sqm {
-    margin-inline: -0.1em;
+    margin-inline: 0.1em;
   }
 
   &.sqr {
-    margin-right: -0.4em;
+    // margin-right: -0.3em;
   }
   &.sqr.q {
-    margin-right: -0.3em;
+    // margin-right: -0.25em;
   }
 
   &.sql {
-    margin-left: -0.4em;
+    // margin-left: -0.3em;
   }
   &.sql.q {
-    margin-left: -0.3em;
+    // margin-left: -0.25em;
   }
 }
 
@@ -52,7 +52,7 @@ body {
   background-color: white;
   line-height: 1.4;
   letter-spacing: 0px;
-  font-synthesis: none;
+  // font-synthesis: none;
 }
 
 section {

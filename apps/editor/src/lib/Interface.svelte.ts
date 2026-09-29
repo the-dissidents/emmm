@@ -66,8 +66,8 @@ const mojikitOpts: Options = {
         {
             heuristic: /[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef\u{20000}-\u{2fa1f}\u{30000}-\u{3134a}“”‘’—·⸺⋯…\d\.\[\]]/u,
             tagName: "mjk-chs",
-            squeezeLeft: /[“‘《〈（「『]/,
-            squeezeRight: /[”’〉》）」』，。、：；？！]/,
+            squeezeLeft: /[《〈（「『]/,
+            squeezeRight: /[〉》）」』，。、：；？！]/,
             squeezeMiddle: /·/,
             noBreakBefore: /[”’〉》）」』，。、：；？！—·⸺⋯－]/,
             noBreakAfter: /[“‘《〈（「『—·⸺⋯－]/,

@@ -4,21 +4,21 @@
   display: inline;
 
   &.sqm {
-    margin-inline: -0.1em;
+    margin-inline: 0.1em;
   }
 
   &.sqr {
     margin-right: -0.4em;
   }
   &.sqr.q {
-    margin-right: -0.3em;
+    margin-right: -0.2em;
   }
 
   &.sql {
     margin-left: -0.4em;
   }
   &.sql.q {
-    margin-left: -0.3em;
+    margin-left: -0.2em;
   }
 }
 
@@ -83,7 +83,10 @@ section.article-body {
 
 span.wide {
   letter-spacing: 2px;
-  padding-inline: 1px;
+}
+
+span.narrow {
+  padding-right: 2px;
 }
 
 /* meta elements */
@@ -196,7 +199,7 @@ blockquote {
 h1 {
   font-size: 150%;
   font-weight: bold;
-  margin-block: 2em 2em;
+  margin-block: 3em 2em;
 }
 
 h2 {
@@ -249,13 +252,14 @@ header {
   h1 {
     margin-block: 0 1em;
     white-space: normal;
+    font-size: 1.5rem;
 
     div {
       white-space: pre-wrap;
     }
 
     .subtitle {
-      font-size: 90% !important;
+      font-size: 1.25rem;
     }
   }
 
