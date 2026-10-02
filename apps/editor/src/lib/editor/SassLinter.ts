@@ -1,4 +1,4 @@
-import { compileStyles } from "$lib/Document.svelte";
+import { compileStyles } from "$lib/Render";
 import { Interface } from "$lib/Interface.svelte";
 import { linter, type Diagnostic } from "@codemirror/lint";
 import type { EmmmDiagnostic } from "./EmmmLinter";

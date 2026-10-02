@@ -13,14 +13,10 @@ export const emmmTheme = [
         "&light": {
             color: "black",
             backgroundColor: "white",
-            boxShadow: '1px 2px 5px 0px #9E9E9E',
-            border: '1px solid #f0a299',
         },
         "&dark": {
             color: "white",
             backgroundColor: "#222",
-            border: '1px solid #8d6262',
-            boxShadow: 'none',
         },
         ".cm-gutters": {
             fontSize: '85%',

@@ -2,6 +2,7 @@
   import { Debug } from "$lib/Debug";
   import { getVoices, say } from "$lib/integration/easter/Eggs";
   import { Interface } from "$lib/Interface.svelte";
+  import { EditableDocument } from "$lib/workspace/Document.svelte";
   import { Workspace } from "$lib/workspace/Workspace.svelte";
   import { platform } from '@tauri-apps/plugin-os';
   import { _, locale, locales } from 'svelte-i18n';
@@ -34,6 +35,8 @@
 
   <button
     onclick={async () => {
+      if (!(Workspace.active instanceof EditableDocument)) return;
+
       const editor = Workspace.active?.editor;
       Debug.assert(!!editor);
       const text = editor.getText();

@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as emmm from '@the_dissidents/libemmm';
-  import { TabView, TabPage, Resizer, ListView } from '@the_dissidents/svelte-ui';
-  import { CircleXIcon, InfoIcon, TriangleAlertIcon } from '@lucide/svelte';
+  import { TabView, TabPage, Resizer, ListView, ConfigTable, ConfigRow } from '@the_dissidents/svelte-ui';
+  import { CircleXIcon, EllipsisIcon, InfoIcon, TriangleAlertIcon } from '@lucide/svelte';
   import { sass as sassLang } from '@codemirror/lang-sass';
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
   import { _ } from 'svelte-i18n';
@@ -12,7 +12,7 @@
 
   import { Interface } from './Interface.svelte';
   import { Workspace } from './workspace/Workspace.svelte';
-  import type { Document } from './workspace/Document.svelte';
+  import { ConfigDocument, EditableDocument, EmmmDocument, LibDocument, StyleDocument, type Document } from './workspace/Document.svelte';
   import EmmmContext from './editor/EmmmContext.svelte';
   import GenericContext from './editor/GenericContext.svelte';
   import type { EmmmParseData } from './editor/ParseData';
@@ -31,8 +31,18 @@
   import { sassLinter } from './editor/SassLinter';
   import WorkspaceToolbox from './toolbox/WorkspaceToolbox.svelte';
 
+  import { Memorized } from './config/Memorized.svelte';
+  import * as z from 'zod/v4-mini';
+
   if (Workspace.documents.length === 0)
     Workspace.newDocument();
+
+  let defaultPath = Memorized.$('workspacePath', z.string(), "");
+  Memorized.onInitialize(() => {
+    if ($defaultPath) {
+      Workspace.open($defaultPath);
+    }
+  });
 
   let left = $state<HTMLElement>(),
       middle = $state<HTMLElement>(),
@@ -43,36 +53,25 @@
   let parsedStatus = $state('');
   let posStatus = $state('');
 
-  let libraryHandle = $state<Editor>(),
-      cssHandle = $state<Editor>();
-
   let status = Interface.status,
       progress = Interface.progress,
       inverted = Interface.invertedPreview,
       syncScrolling = Interface.syncScrolling;
-
-  let library = Interface.library,
-      stylesheet = Interface.stylesheet;
 
   let sassDiag: EmmmDiagnostic[] = $state([]);
 
   function onParseLibrary(doc: EmmmParseData) {
     Interface.libConfig = doc.data.context.config;
     for (const d of Workspace.documents)
-      d.editor?.reparse();
+      if (d instanceof EmmmDocument)
+        d.editor?.reparse();
   }
 
-  function onParseDocument(doc: Document, data: EmmmParseData) {
+  function onParseDocument(doc: EmmmDocument | LibDocument, data: EmmmParseData) {
     doc.parseData = data;
     parsedStatus = $_('main.parsed-in', { values: { ms: data.parseTime.toFixed(0) } });
     if (Workspace.activeId === doc.id)
       Interface.requestRender();
-  }
-
-  function onCursorPositionChanged(doc: Document, pos: number, l: number, c: number) {
-    posStatus = $_('main.cursor-position', { values: { l, c } });
-    if (Workspace.activeId === doc.id)
-      scrollToSource.start(pos, false);
   }
 
   function onGenericCursorChanged(_pos: number, l: number, c: number) {
@@ -89,7 +88,7 @@
     if (doc.dirty && !(await dialog.confirm(
       $_('file.msg.confirm-close', { values: { name: doc.name } }))))
       return;
-    Workspace.close(doc);
+    Workspace.closeDocument(doc);
   }
 
   const scrollToSource = new DebouncedTask(
@@ -98,7 +97,7 @@
   let activeTab = $state('');
 
   const me = {};
-  Workspace.onActiveChanged.bind(me, () => {
+  Workspace.onActiveDocumentChanged.bind(me, () => {
     if (Workspace.activeId)
       activeTab = Workspace.activeId;
   });
@@ -144,61 +143,91 @@
       <TabPage id={doc.id} reorderable={true}
           header={doc.dirty ? `${doc.name} •` : doc.name}
           onActivate={() => {
-            Workspace.setActive(doc.id);
+            Workspace.setActiveDocument(doc.id);
             Interface.requestRender();
-            doc.editor?.focus?.();
+            if (doc instanceof EditableDocument)
+              doc.editor?.focus?.();
           }}
           onCloseRequested={() => closeDocument(doc)}>
-        <EmmmContext onParse={(data) => onParseDocument(doc, data)}
-            provideDescriptor={() => ({ name: doc.name })}
-            provideContext={() => Interface.libConfig
-              ? new emmm.ParseContext(emmm.Configuration.from(Interface.libConfig, true))
-              : undefined}
-            onLint={(d) => doc.diagnostics = d}>
-          <Editor bind:text={doc.source}
-            bind:this={doc.editor}
-            onFocus={() => {
-              Workspace.setActive(doc.id);
-              updateCursorPosition(doc.editor);
-            }}
-            onChange={() => doc.dirty = true}
-            onScroll={(_, view) => {
-              if (!$syncScrolling) return;
-              if (Workspace.activeId !== doc.id) return;
+        {#if doc instanceof EmmmDocument || doc instanceof LibDocument}
+          <EmmmContext
+              onParse={(data) => doc instanceof LibDocument
+                ? onParseLibrary(data)
+                : onParseDocument(doc, data)}
+              provideDescriptor={() => ({ name: doc.name })}
+              provideContext={() => Interface.libConfig
+                ? new emmm.ParseContext(emmm.Configuration.from(Interface.libConfig, true))
+                : undefined}
+              onLint={(d) => doc.diagnostics = d}>
+            <Editor bind:text={doc.source}
+              bind:this={doc.editor}
+              onFocus={() => {
+                Workspace.setActiveDocument(doc.id);
+                updateCursorPosition(doc.editor);
+              }}
+              banner={doc instanceof LibDocument && doc.temporary
+                ? "您正在修改没有保存到工作空间中的临时库文件"
+                : undefined}
+              onChange={() => doc.dirty = true}
+              onScroll={(_, view) => {
+                if (doc instanceof LibDocument) return;
+                if (!$syncScrolling) return;
+                if (Workspace.activeId !== doc.id) return;
 
-              const rect = view.scrollDOM.getBoundingClientRect();
-              const pos = view.posAtCoords({ x: 0, y: rect.top + rect.height / 2 });
-              if (pos === null) return;
-              scrollToSource.start(pos, false);
-            }}
-            onCursorPositionChanged={(pos, l, c) => onCursorPositionChanged(doc, pos, l, c)} />
-        </EmmmContext>
+                const rect = view.scrollDOM.getBoundingClientRect();
+                const pos = view.posAtCoords({ x: 0, y: rect.top + rect.height / 2 });
+                if (pos === null) return;
+                scrollToSource.start(pos, false);
+              }}
+              onCursorPositionChanged={(pos, l, c) => {
+                posStatus = $_('main.cursor-position', { values: { l, c } });
+                if (doc instanceof EmmmDocument && Workspace.activeId === doc.id)
+                  scrollToSource.start(pos, false);
+              }} />
+          </EmmmContext>
+        {:else if doc instanceof StyleDocument}
+          <GenericContext extension={[
+            syntaxHighlighting(defaultHighlightStyle),
+            bracketMatching(),
+            sassLang(),
+            sassLinter((m) => sassDiag = m),
+          ]}>
+            <Editor bind:text={doc.source}
+              bind:this={doc.editor}
+              banner={doc.temporary ? "您正在修改没有保存到工作空间中的临时样式表" : undefined}
+              onFocus={() => {
+                Workspace.setActiveDocument(doc.id);
+                updateCursorPosition(doc.editor);
+              }}
+              onChange={() => {
+                doc.dirty = true;
+                Interface.requestRender();
+              }}
+              onCursorPositionChanged={onGenericCursorChanged} />
+          </GenericContext>
+        {:else if doc instanceof ConfigDocument}
+          <fieldset>
+            <h3>工作空间属性</h3>
+            <ConfigTable>
+              <ConfigRow name="位置">
+                {Workspace.path}
+              </ConfigRow>
+              <ConfigRow name="名称">
+                <div class="row">
+                  <input type="text" bind:value={Workspace.name}>
+                </div>
+              </ConfigRow>
+              <ConfigRow name="素材文件夹">
+                <div class="row">
+                  <input type="text" readonly value={Workspace.assetPath}>
+                  <button><EllipsisIcon /></button>
+                </div>
+              </ConfigRow>
+            </ConfigTable>
+          </fieldset>
+        {/if}
       </TabPage>
     {/each}
-    <TabPage id="Library" header={$_('tab.library')} alignment='end'
-        onActivate={() => libraryHandle?.focus?.()}>
-      <EmmmContext onParse={onParseLibrary}
-          provideDescriptor={() => ({name: '<Library>'})}>
-        <Editor bind:text={$library}
-          bind:this={libraryHandle}
-          onFocus={() => updateCursorPosition(libraryHandle)}
-          onCursorPositionChanged={onGenericCursorChanged} />
-      </EmmmContext>
-    </TabPage>
-    <TabPage id="Stylesheet" header={$_('tab.stylesheet')} alignment='end'>
-      <GenericContext extension={[
-        syntaxHighlighting(defaultHighlightStyle),
-        bracketMatching(),
-        sassLang(),
-        sassLinter((m) => sassDiag = m),
-      ]}>
-        <Editor bind:text={$stylesheet}
-          bind:this={cssHandle}
-          onFocus={() => updateCursorPosition(cssHandle)}
-          onCursorPositionChanged={onGenericCursorChanged}
-          onChange={() => Interface.requestRender()} />
-      </GenericContext>
-    </TabPage>
   </TabView>
 </div>
 
@@ -211,12 +240,10 @@
   <TabView>
     <TabPage id="Preview" header={$_('tab.preview')}>
       <div class="vlayout vfill">
-        <fieldset>
-          <label>
-            <input type='checkbox' class="button" bind:checked={$syncScrolling}>
-            {$_('main.sync-scrolling')}
-          </label>
-        </fieldset>
+        <label style="margin-bottom: 5px;">
+          <input type='checkbox' class="button" bind:checked={$syncScrolling}>
+          {$_('main.sync-scrolling')}
+        </label>
         <iframe bind:this={Interface.frame}
           class={{inverted: $inverted, flexgrow: true}} title="preview"
           sandbox="allow-same-origin allow-scripts">
@@ -225,8 +252,10 @@
     </TabPage>
     <TabPage id="AST" header={$_('tab.ast')} lazy={true}>
       <div class="vlayout vfill">
+        {#if Workspace.active instanceof EmmmDocument || Workspace.active instanceof LibDocument}
+        {@const doc = Workspace.active}
         <div class="ast">
-          <ASTViewer node={strip ? Workspace.active?.parseData?.data.toStripped().root : Workspace.active?.parseData?.data.root} />
+          <ASTViewer node={strip ? doc.parseData?.data.toStripped().root : Workspace.active?.parseData?.data.root} />
         </div>
         <hr>
         <label>
@@ -234,12 +263,13 @@
           {$_('main.show-stripped-ast')}
         </label>
         <button onclick={() => {
-          const source = Workspace.active?.source;
+          const source = doc.source;
           if (!source || !Interface.libConfig) return;
           emmm.setDebugLevel(emmm.DebugLevel.Trace);
           new emmm.ParseContext(Interface.libConfig).parse(new emmm.SimpleScanner(source));
           emmm.setDebugLevel(emmm.DebugLevel.Error);
         }}>{$_('main.trace')}</button>
+        {/if}
       </div>
     </TabPage>
     <TabPage id="HTML" header={$_('tab.html')}>
@@ -253,8 +283,10 @@
   <Resizer first={bottom!} reverse={true} />
 </div>
 <div class="pane" style="height: 100px" bind:this={bottom}>
+  {#if Workspace.active instanceof EditableDocument}
+  {@const doc = Workspace.active}
   <ListView style='height: 100%'
-    items={[...sassDiag, ...(Workspace.active?.diagnostics ?? [])]}
+    items={[...sassDiag, ...doc.diagnostics]}
     columns={[
       ['file',    { header: $_('main.column-file'),    width: 'minmax(max-content, 5em)' }],
       ['type',    { header: '',        width: '3em' }],
@@ -263,8 +295,7 @@
       ['message', { header: $_('main.column-message'), width: 'auto' }],
     ]}
     onClickItem={(x) => {
-      const doc = Workspace.active;
-      if (doc && x.source == doc.name)
+      if (x.source == doc.name)
         doc.editor?.setSelections([{ from: x.from, to: x.to }]);
     }}
   >
@@ -294,6 +325,7 @@
       {d.message}
     {/snippet}
   </ListView>
+  {/if}
 </div>
 
 <div class="pane">
@@ -330,7 +362,25 @@
   }
 
   fieldset {
-    padding-bottom: 5px;
+    padding: 25px;
+    border: 1px solid lightgray;
+    border-radius: 0 0 3px 3px;
+    box-sizing: border-box;
+
+    background-color: white;
+
+    margin: 0;
+    height: 100%;
+
+    .row {
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+
+      input {
+        flex-grow: 1;
+      }
+    }
   }
 
   textarea {

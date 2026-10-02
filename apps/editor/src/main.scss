@@ -80,7 +80,13 @@
       color: uchu.$pink-1;
     }
   }
+
   padding-block: 0.5em;
+
+  .lucide {
+    font-size: 1rem;
+    padding-inline: 0.25em;
+  }
 }
 
 .important {

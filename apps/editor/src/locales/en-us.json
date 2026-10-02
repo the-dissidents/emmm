@@ -163,5 +163,9 @@
   "msg": {
     "autosave-complete": "autosave complete at {time}",
     "autosave-failed": "autosave failed"
+  },
+  "workspace": {
+    "no-workspace-opened": "no workspace opened",
+    "open-folder": "open folder..."
   }
 }

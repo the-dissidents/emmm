@@ -10,10 +10,11 @@ import * as z from "zod/v4-mini";
 import { defaultStyles, defaultLibrary } from './Templates';
 
 import { Debug } from "./Debug";
-import { renderDocument } from "./Document.svelte";
+import { renderDocument } from "./Render";
 import { Workspace } from "./workspace/Workspace.svelte";
 import { EventHost } from "@the_dissidents/svelte-ui";
 import { processDocument, type Options } from "@the_dissidents/mojikit";
+import { EmmmDocument } from "./workspace/Document.svelte";
 
 let status = writable<string>('ok');
 let progress = writable<number | undefined>();
@@ -95,7 +96,10 @@ export const Interface = $state({
     get status() { return status; },
     get progress() { return progress; },
 
+    /** @deprecated */
     stylesheet: Memorized.$('stylesheet', z.string(), defaultStyles),
+
+    /** @deprecated */
     library: Memorized.$('library', z.string(), defaultLibrary),
 
     invertedPreview: Memorized.$('invertedPreview', z.boolean(), false),
@@ -174,11 +178,13 @@ export const Interface = $state({
     },
 
     async render() {
+        if (!(Workspace.active instanceof EmmmDocument)) return;
         const pd = Workspace.active?.parseData?.data;
         if (!pd || !this.frame) return;
+
         const editor = Workspace.active?.editor;
         const result = await renderDocument(pd, {
-            sass: this.stylesheet.get(),
+            sass: Workspace.stylesheet.source,
             colors: this.colors.get(),
             backgroundImage: this.backgroundImage.get(),
         });

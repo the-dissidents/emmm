@@ -49,6 +49,8 @@
      * Changing this will reset cursor positions etc.
      */
     text?: string,
+
+    banner?: string,
   }
 
   export type Selection = {
@@ -57,7 +59,7 @@
 
   let {
     onChange: onTextChange, onCursorPositionChanged, onFocus, onBlur, onScroll,
-    text = $bindable(''),
+    text = $bindable(''), banner
   }: Props = $props();
 
   let editorContainer: HTMLDivElement;
@@ -180,15 +182,44 @@
 </script>
 
 <div bind:this={editorContainer} class="outer">
+  {#if banner}
+    <div class="banner">{banner}</div>
+  {/if}
 </div>
 
-<style>
+<style lang='scss'>
+  @use '../../uchu';
+
   .outer {
     display: flex;
+    flex-direction: column;
+
     justify-content: center;
     overflow: auto;
     height: 100%;
-    border-radius: 3px;
+    border-radius: 0 0 3px 3px;
     box-sizing: border-box;
+
+    position: relative;
+
+    .banner {
+      font-size: 85%;
+      padding: 1px 6px;
+      background-color: uchu.$pink-2;
+      color: uchu.$red-9;
+    }
+
+    :global(.cm-editor) {
+      flex-grow: 1;
+      overflow-y: scroll;
+    }
+
+    @media (prefers-color-scheme: light) {
+      border: 1px solid #f0a299;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      border: 1px solid #8d6262;
+    }
   }
 </style>

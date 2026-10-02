@@ -8,6 +8,7 @@
   import * as z from "zod/v4-mini";
   import { getReplacement } from "$lib/details/Replace";
   import { _ } from 'svelte-i18n';
+  import { EditableDocument } from "$lib/workspace/Document.svelte";
 
   let searchPattern = $state('');
   let replacement = $state('');
@@ -20,6 +21,8 @@
   }
 
   function work(action: 'select' | 'replace', all: boolean, start?: number) {
+    if (!(Workspace.active instanceof EditableDocument)) return;
+
     const editor = Workspace.active?.editor;
     if (!editor) return;
 

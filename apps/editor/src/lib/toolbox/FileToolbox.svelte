@@ -10,8 +10,11 @@
   import { htmlToEmmm } from "$lib/integration/weixin/Importer";
   import { openPath } from "@tauri-apps/plugin-opener";
   import { appConfigDir, appLocalDataDir, appLogDir } from "@tauri-apps/api/path";
-  import { compileStyles } from "$lib/Document.svelte";
+  import { compileStyles } from "$lib/Render";
   import { _ } from 'svelte-i18n';
+  import { EditableDocument, EmmmDocument, MovableDocument } from "$lib/workspace/Document.svelte";
+  import { FilePlusIcon, FolderOpenIcon, SaveIcon } from "@lucide/svelte";
+  import { Tooltip } from "@the_dissidents/svelte-ui";
 
   let progress = Interface.progress;
 
@@ -35,8 +38,8 @@
     const doc = Workspace.active;
     if (!doc) return;
     try {
-      if (await Workspace.save(doc))
-        Interface.status.set($_('file.msg.saved', { values: { path: doc.filePath ?? doc.name } }));
+      if (await doc.save())
+        Interface.status.set($_('file.msg.saved', { values: { path: doc.path ?? doc.name } }));
     } catch (e) {
       Interface.status.set($_('file.msg.error-save', { values: { error: String(e) } }));
     }
@@ -44,10 +47,10 @@
 
   async function saveAsActive() {
     const doc = Workspace.active;
-    if (!doc) return;
+    if (!(doc instanceof MovableDocument)) return;
     try {
-      if (await Workspace.saveAs(doc))
-        Interface.status.set($_('file.msg.saved', { values: { path: doc.filePath ?? doc.name } }));
+      if (await doc.saveAs())
+        Interface.status.set($_('file.msg.saved', { values: { path: doc.path ?? doc.name } }));
     } catch (e) {
       Interface.status.set($_('file.msg.error-save', { values: { error: String(e) } }));
     }
@@ -68,7 +71,7 @@
     }
 
     const doc = Workspace.active;
-    if (!doc) return;
+    if (!(doc instanceof EditableDocument)) return;
     const loc = doc.editor?.getSelections().at(0);
     doc.editor?.update({
       changes: {
@@ -89,7 +92,8 @@
     $progress = 0;
     if ($libraryUrl) {
       try {
-        Interface.library.set(await (await fetch($libraryUrl)).text());
+        Workspace.library.source = await (await fetch($libraryUrl)).text();
+        Workspace.library.dirty = true;
       } catch (e) {
         await dialog.message($_('sync.msg.error-updating-library', { values: { error: String(e) } }), { kind: 'error' });
       }
@@ -98,7 +102,8 @@
 
     if ($stylesUrl) {
       try {
-        Interface.stylesheet.set(await (await fetch($stylesUrl)).text());
+        Workspace.stylesheet.source = await (await fetch($stylesUrl)).text();
+        Workspace.stylesheet.dirty = true;
       } catch (e) {
         await dialog.message($_('sync.msg.error-updating-stylesheet', { values: { error: String(e) } }), { kind: 'error' });
       }
@@ -111,7 +116,7 @@
 
   async function archive() {
     const doc = Workspace.active;
-    if (!doc) return;
+    if (!(doc instanceof EmmmDocument)) return;
 
     const path = await dialog.save({
       filters: [{ name: $_('sync.archive-filter'), extensions: ['zip'] }],
@@ -158,10 +163,31 @@
 </script>
 
 <h5>{$_('tab.file')}</h5>
-<button class="veryimportant" onclick={newDocument}>{$_('file.new')}</button>
-<button class="veryimportant" onclick={openDocument}>{$_('file.open')}</button>
-<button class="veryimportant" onclick={saveActive}>{$_('file.save')}</button>
-<button class="important" onclick={saveAsActive}>{$_('file.save-as')}</button>
+<Tooltip text={$_('file.new')}>
+  <button class="veryimportant" onclick={newDocument}>
+    <FilePlusIcon />
+  </button>
+</Tooltip>
+
+<Tooltip text={$_('file.open')}>
+  <button class="veryimportant" onclick={openDocument}>
+    <FolderOpenIcon />
+  </button>
+</Tooltip>
+
+<Tooltip text={$_('file.save')}>
+  <button class="veryimportant"
+    disabled={!Workspace.active?.path}
+    onclick={saveActive}
+  ><SaveIcon /></button>
+</Tooltip>
+
+<Tooltip text={$_('file.save-as')}>
+  <button class="veryimportant"
+    disabled={!(Workspace.active instanceof MovableDocument)}
+    onclick={saveAsActive}
+  ><SaveIcon /></button>
+</Tooltip>
 
 <button onclick={() => Memorized.save()}>{$_('file.save-system-config')}</button>
 
@@ -180,7 +206,17 @@
     </td>
   </tr>
 </tbody></table>
-<button class="veryimportant" onclick={updateAll}>{$_('sync.update-all')}</button>
+
+<button class="important" onclick={() => {
+  Workspace.openDocument(Workspace.library);
+}}>{$_('sync.edit-library')}</button>
+<button class="important" onclick={() => {
+  Workspace.openDocument(Workspace.stylesheet);
+}}>{$_('sync.edit-stylesheet')}</button>
+<button class="veryimportant" onclick={updateAll}>
+  {$_('sync.update-all')}
+</button>
+
 <h5>{$_('sync.archive-title')}</h5>
 <button class="veryimportant" onclick={archive}>{$_('sync.save-archive')}</button>
 <button class="important" onclick={unarchive}>{$_('sync.import-archive')}</button>
@@ -210,7 +246,7 @@
 
 <button onclick={() => {
   const result = compileStyles({
-    sass: Interface.stylesheet.get(),
+    sass: Workspace.stylesheet.source,
     colors: Interface.colors.get(),
     backgroundImage: Interface.backgroundImage.get()
   });

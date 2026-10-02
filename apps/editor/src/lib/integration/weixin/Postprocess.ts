@@ -10,8 +10,9 @@ import { findBoundingRect } from "$lib/details/BoundingRect";
 import { toCanvas } from "$lib/details/ElementToCanvas";
 import { WeixinClient } from "./API.svelte";
 import { Interface } from "$lib/Interface.svelte";
-import { compileStyles } from "$lib/Document.svelte";
+import { compileStyles } from "$lib/Render";
 import { RustAPI } from "$lib/RustAPI";
+import { Workspace } from "$lib/workspace/Workspace.svelte";
 
 const CONVERT_TO_SECTION = new Set([
     'address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'fieldset',
@@ -193,7 +194,7 @@ export async function postprocess(
         } else {
             console.log('bkg img cache', cache);
             const result = compileStyles({
-                sass: Interface.stylesheet.get(),
+                sass: Workspace.stylesheet.source,
                 colors: Interface.colors.get(),
                 backgroundImage: cache
             });
