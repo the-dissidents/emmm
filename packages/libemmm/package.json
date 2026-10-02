@@ -23,12 +23,12 @@
         "@the_dissidents/minimal-jsx-runtime": "workspace:0.0.3"
     },
     "devDependencies": {
-        "@happy-dom/global-registrator": "^19.0.2",
-        "@vitest/coverage-istanbul": "^4.0.14",
-        "@vitest/ui": "^4.0.14",
-        "happy-dom": "^19.0.2",
-        "tsdown": "^0.15.10",
+        "@happy-dom/global-registrator": "^20.14.5",
+        "@vitest/coverage-istanbul": "^5.0.3",
+        "@vitest/ui": "^5.0.3",
+        "happy-dom": "^20.14.5",
+        "tsdown": "^0.23.0",
         "typescript": "^5.9.3",
-        "vitest": "^4.0.14"
+        "vitest": "^5.0.3"
     }
 }

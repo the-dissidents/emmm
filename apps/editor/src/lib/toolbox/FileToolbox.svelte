@@ -13,7 +13,7 @@
   import { compileStyles } from "$lib/Render";
   import { _ } from 'svelte-i18n';
   import { EditableDocument, EmmmDocument, MovableDocument } from "$lib/workspace/Document.svelte";
-  import { FilePlusIcon, FolderOpenIcon, SaveIcon } from "@lucide/svelte";
+  import { FilePlusIcon, FolderOpenIcon, SaveIcon, SavePlusIcon } from "@lucide/svelte";
   import { Tooltip } from "@the_dissidents/svelte-ui";
 
   let progress = Interface.progress;
@@ -186,7 +186,7 @@
   <button class="veryimportant"
     disabled={!(Workspace.active instanceof MovableDocument)}
     onclick={saveAsActive}
-  ><SaveIcon /></button>
+  ><SavePlusIcon /></button>
 </Tooltip>
 
 <button onclick={() => Memorized.save()}>{$_('file.save-system-config')}</button>
