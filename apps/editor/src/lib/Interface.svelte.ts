@@ -10,6 +10,8 @@ import * as z from "zod/v4-mini";
 import { defaultStyles, defaultLibrary } from './Templates';
 
 import { Debug } from "./Debug";
+import { extendWeixinPreview } from './plugins/weixin/Preview';
+import { syncWeixinFooterHeadingColors } from './plugins/weixin/FooterStyle';
 import { renderDocument } from "./Document.svelte";
 import { Workspace } from "./workspace/Workspace.svelte";
 import { EventHost } from "@the_dissidents/svelte-ui";
@@ -19,6 +21,7 @@ let status = writable<string>('ok');
 let progress = writable<number | undefined>();
 
 let renderTimer: any;
+let renderVersion = 0;
 
 function getId(n: Node | null) {
     while (n) {
@@ -106,6 +109,7 @@ export const Interface = $state({
 
     frame: undefined as HTMLIFrameElement | undefined,
     renderedHTML: null as string | null,
+    renderedDocument: null as Document | null,
     sourceMap: [] as emmm.HTMLSourceMapEntry[],
 
     colors: Memorized.$('colorParams', ZArticleColors, {
@@ -176,7 +180,10 @@ export const Interface = $state({
     async render() {
         const pd = Workspace.active?.parseData?.data;
         if (!pd || !this.frame) return;
-        const editor = Workspace.active?.editor;
+        const active = Workspace.active;
+        const source = active?.source ?? '';
+        const version = ++renderVersion;
+        const editor = active?.editor;
         const result = await renderDocument(pd, {
             sass: this.stylesheet.get(),
             colors: this.colors.get(),
@@ -184,19 +191,33 @@ export const Interface = $state({
         });
         if (result.type !== 'ok') return;
 
+        await extendWeixinPreview(result.doc, source);
+        if (version !== renderVersion || Workspace.active !== active || active?.source !== source) return;
         if (this.useMojikit.get())
             processDocument(result.doc, mojikitOpts);
+        this.renderedDocument = result.doc;
         this.renderedHTML = result.doc.documentElement.outerHTML;
         this.sourceMap = result.map;
 
         const sx = this.frame.contentWindow!.scrollX;
         const sy = this.frame.contentWindow!.scrollY;
-        this.frame.srcdoc = this.renderedHTML;
-        this.frame.addEventListener(
-            'load', () => {
-                this.frame!.contentWindow!.scrollTo(sx, sy);
+        await new Promise<void>((resolve, reject) => {
+            const frame = this.frame!;
+            const timer = setTimeout(() => {
+                frame.removeEventListener('load', loaded);
+                reject(new Error('文章预览加载超时'));
+            }, 30000);
+            const loaded = () => {
+                clearTimeout(timer);
+                syncWeixinFooterHeadingColors(frame.contentDocument!, frame.contentWindow!, this.renderedDocument);
+                this.renderedHTML = this.renderedDocument!.documentElement.outerHTML;
+                frame.contentWindow!.scrollTo(sx, sy);
                 this.onFrameLoaded.dispatch();
-            }, { once: true });
+                resolve();
+            };
+            frame.addEventListener('load', loaded, { once: true });
+            frame.srcdoc = this.renderedHTML!;
+        });
 
         const doc = this.frame.contentDocument!;
         doc.addEventListener('selectionchange', () => {

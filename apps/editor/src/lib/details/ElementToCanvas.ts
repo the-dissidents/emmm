@@ -69,15 +69,24 @@ async function svgToDataURL(svg: SVGElement): Promise<string> {
     return `data:image/svg+xml;charset=utf-8,${html}`;
 }
 
-function createImage(url: string): Promise<HTMLImageElement> {
+function createImage(url: string, backgroundSafe = false): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
+    const timer = backgroundSafe ? setTimeout(() => failed(new Error('图片预渲染超时')), 30000) : undefined
+    const failed = (error: unknown) => { clearTimeout(timer); reject(error) }
     img.onload = () => {
-      img.decode().then(() => {
-        requestAnimationFrame(() => resolve(img))
-      })
+      if (backgroundSafe) {
+        img.decode().then(() => {
+          // The draft plugin can finish while the window is in the background.
+          clearTimeout(timer)
+          resolve(img)
+        }, failed)
+      } else {
+        // Preserve the original editor's rendering behavior when no draft plugin is involved.
+        img.decode().then(() => requestAnimationFrame(() => resolve(img)))
+      }
     }
-    img.onerror = reject
+    img.onerror = failed
     img.crossOrigin = 'anonymous'
     img.decoding = 'async'
     img.src = url
@@ -88,6 +97,7 @@ export async function elementToImage(
     node: HTMLElement,
     width: number,
     height: number,
+    backgroundSafe = false,
 ): Promise<HTMLImageElement> {
     const fontCss = await fontFacesFor(collectFontFamilies(node));
 
@@ -112,17 +122,17 @@ export async function elementToImage(
     }
     svg.appendChild(foreignObject)
     foreignObject.appendChild(node)
-    return createImage(await svgToDataURL(svg))
+    return createImage(await svgToDataURL(svg), backgroundSafe)
 }
 
 export async function toCanvas(
-    e: HTMLElement, width: number, height: number, scale = 1
+    e: HTMLElement, width: number, height: number, scale = 1, backgroundSafe = false
 ) {
     const canvas = new OffscreenCanvas(width * scale, height * scale);
     const ctx = canvas.getContext('2d');
     Debug.assert(!!ctx);
 
-    const i = await elementToImage(e, width, height);
+    const i = await elementToImage(e, width, height, backgroundSafe);
     ctx.drawImage(i, 0, 0, width * scale, height * scale);
     return await canvas.convertToBlob();
 }

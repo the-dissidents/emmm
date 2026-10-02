@@ -72,10 +72,19 @@
           "url": "https://api.ipify.org/"
         },
         {
+          "url": "https://ip.3322.net/"
+        },
+        {
           "url": "https://api.weixin.qq.com/"
         },
         {
           "url": "https://raw.githubusercontent.com/"
+        },
+        {
+          "url": "https://mp.weixin.qq.com/"
+        },
+        {
+          "url": "https://*.qpic.cn/"
         }
       ]
     },
@@ -83,6 +92,7 @@
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-write-image",
     "clipboard-manager:allow-read-text",
-    "dialog:default"
+    "dialog:default",
+    "core:menu:default"
   ]
 }

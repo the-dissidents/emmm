@@ -127,12 +127,12 @@ async function localPathOf(url: URL) {
     console.log(url);
     let filepath = decodeURIComponent(url.pathname);
     if (url.protocol !== 'file:') {
-        let file = new File([await readUrl(url)], url.href,
-            { type: mime.getType(url.href) ?? undefined });
-        // save to local
-        filepath = await path.join(
-            await path.tempDir(),
-            crypto.randomUUID() + await path.extname(filepath));
+        const blob = await readUrl(url);
+        const type = blob.type || mime.getType(url.pathname) || 'application/octet-stream';
+        const file = new File([blob], url.href, { type });
+        // Weixin image URLs often end in /0 or /640; infer the suffix from the response instead.
+        const extension = await path.extname(filepath).catch(() => '') || '.' + (mime.getExtension(type) || 'img');
+        filepath = await path.join(await path.tempDir(), crypto.randomUUID() + extension);
         await fs.writeFile(filepath, file.stream());
     }
     return filepath;

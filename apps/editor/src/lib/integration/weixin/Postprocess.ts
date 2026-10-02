@@ -12,6 +12,7 @@ import { WeixinClient } from "./API.svelte";
 import { Interface } from "$lib/Interface.svelte";
 import { compileStyles } from "$lib/Document.svelte";
 import { RustAPI } from "$lib/RustAPI";
+import { finalizeWeixinFooterColors } from '$lib/plugins/weixin/FooterStyle';
 
 const CONVERT_TO_SECTION = new Set([
     'address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'fieldset',
@@ -31,11 +32,11 @@ const PRESERVE = new Set([
     'p', 'span', 'section', 'img', 'a', 'hr', 'br', 'sub', 'sup',
 ]);
 
-async function prerenderElement(e: HTMLElement, width: number, height: number) {
+async function prerenderElement(e: HTMLElement, width: number, height: number, backgroundSafe = false) {
     const id = crypto.randomUUID();
     const file = await path.join(await path.tempDir(), `prerender-${id}.png`);
     try {
-        const blob = await toCanvas(e, width, height, devicePixelRatio);
+        const blob = await toCanvas(e, width, height, devicePixelRatio, backgroundSafe);
         await fs.writeFile(file, new Uint8Array(await blob.arrayBuffer()));
     } catch (e) {
         console.warn(e);
@@ -61,7 +62,7 @@ function findPrerenderRoots(win: Window, root: Element): HTMLElement[] {
     return result;
 }
 
-export async function prerender(win: Window, doc: Document, progress?: ProgressReporter) {
+export async function prerender(win: Window, doc: Document, progress?: ProgressReporter, backgroundSafe = false) {
     const toPrerender = findPrerenderRoots(win, doc.body);
     if (!toPrerender.length) return { success: 0, total: 0 };
     toPrerender.forEach((v, i) => v.dataset.prerenderId = `${i}`);
@@ -88,7 +89,7 @@ export async function prerender(win: Window, doc: Document, progress?: ProgressR
             continue;
         }
 
-        const file = await prerenderElement(inlined as HTMLElement, rect.width, rect.height);
+        const file = await prerenderElement(inlined as HTMLElement, rect.width, rect.height, backgroundSafe);
         if (!file) {
             console.log('failed to prerender', inlined);
             continue;
@@ -165,7 +166,7 @@ export async function postprocess(
         }
 
         // substitute images URLs to uploaded versions
-        else if (elem.tagName == 'IMG') {
+        else if (elem.tagName == 'IMG' && !elem.closest('[data-emmm-preview-only]')) {
             const img = elem as HTMLImageElement;
 
             try {
@@ -202,7 +203,9 @@ export async function postprocess(
         }
     }
 
+    copy.querySelectorAll('[data-emmm-preview-only]').forEach(node => node.remove());
     inlineCss(copy, { removeStyleTags: true, removeClasses: true });
+    finalizeWeixinFooterColors(copy);
 
     copy.body.querySelectorAll('*').forEach((elem) => {
         if (CONVERT_TO_SECTION.has(elem.tagName.toLowerCase())) {

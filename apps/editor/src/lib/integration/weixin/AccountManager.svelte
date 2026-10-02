@@ -91,7 +91,7 @@
         bind:value={() => account.appid, (x) => account.appid = x} />
     </ConfigRow>
     <ConfigRow name={$_('account.secret')}>
-      <input type="text" class="flexgrow"
+      <input type="password" class="flexgrow"
         bind:value={() => account.secret, (x) => account.secret = x} />
     </ConfigRow>
   </ConfigTable>

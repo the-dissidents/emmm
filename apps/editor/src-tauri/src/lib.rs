@@ -6,11 +6,16 @@ mod archive;
 mod compress;
 mod font_registry;
 mod hash;
+mod weixin_tunnel;
+mod weixin_history;
+use weixin_history::{HistoryBrowserState, read_weixin_history_article};
 
 use archive::{archive, unarchive};
 use compress::compress_image;
 use font_registry::{FontRegistry, init_font_registry, pack_fonts};
 use hash::hash_file;
+use weixin_tunnel::{WeixinTunnelState, ensure_weixin_tunnel, probe_weixin_server};
+use tauri::Manager;
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
@@ -88,6 +93,8 @@ pub fn run() {
                 .build(),
         )
         .manage(Arc::new(Mutex::new(Option::<FontRegistry>::None)))
+        .manage(WeixinTunnelState::default())
+        .manage(HistoryBrowserState::default())
         .invoke_handler(tauri::generate_handler![
             compress_image,
             hash_file,
@@ -95,7 +102,15 @@ pub fn run() {
             unarchive,
             init_font_registry,
             pack_fonts,
+            ensure_weixin_tunnel,
+            probe_weixin_server,
+            read_weixin_history_article,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            if matches!(event, tauri::RunEvent::Exit) {
+                app.state::<WeixinTunnelState>().stop();
+            }
+        });
 }

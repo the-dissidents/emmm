@@ -1,5 +1,7 @@
 <script lang="ts">
   import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
+  import { installPluginMenu } from '$lib/plugins/Menu';
+  import { Interface } from '$lib/Interface.svelte';
   import Main from '../lib/Main.svelte';
   import { Memorized } from '$lib/config/Memorized.svelte';
   import { getVersion } from '@tauri-apps/api/app';
@@ -17,6 +19,7 @@
   const windowH = Memorized.$('windowH', z.number(), 900);
 
   Memorized.init().then(() => {
+    installPluginMenu(() => Interface.requestRender()).catch(console.error);
     currentWindow.setSize(new LogicalSize($windowW, $windowH));
   });
 

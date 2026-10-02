@@ -14,24 +14,31 @@ export class RequestFailedError extends Error {
 
 export enum GetIPMethod {
     ipinfo,
-    ipify
+    ipify,
+    ip3322
 }
 
-export async function getIP(method: GetIPMethod) {
+export async function getIP(method: GetIPMethod, request: typeof fetch = fetch) {
     let r: Response, ip: string;
     switch (method) {
         case GetIPMethod.ipinfo:
-            r = await fetch('https://ipinfo.io/json',
-                { signal: AbortSignal.timeout(2000) });
+            r = await request('https://ipinfo.io/json',
+                { signal: AbortSignal.timeout(10000) });
             if (!r.ok) throw new Error();
             ip = (await r.json()).ip;
             console.log(ip);
             break;
         case GetIPMethod.ipify:
-            r = await fetch('https://api.ipify.org/?format=json',
-                { signal: AbortSignal.timeout(2000) });
+            r = await request('https://api.ipify.org/?format=json',
+                { signal: AbortSignal.timeout(10000) });
             if (!r.ok) throw new Error();
             ip = (await r.json()).ip;
+            break;
+        case GetIPMethod.ip3322:
+            r = await request('https://ip.3322.net',
+                { signal: AbortSignal.timeout(10000) });
+            if (!r.ok) throw new Error();
+            ip = (await r.text()).trim();
             break;
     }
     assert(typeof ip == 'string');

@@ -1,8 +1,20 @@
 <script lang="ts">
   import { assert, Debug } from "../../Debug";
+  import { plugins } from '$lib/plugins/Settings';
+  import MetadataEditor from '$lib/plugins/weixin/MetadataEditor.svelte';
+  import HistoryEditor from '$lib/plugins/weixin/HistoryEditor.svelte';
+  import { saveArticleDraft, uploadDraftImages } from '$lib/plugins/weixin/Drafts';
+  import { getArticleDigest } from '$lib/plugins/weixin/Digest';
+  import { Workspace } from '$lib/workspace/Workspace.svelte';
+  import { getIP, GetIPMethod } from '../../Util';
   import { WeixinClient } from './API.svelte';
   import { guardAsync, Interface } from '../../Interface.svelte';
-  import { getIP, GetIPMethod, type ProgressReporter } from '../../Util';
+  import { type ProgressReporter } from '../../Util';
+  import { getWeixinPublicIP, weixinNetwork, UntrustedWeixinServerError } from './Network';
+  import ServerManager from './ServerManager.svelte';
+  import { weixinServers, saveWeixinServers, type WeixinServer } from './Servers';
+  import { invoke } from '@tauri-apps/api/core';
+  import { get } from 'svelte/store';
   import { postprocess, prerender } from "./Postprocess";
   import { RustAPI, type FileHash } from "$lib/RustAPI";
 
@@ -18,6 +30,54 @@
   import { DebouncedTask } from "$lib/details/DebouncedTask";
 
   let publicIP = $state('');
+  let draftBusy = $state(false);
+  let networkBusy = $state(false);
+  let networkError = $state('');
+  let pendingTrust = $state<{ server: WeixinServer, hostKeys: string[], fingerprints: string } | null>(null);
+
+  async function handleNetworkError(error: unknown) {
+    if (error instanceof UntrustedWeixinServerError) {
+      try {
+        const result = await invoke<{hostKeys: string[], fingerprints: string}>('probe_weixin_server', {
+          host: error.server.host, sshPort: error.server.sshPort,
+        });
+        pendingTrust = { server: error.server, ...result };
+      } catch (failure) { networkError = String(failure); }
+    } else { networkError = String(error); }
+  }
+
+  async function trustServer() {
+    if (!pendingTrust) return;
+    const pending = pendingTrust;
+    const current = get(weixinServers).find(server => server.id === pending.server.id);
+    if (!current || current.host !== pending.server.host || current.sshPort !== pending.server.sshPort) return;
+    await saveWeixinServers(get(weixinServers).map(server => server.id === current.id
+      ? { ...server, hostKeys: pending.hostKeys } : server));
+    pendingTrust = null;
+    await testNetwork();
+  }
+
+  $effect(() => {
+    $weixinNetwork;
+    $plugins.forwarding;
+    publicIP = '';
+    networkError = '';
+    pendingTrust = null;
+  });
+
+  async function testNetwork() {
+    if (!$plugins.forwarding) { publicIP = await getIP(GetIPMethod.ipinfo); return; }
+    networkBusy = true;
+    publicIP = '';
+    networkError = '';
+    try {
+      publicIP = await getWeixinPublicIP();
+    } catch (error) {
+      await handleNetworkError(error);
+    } finally {
+      networkBusy = false;
+    }
+  }
 
   let accountName = Memorized.$('weixin-account-name', z.string(), 'default');
   let client = $state(new WeixinClient());
@@ -152,9 +212,46 @@
   let mode = Memorized.$('weixin-mode', z.enum(['manual', 'automatic']), 'manual');
 
   async function doAuto(report: ProgressReporter = defaultReporter) {
+    if ($plugins.drafts) { await saveDraft(true, report); return; }
     await doPrerender(report);
     await uploadAllImages(report);
     await copyResult();
+  }
+  async function saveDraft(copy = false, report: ProgressReporter = defaultReporter) {
+    if (draftBusy) return;
+    draftBusy = true;
+    networkError = '';
+    const active = Workspace.active;
+    const currentClient = client;
+    try {
+      if (!active) throw new Error('请打开文章');
+      const source = active.source;
+      await currentClient.fetchToken();
+      await Interface.render();
+      const doc = Interface.frame?.contentDocument;
+      const win = Interface.frame?.contentWindow;
+      if (!doc || !win || Workspace.active !== active || active.source !== source)
+        throw new Error('文章已变更，请重新保存');
+      if (doc.querySelector('[data-weixin-plugin-error]')) throw new Error('往期回顾未生成');
+      const result = await prerender(win, doc, report, true);
+      if (result.success !== result.total) throw new Error('部分内容预渲染失败');
+      await uploadDraftImages(currentClient, doc, Interface.backgroundImage.get(), report);
+      const {result: content, notCached} = await postprocess(doc, win);
+      if (Workspace.active !== active || active.source !== source || client !== currentClient)
+        throw new Error('文章或公众号已变更，请重新保存');
+      const parsed = active.parseData?.data;
+      if (!parsed) throw new Error('文章尚未解析完成');
+      const digest = await getArticleDigest(parsed);
+      if (Workspace.active !== active || active.source !== source) throw new Error('文章已变更，请重新保存');
+      const saved = await saveArticleDraft({ client: currentClient, source, doc,
+        key: active.filePath ?? active.id, content, notCached, digest });
+      if (copy) await clipboard.writeHtml(content);
+      Interface.status.set(saved.unchanged ? '草稿已同步' : saved.updated ? '草稿已更新' : '已保存到草稿箱');
+      updateImgList.start();
+    } catch (error) {
+      await handleNetworkError(error);
+      Interface.status.set(`保存草稿失败：${error}`);
+    } finally { draftBusy = false; $progress = undefined; }
   }
 </script>
 
@@ -166,12 +263,25 @@
   onChange={(a) => $accountName = a.name}
 />
 
+{#if $plugins.forwarding}
+<ServerManager busy={networkBusy || draftBusy} />
+{/if}
+{#if pendingTrust}
+  <table class="config"><tbody><tr>
+    <td>{$_('weixin.network.fingerprint')}</td>
+    <td><textarea readonly rows={pendingTrust.fingerprints.split('\n').length} value={pendingTrust.fingerprints}></textarea>
+      <button onclick={trustServer}>{$_('weixin.network.trust')}</button></td>
+  </tr></tbody></table>
+{/if}
+{#if networkError}<div role="alert">{networkError}</div>{/if}
 <table class="config"><tbody>
   <tr>
-    <td>{$_('weixin.public-ip')}</td>
+    <td>{$plugins.forwarding ? $_('weixin.public-ip') : '公网 IP'}</td>
     <td class='hlayout'>
-      <input type="text" class="flexgrow" bind:value={publicIP} />
-      <button onclick={async () => publicIP = await getIP(GetIPMethod.ipinfo)}>{$_('weixin.get')}</button>
+      <input type="text" class="flexgrow" readonly={$plugins.forwarding} bind:value={publicIP} />
+      <button disabled={networkBusy || draftBusy} onclick={testNetwork}>
+        {#if networkBusy}<LoaderIcon />{:else}{$_('weixin.get')}{/if}
+      </button>
     </td>
   </tr>
   <tr>
@@ -179,16 +289,25 @@
     <td>
       <input type="text" style="width: 100%" disabled value={$token} /><br/>
       <button class="veryimportant" style="width: 100%"
+        disabled={networkBusy || draftBusy}
         onclick={async () => {
+          networkBusy = true;
+          networkError = '';
           try {
-            await client.fetchToken();
+            await client.fetchToken($plugins.forwarding);
           } catch (x) {
-            await dialog.message(`${x}`, { kind: 'error' });
+            if ($plugins.forwarding) await handleNetworkError(x);
+            else await dialog.message(`${x}`, { kind: 'error' });
+          } finally {
+            networkBusy = false;
           }
         }}>{$_('weixin.retrieve-token')}</button>
     </td>
   </tr>
 </tbody></table>
+
+{#if $plugins.metadata}<MetadataEditor />{/if}
+{#if $plugins.history}<HistoryEditor />{/if}
 
 <h5>{$_('weixin.publish')}</h5>
 
@@ -216,10 +335,14 @@
 
 {:else}
 
-<button onclick={() => doAuto()} class='veryimportant'>
-  {$_('weixin.render-and-copy')}
+<button onclick={() => doAuto()} disabled={draftBusy} class='veryimportant'>
+  {$plugins.drafts ? '渲染并保存草稿' : $_('weixin.render-and-copy')}
 </button>
 
+{/if}
+
+{#if $plugins.drafts}
+<button class="veryimportant" disabled={draftBusy} onclick={() => saveDraft()}>保存到草稿箱</button>
 {/if}
 
 <ListView style="min-height: 300px; flex-grow: 1;"
@@ -300,6 +423,8 @@
 </div>
 
 <style>
+  textarea { width: 100%; box-sizing: border-box; resize: none; }
+
   button {
     margin-bottom: 5px;
   }
@@ -313,4 +438,3 @@
     width: 100%;
   }
 </style>
-

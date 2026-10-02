@@ -1,5 +1,5 @@
 import { get, readonly, writable, type Readable } from "svelte/store";
-import { fetch } from '@tauri-apps/plugin-http';
+import { weixinFetch as fetch } from './Network';
 import { RequestFailedError } from "$lib/Util";
 import { assert, Debug } from "$lib/Debug";
 import { BaseDirectory, writeFile } from "@tauri-apps/plugin-fs";
@@ -19,6 +19,16 @@ type AccountData = z.infer<typeof accountDataDef>;
 const accounts = Memorized.$dict('weixinAccounts', z.string(), accountDataDef);
 const smallImageCache = Memorized.$dict('weixinSmallImageCacheV2', z.string(), z.string());
 
+Memorized.onInitialize(() => {
+    let pendingSave: ReturnType<typeof setTimeout>;
+    accounts.subscribe(() => {
+        clearTimeout(pendingSave);
+        pendingSave = setTimeout(() => {
+            Memorized.save().catch(error => console.error('Cannot save account settings', error));
+        }, 500);
+    });
+});
+
 export type WeixinAssetType = 'image' | 'video' | 'voice';
 
 export type WeixinAsset = {
@@ -34,7 +44,7 @@ export type WeixinNewsArticle = {
     title: string,
     author: string,
     digest: string,
-    coverMediaID: number,
+    coverMediaID: string,
     coverCrop: [x1: number, y1: number, x2: number, y2: number],
     thumbnailCrop: [x1: number, y1: number, x2: number, y2: number],
     content: string,
@@ -48,11 +58,11 @@ export type WeixinPictureArticle = {
     title: string,
     content?: string,
     commentOpen: boolean,
-    coverMediaID: number,
+    coverMediaID: string,
     coverVersions: {
         [key in '2.35:1' | '16:9' | '1:1']?: [x1: number, y1: number, x2: number, y2: number]
     },
-    imageMediaIDs: number[],
+    imageMediaIDs: string[],
 };
 
 export type WeixinArticle = WeixinNewsArticle | WeixinPictureArticle;
@@ -80,7 +90,7 @@ export enum WeixinPublicationStatus {
 }
 
 function parseArticle(json: any): WeixinArticle {
-    if (json.article_type == 'news') {
+    if (!json.article_type || json.article_type == 'news') {
         return {
             articleType: 'news',
             title: json.title,
@@ -108,6 +118,11 @@ function parseArticle(json: any): WeixinArticle {
     }
 }
 
+function cropCoordinates(crop: [number, number, number, number]) {
+    const [x1, y1, x2, y2] = crop;
+    return { x1: String(x1), y1: String(y1), x2: String(x2), y2: String(y2) };
+}
+
 function makeArticle(obj: WeixinArticle): any {
     if (obj.articleType == 'news') {
         return {
@@ -116,6 +131,10 @@ function makeArticle(obj: WeixinArticle): any {
             author: obj.author,
             digest: obj.digest,
             thumb_media_id: obj.coverMediaID,
+            cover_info: { crop_percent_list: [
+                { ratio: '2.35_1', ...cropCoordinates(obj.coverCrop) },
+                { ratio: '1_1', ...cropCoordinates(obj.thumbnailCrop) },
+            ] },
             content: obj.content,
             content_source_url: obj.originUrl ?? undefined,
             need_open_comment: obj.commentOpen ? 1 : 0,
@@ -247,8 +266,10 @@ export class WeixinClient {
     }
 
     async #rawExec(path: string, body: object, check = true) {
-        if (check && !this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
-            throw new WeixinInvalidTokenError();
+        if (check && !this.tokenOk) {
+            if (!this.autoFetchToken) throw new WeixinInvalidTokenError();
+            await this.fetchToken();
+        }
         const t0 = performance.now();
         const r = await fetch(
             `https://api.weixin.qq.com/cgi-bin/${path}?`
@@ -285,6 +306,9 @@ export class WeixinClient {
         this.#expireTime = new Date(Date.now() + (<number>json.expires_in - 10) * 1000);
         return token;
     }
+
+    /** Narrow extension point for optional Weixin plugins. */
+    async execute(path: string, body: object) { return this.#exec(path, body); }
 
     async getAssets(type: WeixinAssetType, from: number, count = 20) {
         const json = await this.#exec('material/batchget_material', {
@@ -371,8 +395,10 @@ export class WeixinClient {
     async downloadAsset(id: string, name: string, force = false) {
         if (!force && this.#assetCache.has(id))
             return this.#assetCache.get(id)!;
-        if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
-            throw new WeixinInvalidTokenError();
+        if (!this.tokenOk) {
+            if (!this.autoFetchToken) throw new WeixinInvalidTokenError();
+            await this.fetchToken();
+        }
 
         console.log('downloadAsset', id, name, force);
         const r = await this.#rawExec('material/get_material', { "media_id": id });
@@ -395,8 +421,10 @@ export class WeixinClient {
         if (!force && smallImageCache.get().has(key))
             return smallImageCache.getItem(key)!;
 
-        if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
-            throw new WeixinInvalidTokenError();
+        if (!this.tokenOk) {
+            if (!this.autoFetchToken) throw new WeixinInvalidTokenError();
+            await this.fetchToken();
+        }
         const form = new FormData();
         form.append('media', blob, name);
         const r = await fetch(
