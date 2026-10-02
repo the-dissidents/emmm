@@ -59,7 +59,9 @@ export async function saveArticleDraft(options: {
     if (notCached || doc.querySelector('[data-weixin-plugin-error]')) throw new Error('正文图片或往期回顾未准备完成');
     const metaSource = plugins.get().metadata ? source : source.replace(/^\[-var wx-(?:title|author|digest|cover|cover-mode|crop-wide|crop-square|origin)=.*\]\r?\n?/gm, '');
     const meta = articleMetadata(metaSource, doc);
-    if (!meta.title.trim() || [...meta.title].length > 32) throw new Error('微信标题须为 1–32 个字');
+    // Preserve the title; Weixin validates its actual length rules at draft/add or draft/update.
+    // Counting Unicode code points against 32 incorrectly rejects titles accepted by its editor.
+    if (!meta.title.trim()) throw new Error('微信标题不能为空');
     if ([...meta.author].length > 16) throw new Error('微信作者最多 16 个字');
     if ([...digest].length > 120) throw new Error('文章摘要超过微信的 120 字限制');
     if (!meta.cover) throw new Error('请选择头图');

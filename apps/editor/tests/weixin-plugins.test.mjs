@@ -21,6 +21,7 @@ const mocks = {
     const s=globalThis.__wxPluginTest; s.requests.push({url:String(input),init});
     if(s.failure)throw new Error(s.failure);
     const url=String(input);
+    if(s.draftError&&url.includes('draft/'))return new Response(JSON.stringify(s.draftError));
     if(s.articleRedirect&&url.startsWith('https://mp.weixin.qq.com/'))return new Response('',{status:302});
     return new Response(JSON.stringify(url.includes('stable_token')?{access_token:'test-token',expires_in:7200}
       :url.includes('add_material')?{media_id:'cover-id'}:url.includes('draft/add')?{media_id:'draft-id'}
@@ -141,6 +142,25 @@ try{
   assert.equal((await saveArticleDraft({...options,content:'<p>修改后的正文</p>'})).updated,true);
   assert.ok(state.requests.some(r=>r.url.includes('draft/update')));
   assert.equal(state.requests.filter(r=>r.url.includes('add_material')).length,1,'Cover material is reused');
+  const currentTitle='尘埃中的心 · 翻译｜阴性单数的历史：电影手册论《德国，苍白的母亲》';
+  const titledOptions={...options,source:setField(draftSource,'wx-title',currentTitle)};
+  await saveArticleDraft(titledOptions);
+  assert.equal(JSON.parse(state.requests.filter(r=>r.url.includes('draft/update')).at(-1).init.body).articles.title,currentTitle,
+    'Preserve the full real-world title, including punctuation and spaces, when updating a draft');
+  await saveArticleDraft({...titledOptions,key:'new-title-file'});
+  assert.equal(JSON.parse(state.requests.filter(r=>r.url.includes('draft/add')).at(-1).init.body).articles[0].title,currentTitle,
+    'Preserve the full title when creating a draft');
+  const requestsBeforeBlank=state.requests.length;
+  await assert.rejects(()=>saveArticleDraft({...options,source:setField(draftSource,'wx-title','   ')}),/标题不能为空/);
+  assert.equal(state.requests.length,requestsBeforeBlank,'Reject blank titles without making API requests');
+  const signatureBeforeError=state.stores.get('plugin-weixin-drafts').getItem('test-id:test-file').signature;
+  state.draftError={errcode:45003,errmsg:'title size out of limit'};
+  await assert.rejects(()=>saveArticleDraft({...options,source:setField(draftSource,'wx-title','长'.repeat(100))}),
+    error=>error.name==='WeixinAPIError'&&error.code===45003,'Let Weixin enforce its actual title limit and report its error');
+  assert.equal(state.stores.get('plugin-weixin-drafts').getItem('test-id:test-file').signature,signatureBeforeError,
+    'A rejected title must not be marked as successfully saved');
+  delete state.draftError;
+  assert.equal((await saveArticleDraft(titledOptions)).unchanged,true,'A rejected title does not corrupt the previous saved draft');
   await assert.rejects(()=>saveArticleDraft({...options,notCached:1}),/未准备完成/);
   state.failure='upload failed';
   doc.body.innerHTML='<img src="file:/tmp/body.png">';
