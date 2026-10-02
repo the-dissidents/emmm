@@ -193,7 +193,7 @@ export async function postprocess(
             notCached++;
         } else {
             console.log('bkg img cache', cache);
-            const result = compileStyles({
+            const result = await compileStyles({
                 sass: Workspace.stylesheet.source,
                 colors: Interface.colors.get(),
                 backgroundImage: cache

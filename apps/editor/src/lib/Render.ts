@@ -3,6 +3,8 @@ import * as sass from 'sass';
 import { CustomHTMLRenderer } from './emmm/Custom';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { getSassVariablesFromColors, type ArticleColors } from './ColorTheme';
+import { join } from '@tauri-apps/api/path';
+import { Workspace } from './workspace/Workspace.svelte';
 
 type DocumentStyle = {
     sass: string,
@@ -10,16 +12,23 @@ type DocumentStyle = {
     backgroundImage: string,
 }
 
-function transformAsset(url: string) {
-    if (!url.startsWith('file:')) return undefined;
-    return convertFileSrc(url.substring(5));
+async function transformAsset(url: string) {
+    if (url.startsWith('file:'))
+        return { transformed: convertFileSrc(url.substring('file:'.length)), original: url};
+
+    if (url.startsWith('http:') || url.startsWith('https:') || !Workspace.assetPath)
+        return undefined;
+
+    const joined = await join(Workspace.assetPath, url);
+    return { transformed: convertFileSrc(joined), original: 'file:' + joined };
 }
 
-export function compileStyles(style: DocumentStyle): string | sass.Exception {
+export async function compileStyles(style: DocumentStyle): Promise<string | sass.Exception> {
     const vars = getSassVariablesFromColors(style.colors);
     const backgroundImage = style.backgroundImage
         ? new sass.SassString(
-            transformAsset(style.backgroundImage) ?? style.backgroundImage, { quotes: true })
+            (await transformAsset(style.backgroundImage))?.transformed
+                ?? style.backgroundImage, { quotes: true })
         : sass.sassNull;
     try {
         const css = sass.compileString(style.sass, { functions: {
@@ -39,7 +48,7 @@ export function compileStyles(style: DocumentStyle): string | sass.Exception {
 }
 
 export async function renderDocument(d: emmm.Document, style: DocumentStyle) {
-    const css = compileStyles(style);
+    const css = await compileStyles(style);
     if (typeof css !== 'string') return { type: 'error' as const, sass: css };
 
     const state = new emmm.HTMLRenderState();

@@ -13,13 +13,15 @@ import { TableBlockRenderers, TableInlineRenderers } from "./table";
 import { GalleryBlockRendererHTML } from "./gallery";
 import { useDocument } from "@the_dissidents/minimal-jsx-runtime/jsx-runtime";
 
+export type HTMLAssetPath = { original: string, transformed: string };
+
 export type HTMLRendererOptions = {
     window: Window,
     headPlugins: HTMLComponentPlugin[];
     headerPlugins: HTMLComponentPlugin[];
     footerPlugins: HTMLComponentPlugin[];
     postprocessPlugins: HTMLPostprocessPlugin[];
-    transformAsset: (id: string) => string | Promise<string> | undefined;
+    transformAsset: (id: string) => HTMLAssetPath | undefined | Promise<HTMLAssetPath | undefined>;
 }
 
 export type HTMLRenderType = {

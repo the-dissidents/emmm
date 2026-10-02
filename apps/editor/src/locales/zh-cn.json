@@ -169,6 +169,13 @@
   },
   "workspace": {
     "no-workspace-opened": "尚未打开工作空间",
-    "open-folder": "打开文件夹"
+    "open-folder": "打开文件夹",
+    "untitled": "（未命名）",
+    "workspace": "工作空间"
+  },
+  "wkspconfig": {
+    "location": "位置",
+    "name": "名称",
+    "asset-folder": "素材文件夹"
   }
 }

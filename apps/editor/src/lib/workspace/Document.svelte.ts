@@ -10,6 +10,8 @@ import * as fs from '@tauri-apps/plugin-fs';
 import type { SerializedWorkspace, WorkspaceContext } from './Workspace.svelte';
 import { defaultLibrary, defaultStyles } from '$lib/Templates';
 import { Debug } from '$lib/Debug';
+import { CustomConfig } from '$lib/emmm/Custom';
+import * as emmm from '@the_dissidents/libemmm';
 
 function autosaveTimestamp(now: Date = new Date()): string {
     const year = now.getFullYear();
@@ -190,6 +192,17 @@ export class LibDocument extends FixedDocument {
         super(wksp, () => defaultLibrary);
     }
 
+    async load(): Promise<void> {
+        await super.load();
+
+        const start = performance.now();
+        const ctx = new emmm.ParseContext(emmm.Configuration.from(CustomConfig, false));
+        const scanner = new emmm.SimpleScanner(this.source, { name: this.name });
+        const data = ctx.parse(scanner);
+
+        this.parseData = { data, parseTime: performance.now() - start, inspector: null };
+    }
+
     parseData = $state<EmmmParseData>();
 }
 
@@ -223,6 +236,11 @@ export class ConfigDocument extends Document {
     async load() {
         Debug.assert(!!this.wksp.path);
         this.#path = await join(this.wksp.path, 'emmm-workspace.json');
+        if (await fs.exists(this.#path)) {
+            this.dirty = false;
+        } else {
+            this.dirty = true;
+        }
     }
 
     async save(): Promise<boolean> {
@@ -234,6 +252,7 @@ export class ConfigDocument extends Document {
             assetPath: this.wksp.assetPath,
             plugins: []
         } satisfies SerializedWorkspace));
+        this.dirty = false;
         return true;
     }
 }

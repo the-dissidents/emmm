@@ -55,13 +55,17 @@ render.textRenderer = (node, cxt) => {
 
 render.options.headerPlugins.push(async (cxt) => {
     const metadata = await getEmmmMetadata(cxt.parsedDocument.context, cxt);
-    return <header>
-        { metadata.posterUrl &&
+    let figure = undefined;
+    if (metadata.posterUrl) {
+        const tr = await cxt.config.options.transformAsset(metadata.posterUrl);
+        figure =
             <figure>
-                <img src={await cxt.config.options.transformAsset(metadata.posterUrl)}
-                    data-original-src={metadata.posterUrl} />
-            </figure> }
-
+                <img src={tr?.transformed ?? metadata.posterUrl}
+                    data-original-src={tr?.original ?? metadata.posterUrl} />
+            </figure>;
+    }
+    return <header>
+        { figure }
         <h1 class="titles">
             <div class="title">{metadata.title}</div>
             { metadata.subtitle &&

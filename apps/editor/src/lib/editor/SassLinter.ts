@@ -3,9 +3,9 @@ import { Interface } from "$lib/Interface.svelte";
 import { linter, type Diagnostic } from "@codemirror/lint";
 import type { EmmmDiagnostic } from "./EmmmLinter";
 
-export const sassLinter = (onLint?: (msgs: EmmmDiagnostic[]) => void) => linter((view) => {
+export const sassLinter = (onLint?: (msgs: EmmmDiagnostic[]) => void) => linter(async (view) => {
     const text = view.state.doc.toString();
-    const result = compileStyles({
+    const result = await compileStyles({
         sass: text,
         colors: Interface.colors.get(),
         backgroundImage: Interface.backgroundImage.get()

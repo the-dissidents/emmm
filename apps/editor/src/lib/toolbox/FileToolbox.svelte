@@ -244,8 +244,8 @@
   openPath(await appLocalDataDir());
 }}>{$_('sync.open-autosave-folder')}</button>
 
-<button onclick={() => {
-  const result = compileStyles({
+<button onclick={async () => {
+  const result = await compileStyles({
     sass: Workspace.stylesheet.source,
     colors: Interface.colors.get(),
     backgroundImage: Interface.backgroundImage.get()

@@ -4,7 +4,7 @@
   import * as path from '@tauri-apps/api/path';
   import * as z from 'zod/v4-mini';
 
-  import { ConfigRow, ConfigTable, TreeButtonItem, TreeView, type TreeViewItem } from '@the_dissidents/svelte-ui'
+  import { TreeButtonItem, TreeView, type TreeViewItem } from '@the_dissidents/svelte-ui'
   import { Memorized } from "$lib/config/Memorized.svelte";
   import { CogIcon, FileImageIcon, FileTextIcon, FolderOpenIcon, LibraryBigIcon, PaletteIcon, SaveIcon } from "@lucide/svelte";
   import { Workspace } from "$lib/workspace/Workspace.svelte";
@@ -13,14 +13,40 @@
   let showHidden = Memorized.$('showHidden', z.boolean(), false);
   const assetExts = /\.(jpg|jpeg|png|gif|webp|svg|tiff)$/;
 
-  type Item = TreeViewItem<{
+  type Leaf = {
     name: string,
     type: 'document' | 'asset' | 'config' | 'library' | 'stylesheet'
-  }, {
+  };
+  type Node = {
     name: string
-  }>;
+  };
 
+  type Item = TreeViewItem<Leaf, Node>;
+
+  let treeView = $state<TreeView<Leaf, Node>>();
   let selectedId = $state<string | null>(null);
+
+  const me = {};
+  let unwatch: (() => void) | undefined;
+  Workspace.onWorkspaceChanged.bind(me, async () => {
+    if (unwatch) unwatch();
+    if (!Workspace.path) return;
+
+    unwatch = await fs.watch(Workspace.path, (e) => {
+      if (typeof e.type !== 'object') return;
+      if ('create' in e.type || 'delete' in e.type) {
+        // update
+        treeView?.reload();
+      } else if ('modify' in e.type && e.type.modify.kind == 'rename') {
+        // update
+        treeView?.reload();
+      }
+    }, { delayMs: 500, recursive: true });
+  });
+  Workspace.onActiveDocumentChanged.bind(me, () => {
+    if (Workspace.active?.path)
+      selectedId = Workspace.active.path;
+  });
 
   function getOrdering(a: Item): number {
     if (!a.leaf) return 0;
@@ -45,9 +71,9 @@
 
 {#if Workspace.path}
   <div class="opened">
-    <span>已打开工作空间</span>
+    <span>{$_('workspace.workspace')}</span>
     <div class="row">
-      <code>{Workspace.path.split(path.sep()).at(-1)}</code>
+      <code>{Workspace.name ?? $_('workspace.untitled')}</code>
       <button onclick={() => Workspace.openDocument(Workspace.config)}>
         <CogIcon />
       </button>
@@ -60,34 +86,38 @@
     </div>
   </div>
 
-  <TreeView getItems={async (item): Promise<Item[]> => {
-    const base = item?.key ?? Workspace.path;
-    if (!base) return [];
-    const items: Item[] = [];
+  <TreeView bind:this={treeView}
+    getItems={async (item): Promise<Item[]> => {
+      const base = item?.key ?? Workspace.path;
+      if (!base) return [];
+      const items: Item[] = [];
 
-    for (const x of await fs.readDir(base)) {
-      if (!$showHidden && x.name.startsWith('.')) continue;
-      if (x.isDirectory)
-        items.push({ key: await path.join(base, x.name), leaf: false, data: { name: x.name } });
-      if (x.isFile) {
-        const key = await path.join(base, x.name), leaf = true;
-        if (!item && x.name === 'lib.emmm')
-          items.push({ key, leaf, data: { name: x.name, type: 'library' } });
-        else if (!item && x.name === 'emmm-workspace.json')
-          items.push({ key, leaf, data: { name: x.name, type: 'config' } });
-        else if (!item && x.name === 'style.scss')
-          items.push({ key, leaf, data: { name: x.name, type: 'stylesheet' } });
-        else if (x.name.endsWith('.emmm'))
-          items.push({ key, leaf, data: { name: x.name, type: 'document' } });
-        else if (assetExts.test(x.name))
-          items.push({ key, leaf, data: { name: x.name, type: 'asset' } });
+      for (const x of await fs.readDir(base)) {
+        if (!$showHidden && x.name.startsWith('.')) continue;
+        if (x.isDirectory)
+          items.push({ key: await path.join(base, x.name), leaf: false, data: { name: x.name } });
+        if (x.isFile) {
+          const key = await path.join(base, x.name), leaf = true;
+          if (!item && x.name === 'lib.emmm')
+            items.push({ key, leaf, data: { name: x.name, type: 'library' } });
+          else if (!item && x.name === 'emmm-workspace.json')
+            items.push({ key, leaf, data: { name: x.name, type: 'config' } });
+          else if (!item && x.name === 'style.scss')
+            items.push({ key, leaf, data: { name: x.name, type: 'stylesheet' } });
+          else if (x.name.endsWith('.emmm'))
+            items.push({ key, leaf, data: { name: x.name, type: 'document' } });
+          else if (assetExts.test(x.name))
+            items.push({ key, leaf, data: { name: x.name, type: 'asset' } });
+        }
       }
-    }
-    return items.sort((a, b) => {
-      return getOrdering(a) - getOrdering(b)
-          || a.data.name.localeCompare(b.data.name);
-    });
-  }} style="flex-grow: 1;">
+      return items.sort((a, b) => {
+        return getOrdering(a) - getOrdering(b)
+            || a.data.name.localeCompare(b.data.name);
+      });
+    }}
+    style="flex-grow: 1;"
+    bind:selected={selectedId}
+  >
     {#snippet leaf({data, key})}
       <TreeButtonItem onclick={() => {
         switch (data.type) {

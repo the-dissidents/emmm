@@ -120,15 +120,20 @@ export const MiscBlockRenderersHTML = [
         if (node.state === undefined)
             return cxt.state.invalidBlock(node, 'bad format', cxt);
         let transformed: string | undefined;
+        let original = node.state;
         try {
-            transformed = await cxt.config.options.transformAsset(node.state);
+            const path = await cxt.config.options.transformAsset(node.state);
+            if (path) {
+                transformed = path.transformed;
+                original = path.original;
+            }
         } catch {
             return cxt.state.invalidBlock(node, 'unable to transform asset', cxt);
         }
         return <figure data-id={cxt.state.addSourceMap(node.location)}>
             {transformed
-                ? <img src={transformed} data-original-src={node.state} />
-                : <img src={node.state} />}
+                ? <img src={transformed} data-original-src={original} />
+                : <img src={original} />}
             {node.content.length > 0
                 ? <figcaption>
                     {await cxt.state.render((node.content[0] as ParagraphNode).content, cxt)}

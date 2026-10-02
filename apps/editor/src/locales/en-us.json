@@ -17,7 +17,8 @@
     "preview": "Preview",
     "ast": "AST",
     "html": "HTML",
-    "workspace": "Workspace"
+    "workspace": "Workspace",
+    "workspace-config": "workspace configuration"
   },
   "main": {
     "sync-scrolling": "Automatic synchronized scrolling",
@@ -76,7 +77,9 @@
       "extracted": "extracted assets from archive to {path}",
       "error-unarchiving": "error when unarchiving: {error}"
     },
-    "open-autosave-folder": "Open autosave folder"
+    "open-autosave-folder": "Open autosave folder",
+    "edit-library": "edit library",
+    "edit-stylesheet": "edit stylesheet"
   },
   "search": {
     "title": "Search & Replace",
@@ -166,6 +169,13 @@
   },
   "workspace": {
     "no-workspace-opened": "no workspace opened",
-    "open-folder": "open folder..."
+    "open-folder": "open folder...",
+    "untitled": "(untitled)",
+    "workspace": "workspace"
+  },
+  "wkspconfig": {
+    "asset-folder": "asset folder",
+    "location": "location",
+    "name": "name"
   }
 }

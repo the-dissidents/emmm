@@ -1,11 +1,10 @@
 <script lang="ts">
   import * as emmm from '@the_dissidents/libemmm';
-  import { TabView, TabPage, Resizer, ListView, ConfigTable, ConfigRow } from '@the_dissidents/svelte-ui';
-  import { CircleXIcon, EllipsisIcon, InfoIcon, TriangleAlertIcon } from '@lucide/svelte';
+  import { TabView, TabPage, Resizer, ListView } from '@the_dissidents/svelte-ui';
+  import { CircleXIcon, InfoIcon, TriangleAlertIcon } from '@lucide/svelte';
   import { sass as sassLang } from '@codemirror/lang-sass';
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
   import { _ } from 'svelte-i18n';
-  import { untrack } from 'svelte';
   import * as dialog from '@tauri-apps/plugin-dialog';
 
   import Editor from './editor/Editor.svelte';
@@ -33,6 +32,7 @@
 
   import { Memorized } from './config/Memorized.svelte';
   import * as z from 'zod/v4-mini';
+  import WorkspaceConfig from './component/WorkspaceConfig.svelte';
 
   if (Workspace.documents.length === 0)
     Workspace.newDocument();
@@ -101,6 +101,10 @@
     if (Workspace.activeId)
       activeTab = Workspace.activeId;
   });
+  Workspace.onWorkspaceChanged.bind(me, () => {
+    if (Workspace.library.parseData)
+      onParseLibrary(Workspace.library.parseData);
+  });
 </script>
 
 <div class="vlayout flexgrow">
@@ -155,7 +159,7 @@
                 ? onParseLibrary(data)
                 : onParseDocument(doc, data)}
               provideDescriptor={() => ({ name: doc.name })}
-              provideContext={() => Interface.libConfig
+              provideContext={() => Interface.libConfig && doc instanceof EmmmDocument
                 ? new emmm.ParseContext(emmm.Configuration.from(Interface.libConfig, true))
                 : undefined}
               onLint={(d) => doc.diagnostics = d}>
@@ -206,25 +210,7 @@
               onCursorPositionChanged={onGenericCursorChanged} />
           </GenericContext>
         {:else if doc instanceof ConfigDocument}
-          <fieldset>
-            <h3>工作空间属性</h3>
-            <ConfigTable>
-              <ConfigRow name="位置">
-                {Workspace.path}
-              </ConfigRow>
-              <ConfigRow name="名称">
-                <div class="row">
-                  <input type="text" bind:value={Workspace.name}>
-                </div>
-              </ConfigRow>
-              <ConfigRow name="素材文件夹">
-                <div class="row">
-                  <input type="text" readonly value={Workspace.assetPath}>
-                  <button><EllipsisIcon /></button>
-                </div>
-              </ConfigRow>
-            </ConfigTable>
-          </fieldset>
+          <WorkspaceConfig />
         {/if}
       </TabPage>
     {/each}
@@ -359,28 +345,6 @@
 
   .pane {
     padding: 2px;
-  }
-
-  fieldset {
-    padding: 25px;
-    border: 1px solid lightgray;
-    border-radius: 0 0 3px 3px;
-    box-sizing: border-box;
-
-    background-color: white;
-
-    margin: 0;
-    height: 100%;
-
-    .row {
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-
-      input {
-        flex-grow: 1;
-      }
-    }
   }
 
   textarea {

@@ -57,6 +57,7 @@ export class WorkspaceContext {
 
         await this.library.load();
         await this.stylesheet.load();
+        await this.config.load();
 
         console.log('opened workspace at', path);
         this.onWorkspaceChanged.dispatch();
@@ -65,6 +66,18 @@ export class WorkspaceContext {
     get path() { return this.#path; }
     get name() { return this.#name; }
     get assetPath() { return this.#assetPath; }
+
+    set name(x) {
+        if (this.#name == x) return;
+        this.#name = x;
+        this.config.dirty = true;
+    }
+
+    set assetPath(x) {
+        if (this.#assetPath == x) return;
+        this.#assetPath = x;
+        this.config.dirty = true;
+    }
 
     get documents(): readonly Document[] { return this.#documents; }
     get activeId() { return this.#activeId; }
