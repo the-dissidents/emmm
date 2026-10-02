@@ -1,5 +1,18 @@
-/** Preserve explicit footer colors through the original CSS inliner. */
+function normalizeCaptionSpacing(footer: HTMLElement) {
+    for (const anchor of footer.querySelectorAll('a[linktype="image"]')) {
+        const captions = anchor.parentElement?.nextElementSibling?.querySelectorAll('p');
+        captions?.forEach(caption => {
+            // A body p rule adds margin-block even when the template has margin: 0.
+            // Reset both logical and physical spacing before preview and after CSS inlining.
+            for (const property of ['margin', 'margin-block', 'margin-inline', 'padding', 'padding-block', 'padding-inline'])
+                caption.style.setProperty(property, '0');
+        });
+    }
+}
+
+/** Preserve card caption spacing and explicit colors through the original CSS inliner. */
 export function styleHistory(footer: HTMLElement, headingColor?: string, textColor?: string): HTMLElement {
+    normalizeCaptionSpacing(footer);
     const valid = (color?: string) => !!color && /^#[\da-f]{6}$/i.test(color);
     if (valid(textColor)) {
         footer.dataset.weixinHistoryTextColor = textColor;

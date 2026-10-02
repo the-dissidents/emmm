@@ -114,11 +114,26 @@ try{
   const titleColor=window.getComputedStyle(doc.querySelector('header .title')).color;
   assert.equal(doc.querySelector('[data-weixin-history] strong').style.color,titleColor,'Imported footer follows the actual title color');
   const previewHeading=doc.querySelector('[data-weixin-history] strong');
-  const themeStyle=doc.createElement('style');themeStyle.textContent='strong { color: #28428c; }';doc.head.append(themeStyle);
+  const bodyParagraph=doc.querySelector('.article-body > p');
+  const captionParagraphs=[...doc.querySelectorAll('[data-weixin-history] a[linktype="image"]')]
+    .map(a=>a.parentElement.nextElementSibling.querySelector('p'));
+  const captionText=captionParagraphs.map(p=>p.textContent);
+  const captionLineHeights=captionParagraphs.map(p=>p.parentElement.style.lineHeight);
+  const themeStyle=doc.createElement('style');themeStyle.textContent='strong { color: #28428c; } p { margin-block: 0 1.5em; padding-block: 0 0.5em; }';doc.head.append(themeStyle);
   inlineCss(doc,{removeStyleTags:true,removeClasses:true});
   assert.equal(previewHeading.style.color,'#28428c','Reproduce original inliner overriding inline footer colors');
+  assert.equal(captionParagraphs[0].style.getPropertyValue('margin-block'),'0 1.5em','Reproduce body paragraph spacing leaking into footer captions');
   finalizeWeixinFooterColors(doc);
   assert.equal(previewHeading.style.color,titleColor,'Title color survives Weixin CSS inlining');
+  for(const p of captionParagraphs){
+    assert.equal(p.style.getPropertyValue('margin-block'),'0','Footer captions must not inherit body paragraph bottom spacing');
+    assert.equal(p.style.getPropertyValue('padding-block'),'0','Footer captions must not inherit body paragraph bottom padding');
+    assert.equal(p.style.margin,'0px');assert.equal(p.style.padding,'0px');
+  }
+  assert.deepEqual(captionParagraphs.map(p=>p.textContent),captionText,'Caption text and natural wrapping remain unchanged');
+  assert.deepEqual(captionParagraphs.map(p=>p.parentElement.style.lineHeight),captionLineHeights,'Keep the template caption line height');
+  assert.equal(bodyParagraph.style.getPropertyValue('margin-block'),'0 1.5em','Keep normal article paragraph margins');
+  assert.equal(bodyParagraph.style.getPropertyValue('padding-block'),'0 0.5em','Keep normal article paragraph padding');
   doc.body.innerHTML='<p>正文</p>';
   weixinNetwork.set({mode:'ssh',sshServer:'missing',localPort:18781});
   await weixinFetch('https://api.weixin.qq.com/test');assert.equal(state.commands.length,0,'Disabled forwarding never starts SSH');assert.equal(state.requests.at(-1).init.proxy,undefined);
