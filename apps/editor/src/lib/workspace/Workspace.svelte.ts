@@ -2,7 +2,7 @@ import * as dialog from '@tauri-apps/plugin-dialog';
 import * as fs from '@tauri-apps/plugin-fs';
 import * as z from 'zod/v4-mini';
 import { ConfigDocument, Document, EmmmDocument, LibDocument, StyleDocument } from './Document.svelte';
-import { defaultSource } from '../Templates';
+import { defaultSource } from '../templates';
 import { Debug } from '$lib/Debug';
 import { EventHost } from '@the_dissidents/svelte-ui';
 import { join } from '@tauri-apps/api/path';

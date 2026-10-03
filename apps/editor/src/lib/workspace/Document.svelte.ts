@@ -8,7 +8,7 @@ import { basename, join } from '@tauri-apps/api/path';
 import * as dialog from '@tauri-apps/plugin-dialog';
 import * as fs from '@tauri-apps/plugin-fs';
 import type { SerializedWorkspace, WorkspaceContext } from './Workspace.svelte';
-import { defaultLibrary, defaultStyles } from '$lib/Templates';
+import { defaultLibrary, defaultStyles } from '$lib/templates';
 import { Debug } from '$lib/Debug';
 import { CustomConfig } from '$lib/emmm/Custom';
 import * as emmm from '@the_dissidents/libemmm';

@@ -23,7 +23,7 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-fs = { version = "2", features = ["watch"] }
-tauri-plugin-http = "2"
+tauri-plugin-http = { version = "2", features = [] }
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-log = "2"
@@ -40,6 +40,11 @@ zip = "7.2.0"
 anyhow = { version = "1.0.100", features = ["backtrace"] }
 fancy-regex = "0.17.0"
 font-kit = "0.14"
+
+futures-util = "0.3"
+
+reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "rustls-tls-native-roots"] }
+zeroize = "1"
 
 [patch.crates-io]
 font-kit = { git = "https://github.com/the-dissidents/font-kit.git", branch = "fix/coretext-path" }

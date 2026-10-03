@@ -1,16 +1,25 @@
-use std::{format, panic, sync::{Arc, Mutex}};
+use std::{
+    format, panic,
+    sync::{Arc, Mutex},
+};
 
 use serde::Serialize;
 
 mod archive;
 mod compress;
+mod credentials;
 mod font_registry;
 mod hash;
+mod weixin_proxy;
 
 use archive::{archive, unarchive};
 use compress::compress_image;
+use credentials::get_weixin_token;
 use font_registry::{FontRegistry, pack_fonts};
 use hash::hash_file;
+use weixin_proxy::{
+    proxy_weixin_request, proxy_weixin_upload, test_weixin_proxy, validate_weixin_proxy,
+};
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
@@ -31,13 +40,18 @@ pub enum BackendEvent {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     panic::set_hook(Box::new(|info| {
-        let message =
-            if let Some(s) = info.payload().downcast_ref::<&str>() { (*s).to_string() }
-            else if let Some(s) = info.payload().downcast_ref::<String>() { s.clone() }
-            else { "<no message>".to_string() };
-        let location =
-            if let Some(loc) = info.location() { format!("{loc}") }
-            else { "unknown location".to_string() };
+        let message = if let Some(s) = info.payload().downcast_ref::<&str>() {
+            (*s).to_string()
+        } else if let Some(s) = info.payload().downcast_ref::<String>() {
+            s.clone()
+        } else {
+            "<no message>".to_string()
+        };
+        let location = if let Some(loc) = info.location() {
+            format!("{loc}")
+        } else {
+            "unknown location".to_string()
+        };
         log::error!("!! FATAL !! backend panicked ({message}) at {location}");
     }));
 
@@ -60,18 +74,21 @@ pub fn run() {
                     out.finish(format_args!(
                         "{}[{}][{}] {}",
                         tauri_plugin_log::TimezoneStrategy::UseLocal
-                            .get_now().format(&time_format).unwrap(),
+                            .get_now()
+                            .format(&time_format)
+                            .unwrap(),
                         record.level(),
                         record.target(),
                         message
                     ));
                 })
-                .filter(|metadata|
-                       !metadata.target().starts_with("tao::")
-                    && !metadata.target().starts_with("html5ever::")
-                    && !metadata.target().starts_with("style::")
-                    && !metadata.target().starts_with("selectors::")
-                    && metadata.level() <= log::Level::Debug)
+                .filter(|metadata| {
+                    !metadata.target().starts_with("tao::")
+                        && !metadata.target().starts_with("html5ever::")
+                        && !metadata.target().starts_with("style::")
+                        && !metadata.target().starts_with("selectors::")
+                        && metadata.level() <= log::Level::Debug
+                })
                 .clear_targets()
                 .target(tauri_plugin_log::Target::new(
                     tauri_plugin_log::TargetKind::Stderr,
@@ -94,6 +111,11 @@ pub fn run() {
             archive,
             unarchive,
             pack_fonts,
+            get_weixin_token,
+            validate_weixin_proxy,
+            test_weixin_proxy,
+            proxy_weixin_request,
+            proxy_weixin_upload,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,11 +1,24 @@
-import { Debug } from "$lib/Debug"
-import { RustAPI } from "$lib/RustAPI"
+import { Debug } from '$lib/Debug';
+import { RustAPI } from '$lib/RustAPI';
 
 const GENERIC_FAMILIES = new Set([
-    'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui',
-    'ui-serif', 'ui-sans-serif', 'ui-monospace', 'ui-rounded',
-    'emoji', 'math', 'fangsong',
-    'inherit', 'initial', 'unset', 'revert',
+    'serif',
+    'sans-serif',
+    'monospace',
+    'cursive',
+    'fantasy',
+    'system-ui',
+    'ui-serif',
+    'ui-sans-serif',
+    'ui-monospace',
+    'ui-rounded',
+    'emoji',
+    'math',
+    'fangsong',
+    'inherit',
+    'initial',
+    'unset',
+    'revert',
 ]);
 
 /** maps lowercased family names to ready-made `@font-face` rules */
@@ -14,12 +27,17 @@ const fontCssCache = new Map<string, string>();
 function collectFontFamilies(root: HTMLElement): string[] {
     const families = new Map<string, string>();
     for (const elem of [root, ...root.querySelectorAll<HTMLElement>('*')]) {
-        const value = elem.style?.fontFamily
-            || (elem.ownerDocument === document && elem.isConnected
-                ? getComputedStyle(elem).fontFamily : '');
+        const value =
+            elem.style?.fontFamily ||
+            (elem.ownerDocument === document && elem.isConnected
+                ? getComputedStyle(elem).fontFamily
+                : '');
         if (!value) continue;
         for (const part of value.split(',')) {
-            const family = part.trim().replace(/^["']|["']$/g, '').trim();
+            const family = part
+                .trim()
+                .replace(/^["']|["']$/g, '')
+                .trim();
             if (!family || GENERIC_FAMILIES.has(family.toLowerCase())) continue;
             if (!families.has(family.toLowerCase()))
                 families.set(family.toLowerCase(), family);
@@ -41,14 +59,19 @@ async function fontFacesFor(families: string[]): Promise<string> {
     const missing = families.filter((x) => !fontCssCache.has(x.toLowerCase()));
     if (missing.length > 0) {
         const rules = new Map<string, string[]>(
-            missing.map((x) => [x.toLowerCase(), []]));
+            missing.map((x) => [x.toLowerCase(), []])
+        );
         for (const font of await RustAPI.packFonts(missing)) {
             const url = await blobToDataURL(
-                new Blob([font.data], { type: 'application/octet-stream' }));
-            rules.get(font.family.toLowerCase())?.push(
-                `@font-face{font-family:${JSON.stringify(font.family)};`
-              + `font-weight:${font.weight};font-style:${font.style};`
-              + `src:url("${url}")}`);
+                new Blob([font.data], { type: 'application/octet-stream' })
+            );
+            rules
+                .get(font.family.toLowerCase())
+                ?.push(
+                    `@font-face{font-family:${JSON.stringify(font.family)};` +
+                        `font-weight:${font.weight};font-style:${font.style};` +
+                        `src:url("${url}")}`
+                );
         }
         for (const [family, list] of rules) {
             if (list.length == 0)
@@ -69,60 +92,84 @@ async function svgToDataURL(svg: SVGElement): Promise<string> {
     return `data:image/svg+xml;charset=utf-8,${html}`;
 }
 
-function createImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => {
-      img.decode().then(() => {
-        requestAnimationFrame(() => resolve(img))
-      })
-    }
-    img.onerror = reject
-    img.crossOrigin = 'anonymous'
-    img.decoding = 'async'
-    img.src = url
-  });
+function createImage(
+    url: string,
+    backgroundSafe = false
+): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const timer = backgroundSafe
+            ? setTimeout(() => failed(new Error('图片预渲染超时')), 30000)
+            : undefined;
+        const failed = (error: unknown) => {
+            clearTimeout(timer);
+            reject(error);
+        };
+        img.onload = () => {
+            if (backgroundSafe) {
+                img.decode().then(() => {
+                    // Draft rendering can finish while the window is in the background.
+                    clearTimeout(timer);
+                    resolve(img);
+                }, failed);
+            } else {
+                // Preserve the original editor's rendering behavior when no draft plugin is involved.
+                img.decode().then(() =>
+                    requestAnimationFrame(() => resolve(img))
+                );
+            }
+        };
+        img.onerror = failed;
+        img.crossOrigin = 'anonymous';
+        img.decoding = 'async';
+        img.src = url;
+    });
 }
 
 export async function elementToImage(
     node: HTMLElement,
     width: number,
     height: number,
+    backgroundSafe = false
 ): Promise<HTMLImageElement> {
     const fontCss = await fontFacesFor(collectFontFamilies(node));
 
-    const xmlns = 'http://www.w3.org/2000/svg'
-    const svg = document.createElementNS(xmlns, 'svg')
-    const foreignObject = document.createElementNS(xmlns, 'foreignObject')
+    const xmlns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(xmlns, 'svg');
+    const foreignObject = document.createElementNS(xmlns, 'foreignObject');
 
-    svg.setAttribute('width', `${width}`)
-    svg.setAttribute('height', `${height}`)
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`)
+    svg.setAttribute('width', `${width}`);
+    svg.setAttribute('height', `${height}`);
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
 
-    foreignObject.setAttribute('width', '100%')
-    foreignObject.setAttribute('height', '100%')
-    foreignObject.setAttribute('x', '0')
-    foreignObject.setAttribute('y', '0')
-    foreignObject.setAttribute('externalResourcesRequired', 'true')
+    foreignObject.setAttribute('width', '100%');
+    foreignObject.setAttribute('height', '100%');
+    foreignObject.setAttribute('x', '0');
+    foreignObject.setAttribute('y', '0');
+    foreignObject.setAttribute('externalResourcesRequired', 'true');
 
     if (fontCss) {
-        const style = document.createElementNS(xmlns, 'style')
-        style.textContent = fontCss
-        svg.appendChild(style)
+        const style = document.createElementNS(xmlns, 'style');
+        style.textContent = fontCss;
+        svg.appendChild(style);
     }
-    svg.appendChild(foreignObject)
-    foreignObject.appendChild(node)
-    return createImage(await svgToDataURL(svg))
+    svg.appendChild(foreignObject);
+    foreignObject.appendChild(node);
+    return createImage(await svgToDataURL(svg), backgroundSafe);
 }
 
 export async function toCanvas(
-    e: HTMLElement, width: number, height: number, scale = 1
+    e: HTMLElement,
+    width: number,
+    height: number,
+    scale = 1,
+    backgroundSafe = false
 ) {
     const canvas = new OffscreenCanvas(width * scale, height * scale);
     const ctx = canvas.getContext('2d');
     Debug.assert(!!ctx);
 
-    const i = await elementToImage(e, width, height);
+    const i = await elementToImage(e, width, height, backgroundSafe);
     ctx.drawImage(i, 0, 0, width * scale, height * scale);
     return await canvas.convertToBlob();
 }

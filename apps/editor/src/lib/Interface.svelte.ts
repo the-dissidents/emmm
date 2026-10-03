@@ -1,56 +1,73 @@
-import { writable } from "svelte/store"
-import { ZArticleColors } from "./ColorTheme";
-import * as Color from "colorjs.io/fn";
+import { writable } from 'svelte/store';
+import { ZArticleColors } from './ColorTheme';
+import * as Color from 'colorjs.io/fn';
 
 import * as emmm from '@the_dissidents/libemmm';
-import { Memorized } from "./config/Memorized.svelte";
+import { Memorized } from './config/Memorized.svelte';
 
-import * as z from "zod/v4-mini";
+import * as z from 'zod/v4-mini';
 
-import { defaultStyles, defaultLibrary } from './Templates';
+import { defaultStyles, defaultLibrary } from './templates';
 
-import { Debug } from "./Debug";
-import { renderDocument } from "./Render";
-import { Workspace } from "./workspace/Workspace.svelte";
-import { EventHost } from "@the_dissidents/svelte-ui";
-import { processDocument, type Options } from "@the_dissidents/mojikit";
-import { EmmmDocument } from "./workspace/Document.svelte";
+import { Debug } from './Debug';
+import { renderDocument } from './Render';
+import { Workspace } from './workspace/Workspace.svelte';
+import { EventHost } from '@the_dissidents/svelte-ui';
+import { processDocument, type Options } from '@the_dissidents/mojikit';
+import { EmmmDocument } from './workspace/Document.svelte';
 
 let status = writable<string>('ok');
 let progress = writable<number | undefined>();
 
 let renderTimer: any;
+let renderVersion = 0;
 
 function getId(n: Node | null) {
     while (n) {
         if (n instanceof HTMLElement) {
-            if (n.dataset.id !== undefined)
-                return n.dataset.id;
+            if (n.dataset.id !== undefined) return n.dataset.id;
         }
         n = n?.parentElement;
     }
     return undefined;
 }
 
-export async function guardAsync(x: () => Promise<void>, msg: string): Promise<void>;
-export async function guardAsync<T>(x: () => Promise<T>, msg: string, fallback: T): Promise<T>;
+export async function guardAsync(
+    x: () => Promise<void>,
+    msg: string
+): Promise<void>;
+export async function guardAsync<T>(
+    x: () => Promise<T>,
+    msg: string,
+    fallback: T
+): Promise<T>;
 
-export async function guardAsync<T>(x: () => Promise<T>, msg: string, fallback?: T) {
+export async function guardAsync<T>(
+    x: () => Promise<T>,
+    msg: string,
+    fallback?: T
+) {
     try {
         return await x();
     } catch (x) {
         Interface.status.set(`${msg}: ${String(x)}`);
         console.info('guard:', msg, x);
         return fallback;
-    };
+    }
 }
 
 type EnforceNotPromise<T extends () => unknown> =
     ReturnType<T> extends Promise<unknown> ? never : T;
 
-export function guard<T extends () => void>(x: EnforceNotPromise<T>, msg: string): void;
+export function guard<T extends () => void>(
+    x: EnforceNotPromise<T>,
+    msg: string
+): void;
 export function guard<T extends () => unknown>(
-    x: EnforceNotPromise<T>, msg: string, fallback: ReturnType<T>): ReturnType<T>;
+    x: EnforceNotPromise<T>,
+    msg: string,
+    fallback: ReturnType<T>
+): ReturnType<T>;
 
 export function guard<T>(x: () => T, msg: string, fallback?: T) {
     try {
@@ -59,14 +76,15 @@ export function guard<T>(x: () => T, msg: string, fallback?: T) {
         Interface.status.set(`${msg}: ${String(x)}`);
         console.info('guard:', msg, x);
         return fallback;
-    };
+    }
 }
 
 const mojikitOpts: Options = {
     rulesets: [
         {
-            heuristic: /[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef\u{20000}-\u{2fa1f}\u{30000}-\u{3134a}“”‘’—·⸺⋯…\d\.\[\]]/u,
-            tagName: "mjk-chs",
+            heuristic:
+                /[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef\u{20000}-\u{2fa1f}\u{30000}-\u{3134a}“”‘’—·⸺⋯…\d\.\[\]]/u,
+            tagName: 'mjk-chs',
             squeezeLeft: /[《〈（「『]/,
             squeezeRight: /[〉》）」』，。、：；？！]/,
             squeezeMiddle: /·/,
@@ -74,12 +92,13 @@ const mojikitOpts: Options = {
             noBreakAfter: /[“‘《〈（「『—·⸺⋯－]/,
             addClass: /[—·⸺⋯－…]/,
             weight: 4,
-        }, {
+        },
+        {
             heuristic: /[\u0021-\u007e\u00a1-\u00ff\p{Script=Latin}“”‘’ ]/u,
-            tagName: "mjk-lat",
+            tagName: 'mjk-lat',
             // addClass: /[“”‘’]/, // only problematic ones
             weight: 2,
-        }
+        },
     ],
     classnames: {
         ambiguous: 'ambig',
@@ -93,8 +112,12 @@ const mojikitOpts: Options = {
 };
 
 export const Interface = $state({
-    get status() { return status; },
-    get progress() { return progress; },
+    get status() {
+        return status;
+    },
+    get progress() {
+        return progress;
+    },
 
     /** @deprecated */
     stylesheet: Memorized.$('stylesheet', z.string(), defaultStyles),
@@ -109,7 +132,9 @@ export const Interface = $state({
     libConfig: undefined as emmm.Configuration | undefined,
 
     frame: undefined as HTMLIFrameElement | undefined,
+    isCurrentPreview: (() => false) as () => boolean,
     renderedHTML: null as string | null,
+    renderedDocument: null as Document | null,
     sourceMap: [] as emmm.HTMLSourceMapEntry[],
 
     colors: Memorized.$('colorParams', ZArticleColors, {
@@ -117,7 +142,7 @@ export const Interface = $state({
         text: Color.getColor('black'),
         commentary: Color.getColor('indianred'),
         link: Color.getColor('MediumVioletRed'),
-        highlight: Color.getColor('yellow')
+        highlight: Color.getColor('yellow'),
     }),
 
     backgroundImage: Memorized.$('backgroundImage', z.string(), ''),
@@ -139,11 +164,11 @@ export const Interface = $state({
         const doc = this.frame.contentDocument!;
         const window = this.frame.contentWindow!;
 
-        const ranges = this.sourceMap
-            .filter((x) => x.start <= pos && x.end >= pos);
+        const ranges = this.sourceMap.filter(
+            (x) => x.start <= pos && x.end >= pos
+        );
         if (ranges.length == 0) {
-            if (select)
-                doc.getSelection()!.removeAllRanges();
+            if (select) doc.getSelection()!.removeAllRanges();
             return;
         }
 
@@ -152,7 +177,9 @@ export const Interface = $state({
             if (r.end - r.start < mostSpecific.end - mostSpecific.start)
                 mostSpecific = r;
 
-        const elem = doc.querySelector(`[data-id="${CSS.escape(mostSpecific.id)}"]`);
+        const elem = doc.querySelector(
+            `[data-id="${CSS.escape(mostSpecific.id)}"]`
+        );
         if (!elem) return;
 
         const lx = pos;
@@ -161,8 +188,11 @@ export const Interface = $state({
 
         if (l2 > l1) {
             const rect = elem.getBoundingClientRect();
-            const y = (lx - l1) / (l2 - l1) * rect.height
-                + rect.top + window.scrollY - window.innerHeight / 2;
+            const y =
+                ((lx - l1) / (l2 - l1)) * rect.height +
+                rect.top +
+                window.scrollY -
+                window.innerHeight / 2;
             window.scrollTo({ top: y, behavior: 'smooth' });
         } else {
             elem.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -178,33 +208,71 @@ export const Interface = $state({
     },
 
     async render() {
-        if (!(Workspace.active instanceof EmmmDocument)) return;
+        clearTimeout(renderTimer);
+        renderTimer = undefined;
+        if (!(Workspace.active instanceof EmmmDocument)) return false;
         const pd = Workspace.active?.parseData?.data;
-        if (!pd || !this.frame) return;
-
-        const editor = Workspace.active?.editor;
+        if (!pd || !this.frame) return false;
+        const active = Workspace.active;
+        const source = active.source;
+        const version = ++renderVersion;
+        const mojikit = this.useMojikit.get();
+        const editor = active.editor;
+        const stylesheet = Workspace.stylesheet.source;
+        const library = Workspace.library.source;
+        const assets = Workspace.assetPath;
+        const background = this.backgroundImage.get();
+        const colors = JSON.stringify(
+            z.encode(ZArticleColors, this.colors.get())
+        );
+        const current = () =>
+            version === renderVersion &&
+            Workspace.active === active &&
+            active.source === source &&
+            Workspace.stylesheet.source === stylesheet &&
+            Workspace.library.source === library &&
+            Workspace.assetPath === assets &&
+            this.useMojikit.get() === mojikit &&
+            this.backgroundImage.get() === background &&
+            JSON.stringify(z.encode(ZArticleColors, this.colors.get())) ===
+                colors;
         const result = await renderDocument(pd, {
-            sass: Workspace.stylesheet.source,
+            sass: stylesheet,
             colors: this.colors.get(),
             backgroundImage: this.backgroundImage.get(),
         });
-        if (result.type !== 'ok') return;
+        if (result.type !== 'ok' || !current()) return false;
 
-        if (this.useMojikit.get())
-            processDocument(result.doc, mojikitOpts);
+        if (!current()) return false;
+        if (this.useMojikit.get()) processDocument(result.doc, mojikitOpts);
+        this.renderedDocument = result.doc;
         this.renderedHTML = result.doc.documentElement.outerHTML;
         this.sourceMap = result.map;
 
         const sx = this.frame.contentWindow!.scrollX;
         const sy = this.frame.contentWindow!.scrollY;
-        this.frame.srcdoc = this.renderedHTML;
-        this.frame.addEventListener(
-            'load', () => {
-                this.frame!.contentWindow!.scrollTo(sx, sy);
+        await new Promise<void>((resolve, reject) => {
+            const frame = this.frame!;
+            const timer = setTimeout(() => {
+                frame.removeEventListener('load', loaded);
+                reject(new Error('文章预览加载超时'));
+            }, 30000);
+            const loaded = () => {
+                clearTimeout(timer);
+                this.renderedHTML =
+                    this.renderedDocument!.documentElement.outerHTML;
+                frame.contentWindow!.scrollTo(sx, sy);
                 this.onFrameLoaded.dispatch();
-            }, { once: true });
+                resolve();
+            };
+            frame.addEventListener('load', loaded, { once: true });
+            frame.srcdoc = this.renderedHTML!;
+        });
 
+        if (!current()) return false;
         const doc = this.frame.contentDocument!;
+        this.isCurrentPreview = () =>
+            current() && this.frame?.contentDocument === doc;
         doc.addEventListener('selectionchange', () => {
             const sel = doc.getSelection()!;
             const n = sel.anchorNode;
@@ -214,5 +282,6 @@ export const Interface = $state({
             if (!entry) return;
             editor?.setSelections([{ from: entry.start, to: entry.end }]);
         });
-    }
+        return true;
+    },
 });

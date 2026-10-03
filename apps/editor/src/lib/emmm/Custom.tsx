@@ -86,13 +86,13 @@ render.options.headerPlugins.push(async (cxt) => {
                 </p> }
             </div> }
 
-        { metadata.fields.length > 0 &&
+        { metadata.fields.length > 0 ?
             <div class='metadata'>
                 { metadata.fields.map(([k, v]) =>
                 <p>
                     <span class='key'>{k}</span> / <span class='field'>{v}</span>
                 </p>) }
-            </div> }
+            </div> : [] }
 
         <aside class='ttr'><p>
             全文 {(Math.round(metadata.wordCount / 50) * 50).toString()} 字，阅读时间 {(metadata.wordCount / 400).toFixed(0)} 分钟

@@ -8,7 +8,7 @@
   import { onMount } from 'svelte';
   import { _ } from 'svelte-i18n';
 
-  import * as z from "zod/v4-mini";
+  import * as z from 'zod/v4-mini';
 
   const currentWindow = getCurrentWindow();
 
@@ -39,16 +39,20 @@
 
   async function init() {
     const v = await getVersion();
-    await currentWindow.setTitle(`emmui ${v} (${arch()}/${platform()}${version()})`);
+    await currentWindow.setTitle(
+      `emmui ${v} [${__EMMM_BUILD_ID__}] (${arch()}/${platform()}${version()})`
+    );
   }
   onMount(init);
 </script>
 
-<Banner style='error' bind:open={errorBanner}
-  text={$_('banner.internal-error')}/>
+<Banner
+  style="error"
+  bind:open={errorBanner}
+  text={$_('banner.internal-error')}
+/>
 
 <main class="container vlayout">
-
   <div id="titlebar" data-tauri-drag-region></div>
 
   <div class="page vlayout flexgrow">
