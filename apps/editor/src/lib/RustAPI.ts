@@ -1,28 +1,34 @@
-import { Channel, invoke } from "@tauri-apps/api/core";
-import { BinaryReader } from "./details/BinaryReader";
-import { path } from "@tauri-apps/api";
-import * as fs from "@tauri-apps/plugin-fs";
+import { Channel, invoke } from '@tauri-apps/api/core';
+import { BinaryReader } from './details/BinaryReader';
+import { path } from '@tauri-apps/api';
+import * as fs from '@tauri-apps/plugin-fs';
 import mime from 'mime/lite';
-import { readUrl } from "./Util";
+import { readUrl } from './Util';
+import type { ProxySettings } from './integration/weixin/Connection';
 
-type BackendEvent = {
-    event: 'failed'
-    data: {
-        msg: string
-    }
-} | {
-    event: 'inlined'
-    data: {
-        result: string
-    }
-} | {
-    event: 'done',
-    data: {}
-}
+type BackendEvent =
+    | {
+          event: 'failed';
+          data: {
+              msg: string;
+          };
+      }
+    | {
+          event: 'inlined';
+          data: {
+              result: string;
+          };
+      }
+    | {
+          event: 'done';
+          data: {};
+      };
 
 type BackendEventKey = BackendEvent['event'];
-type BackendEventData = {[E in BackendEvent as E['event']]: E['data']};
-type BackendEventHandler<key extends BackendEventKey> = (data: BackendEventData[key]) => void;
+type BackendEventData = { [E in BackendEvent as E['event']]: E['data'] };
+type BackendEventHandler<key extends BackendEventKey> = (
+    data: BackendEventData[key]
+) => void;
 
 class BackendError extends Error {
     constructor(msg: string) {
@@ -31,8 +37,10 @@ class BackendError extends Error {
     }
 }
 
-function createChannel(handler: {[key in BackendEventKey]?: BackendEventHandler<key>}) {
-    const channel = new Channel<BackendEvent>;
+function createChannel(handler: {
+    [key in BackendEventKey]?: BackendEventHandler<key>;
+}) {
+    const channel = new Channel<BackendEvent>();
     channel.onmessage = (msg) => {
         let h = handler[msg.event];
         // 'as any' because a little quirk in TypeScript's inference system
@@ -44,25 +52,31 @@ function createChannel(handler: {[key in BackendEventKey]?: BackendEventHandler<
         }
 
         switch (msg.event) {
-        case 'failed':
-            throw new BackendError(msg.data.msg);
-        default:
-            throw new Error('unhandled event: ' + msg.event);
+            case 'failed':
+                throw new BackendError(msg.data.msg);
+            default:
+                throw new Error('unhandled event: ' + msg.event);
         }
-    }
+    };
     return channel;
 }
 
 export type PackedFont = {
-    family: string,
-    weight: number,
-    style: string,
-    data: Uint8ClampedArray<ArrayBuffer>
+    family: string;
+    weight: number;
+    style: string;
+    data: Uint8ClampedArray<ArrayBuffer>;
 };
 
 export type FileHash = string & { __brand: 'FileHash' };
 
 export const RustAPI = {
+    getWeixinToken(appid: string, secret: string, proxy?: ProxySettings) {
+        return invoke<{ access_token: string; expires_in: number }>(
+            'get_weixin_token',
+            { appid, secret, proxy }
+        );
+    },
     async packFonts(families: string[]): Promise<PackedFont[]> {
         const buf = await invoke<ArrayBuffer>('pack_fonts', { families });
         const reader = new BinaryReader(buf);
@@ -79,25 +93,34 @@ export const RustAPI = {
         return fonts;
     },
 
-    async archive(source: string, path: string, onProgress?: (x: number) => void) {
+    async archive(
+        source: string,
+        path: string,
+        onProgress?: (x: number) => void
+    ) {
         const channel = new Channel<{ progress: number }>();
         channel.onmessage = ({ progress }) => onProgress?.(progress);
         await invoke('archive', { channel, source, path });
     },
 
-    async unarchive(path: string, output: string, onProgress?: (x: number) => void) {
+    async unarchive(
+        path: string,
+        output: string,
+        onProgress?: (x: number) => void
+    ) {
         const channel = new Channel<{ progress: number }>();
         channel.onmessage = ({ progress }) => onProgress?.(progress);
-        return await invoke('unarchive', { channel, path, output }) as string;
+        return (await invoke('unarchive', { channel, path, output })) as string;
     },
 
     async compressImage(url: URL, maxSize: number) {
         let filepath = await localPathOf(url);
 
         const buf = await invoke<ArrayBuffer>('compress_image', {
-            path: filepath, maxSize,
+            path: filepath,
+            maxSize,
             supportedTypes: ['image/jpeg', 'image/png'],
-            max_width: 1920
+            max_width: 1920,
         });
 
         const reader = new BinaryReader(buf);
@@ -106,27 +129,38 @@ export const RustAPI = {
         const data = reader.readToEnd();
         return {
             blob: new Blob([data], { type }),
-            ext, mime: type
+            ext,
+            mime: type,
         };
     },
 
     async hashFile(url: URL) {
         const filepath = await localPathOf(url);
         console.log(filepath);
-        return await invoke<string>('hash_file', { path: filepath }) as FileHash;
-    }
-}
+        return (await invoke<string>('hash_file', {
+            path: filepath,
+        })) as FileHash;
+    },
+};
 
 async function localPathOf(url: URL) {
     console.log(url);
     let filepath = decodeURIComponent(url.pathname);
     if (url.protocol !== 'file:') {
-        let file = new File([await readUrl(url)], url.href,
-            { type: mime.getType(url.href) ?? undefined });
-        // save to local
+        const blob = await readUrl(url);
+        const type =
+            blob.type ||
+            mime.getType(url.pathname) ||
+            'application/octet-stream';
+        const file = new File([blob], url.href, { type });
+        // Weixin image URLs often end in /0 or /640; infer the suffix from the response instead.
+        const extension =
+            (await path.extname(filepath).catch(() => '')) ||
+            '.' + (mime.getExtension(type) || 'img');
         filepath = await path.join(
             await path.tempDir(),
-            crypto.randomUUID() + await path.extname(filepath));
+            crypto.randomUUID() + extension
+        );
         await fs.writeFile(filepath, file.stream());
     }
     return filepath;
