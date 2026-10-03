@@ -1,0 +1,33 @@
+[Unit]
+Description=Authenticated HTTPS proxy for Weixin
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=squid
+Group=squid
+RuntimeDirectory=emmm-proxy
+RuntimeDirectoryMode=0750
+LogsDirectory=emmm-proxy
+LogsDirectoryMode=0750
+ExecStartPre=/usr/sbin/squid -k parse -f /etc/emmm-proxy/squid.conf
+ExecStart=/usr/sbin/squid -N -f /etc/emmm-proxy/squid.conf
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=512
+MemoryMax=192M
+TasksMax=32
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/run/emmm-proxy /var/log/emmm-proxy
+
+[Install]
+WantedBy=multi-user.target
