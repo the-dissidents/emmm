@@ -1,4 +1,4 @@
-import { RangeSet, RangeSetBuilder } from "@codemirror/state";
+import { RangeSet, RangeSetBuilder, StateEffect } from "@codemirror/state";
 import { Decoration, EditorView, ViewPlugin, ViewUpdate, WidgetType, type DecorationSet } from "@codemirror/view";
 import * as emmm from "@the_dissidents/libemmm";
 import { emmmDocument, type EmmmParseData } from "./ParseData";
@@ -114,8 +114,12 @@ function highlightNode(
     }
 }
 
+const refreshHighlighting = StateEffect.define<void>();
+
 export const emmmHighlighter = ViewPlugin.fromClass(class {
     decorations: DecorationSet = RangeSet.empty;
+    private highlightedDocument: EmmmParseData | undefined;
+    private refreshTimer: ReturnType<typeof setTimeout> | undefined;
 
     make(doc: EmmmParseData) {
         let ranges: Range[] = [];
@@ -125,19 +129,50 @@ export const emmmHighlighter = ViewPlugin.fromClass(class {
         let builder = new RangeSetBuilder<Decoration>();
         ranges.forEach((x) => builder.add(x.start, x.end, x.deco));
         this.decorations = builder.finish();
+        this.highlightedDocument = doc;
     }
 
-    constructor(view: EditorView) {
+    constructor(private view: EditorView) {
         const doc = view.state.field(emmmDocument);
         if (!doc) return;
         this.make(doc);
     }
 
     update(update: ViewUpdate) {
-        const prev = update.startState.field(emmmDocument);
+        // Keep existing marks aligned without rebuilding the composing DOM.
+        if (update.docChanged)
+            this.decorations = this.decorations.map(update.changes);
+
         const doc = update.state.field(emmmDocument);
-        if (doc && doc !== prev && !update.view.composing) this.make(doc);
+        if (doc && doc !== this.highlightedDocument && !update.view.compositionStarted)
+            this.make(doc);
+    }
+
+    cancelRefresh() {
+        if (this.refreshTimer !== undefined) {
+            clearTimeout(this.refreshTimer);
+            this.refreshTimer = undefined;
+        }
+    }
+
+    scheduleRefresh() {
+        this.cancelRefresh();
+        // Let CodeMirror finish handling compositionend and flush pending text.
+        // Ending composition does not necessarily change the document again.
+        this.refreshTimer = setTimeout(() => {
+            this.refreshTimer = undefined;
+            if (!this.view.compositionStarted)
+                this.view.dispatch({ effects: refreshHighlighting.of(undefined) });
+        }, 0);
+    }
+
+    destroy() {
+        this.cancelRefresh();
     }
 }, {
-    decorations: v => v.decorations
+    decorations: v => v.decorations,
+    eventHandlers: {
+        compositionstart() { this.cancelRefresh(); },
+        compositionend() { this.scheduleRefresh(); },
+    },
 })
