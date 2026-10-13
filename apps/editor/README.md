@@ -16,7 +16,7 @@ The `emmm` source file should remain purely semantic, independent from its mediu
 
 [Locally build](../../README.md#building) the project first.
 
-Currently, we focus on typesetting for WeChat 公众号. To enable WeChat publishing features, you need the **appid** and **secret** from the [Developer Platform](https://developers.weixin.qq.com/platform). 
+Currently, we focus on typesetting for WeChat 公众号. To enable WeChat publishing features, you need the **appid** and **secret** from the [Developer Platform](https://developers.weixin.qq.com/platform).
 
 > **Important note:** While they never leave your machine (except for going to Tencent), the `appid` and `secret` are stored across sessions in a config file *in plaintext*.
 
@@ -24,11 +24,11 @@ Additionally, since we make the API calls locally, you need to **put your public
 
 ## The Interface
 
-The **Source** tab is where you typeset your articles. 
+The **Source** tab is where you typeset your articles.
 
 - Don't put any definitions in it.
 - Don't put anything technical in it.
-- Don't put anything that is not directly part of your article's semantic content in it. 
+- Don't put anything that is not directly part of your article's semantic content in it.
 - This is the only tab non-technical typesetters ever need to use.
 
 The **Library** tab should contain definitions of custom modifiers and shorthands. For maximum flexibility, the default configuration doesn't include any shorthands, so you want to define them here.
@@ -36,12 +36,12 @@ The **Library** tab should contain definitions of custom modifiers and shorthand
 - This tab should only contain system modifiers and produces nothing when rendered. In any case, the expansion result of this page is discarded.
 - Non-technical people don't need to read anything on this page, although you'll want to tell them about the shorthands you defined.
 
-The **CSS** tab controls the styling of the rendered HTML document. 
+The **CSS** tab controls the styling of the rendered HTML document.
 
 - Obviously, web development knowledge is required to write CSS.
 - **Not all styling works when pasted into the WeChat editor or submitted via API as an article.** Apparently WeChat platform modifies your HTML in some way, and we haven't entirely figured it out how.
 
-On the right pane you have a preview of the rendered page and debug views of the AST and the generated HTML code. 
+On the right pane you have a preview of the rendered page and debug views of the AST and the generated HTML code.
 
 > Note that the HTML code comes directly from `libemmm` and is **not** the HTML that you copy to WeChat. To circumvent WeChat's automatic formatting, `kfgui` attempts to transform the code by inlining everything and rewriting tag names. Click `copy transformed HTML` to get the transformed version.
 
@@ -53,10 +53,11 @@ On the right pane you have a preview of the rendered page and debug views of the
   - [x] diagnostic underlines
   - [x] autocompletion
 - [x] Rendered view
-  - [x] simple AST view
+  - [x] AST view
   - [x] raw HTML view
   - [x] HTML preview
-  - [ ] synchronized scrolling (with source map?)
+  - [x] synchronized scrolling (with source map?)
+    - [ ] bidirectional
 - [x] Diagnostics view
   - [x] linting support
 - [ ] Options and tools
@@ -64,11 +65,10 @@ On the right pane you have a preview of the rendered page and debug views of the
     - [ ] spell check tools
     - [ ] quick actions / insertions?
       - [x] drag to insert `[.image]`s
-    - [ ] search toolbox
+    - [x] search toolbox
 - [x] Support for multiple files
-  - [x] library and source (currently fake files)
-  - [ ] edit multiple library files
-  - [ ] proper project management
+  - [x] library and source
+  - [x] project management
 - [ ] Publishing
   - [ ] support for WeChat
     - [x] copy to editor
@@ -79,8 +79,9 @@ On the right pane you have a preview of the rendered page and debug views of the
     - [ ] upload to server?
     - [ ] automatic formatting
       - [x] color themes
-      - [ ] rule-based typographic tweaks
+      - [x] rule-based typographic tweaks
         - [x] span classes for wide and narrow characters
+        - [x] advanced mojikumi powered by  `mojikit`
   - [ ] support for Douban
     - [ ] copy to editor
 - [ ] Collaboration

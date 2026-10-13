@@ -2,10 +2,13 @@
   import { Debug } from "$lib/Debug";
   import { getVoices, say } from "$lib/integration/easter/Eggs";
   import { Interface } from "$lib/Interface.svelte";
+  import { PluginManager } from "$lib/plugin/Plugin";
   import { EditableDocument } from "$lib/workspace/Document.svelte";
   import { Workspace } from "$lib/workspace/Workspace.svelte";
   import { platform } from '@tauri-apps/plugin-os';
   import { _, locale, locales } from 'svelte-i18n';
+
+  import testPluginSource from '../plugin/host/test.js?raw';
 
   const hasTTS = platform() == 'macos';
 
@@ -18,6 +21,13 @@
     if (hasTTS)
       voices = await getVoices();
   })();
+
+  let counter = 0;
+  let pluginLog = $state('');
+  let manager = new PluginManager({
+    counter: () => counter++,
+    log: (p, inst) => console.log(`from ${inst.manifest.id}`, p)
+  });
 </script>
 
 <h5>
@@ -68,3 +78,19 @@
     <option value={l}>{l}</option>
   {/each}
 </select>
+
+<h5>Plugin</h5>
+
+<pre>{pluginLog}</pre>
+
+<button onclick={async () => {
+  await manager.load(testPluginSource);
+  pluginLog = 'instances: ' + manager.instances.map((x) => x.manifest.id).join(', ');
+}}>load</button>
+
+<button onclick={async () => {
+  await manager.dispatchHook('ping', (r, inst) => {
+    if (r && inst) pluginLog = `ping hook result from ${inst.manifest.id}: ${r}`;
+  });
+}}>ping</button>
+
