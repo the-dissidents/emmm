@@ -1,138 +1,55 @@
-# `emmm` plugin system
+# Introduction to the plugin system
 
-Plugins for `emmm` are plain JS files that can be loaded into projects. Once loaded, they can register hooks that influence the app's behavior and invoke commands.
+Plugins for `emmm` are *plain Javascript files* that can be loaded into workspaces.
 
-Although they live in sandboxed `<iframe>`s, plugins are currently treated as trusted code. In the future we may introduce a kind of signing process where a plugin is signed with a comment line containing the hash of the code combined with a private key, and verified with a public key.
-
-```text
- [ Plugin script file (simple JS) ]          [ Fixed bootstrap script ]
-         |                                             |
-         | load                                        | load
- [       |                    <iframe>                 |              ]
- [       v                                             v              ]
- [     [          ]       call registered hooks      [          ]     ]
- [     [          ]    async command abstractions    [          ]     ]
- [     [ <script> ]  <-----------------------------  [ <script> ]     ]
- [     [          ]  ----------------------------->  [          ]     ]
- [     [          ]         register hooks           [          ]     ]
-                                                          ^ |
-                                                          | |
-                                            `onmessage` - x x - `postMessage`
-                                                          | |
- Command API  ··························  command result  | |  command request
- Hook API  ··························  hook notification  | |  hook result
-                                                          | |
-                                          `postMessage` - x x - `onmessage`
-                                                          | |
-              [ ... ]              [ ... ]                | x - verified with `zod`
-                ^ |                  ^ |                  | |
-                | |                  | |                  | |
-      [         | v                  | v                  | v              ]
-      [ [ `PluginInstance` ] [ `PluginInstance` ] [ `PluginInstance` ] ... ]
-      [                                                                    ]
-      [                        `PluginManager`                             ]
-                                     ^
-                                     |
-                                     v
-                             [ emmm main app ]
-```
-
-## Message reference
-
-> Note: the host waits up to 1000ms for the initial `plugin:ready` and for each hook response. Timing out results in an error.
-
-### Sent by the plugin
-
-#### ready
+A few functions are available in the enviroment where a plugin runs to enable communication with the host. Once loaded, the plugin should report to the host app and supply a *plugin manifest*:
 
 ```typescript
-{
-    type: 'plugin:ready',
-    id: string, // plugin identifier
-    names: Record<string, string>, // i18n'ed name
-    apiVersion: string, // target host API version
-    ui?: PluginUiItem[],
-}
+await init({
+    // Plugin identifier.
+    id: 'my-plugin',
+
+    // Version of the plugin.
+    version: '000001',
+
+    // The target plugin API version of the host app.
+    apiVersion: '000200',
+
+    // Internationalized names of the plugin.
+    names: {
+        'en-us': 'Test plugin',
+        'zh-cn': '测试插件',
+    },
+
+    // Define actions and configurable fields available in the host's UI.
+    ui: []
+});
 ```
 
-This should be sent as soon as the plugin is loaded. Invocations and hooks are not available until the host has acknowledged this message.
+Note that the plugin identifier must be unique and correspond to the plugin's file name, e.g. the example plugin above should have a file name of `my-plugin.js`. This is because workspace files store plugin IDs, and the app resolves an ID to its source file by just looking into the corresponding file in `${AppConfigDir}/plugins/`. Conversely, installing a plugin is just copying the source into that folder.
 
-#### command invocation
+After `init` finishes, the plugin gains the ability to call commands to communicate with the host:
+```typescript
+await call('log', 'initialized');
+
+let value = await call('config', 'path');
+```
+
+The plugin can also register hooks that influence the app's behavior
+```typescript
+on('ping', async () => {
+    return `ping ok`;
+});
+```
+
+Typically, the main part of a plugin is written as an `async` function that is immediately evaluated:
 
 ```typescript
-{
-    type: `plugin:command:${name}`,
-    id: string, // plugin identifier
-    args: CommandParam<C>
-}
+void (async () => {
+    // await init(...);
+})();
 ```
 
-where `name: C extends CommandName`.
+## Command reference
 
-#### hook return
-
-```typescript
-{
-    type: `plugin:hook:${name}`,
-    id: string, // plugin identifier
-    result: HookResult<C> | null
-}
-```
-
-where `name: H extends HookName`. A plugin must answer *all* hook notifications. If no handler exists, a `null` result should be returned.
-
-### Sent by the host
-
-#### ready
-
-```typescript
-{
-    type: 'host:ready'
-}
-```
-
-#### generic error
-
-```typescript
-{
-    type: 'host:error',
-    message: string,
-    payload: any
-}
-```
-
-#### command result
-
-```typescript
-{
-    type: `host:command:${name}`,
-    status: 'ok',
-    result: CommandResult<C>
-}
-```
-
-where `name: C extends CommandName`.
-
-#### command error
-
-```typescript
-{
-    type: `host:command:${name}`,
-    status: 'error',
-    message: string,
-    payload: any
-}
-```
-
-where `name: C extends CommandName`.
-
-#### hook notification
-
-```typescript
-{
-    type: `host:hook:${name}`,
-    args: HookParam<C>
-}
-```
-
-where `name: H extends HookName`.
+## Hook reference

@@ -6,6 +6,7 @@ import { defaultSource } from '../Templates';
 import { Debug } from '$lib/Debug';
 import { EventHost } from '@the_dissidents/svelte-ui';
 import { join } from '@tauri-apps/api/path';
+import { PluginManager } from '$lib/plugin/Plugin.svelte';
 
 function basename(p: string): string {
     return p.split(/[\\/]/).pop() ?? p;
@@ -35,6 +36,8 @@ export class WorkspaceContext {
     readonly onActiveDocumentChanged = new EventHost<[]>();
     readonly onWorkspaceChanged = new EventHost<[]>();
 
+    readonly plugins = new PluginManager();
+
     constructor() {}
 
     /**
@@ -46,11 +49,13 @@ export class WorkspaceContext {
         this.#assetPath = null;
 
         const wkspFile = await join(path, 'emmm-workspace.json');
+        let pluginsToLoad: string[] = [];
         if (await fs.exists(wkspFile)) {
             try {
                 const sw = SerializedWorkspace.parse(JSON.parse(await fs.readTextFile(wkspFile)));
                 this.#assetPath = sw.assetPath;
                 this.#name = sw.name;
+                pluginsToLoad = sw.plugins;
             } catch {}
             this.config.dirty = false;
         }
@@ -58,6 +63,15 @@ export class WorkspaceContext {
         await this.library.load();
         await this.stylesheet.load();
         await this.config.load();
+
+        await this.plugins.unloadAll();
+        for (const id of pluginsToLoad) {
+            try {
+                await this.plugins.loadInstalled(id);
+            } catch (e) {
+                console.warn(e);
+            }
+        }
 
         console.log('opened workspace at', path);
         this.onWorkspaceChanged.dispatch();

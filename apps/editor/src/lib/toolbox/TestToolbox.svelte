@@ -2,7 +2,7 @@
   import { Debug } from "$lib/Debug";
   import { getVoices, say } from "$lib/integration/easter/Eggs";
   import { Interface } from "$lib/Interface.svelte";
-  import { PluginManager } from "$lib/plugin/Plugin";
+  import { PluginManager } from "$lib/plugin/Plugin.svelte";
   import { EditableDocument } from "$lib/workspace/Document.svelte";
   import { Workspace } from "$lib/workspace/Workspace.svelte";
   import { platform } from '@tauri-apps/plugin-os';
@@ -22,12 +22,8 @@
       voices = await getVoices();
   })();
 
-  let counter = 0;
   let pluginLog = $state('');
-  let manager = new PluginManager({
-    counter: () => counter++,
-    log: (p, inst) => console.log(`from ${inst.manifest.id}`, p)
-  });
+  let manager = new PluginManager();
 </script>
 
 <h5>

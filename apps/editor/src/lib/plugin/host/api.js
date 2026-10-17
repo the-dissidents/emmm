@@ -1,9 +1,21 @@
-/** @import { CommandName, CommandParam, CommandReturn, HookName, HookParam, HookReturn, PluginManifest } from '../Commands' */
+/** @import { CommandName, CommandParam, CommandReturn, HookName, HookParam, HookReturn, PluginManifest } from '../Types' */
 
-/** @type {Partial<Record<HookName, (args: any) => any>>} */
+/**
+ * @internal
+ * @type {Partial<Record<HookName, (args: any) => any>>}
+ */
 let hookHandlers = {};
+
+/**
+ * @internal
+ * @type {Record<string, () => any>}
+ */
+let actionCallbacks = {};
+
+/** @internal */
 let id = '';
 
+/** @internal */
 const ORIGIN = "*";
 
 class PluginAPIError extends Error {
@@ -20,6 +32,7 @@ class PluginAPIError extends Error {
 }
 
 /**
+ * @internal
  * @param {string} type
  */
 const waitForMessage = async (type) => {
@@ -68,6 +81,27 @@ async function call(name, args) {
     throw new PluginAPIError(msg.message, msg.payload);
 }
 
+/**
+ * Get the value of a config item.
+ *
+ * @param {string} key
+ * @returns {Promise<unknown>}
+ */
+async function get(key) {
+    return await call('get', key);
+}
+
+/**
+ * Set the value of a config item.
+ *
+ * @param {string} key
+ * @param {unknown} value
+ * @returns {Promise<void>}
+ */
+async function set(key, value) {
+    await call('set', { key, value });
+}
+
 // listen for hook notifications
 window.addEventListener('message', async (ev) => {
     if (!ev.data || typeof ev.data !== 'object'
@@ -81,7 +115,10 @@ window.addEventListener('message', async (ev) => {
     /** @type {HookReturn<HookName> | undefined} */
     let result;
 
-    if (name in hookHandlers) {
+    if (name == 'action') {
+        if (ev.data.args in actionCallbacks)
+            await actionCallbacks[ev.data.args]();
+    } else if (name in hookHandlers) {
         // @ts-ignore
         result = await hookHandlers[name](ev.data.args);
     }
@@ -92,7 +129,7 @@ window.addEventListener('message', async (ev) => {
 
 // listen for errors
 window.addEventListener('error', (ev) => {
-    void call('log', ev.message);
+    void call('warn', ev.message);
 });
 
 /**
@@ -107,4 +144,17 @@ function on(name, handler) {
         void call('log', `warning: overwriting hook: ${name}`);
     }
     hookHandlers[name] = handler;
+}
+
+/**
+ * Register an action callback. You should only register once for each action.
+ *
+ * @param {string} name
+ * @param {() => void | Promise<void>} handler
+ */
+function onAction(name, handler) {
+    if (name in actionCallbacks) {
+        void call('log', `warning: overwriting action callback: ${name}`);
+    }
+    actionCallbacks[name] = handler;
 }

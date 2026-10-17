@@ -1,6 +1,4 @@
-# kfgui
-
-(it's a working title)
+# emmui
 
 GUI editor for typesetting articles using the `emmm` markup language, developed using tauri + Svelte.
 
@@ -11,6 +9,10 @@ Ideally, a typesetter should only care about the *semantics* of an article, and 
 A typesetter should always control the appearance of a document by using *parameters* (e.g. thematic colors, choosable styles) provided by the configuration, and not by changing the modifiers used in the source.
 
 The `emmm` source file should remain purely semantic, independent from its medium and representation.
+
+## Plugins
+
+We're adding experimental support for plugins to `emmui`. Refer to [Plugin README](./src/lib/plugin/README.md) and [TECHNICAL](./src/lib/plugin/TECHNICAL.md) for more details.
 
 ## Getting started
 

@@ -250,7 +250,7 @@ export class ConfigDocument extends Document {
             version: 1,
             name: this.wksp.name,
             assetPath: this.wksp.assetPath,
-            plugins: []
+            plugins: this.wksp.plugins.instances.map((x) => x.manifest.id)
         } satisfies SerializedWorkspace));
         this.dirty = false;
         return true;

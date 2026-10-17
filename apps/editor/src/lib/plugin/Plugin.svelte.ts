@@ -1,13 +1,11 @@
 import { Debug } from "$lib/Debug";
-import { CommandDefinitions, HookDefinitions, PluginManifest, type CommandName, type CommandParam, type CommandReturn, type HookName, type HookParam, type HookReturn } from "./Commands";
+import { CommandDefinitions, HookDefinitions, PluginManifest, PluginUIValueType, type CommandName, type CommandParam, type CommandReturn, type HookName, type HookParam, type HookReturn, type PluginUIItemType } from "./Types";
+import { PluginCommandHandlers } from "./Implementation.svelte";
+import * as fs from '@tauri-apps/plugin-fs';
+import * as z from "zod/v4-mini";
 
 import bootstrapScript from './host/api.js?raw';
-
-export interface PluginInstance {
-    readonly window: Window;
-    readonly frame: HTMLIFrameElement;
-    readonly manifest: PluginManifest;
-}
+import { path } from "@tauri-apps/api";
 
 export type PluginCommandHandler<C extends CommandName> =
     (param: CommandParam<C>, inst: PluginInstance) => CommandReturn<C> | Promise<CommandReturn<C>>;
@@ -22,9 +20,7 @@ export class PluginManager {
         return this.#instances;
     }
 
-    constructor(
-        readonly commandHandlers: { readonly [C in CommandName]: PluginCommandHandler<C> }
-    ) { }
+    constructor() { }
 
     private async handleCommandMessage(inst: PluginInstanceImpl, data: any) {
         if (typeof data.type !== 'string'
@@ -41,18 +37,47 @@ export class PluginManager {
 
         console.log(`receiving command from ${inst.manifest.id}`, command, args);
         try {
-            const result = await this.commandHandlers[command](args.data as never, inst);
+            const result = await PluginCommandHandlers[command](args.data as never, inst);
             inst.postResponse(command, result);
         } catch (e) {
             inst.postError(command, 'an error occurred when executing the command', e);
         }
     }
 
+    async loadInstalled(id: string) {
+        if (/\.\.|\/|\\|/.test(id))
+            throw new Error('invalid plugin id');
+
+        const filename = await path.join('plugins', `${id}.js`);
+        if (!await fs.exists(filename, { baseDir: fs.BaseDirectory.AppConfig }))
+            throw new Error('plugin not found');
+
+        const source = await fs.readTextFile(filename, { baseDir: fs.BaseDirectory.AppConfig });
+        return await this.load(source);
+    }
+
+    static async install(file: string) {
+        const name = await path.basename(file);
+        if (!name.endsWith('.js'))
+            throw new Error('invalid plugin file');
+        if (/\.\.|\/|\\|/.test(name))
+            throw new Error('invalid plugin id');
+
+        if (!(await fs.stat('plugins', { baseDir: fs.BaseDirectory.AppConfig })).isDirectory) {
+            await fs.mkdir('plugins', { baseDir: fs.BaseDirectory.AppConfig });
+        }
+
+        await fs.copyFile(file, await path.join('plugins', name), {
+            toPathBaseDir: fs.BaseDirectory.AppConfig
+        });
+    }
+
     /**
      * Loads a plugin from a Javascript source file.
+     *
      * @returns the plugin instance if loaded successfully; `null` if a plugin with the same manifest id has already been loaded
      */
-    async load(source: string) {
+    async load(source: string): Promise<PluginInstance | null> {
         const inst = await PluginInstanceImpl.load(source);
 
         if (this.#instances.find((x) => x.manifest.id == inst.manifest.id)) {
@@ -71,6 +96,25 @@ export class PluginManager {
         inst.window.postMessage({ type: 'host:ready' }, HOST_ORIGIN);
         console.log('plugin ready', inst.manifest);
         return inst;
+    }
+
+    async unload(inst: PluginInstance) {
+        Debug.assert(inst instanceof PluginInstanceImpl);
+        const i = this.#instances.indexOf(inst);
+        Debug.assert(i >= 0);
+        this.#instances.splice(i, 1);
+        await inst.unload();
+    }
+
+    async unloadAll() {
+        for (const inst of this.#instances) {
+            try {
+                await inst.unload();
+            } catch (e) {
+                console.warn('error unloading plugin', inst, e);
+            }
+        }
+        this.#instances = [];
     }
 
     async dispatchHook<H extends HookName>(
@@ -97,8 +141,27 @@ function addScript(
     doc.head.appendChild(script);
 }
 
-class PluginInstanceImpl {
-    private listeners = new Set<(ev: MessageEvent) => void>();
+type ConfigItem = {
+    type: PluginUIItemType,
+    value: unknown,
+};
+
+export interface PluginInstance {
+    readonly window: Window;
+    readonly frame: HTMLIFrameElement;
+    readonly manifest: PluginManifest;
+
+    getConfigType(key: string): PluginUIItemType;
+    getConfig(key: string): unknown;
+    setConfig(key: string, value: unknown): boolean;
+
+    callAction(key: string): Promise<void>;
+}
+
+class PluginInstanceImpl implements PluginInstance {
+    #config: Record<string, ConfigItem> = $state({});
+    #listeners = new Set<(ev: MessageEvent) => void>();
+
     readonly window: Window;
 
     private constructor(
@@ -107,6 +170,39 @@ class PluginInstanceImpl {
     ) {
         Debug.assert(!!frame.contentWindow);
         this.window = frame.contentWindow;
+
+        for (const item of manifest.ui) {
+            if ('input' in item) {
+                this.#config[item.key] = {
+                    type: item.input,
+                    value: item.defaultValue
+                };
+            }
+        }
+    }
+
+    getConfigType(key: string) {
+        Debug.assert(key in this.#config);
+        return this.#config[key].type;
+    }
+
+    getConfig(key: string) {
+        Debug.assert(key in this.#config);
+        return this.#config[key].value;
+    }
+
+    setConfig(key: string, value: unknown): boolean {
+        Debug.assert(key in this.#config);
+        const schema = PluginUIValueType[this.#config[key].type];
+        if (schema.safeParse(value).success) {
+            this.#config[key].value = value;
+            return true;
+        }
+        return false;
+    }
+
+    async callAction(key: string) {
+        await this.dispatch('action', key);
     }
 
     addMessageListener(callback: (data: any) => boolean) {
@@ -115,18 +211,21 @@ class PluginInstanceImpl {
             if (typeof data !== 'object' || data.id !== this.manifest.id) return;
             if (!callback(data)) {
                 this.window.removeEventListener('message', listener);
-                this.listeners.delete(listener);
+                this.#listeners.delete(listener);
             }
         };
         window.addEventListener('message', listener);
-        this.listeners.add(listener);
+        this.#listeners.add(listener);
     }
 
     async unload() {
-        await this.dispatch('finalize', undefined);
-        for (const listener of this.listeners)
-            window.removeEventListener('message', listener);
-        this.frame.remove();
+        try {
+            await this.dispatch('finalize', undefined);
+        } finally {
+            for (const listener of this.#listeners)
+                window.removeEventListener('message', listener);
+            this.frame.remove();
+        }
     }
 
     static async load(source: string) {
