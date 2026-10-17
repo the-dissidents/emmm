@@ -35,12 +35,23 @@ await call('log', 'initialized');
 let value = await call('config', 'path');
 ```
 
-The plugin can also register hooks that influence the app's behavior
+The plugin can also register hooks that influence the app's behavior:
 ```typescript
 on('ping', async () => {
     return `ping ok`;
 });
+
+onAction('mybutton', async () => { ... });
 ```
+
+> Note: the host waits up to 1000ms for each hook response. This means if you need to interact with the user in a blocking way (eg. displaying message boxes) you need to return from the hook handler early while letting the interaction running:
+>  ```typescript
+> onAction('mybutton', async () => {
+>     /* ... */
+>     const run = async () => { /* message box etc */ };
+>     void run();
+> });
+> ```
 
 Typically, the main part of a plugin is written as an `async` function that is immediately evaluated:
 

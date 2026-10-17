@@ -6,32 +6,32 @@
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
   import { _ } from 'svelte-i18n';
   import * as dialog from '@tauri-apps/plugin-dialog';
+  import * as z from 'zod/v4-mini';
+
+  import { Debug } from './Debug';
+  import { Interface } from './Interface.svelte';
+  import { Memorized } from './config/Memorized.svelte';
+  import { DebouncedTask } from './details/DebouncedTask';
 
   import Editor from './editor/Editor.svelte';
-
-  import { Interface } from './Interface.svelte';
-  import { Workspace } from './workspace/Workspace.svelte';
-  import { ConfigDocument, EditableDocument, EmmmDocument, LibDocument, StyleDocument, type Document } from './workspace/Document.svelte';
   import EmmmContext from './editor/EmmmContext.svelte';
   import GenericContext from './editor/GenericContext.svelte';
   import type { EmmmParseData } from './editor/ParseData';
-  import ASTViewer from './emmm/ASTViewer.svelte';
+  import { sassLinter } from './editor/SassLinter';
+  import type { EmmmDiagnostic } from './editor/EmmmLinter';
+
+  import { Workspace } from './workspace/Workspace.svelte';
+  import { ConfigDocument, EditableDocument, EmmmDocument, LibDocument, StyleDocument, type Document } from './workspace/Document.svelte';
 
   import WeixinToolbox from './integration/weixin/WeixinToolbox.svelte';
   import SearchToolbox from './toolbox/SearchToolbox.svelte';
   import ParametersToolbox from './toolbox/ParametersToolbox.svelte';
   import FileToolbox from './toolbox/FileToolbox.svelte';
   import TestToolbox from './toolbox/TestToolbox.svelte';
-
-  import type { EmmmDiagnostic } from './editor/EmmmLinter';
-  import { Debug } from './Debug';
-  import { DebouncedTask } from './details/DebouncedTask';
-
-  import { sassLinter } from './editor/SassLinter';
   import WorkspaceToolbox from './toolbox/WorkspaceToolbox.svelte';
+  import PluginToolbox from './toolbox/PluginToolbox.svelte';
 
-  import { Memorized } from './config/Memorized.svelte';
-  import * as z from 'zod/v4-mini';
+  import ASTViewer from './emmm/ASTViewer.svelte';
   import WorkspaceConfig from './component/WorkspaceConfig.svelte';
 
   if (Workspace.documents.length === 0)
@@ -129,6 +129,9 @@
     </TabPage>
     <TabPage id='Search' header={$_('tab.search')}>
       <SearchToolbox />
+    </TabPage>
+    <TabPage id='Plugins' header={$_('tab.plugins')}>
+      <PluginToolbox />
     </TabPage>
     <TabPage id='Eggs' header={$_('tab.eggs')}>
       <TestToolbox />

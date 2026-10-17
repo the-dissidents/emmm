@@ -23,7 +23,6 @@
   })();
 
   let pluginLog = $state('');
-  let manager = new PluginManager();
 </script>
 
 <h5>
@@ -80,12 +79,7 @@
 <pre>{pluginLog}</pre>
 
 <button onclick={async () => {
-  await manager.load(testPluginSource);
-  pluginLog = 'instances: ' + manager.instances.map((x) => x.manifest.id).join(', ');
-}}>load</button>
-
-<button onclick={async () => {
-  await manager.dispatchHook('ping', (r, inst) => {
+  await Workspace.plugins.dispatchHook('ping', (r, inst) => {
     if (r && inst) pluginLog = `ping hook result from ${inst.manifest.id}: ${r}`;
   });
 }}>ping</button>

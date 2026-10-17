@@ -21,7 +21,7 @@ void (async () => {
     await call('log', 'initialized');
 
     onAction('test', async () => {
-        await call('messagebox', {
+        void call('messagebox', {
             msg: `${await get('message')}`,
             kind: 'info'
         });

@@ -189,8 +189,6 @@
   ><SavePlusIcon /></button>
 </Tooltip>
 
-<button onclick={() => Memorized.save()}>{$_('file.save-system-config')}</button>
-
 <h5>{$_('sync.title')}</h5>
 <table class="config"><tbody>
   <tr>
@@ -228,6 +226,8 @@
 >{$_('sync.insert-from-clipboard')}</button>
 
 <h5>{$_('sync.debug')}</h5>
+
+<button onclick={() => Memorized.save()}>{$_('file.save-system-config')}</button>
 
 <button onclick={async () => {
   console.log(await appLogDir());

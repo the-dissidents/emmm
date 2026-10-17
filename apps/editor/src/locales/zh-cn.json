@@ -18,7 +18,8 @@
     "ast": "AST",
     "html": "HTML",
     "workspace": "项目管理",
-    "workspace-config": "工作空间属性"
+    "workspace-config": "工作空间属性",
+    "plugins": "插件"
   },
   "main": {
     "sync-scrolling": "自动同步滚动",
@@ -177,5 +178,8 @@
     "location": "位置",
     "name": "名称",
     "asset-folder": "素材文件夹"
+  },
+  "plugin": {
+    "unknown": "未知名称"
   }
 }

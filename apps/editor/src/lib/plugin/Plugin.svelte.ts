@@ -2,10 +2,10 @@ import { Debug } from "$lib/Debug";
 import { CommandDefinitions, HookDefinitions, PluginManifest, PluginUIValueType, type CommandName, type CommandParam, type CommandReturn, type HookName, type HookParam, type HookReturn, type PluginUIItemType } from "./Types";
 import { PluginCommandHandlers } from "./Implementation.svelte";
 import * as fs from '@tauri-apps/plugin-fs';
-import * as z from "zod/v4-mini";
 
 import bootstrapScript from './host/api.js?raw';
 import { path } from "@tauri-apps/api";
+import { _ } from "svelte-i18n";
 
 export type PluginCommandHandler<C extends CommandName> =
     (param: CommandParam<C>, inst: PluginInstance) => CommandReturn<C> | Promise<CommandReturn<C>>;
@@ -14,7 +14,7 @@ const HOST_ORIGIN = "*";
 const TIMEOUT = 1000;
 
 export class PluginManager {
-    #instances: PluginInstanceImpl[] = [];
+    #instances: PluginInstanceImpl[] = $state([]);
 
     get instances(): readonly PluginInstance[] {
         return this.#instances;
@@ -45,7 +45,7 @@ export class PluginManager {
     }
 
     async loadInstalled(id: string) {
-        if (/\.\.|\/|\\|/.test(id))
+        if (/\.\.|\/|\\/.test(id))
             throw new Error('invalid plugin id');
 
         const filename = await path.join('plugins', `${id}.js`);
@@ -56,14 +56,32 @@ export class PluginManager {
         return await this.load(source);
     }
 
+    static async listInstalled() {
+        if (
+            !(await fs.exists('plugins', { baseDir: fs.BaseDirectory.AppConfig })) ||
+            !(await fs.stat('plugins', { baseDir: fs.BaseDirectory.AppConfig })).isDirectory
+        ) {
+            return [];
+        }
+
+        const items = await fs.readDir('plugins', { baseDir: fs.BaseDirectory.AppConfig });
+        return items
+            .filter((x) => x.isFile && x.name.endsWith('.js'))
+            .map((x) => x.name.slice(0, x.name.length - '.js'.length));
+    }
+
     static async install(file: string) {
         const name = await path.basename(file);
+        console.log('installing', file, name);
         if (!name.endsWith('.js'))
             throw new Error('invalid plugin file');
-        if (/\.\.|\/|\\|/.test(name))
+        if (/\.\.|\/|\\/.test(name))
             throw new Error('invalid plugin id');
 
-        if (!(await fs.stat('plugins', { baseDir: fs.BaseDirectory.AppConfig })).isDirectory) {
+        if (
+            !(await fs.exists('plugins', { baseDir: fs.BaseDirectory.AppConfig })) ||
+            !(await fs.stat('plugins', { baseDir: fs.BaseDirectory.AppConfig })).isDirectory
+        ) {
             await fs.mkdir('plugins', { baseDir: fs.BaseDirectory.AppConfig });
         }
 
