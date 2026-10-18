@@ -25,7 +25,14 @@ export const PluginUIConfigItem = z.union([
         readonly: z.optional(z.boolean()),
     }),
     z.object({
-        input: z.literal('path'),
+        input: z.literal('folder'),
+        key: z.string(),
+        names: I18nString,
+        defaultValue: z.string(),
+        readonly: z.optional(z.boolean()),
+    }),
+    z.object({
+        input: z.literal('file'),
         key: z.string(),
         names: I18nString,
         defaultValue: z.string(),
@@ -57,7 +64,8 @@ export const PluginUIValueType = {
     'checkbox': z.boolean(),
     'textbox': z.string(),
     'textarea': z.string(),
-    'path': z.string(),
+    'folder': z.string(),
+    'file': z.string(),
     'select': z.string(),
 };
 

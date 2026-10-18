@@ -40,40 +40,43 @@
         <ConfigRow name={preferredName(item.names)}>
         <div class="value">
           {#if item.input == 'checkbox'}
-            <input type='checkbox'
+            <input type='checkbox' class="grow"
               readonly={item.readonly}
               bind:checked={
                 () => inst.getConfig(item.key) as boolean,
                 (v) => inst.setConfig(item.key, v)
               } />
           {:else if item.input == 'textbox'}
-            <input type='text'
+            <input type='text' class="grow"
               readonly={item.readonly}
               bind:value={
                 () => inst.getConfig(item.key) as string,
                 (v) => inst.setConfig(item.key, v)
               } />
           {:else if item.input == 'textarea'}
-            <textarea
+            <textarea class="grow"
               readonly={item.readonly}
               bind:value={
                 () => inst.getConfig(item.key) as string,
                 (v) => inst.setConfig(item.key, v)
               }>
             </textarea>
-          {:else if item.input == 'path'}
-            <input type='text'
+          {:else if item.input == 'folder' || item.input == 'file'}
+            <input type='text' class="grow"
               readonly={item.readonly}
               bind:value={
                 () => inst.getConfig(item.key) as string,
                 (v) => inst.setConfig(item.key, v)
               } />
             <button onclick={async () => {
-              const result = await dialog.open();
-              if (!result) inst.setConfig(item.key, result);
+              const result = await dialog.open({
+                directory: item.input == 'folder',
+                defaultPath: inst.getConfig(item.key) as string
+              });
+              if (result) inst.setConfig(item.key, result);
             }}><EllipsisIcon /></button>
           {:else if item.input == 'select'}
-            <select bind:value={
+            <select class="grow" bind:value={
               () => inst.getConfig(item.key) as string,
               (v) => inst.setConfig(item.key, v)
             }>
@@ -91,7 +94,7 @@
         </ConfigRow>
       {:else if 'action' in item}
         <ConfigRow name=''>
-          <button onclick={() => inst.callAction(item.key)}>
+          <button class="grow" onclick={() => inst.callAction(item.key)}>
             {preferredName(item.names)}
           </button>
         </ConfigRow>
@@ -144,6 +147,10 @@
 </button>
 
 <style lang="scss">
+  .grow {
+    flex-grow: 1;
+  }
+
   .header {
     display: flex;
     flex-direction: row;

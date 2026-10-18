@@ -36,7 +36,7 @@ export const PluginCommandHandlers: { readonly [C in CommandName]: PluginCommand
     'read-binary-file': async (path) => {
         try {
             const array = await fs.readFile(path);
-            return { data: array, transfer: [array] };
+            return { data: array, transfer: [array.buffer] };
         } catch {
             return { data: null };
         }
