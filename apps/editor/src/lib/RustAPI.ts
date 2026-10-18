@@ -112,13 +112,11 @@ export const RustAPI = {
 
     async hashFile(url: URL) {
         const filepath = await localPathOf(url);
-        console.log(filepath);
         return await invoke<string>('hash_file', { path: filepath }) as FileHash;
     }
 }
 
 async function localPathOf(url: URL) {
-    console.log(url);
     let filepath = decodeURIComponent(url.pathname);
     if (url.protocol !== 'file:') {
         let file = new File([await readUrl(url)], url.href,

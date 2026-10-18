@@ -44,7 +44,7 @@ on('ping', async () => {
 onAction('mybutton', async () => { ... });
 ```
 
-> Note: the host waits up to 1000ms for each hook response. This means if you need to interact with the user in a blocking way (eg. displaying message boxes) you need to return from the hook handler early while letting the interaction running:
+> Note: the host waits up to 1000ms for each hook response. This means if you need to interact with the user in a blocking way (eg. displaying message boxes) you need to return from the hook handler early while letting the interaction continue running:
 >  ```typescript
 > onAction('mybutton', async () => {
 >     /* ... */

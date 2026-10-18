@@ -128,7 +128,10 @@ export abstract class MovableDocument extends EditableDocument {
     }
 
     async saveAs(): Promise<boolean> {
-        const path = await dialog.save({ filters: this.filter });
+        const path = await dialog.save({
+            filters: this.filter,
+            defaultPath: this.path ?? undefined
+        });
         if (!path) return false;
         this.path = path;
         this.name = await basename(path);
@@ -250,7 +253,13 @@ export class ConfigDocument extends Document {
             version: 1,
             name: this.wksp.name,
             assetPath: this.wksp.assetPath,
-            plugins: this.wksp.plugins.instances.map((x) => x.manifest.id)
+            plugins: this.wksp.plugins.instances.map((x) => ({
+                id: x.manifest.id,
+                config: Object.fromEntries(x.manifest.ui.flatMap(
+                    (item) => 'input' in item
+                        ? [[item.key, x.getConfig(item.key)]] : []
+                ))
+            }))
         } satisfies SerializedWorkspace));
         this.dirty = false;
         return true;

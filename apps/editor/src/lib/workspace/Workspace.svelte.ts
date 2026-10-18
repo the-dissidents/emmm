@@ -16,10 +16,15 @@ export const SerializedWorkspace = z.object({
     version: z.literal(1),
     name: z.string(),
     assetPath: z.nullable(z.string()),
-    plugins: z.array(z.string())
+    plugins: z.array(z.object({
+        id: z.string(),
+        config: z.record(z.string(), z.unknown())
+    }))
 });
 
 export type SerializedWorkspace = z.infer<typeof SerializedWorkspace>;
+
+export type SerializedPluginConfig = SerializedWorkspace['plugins'][0];
 
 export class WorkspaceContext {
     #path = $state<string | null>(null);
@@ -49,7 +54,7 @@ export class WorkspaceContext {
         this.#assetPath = null;
 
         const wkspFile = await join(path, 'emmm-workspace.json');
-        let pluginsToLoad: string[] = [];
+        let pluginsToLoad: SerializedPluginConfig[] = [];
         if (await fs.exists(wkspFile)) {
             try {
                 const sw = SerializedWorkspace.parse(JSON.parse(await fs.readTextFile(wkspFile)));
@@ -65,9 +70,12 @@ export class WorkspaceContext {
         await this.config.load();
 
         await this.plugins.unloadAll();
-        for (const id of pluginsToLoad) {
+        for (const plugin of pluginsToLoad) {
             try {
-                await this.plugins.loadInstalled(id);
+                const p = await this.plugins.loadInstalled(plugin.id);
+                if (!p) continue;
+                for (const [k, v] of Object.entries(plugin.config))
+                    p.setConfig(k, v);
             } catch (e) {
                 console.warn(e);
             }
