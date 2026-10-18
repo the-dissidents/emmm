@@ -1,9 +1,9 @@
 import { Debug } from "$lib/Debug";
-import { CommandDefinitions, HookDefinitions, PluginManifest, PluginUIValueType, type CommandName, type CommandParam, type CommandReturn, type CommandReturnData, type HookArgs, type HookName, type HookParam, type HookReturn, type PluginUIItemType } from "./Types";
+import { CommandDefinitions, HookDefinitions, PluginManifest, PluginUIValueType, type CommandName, type CommandParam, type CommandReturnData, type HookArgs, type HookName, type HookReturn, type PluginUIItemType } from "./Types";
 import { PluginCommandHandlers } from "./Implementation.svelte";
 import * as fs from '@tauri-apps/plugin-fs';
 
-import bootstrapScript from './host/api.js?raw';
+import bootstrapScript from './api.js?raw';
 import { path } from "@tauri-apps/api";
 import { _ } from "svelte-i18n";
 

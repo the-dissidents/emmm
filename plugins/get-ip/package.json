@@ -1,0 +1,15 @@
+{
+  "name": "get-ip",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "tsdown"
+  },
+  "devDependencies": {
+    "@the_dissidents/emmui-plugin-sdk": "workspace:*",
+    "tsdown": "^0.23.1",
+    "typescript": "^6.0.0"
+  },
+  "keywords": [],
+  "type": "module"
+}

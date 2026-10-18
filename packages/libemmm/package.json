@@ -3,7 +3,7 @@
     "version": "0.0.15",
     "description": "Parser and language server for the emmm markup language",
     "author": "the_dissidents",
-    "license": "GPL-2.0-only",
+    "license": "AGPL-3.0-only",
     "scripts": {
         "test": "pnpm vitest",
         "build": "tsdown",
