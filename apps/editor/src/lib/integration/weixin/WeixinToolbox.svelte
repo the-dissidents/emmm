@@ -2,7 +2,7 @@
   import { assert, Debug } from "../../Debug";
   import { WeixinClient } from './API.svelte';
   import { guardAsync, Interface } from '../../Interface.svelte';
-  import { getIP, GetIPMethod, type ProgressReporter } from '../../Util';
+  import { type ProgressReporter } from '../../Util';
   import { postprocess, prerender } from "./Postprocess";
   import { RustAPI, type FileHash } from "$lib/RustAPI";
 
@@ -167,13 +167,6 @@
 />
 
 <table class="config"><tbody>
-  <tr>
-    <td>{$_('weixin.public-ip')}</td>
-    <td class='hlayout'>
-      <input type="text" class="flexgrow" bind:value={publicIP} />
-      <button onclick={async () => publicIP = await getIP(GetIPMethod.ipinfo)}>{$_('weixin.get')}</button>
-    </td>
-  </tr>
   <tr>
     <td>{$_('weixin.stable-token')}</td>
     <td>

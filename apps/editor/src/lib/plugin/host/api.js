@@ -70,12 +70,13 @@ async function init(manifest) {
  * @template {CommandName} C
  * @param {C} name
  * @param {CommandParam<C>} args
+ * @param {Transferable[] | undefined} transfer
  * @returns {Promise<CommandReturn<C>>}
  */
-async function call(name, args) {
+async function call(name, args, transfer = undefined) {
     window.parent.postMessage({
         type: `plugin:command:${name}`, id, args
-    }, ORIGIN);
+    }, ORIGIN, transfer);
     const msg = await waitForMessage(`host:command:${name}`);
     if (msg.status === 'ok') return msg.result;
     throw new PluginAPIError(msg.message, msg.payload);

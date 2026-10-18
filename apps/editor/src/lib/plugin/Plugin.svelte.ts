@@ -1,5 +1,5 @@
 import { Debug } from "$lib/Debug";
-import { CommandDefinitions, HookDefinitions, PluginManifest, PluginUIValueType, type CommandName, type CommandParam, type CommandReturn, type HookName, type HookParam, type HookReturn, type PluginUIItemType } from "./Types";
+import { CommandDefinitions, HookDefinitions, PluginManifest, PluginUIValueType, type CommandName, type CommandParam, type CommandReturn, type CommandReturnData, type HookArgs, type HookName, type HookParam, type HookReturn, type PluginUIItemType } from "./Types";
 import { PluginCommandHandlers } from "./Implementation.svelte";
 import * as fs from '@tauri-apps/plugin-fs';
 
@@ -8,7 +8,8 @@ import { path } from "@tauri-apps/api";
 import { _ } from "svelte-i18n";
 
 export type PluginCommandHandler<C extends CommandName> =
-    (param: CommandParam<C>, inst: PluginInstance) => CommandReturn<C> | Promise<CommandReturn<C>>;
+    (param: CommandParam<C>, inst: PluginInstance) =>
+        CommandReturnData<C> | Promise<CommandReturnData<C>>;
 
 const HOST_ORIGIN = "*";
 const TIMEOUT = 1000;
@@ -140,7 +141,7 @@ export class PluginManager {
         receive: (
             prevResponse?: HookReturn<H>,
             inst?: PluginInstance
-        ) => HookParam<H> | Promise<HookParam<H>>
+        ) => HookArgs<H> | Promise<HookArgs<H>>
     ) {
         let args = await receive();
         for (const inst of this.#instances) {
@@ -220,7 +221,7 @@ class PluginInstanceImpl implements PluginInstance {
     }
 
     async callAction(key: string) {
-        await this.dispatch('action', key);
+        await this.dispatch('action', { args: key });
     }
 
     addMessageListener(callback: (data: any) => boolean) {
@@ -238,7 +239,7 @@ class PluginInstanceImpl implements PluginInstance {
 
     async unload() {
         try {
-            await this.dispatch('finalize', undefined);
+            await this.dispatch('finalize', { args: undefined });
         } finally {
             for (const listener of this.#listeners)
                 window.removeEventListener('message', listener);
@@ -285,13 +286,18 @@ class PluginInstanceImpl implements PluginInstance {
         console.log(`posted error to ${this.manifest.id}`, cmd, message, payload);
     }
 
-    postResponse<C extends CommandName>(name: C, result: CommandReturn<C>) {
-        this.window.postMessage({ type: `host:command:${name}`, status: 'ok', result }, HOST_ORIGIN);
+    postResponse<C extends CommandName>(
+        name: C, result: CommandReturnData<C>
+    ) {
+        this.window.postMessage(
+            { type: `host:command:${name}`, status: 'ok', result: result.data },
+            HOST_ORIGIN, result.transfer
+        );
         console.log(`posted response to ${this.manifest.id}`, name, result);
     }
 
     async dispatch<H extends HookName>(
-        name: H, args: HookParam<H>
+        name: H, args: HookArgs<H>
     ): Promise<undefined | HookReturn<H>> {
         console.log(`posted hook notification to ${this.manifest.id}`, name, args);
 
@@ -304,7 +310,10 @@ class PluginInstanceImpl implements PluginInstance {
                 resolve(data);
                 return false;
             });
-            this.window.postMessage({ type: `host:hook:${name}`, args }, HOST_ORIGIN);
+            this.window.postMessage(
+                { type: `host:hook:${name}`, args: args.args },
+                HOST_ORIGIN, args.transfer
+            );
         });
         console.log(`got hook result from ${this.manifest.id}`, name, msg);
         if (!msg.result) return undefined;

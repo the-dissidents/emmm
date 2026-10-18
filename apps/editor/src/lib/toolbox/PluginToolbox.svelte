@@ -8,6 +8,7 @@
 
   import * as dialog from "@tauri-apps/plugin-dialog";
   import * as fs from "@tauri-apps/plugin-fs";
+  import { Debug } from "$lib/Debug";
 
   function preferredName(names: Record<string, string>) {
     if ($locale && $locale in names)
@@ -71,6 +72,20 @@
               const result = await dialog.open();
               if (!result) inst.setConfig(item.key, result);
             }}><EllipsisIcon /></button>
+          {:else if item.input == 'select'}
+            <select bind:value={
+              () => inst.getConfig(item.key) as string,
+              (v) => inst.setConfig(item.key, v)
+            }>
+              {#each item.options as opt}
+              {@const [key, value] = typeof opt == 'string'
+                  ? [opt, opt]
+                  : [opt[0], preferredName(opt[1])]}
+                <option value={key}>{value}</option>
+              {/each}
+            </select>
+          {:else}
+            {Debug.never(item)}
           {/if}
         </div>
         </ConfigRow>

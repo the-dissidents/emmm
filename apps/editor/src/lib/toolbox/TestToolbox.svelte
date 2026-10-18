@@ -2,13 +2,10 @@
   import { Debug } from "$lib/Debug";
   import { getVoices, say } from "$lib/integration/easter/Eggs";
   import { Interface } from "$lib/Interface.svelte";
-  import { PluginManager } from "$lib/plugin/Plugin.svelte";
   import { EditableDocument } from "$lib/workspace/Document.svelte";
   import { Workspace } from "$lib/workspace/Workspace.svelte";
   import { platform } from '@tauri-apps/plugin-os';
   import { _, locale, locales } from 'svelte-i18n';
-
-  import testPluginSource from '../plugin/host/test.js?raw';
 
   const hasTTS = platform() == 'macos';
 
@@ -81,6 +78,7 @@
 <button onclick={async () => {
   await Workspace.plugins.dispatchHook('ping', (r, inst) => {
     if (r && inst) pluginLog = `ping hook result from ${inst.manifest.id}: ${r}`;
+    return { args: undefined };
   });
 }}>ping</button>
 

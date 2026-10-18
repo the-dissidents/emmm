@@ -1,33 +1,42 @@
 import * as z from "zod/v4-mini";
 
+const I18nString = z.record(z.string(), z.string());
+
 export const PluginUIConfigItem = z.union([
     z.object({
         input: z.literal('checkbox'),
         key: z.string(),
-        names: z.record(z.string(), z.string()),
+        names: I18nString,
         defaultValue: z.boolean(),
         readonly: z.optional(z.boolean()),
     }),
     z.object({
         input: z.literal('textbox'),
         key: z.string(),
-        names: z.record(z.string(), z.string()),
+        names: I18nString,
         defaultValue: z.string(),
         readonly: z.optional(z.boolean()),
     }),
     z.object({
         input: z.literal('textarea'),
         key: z.string(),
-        names: z.record(z.string(), z.string()),
+        names: I18nString,
         defaultValue: z.string(),
         readonly: z.optional(z.boolean()),
     }),
     z.object({
         input: z.literal('path'),
         key: z.string(),
-        names: z.record(z.string(), z.string()),
+        names: I18nString,
         defaultValue: z.string(),
         readonly: z.optional(z.boolean()),
+    }),
+    z.object({
+        input: z.literal('select'),
+        key: z.string(),
+        names: I18nString,
+        options: z.array(z.union([z.string(), z.tuple([z.string(), I18nString])])),
+        defaultValue: z.string(),
     }),
 ]);
 
@@ -35,7 +44,7 @@ export const PluginUIActionItem = z.union([
     z.object({
         action: z.literal('button'),
         key: z.string(),
-        names: z.record(z.string(), z.string()),
+        names: I18nString,
     }),
 ]);
 
@@ -48,7 +57,8 @@ export const PluginUIValueType = {
     'checkbox': z.boolean(),
     'textbox': z.string(),
     'textarea': z.string(),
-    'path': z.string()
+    'path': z.string(),
+    'select': z.string(),
 };
 
 export type PluginUIActionItem = z.infer<typeof PluginUIActionItem>;
@@ -94,6 +104,14 @@ export const CommandDefinitions = {
         param: z.any(),
         return: z.void()
     }),
+    'read-text-file': z.object({
+        param: z.string(),
+        return: z.nullable(z.string())
+    }),
+    'read-binary-file': z.object({
+        param: z.string(),
+        return: z.nullable(z.instanceof(Uint8Array))
+    }),
     'messagebox': z.object({
         param: z.object({
             msg: z.string(),
@@ -107,6 +125,10 @@ export const CommandDefinitions = {
 export type CommandName = keyof typeof CommandDefinitions;
 export type CommandParam<N extends CommandName> = z.infer<typeof CommandDefinitions[N]>['param'];
 export type CommandReturn<N extends CommandName> = z.infer<typeof CommandDefinitions[N]>['return'];
+export type CommandReturnData<N extends CommandName> = {
+    data: z.infer<typeof CommandDefinitions[N]>['return'],
+    transfer?: Transferable[]
+}
 
 export const HookDefinitions = {
     'finalize': z.object({
@@ -126,3 +148,8 @@ export const HookDefinitions = {
 export type HookName = keyof typeof HookDefinitions;
 export type HookParam<N extends HookName> = z.infer<typeof HookDefinitions[N]>['param'];
 export type HookReturn<N extends HookName> = z.infer<typeof HookDefinitions[N]>['return'];
+
+export type HookArgs<N extends HookName> = {
+    args: HookParam<N>,
+    transfer?: Transferable[]
+};
