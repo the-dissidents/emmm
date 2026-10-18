@@ -4,7 +4,7 @@
   import * as path from '@tauri-apps/api/path';
   import * as z from 'zod/v4-mini';
 
-  import { TreeButtonItem, TreeView, type TreeViewItem } from '@the_dissidents/svelte-ui'
+  import { Tooltip, TreeButtonItem, TreeView, type TreeViewItem } from '@the_dissidents/svelte-ui'
   import { Memorized } from "$lib/config/Memorized.svelte";
   import { CogIcon, FileImageIcon, FileTextIcon, FolderOpenIcon, LibraryBigIcon, PaletteIcon, SaveIcon } from "@lucide/svelte";
   import { Workspace } from "$lib/workspace/Workspace.svelte";
@@ -74,15 +74,21 @@
     <span>{$_('workspace.workspace')}</span>
     <div class="row">
       <code>{Workspace.name ?? $_('workspace.untitled')}</code>
-      <button onclick={() => Workspace.openDocument(Workspace.config)}>
-        <CogIcon />
-      </button>
-      <button onclick={() => Workspace.config.save()}>
-        <SaveIcon />
-      </button>
-      <button onclick={askOpenWorkspace}>
-        <FolderOpenIcon />
-      </button>
+      <Tooltip text={$_('workspace.settings')}>
+        <button onclick={() => Workspace.openDocument(Workspace.config)}>
+          <CogIcon />
+        </button>
+      </Tooltip>
+      <Tooltip text={$_('workspace.save')}>
+        <button onclick={() => Workspace.config.save()}>
+          <SaveIcon />
+        </button>
+      </Tooltip>
+      <Tooltip text={$_('workspace.open-new')}>
+        <button onclick={askOpenWorkspace}>
+          <FolderOpenIcon />
+        </button>
+      </Tooltip>
     </div>
   </div>
 

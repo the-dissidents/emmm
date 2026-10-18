@@ -37,27 +37,28 @@ class Structure {
 
     #reformatFolds(
         line: LineStructure, newWidth: number,
-        uend: FoldUnit, uline: FoldUnit, urepl: FoldUnit
+        terminal: FoldUnit, middle: FoldUnit, joiner: FoldUnit
     ) {
         const oldWidth = line.folds.length;
         for (let i = 0; i < oldWidth; i++) {
-            if (line.folds[i] == FoldUnit.Space) line.folds[i] = uline;
+            if (line.folds[i] == FoldUnit.Space) line.folds[i] = middle;
             else if (line.folds[i] == FoldUnit.Begin || line.folds[i] == FoldUnit.End)
-                line.folds[i] = urepl;
+                line.folds[i] = joiner;
         }
         for (let j = oldWidth; j <= newWidth; j++) {
-            if (j == newWidth) line.folds.push(uend);
-            else line.folds.push(uline);
+            if (j == newWidth) line.folds.push(terminal);
+            else line.folds.push(middle);
         }
     }
 
-    #makeBlock(from: number, to: number, content: emmm.DocumentNode[]) {
-        if (from >= this.lines.length) return 0;
+    #makeBlock(from: number, to: number, parent: emmm.DocumentNode, content: emmm.DocumentNode[]) {
         if (to >= this.lines.length) to = this.lines.length - 1;
-        if (from == to) return 0;
+
+        // do not display gutter for single-line blocks
+        if (from >= this.lines.length || from == to) return 0;
         if (content.length == 0) return 0;
 
-        const width = Math.max(...content.map((x) => this.#makeFold(x)));
+        const width = Math.max(...content.map((x) => this.#makeFold(x, parent)));
 
         this.#reformatFolds(this.lines[from], width,
             FoldUnit.Begin, FoldUnit.Top, FoldUnit.TopJoin);
@@ -74,22 +75,27 @@ class Structure {
         return width + 1;
     }
 
-    #makeFold(node: emmm.DocumentNode): number {
+    #makeFold(node: emmm.DocumentNode, parent?: emmm.DocumentNode): number {
         if (node.type !== emmm.NodeType.Root
          && node.location.source != this.doc.root.source) return 0;
 
         let width = 0;
         switch (node.type) {
             case emmm.NodeType.Root:
+                return Math.max(width, ...node.content.map((x) => this.#makeFold(x, node)));
             case emmm.NodeType.Group:
-                return Math.max(width,
-                    ...node.content.map((x) => this.#makeFold(x)));
+                if (!parent
+                    || parent.type == emmm.NodeType.BlockModifier
+                    || parent.type == emmm.NodeType.SystemModifier
+                ) {
+                    return Math.max(width, ...node.content.map((x) => this.#makeFold(x, node)));
+                } // else fallthrough
             case emmm.NodeType.Paragraph:
                 // FIXME: should include --:
                 return this.#makeBlock(
                     this.text.lineAt(node.location.start).number,
                     this.text.lineAt(node.location.actualEnd ?? node.location.end).number,
-                    node.content);
+                    node, node.content);
             case emmm.NodeType.SystemModifier:
             case emmm.NodeType.InlineModifier:
             case emmm.NodeType.BlockModifier:
@@ -120,8 +126,8 @@ class Structure {
                 }
                 if (node.content.length == 1
                     && this.text.lineAt(node.content[0].location.start).number == l1)
-                    return this.#makeFold(node.content[0]);
-                return this.#makeBlock(l1, l2, node.content);
+                    return this.#makeFold(node.content[0], node);
+                return this.#makeBlock(l1, l2, node, node.content);
             case emmm.NodeType.Preformatted:
             case emmm.NodeType.Text:
             case emmm.NodeType.Escaped:
