@@ -4,6 +4,7 @@
 .vs/
 node_modules/
 target/
+**/dist/
 .yalc/
 experiment/
 opencode.json

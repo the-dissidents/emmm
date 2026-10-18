@@ -256,7 +256,7 @@ export class ConfigDocument extends Document {
             plugins: this.wksp.plugins.instances.map((x) => ({
                 id: x.manifest.id,
                 config: Object.fromEntries(x.manifest.ui.flatMap(
-                    (item) => 'input' in item
+                    (item) => 'input' in item && (item.save ?? true)
                         ? [[item.key, x.getConfig(item.key)]] : []
                 ))
             }))

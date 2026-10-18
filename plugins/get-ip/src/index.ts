@@ -20,7 +20,9 @@ void (async () => {
             key: 'ip',
             readonly: true,
             names: { 'en-us': 'public IP', 'zh-cn': '公网 IP', },
-            defaultValue: ''
+            defaultValue: '',
+            isCode: true,
+            save: false
         }, {
             action: 'button',
             key: 'get-ip',

@@ -11,6 +11,9 @@ This is the monorepo for `emmm`, a better markup language for typesetting articl
 - `packages/libemmm` – parser for the language. See [there](packages/libemmm/README.md) for an overview of the language.
 - `packages/minimal-jsx-runtime` - a private little wrapper for using JSX the above projects
 - `packages/dom-css-inliner` - a CSS inliner based on DOM and CSSOM APIs
+- `packages/emmui-plugin-sdk` - type definitions for `emmui` plugin development; auto-generated
+
+Plugins for the editor are structured as individual packages in `plugins/` (see more below).
 
 ## Releases
 
@@ -23,25 +26,29 @@ However, you can build the project yourself.
 Make sure you have [Rust](https://rust-lang.org/tools/install/) and [Node.js](https://nodejs.org/en/download) installed.
 
 1. Install `pnpm` if you haven't yet.
-
    ```bash
    npm install -g pnpm@latest-10
    ```
 
 2. Install dependencies. Go to the root folder, run:
-
    ```bash
    pnpm i
    ```
 
-3. Run the editor in development mode. Compilation may take several minutes for the first time.
-
+3. You can now run the editor in development mode. Compilation may take several minutes for the first time.
    ```bash
-   pnpm dev
+   pnpm run dev
    ```
 
-4. To build an executable bundle, run:
+4. To build an executable bundle, run `pnpm run build-win` or `pnpm run build-mac`.
 
-   ```bash
-   pnpm build
-   ```
+### Building the plugins
+
+To build existing plugins from source, run:
+```bash
+pnpm run build:plugins
+```
+
+The compiled `.js` plugin files can be found in `plugins/dist/`.
+
+For instructions about plugin development, see the relevant [documentation](apps/editor/src/lib/plugin/README.md) and the [example plugin](plugins/get-ip) which you can use as a template for new plugins.

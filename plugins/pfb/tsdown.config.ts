@@ -6,9 +6,8 @@ export default defineConfig({
     entryFileNames: 'pfb.js',
   },
   deps: {
-    // alwaysBundle: ['xlsx'],
     neverBundle: ['@the_dissidents/emmui-plugin-sdk'],
   },
-//   minify: true,
+  minify: true,
   format: 'iife'
 });

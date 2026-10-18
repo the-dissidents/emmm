@@ -9,6 +9,8 @@ export const PluginUIConfigItem = z.union([
         names: I18nString,
         defaultValue: z.boolean(),
         readonly: z.optional(z.boolean()),
+        save: z.optional(z.boolean()),
+
     }),
     z.object({
         input: z.literal('textbox'),
@@ -16,6 +18,8 @@ export const PluginUIConfigItem = z.union([
         names: I18nString,
         defaultValue: z.string(),
         readonly: z.optional(z.boolean()),
+        save: z.optional(z.boolean()),
+        isCode: z.optional(z.boolean()),
     }),
     z.object({
         input: z.literal('textarea'),
@@ -23,6 +27,8 @@ export const PluginUIConfigItem = z.union([
         names: I18nString,
         defaultValue: z.string(),
         readonly: z.optional(z.boolean()),
+        save: z.optional(z.boolean()),
+        isCode: z.optional(z.boolean()),
     }),
     z.object({
         input: z.literal('folder'),
@@ -30,6 +36,7 @@ export const PluginUIConfigItem = z.union([
         names: I18nString,
         defaultValue: z.string(),
         readonly: z.optional(z.boolean()),
+        save: z.optional(z.boolean()),
     }),
     z.object({
         input: z.literal('file'),
@@ -37,6 +44,7 @@ export const PluginUIConfigItem = z.union([
         names: I18nString,
         defaultValue: z.string(),
         readonly: z.optional(z.boolean()),
+        save: z.optional(z.boolean()),
     }),
     z.object({
         input: z.literal('select'),
@@ -44,6 +52,7 @@ export const PluginUIConfigItem = z.union([
         names: I18nString,
         options: z.array(z.union([z.string(), z.tuple([z.string(), I18nString])])),
         defaultValue: z.string(),
+        save: z.optional(z.boolean()),
     }),
 ]);
 

@@ -47,14 +47,15 @@
                 (v) => inst.setConfig(item.key, v)
               } />
           {:else if item.input == 'textbox'}
-            <input type='text' class="grow"
+            <input type='text'
+              class:grow={true} class:code={item.isCode}
               readonly={item.readonly}
               bind:value={
                 () => inst.getConfig(item.key) as string,
                 (v) => inst.setConfig(item.key, v)
               } />
           {:else if item.input == 'textarea'}
-            <textarea class="grow"
+            <textarea class:grow={true} class:code={item.isCode}
               readonly={item.readonly}
               bind:value={
                 () => inst.getConfig(item.key) as string,
@@ -68,13 +69,15 @@
                 () => inst.getConfig(item.key) as string,
                 (v) => inst.setConfig(item.key, v)
               } />
-            <button onclick={async () => {
-              const result = await dialog.open({
-                directory: item.input == 'folder',
-                defaultPath: inst.getConfig(item.key) as string
-              });
-              if (result) inst.setConfig(item.key, result);
-            }}><EllipsisIcon /></button>
+            {#if !item.readonly}
+              <button onclick={async () => {
+                const result = await dialog.open({
+                  directory: item.input == 'folder',
+                  defaultPath: inst.getConfig(item.key) as string
+                });
+                if (result) inst.setConfig(item.key, result);
+              }}><EllipsisIcon /></button>
+            {/if}
           {:else if item.input == 'select'}
             <select class="grow" bind:value={
               () => inst.getConfig(item.key) as string,
@@ -149,6 +152,14 @@
 <style lang="scss">
   .grow {
     flex-grow: 1;
+  }
+
+  .code {
+    font-family: monospace;
+  }
+
+  textarea {
+    resize: vertical;
   }
 
   .header {
