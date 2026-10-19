@@ -1,9 +1,13 @@
 import { Debug } from "$lib/Debug";
-import { CommandDefinitions, HookDefinitions, PluginManifest, PluginUIValueType, type CommandName, type CommandParam, type CommandReturnData, type HookArgs, type HookName, type HookReturn, type PluginUIItemType } from "./Types";
+import { CommandDefinitions, HookDefinitions, I18nString, PluginManifest, PluginUIValueType, type CommandName, type CommandParam, type CommandReturnData, type HookArgs, type HookName, type HookReturn, type PluginUIItemType } from "./Types";
 import { PluginCommandHandlers } from "./Implementation.svelte";
-import * as fs from '@tauri-apps/plugin-fs';
 
 import bootstrapScript from './api.js?raw';
+import { Memorized } from "$lib/config/Memorized.svelte";
+
+import * as z from "zod/v4-mini";
+import * as fs from '@tauri-apps/plugin-fs';
+import * as dialog from "@tauri-apps/plugin-dialog";
 import { path } from "@tauri-apps/api";
 import { _ } from "svelte-i18n";
 
@@ -13,6 +17,14 @@ export type PluginCommandHandler<C extends CommandName> =
 
 const HOST_ORIGIN = "*";
 const TIMEOUT = 1000;
+
+const PluginRegistryEntry = z.object({
+    version: z.string(),
+    names: I18nString,
+    apiVersion: z.string(),
+})
+export type PluginRegistryEntry = z.infer<typeof PluginRegistryEntry>;
+const registry = Memorized.$dict('plugin-registry', z.string(), PluginRegistryEntry);
 
 export class PluginManager {
     #instances: PluginInstanceImpl[] = $state([]);
@@ -54,28 +66,28 @@ export class PluginManager {
             throw new Error('plugin not found');
 
         const source = await fs.readTextFile(filename, { baseDir: fs.BaseDirectory.AppConfig });
-        return await this.load(source);
+        const inst = await this.load(source);
+        if (!inst) return inst;
+
+        // TODO: ask the user in case of discrepancies
+        registry.setItem(inst.manifest.id, {
+            version: inst.manifest.version,
+            names: inst.manifest.names,
+            apiVersion: inst.manifest.apiVersion
+        });
+
+        return inst;
     }
 
-    static async listInstalled() {
-        if (
-            !(await fs.exists('plugins', { baseDir: fs.BaseDirectory.AppConfig })) ||
-            !(await fs.stat('plugins', { baseDir: fs.BaseDirectory.AppConfig })).isDirectory
-        ) {
-            return [];
-        }
-
-        const items = await fs.readDir('plugins', { baseDir: fs.BaseDirectory.AppConfig });
-        return items
-            .filter((x) => x.isFile && x.name.endsWith('.js'))
-            .map((x) => x.name.slice(0, x.name.length - '.js'.length));
+    static listInstalled(): ReadonlyMap<string, Readonly<PluginRegistryEntry>> {
+        return registry.get();
     }
 
-    static async install(file: string) {
-        const name = await path.basename(file);
-        console.log('installing', file, name);
-        if (!name.endsWith('.js'))
-            throw new Error('invalid plugin file');
+    static async install(inst: PluginInstance) {
+        Debug.assert(inst instanceof PluginInstanceImpl);
+
+        const name = inst.manifest.id + '.js';
+        console.log('installing plugin', name);
         if (/\.\.|\/|\\/.test(name))
             throw new Error('invalid plugin id');
 
@@ -86,8 +98,14 @@ export class PluginManager {
             await fs.mkdir('plugins', { baseDir: fs.BaseDirectory.AppConfig });
         }
 
-        await fs.copyFile(file, await path.join('plugins', name), {
-            toPathBaseDir: fs.BaseDirectory.AppConfig
+        await fs.writeTextFile(await path.join('plugins', name), inst.source,
+            { baseDir: fs.BaseDirectory.AppConfig });
+
+        // TODO: ask the user in case of discrepancies
+        registry.setItem(inst.manifest.id, {
+            version: inst.manifest.version,
+            names: inst.manifest.names,
+            apiVersion: inst.manifest.apiVersion
         });
     }
 
@@ -96,24 +114,50 @@ export class PluginManager {
      *
      * @returns the plugin instance if loaded successfully; `null` if a plugin with the same manifest id has already been loaded
      */
-    async load(source: string): Promise<PluginInstance | null> {
+    async load(source: string, install?: boolean): Promise<PluginInstance | null> {
         const inst = await PluginInstanceImpl.load(source);
 
-        if (this.#instances.find((x) => x.manifest.id == inst.manifest.id)) {
-            try {
-                await inst.unload();
-            } finally {
-                return null;
+        if (install) {
+            const entry = registry.getItem(inst.manifest.id);
+            if (entry) {
+                let ok = await dialog.confirm(
+                      entry.version < inst.manifest.version ?
+                        `确认将已安装的插件「${inst.manifest.id}」更新到新版本？`
+                    : entry.version == inst.manifest.version ?
+                        `已安装该插件的同一版本，确定需要用这个文件覆盖？`
+                    : `已安装该插件的更新版本。确定需要用旧版本覆盖？`);
+                if (!ok) try {
+                    await inst.unload();
+                } catch {
+                    return null;
+                }
             }
+            await PluginManager.install(inst);
         }
 
-        this.#instances.push(inst);
         inst.addMessageListener((data) => {
             void this.handleCommandMessage(inst, data);
             return true;
         });
         inst.window.postMessage({ type: 'host:ready' }, HOST_ORIGIN);
-        console.log('plugin ready', inst.manifest);
+        console.log('plugin ready:', inst.manifest);
+
+        const old = this.#instances.find((x) => x.manifest.id == inst.manifest.id);
+        this.#instances.push(inst);
+
+        if (old) {
+            for (const item of Object.values(inst.manifest.ui)) {
+                console.log(item.key, item, old.getConfigType(item.key));
+                if ('input' in item && old.getConfigType(item.key) === item.input)
+                    inst.setConfig(item.key, old.getConfig(item.key));
+            }
+            try {
+                await this.unload(old);
+            } catch {
+                return null;
+            }
+        }
+
         return inst;
     }
 
@@ -184,6 +228,7 @@ class PluginInstanceImpl implements PluginInstance {
     readonly window: Window;
 
     private constructor(
+        readonly source: string,
         readonly frame: HTMLIFrameElement,
         readonly manifest: PluginManifest,
     ) {
@@ -201,8 +246,7 @@ class PluginInstanceImpl implements PluginInstance {
     }
 
     getConfigType(key: string) {
-        Debug.assert(key in this.#config);
-        return this.#config[key].type;
+        return this.#config[key]?.type ?? null;
     }
 
     getConfig(key: string) {
@@ -275,7 +319,7 @@ class PluginInstanceImpl implements PluginInstance {
             console.log(doc);
             frame.srcdoc = doc.documentElement.outerHTML;
         });
-        return new PluginInstanceImpl(frame, manifest);
+        return new PluginInstanceImpl(source, frame, manifest);
     }
 
     postError(cmd: CommandName | null, message: string, payload?: unknown) {

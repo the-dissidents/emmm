@@ -1,6 +1,6 @@
 import * as z from "zod/v4-mini";
 
-const I18nString = z.record(z.string(), z.string());
+export const I18nString = z.record(z.string(), z.string());
 
 export const PluginUIConfigItem = z.union([
     z.object({
@@ -86,7 +86,7 @@ export type PluginUIItemType = keyof typeof PluginUIValueType;
 export const PluginManifest = z.object({
     id: z.string(),
     version: z.string(),
-    names: z.record(z.string(), z.string()),
+    names: I18nString,
     apiVersion: z.string(),
     ui: z._default(z.array(PluginUIItem), [])
 });

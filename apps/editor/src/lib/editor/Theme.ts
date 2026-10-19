@@ -96,6 +96,9 @@ export const emmmTheme = [
         ".em-args": {
             color: 'dimgray'
         },
+        "&dark .em-args": {
+            color: 'lightgray'
+        },
         ".em-escape": {
             color: 'gainsboro'
         },
@@ -113,7 +116,11 @@ export const emmmTheme = [
         },
         ":where(.em-role-link)": {
             color: 'darkblue',
-            textDecoration: 'underline'
+            textDecoration: 'underline',
+            textDecorationColor: 'gray'
+        },
+        "&dark :where(.em-role-link)": {
+            color: 'lightblue',
         },
         ".em-role-emphasis": {
             fontStyle: 'italic'
@@ -122,7 +129,10 @@ export const emmmTheme = [
             fontWeight: 'bold'
         },
         ".em-role-highlight": {
-            backgroundColor: 'color-mix(in srgb, yellow, transparent 50%)'
+            backgroundColor: '#ff9'
+        },
+        "&dark .em-role-highlight": {
+            backgroundColor: '#660'
         },
         ".em-role-commentary": {
             color: 'gray',

@@ -72,12 +72,20 @@ const readPfb = (rows: unknown[][]): PfbTable => {
     return table;
 };
 
+const toStars = (n: number) => n == 0 ? '×' : '★'.repeat(n);
+
+type PfbEntry = {
+    ratings: Map<string, number>,
+    director: string,
+    title: string
+};
+
 const work = async (
     imgfolder: string,
     monthlyPath: string,
-    monthlyCats: string | null,
     pfbPath: string,
-    pfbCategory: string,
+    monthlyCats: Set<string>,
+    pfbCats: Set<string>,
     blacklist: Set<string>,
 ): Promise<[string, string[]]> => {
     const messages: string[] = [];
@@ -87,26 +95,23 @@ const work = async (
     if (!pfbPath) messages.push('请指定评分表地址');
     if (messages.length > 0) return ['', messages];
 
-    const cats = new Set(
-        (monthlyCats || '').split('//').filter((cat) => cat !== ''));
-
     const monthly = readMonthly(await readSheet(monthlyPath, 0));
     let pfb = readPfb(await readSheet(pfbPath, '评分表'));
 
-    if (pfbCategory) {
+    if (pfbCats.size > 0) {
         const filtered: PfbTable = new Map();
         for (const [title, rows] of pfb) {
-            const kept = rows.filter((row) => str(row['特殊']) == pfbCategory);
-            if (kept.length > 0) filtered.set(title, kept);
+            // keep one category
+            filtered.set(title, rows.filter((row) => pfbCats.has(str(row['特殊']))));
         }
         pfb = filtered;
     }
 
-    const printRatings = (title: string, n?: number, data = false): string => {
+    const readEntry = (title: string, n?: number): PfbEntry | null => {
         const selection = pfb.get(title);
         if (!selection) {
             messages.push(`评分表未发现「${title}」`);
-            return `Title '${title}' not found.`;
+            return null;
         }
 
         let item: Row;
@@ -114,30 +119,40 @@ const work = async (
             if (n === undefined) {
                 messages.push(`评分表中发现多个「${title}」，采取第一个`);
                 n = 0;
+            } else if (n < 0 || n >= selection.length) {
+                messages.push(`评分表中只有${selection.length}个「${title}」，却要求第${n+1}个`);
+                return null;
             }
-            if (n < 0 || n >= selection.length)
-                return `Index ${n} out of bounds for duplicated title '${title}'`;
             item = selection[n];
         } else {
-            if (n !== undefined && n > 0)
-                return `Title '${title}' is unique; cannot select index ${n}`;
+            if (n !== undefined && n > 0) {
+                messages.push(`评分表中只有一个「${title}」，却要求第${n+1}个`);
+                return null;
+            }
             item = selection[0];
         }
 
         const ZEROES = ['×', 'x', 'X'];
-
-        const author = str(item['导演']);
-        if (!author) messages.push(`评分表中「${title}」没有导演信息`);
-
-        let ratings = '';
+        const ratings = new Map<string, number>();
         for (const [key, value] of Object.entries(item)) {
             const score = str(value);
             if (!(score.startsWith('★') || ZEROES.includes(score))) continue;
             if (blacklist.has(key)) continue;
-            ratings += `|${key}|${ZEROES.includes(score) ? 0 : score.length}`;
+            ratings.set(key, ZEROES.includes(score) ? 0 : score.length);
         }
 
-        return `[.ratings${data ? '-data' : ''} ${title}|dir=${author}\n${ratings}]`;
+        const director = str(item['导演']);
+        if (!director) messages.push(`评分表中「${title}」没有导演信息`);
+
+        return { title, ratings, director };
+    }
+
+    const printRatings = (entry: PfbEntry, data = false): string => {
+        let ratings = '';
+        for (const [key, score] of entry.ratings) {
+            ratings += `|${key}|${score}`;
+        }
+        return `[.ratings${data ? '-data' : ''} ${entry.title}|dir=${entry.director}\n${ratings}]`;
     };
 
     const entries: [string, string][] = [];
@@ -145,16 +160,18 @@ const work = async (
 
     for (let i = 0; i < monthly.length; i++) {
         const row = monthly[i];
-        const cat = str(row['分类']);
-        if (cats.size > 0 && !cats.has(cat)) continue;
+        const category = str(row['分类']);
+        if (monthlyCats.size > 0 && !monthlyCats.has(category)) continue;
 
-        const debugTitle = str(row['片名'] || row['原片名']).trim();
-        if (!debugTitle)
+        const titleKey = str(row['片名'] || row['原片名']).trim();
+        if (!titleKey)
             messages.push(`回顾表中第${i}行没有中文名也没有英文名`);
 
+        const pfbEntry = readEntry(titleKey);
+
         if (!row['编辑']) {
-            messages.push(`回顾表中「${debugTitle}」没有任何短评，只加入总表`);
-            dataOnly.push(printRatings(debugTitle, undefined, true) || '???');
+            messages.push(`回顾表中「${titleKey}」没有任何短评，只加入总表`);
+            dataOnly.push(pfbEntry ? printRatings(pfbEntry, true) : '???');
             continue;
         }
 
@@ -164,7 +181,7 @@ const work = async (
             const filename = fixFeishuFilename(str(row['配图']));
             entry += `[.image file:${emmmescape(joinPath(imgfolder, filename))};]\n\n`;
         } else {
-            messages.push(`回顾表中「${debugTitle}」没有配图`);
+            messages.push(`回顾表中「${titleKey}」没有配图`);
             entry += '?? Missing Image\n\n';
         }
 
@@ -173,25 +190,41 @@ const work = async (
             entry += str(row['片名']).trim() + (row['原片名'] ? '\n' : ' ');
         if (row['原片名'])
             entry += `_${str(row['原片名']).trim()}_ `;
+
         if (row['年份']) {
             entry += `(${str(row['年份'])})\n\n`;
         } else {
-            messages.push(`回顾表中「${debugTitle}」没有年份`);
+            messages.push(`回顾表中「${titleKey}」没有年份`);
             entry += '\n\n';
         }
 
-        entry += `*@${str(row['编辑'])} 评分：${str(row['个人评分'])}*\n`;
-        entry += `${row['短评'] ? str(row['短评']) : '???'}\n\n`;
-        if (!row['短评']) messages.push(`回顾表中「${debugTitle}」短评1为空`);
+        const makeReview = (postfix: string) => {
+            const editor = str(row['编辑' + postfix]);
+            const rating = pfbEntry?.ratings.get(editor);
+            let ratingString: string;
+            if (rating === undefined) {
+                ratingString = str(row['个人评分' + postfix]);
+                if (ratingString)
+                    messages.push(`评论「${titleKey}」的编辑${editor}没有在评分表里打分，采用回顾表中数据`);
+                else {
+                    messages.push(`评论「${titleKey}」的编辑${editor}没有找到任何打分数据`);
+                    ratingString = '???';
+                }
+            } else {
+                ratingString = toStars(rating);
+            }
+            entry += `*@${editor} 评分：${ratingString}*\n`;
 
-        if (row['编辑2']) {
-            entry += `*@${str(row['编辑2'])} 评分：${str(row['个人评分2'])}*\n`;
-            entry += `${row['短评2'] ? str(row['短评2']) : '???'}\n\n`;
-            if (!row['短评2']) messages.push(`回顾表中「${debugTitle}」短评2为空`);
+            const review = str(row['短评' + postfix]);
+            if (!review) messages.push(`回顾表中编辑${editor}的「${titleKey}」短评为空`);
+            entry += `${review || '???'}\n\n`;
         }
 
-        entry += (printRatings(debugTitle) || '???') + '\n>>>';
-        entries.push([cat, entry]);
+        makeReview('');
+        if (row['编辑2']) makeReview('2');
+
+        entry += (pfbEntry ? printRatings(pfbEntry) : '???') + '\n>>>';
+        entries.push([category, entry]);
     }
 
     entries.sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0);
@@ -214,7 +247,7 @@ const work = async (
 void (async () => {
     await emmui.init({
         id: 'pfb',
-        version: '000001',
+        version: '000002',
         names: {
             'zh-cn': '月度回顾评分表',
         },
@@ -228,6 +261,11 @@ void (async () => {
             input: 'textbox',
             key: 'pfb_category',
             names: { 'zh-cn': '评分表分类', },
+            defaultValue: ''
+        }, {
+            input: 'textbox',
+            key: 'blacklist',
+            names: { 'zh-cn': '从评分表中排除的编辑', },
             defaultValue: ''
         }, {
             input: 'file',
@@ -245,11 +283,6 @@ void (async () => {
             names: { 'zh-cn': '月度回顾分类列表', },
             defaultValue: ''
         }, {
-            input: 'textbox',
-            key: 'blacklist',
-            names: { 'zh-cn': '从评分表中排除的编辑', },
-            defaultValue: '脆脆鲨//铜tt//42.'
-        }, {
             action: 'button',
             key: 'generate',
             names: { 'zh-cn': '生成', },
@@ -265,41 +298,51 @@ void (async () => {
             readonly: true, save: false, isCode: true,
             names: { 'zh-cn': '结果', },
             defaultValue: ''
-        }]
+        }, {
+            action: 'button',
+            key: 'help',
+            names: { 'zh-cn': '使用说明', },
+        }, ]
     });
     await emmui.call('log', 'initialized');
 
-    emmui.onAction('generate', async () => {
-        void (async () => {
-            try {
-                const pfbPath = await emmui.get('pfb_path') as string;
-                const pfbCategory = await emmui.get('pfb_category') as string;
-                const monthlyPath = await emmui.get('monthly_path') as string;
-                const assetPath = await emmui.get('asset_path') as string;
-                const monthlyCats = await emmui.get('monthly_cats') as string;
-                const blacklist = await emmui.get('blacklist') as string;
+    emmui.onAction('generate', () => void (async () => {
+        try {
+            const pfbPath = await emmui.get('pfb_path') as string;
+            const pfbCategory = await emmui.get('pfb_category') as string;
+            const monthlyPath = await emmui.get('monthly_path') as string;
+            const assetPath = await emmui.get('asset_path') as string;
+            const monthlyCats = await emmui.get('monthly_cats') as string;
+            const blacklist = await emmui.get('blacklist') as string;
 
-                const [output, msgs] = await work(
-                    assetPath,
-                    monthlyPath,
-                    monthlyCats || null,
-                    pfbPath,
-                    pfbCategory,
-                    new Set(blacklist.split('//')),
-                );
+            const [output, msgs] = await work(
+                assetPath,
+                monthlyPath,
+                pfbPath,
+                new Set(monthlyCats.split('//').filter(Boolean)),
+                new Set(pfbCategory.split('//').filter(Boolean)),
+                new Set(blacklist.split('//').filter(Boolean)),
+            );
 
-                await emmui.set('messages', msgs.join('\n'));
-                await emmui.set('output', output);
-            } catch (e) {
-                await emmui.set('output', '');
-                await emmui.set('messages', `出现了意外错误：\n\n${e}`);
-            }
-        })();
-    });
+            await emmui.set('messages', msgs.join('\n'));
+            await emmui.set('output', output);
+        } catch (e) {
+            await emmui.set('messages', '');
+            await emmui.set('output', '');
+            await emmui.call('messagebox', {
+                msg: `出现了意外错误：\n\n${e}`,
+                kind: 'error'
+            });
+        }
+    })());
 
-    emmui.on('ping', async () => {
-        return `${await emmui.get('message')} ${await emmui.call('counter', undefined)}`;
-    });
+    emmui.onAction('help', () => void (async () => {
+        await emmui.call('messagebox', {
+            msg: '1. 去飞书里打开月度回顾表格，导出Excel文件，注意选择只下载月度回顾这一个页面。记得勾选下载附件，下载了之后解压成一个文件夹。\n\n2. 去腾讯文档将评分表导出为Excel文件，这里不需要下载附件\n\n3. 点击按钮填入以上得到的两个表格和一个文件夹，输入相应信息。多个分类用双斜杠（//）分开\n\n4. 点击生成',
+            kind: 'info',
+            title: '「月度回顾评分表」插件使用说明'
+        });
+    })());
 
     emmui.on('finalize', async () => {
         await emmui.call('log', 'finalizing');

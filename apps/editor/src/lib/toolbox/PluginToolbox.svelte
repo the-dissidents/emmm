@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Workspace } from "$lib/workspace/Workspace.svelte";
   import { EllipsisIcon, XIcon } from "@lucide/svelte";
-  import { Collapsible, ConfigRow, ConfigTable } from "@the_dissidents/svelte-ui";
+  import { Collapsible, ConfigRow, ConfigTable, Tooltip } from "@the_dissidents/svelte-ui";
   import { _, locale } from "svelte-i18n";
   import { menu } from "@tauri-apps/api";
   import { PluginManager } from "$lib/plugin/Plugin.svelte";
@@ -19,15 +19,15 @@
         return entries[0][1];
     return $_('plugin.unknown');
   }
-
 </script>
 
 {#each Workspace.plugins.instances as inst}
 <Collapsible>
   {#snippet header()}
   <div class="header">
-    <span>{preferredName(inst.manifest.names)} <code>{inst.manifest.id}</code></span>
+    <span>{preferredName(inst.manifest.names)}</span>
     <div class="spacer"></div>
+    <Tooltip text="[{inst.manifest.id}] v.{inst.manifest.version}"/>
     <button onclick={() => Workspace.plugins.unload(inst)}>
       <XIcon />
     </button>
@@ -114,17 +114,17 @@
 <hr>
 
 <button onclick={async () => {
-  const installed = (await PluginManager.listInstalled()).filter(
-    (id) => !Workspace.plugins.instances.find((x) => x.manifest.id == id));
+  const installed = [...PluginManager.listInstalled()].filter(
+    ([id, _]) => !Workspace.plugins.instances.find((x) => x.manifest.id == id));
 
   (await menu.Menu.new({
     items: [
-      ...(installed.length > 0 ? installed.map((id) => ({
-        text: id,
+      ...(installed.length > 0 ? installed.map(([id, info]) => ({
+        text: preferredName(info.names),
         action: () => Workspace.plugins.loadInstalled(id)
       })) : [
         {
-          text: '没有更多安装的插件',
+          text: '没有更多可用的插件',
           enabled: false,
         }
       ]),
@@ -132,15 +132,14 @@
         item: 'Separator'
       },
       {
-        text: '安装其它插件',
+        text: '安装…',
         action: async () => {
           const path = await dialog.open({
             filters: [ { name: 'emmm plugin', extensions: ['js'] } ]
           });
           if (!path) return;
           const source = await fs.readTextFile(path);
-          await Workspace.plugins.load(source);
-          await PluginManager.install(path);
+          await Workspace.plugins.load(source, true);
         }
       }
     ]
@@ -154,10 +153,6 @@
     flex-grow: 1;
   }
 
-  .code {
-    font-family: monospace;
-  }
-
   textarea {
     resize: vertical;
   }
@@ -167,11 +162,6 @@
     flex-direction: row;
     align-items: center;
 
-    code {
-      color: #999;
-      text-transform: none;
-    }
-
     .spacer {
       flex-grow: 1;
     }
@@ -179,6 +169,7 @@
     button {
       padding: 2px;
       margin: 0px;
+      margin-left: 5px;
     }
   }
 
