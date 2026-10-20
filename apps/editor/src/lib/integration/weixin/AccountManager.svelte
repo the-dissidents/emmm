@@ -1,10 +1,11 @@
 <script lang="ts">
   import { ConfigRow, ConfigTable, Popup, showConfirmationPopup, showInputPopup } from "@the_dissidents/svelte-ui";
   import { WeixinClient } from "./API.svelte";
-  import { PencilIcon, Trash2Icon, UserPlusIcon } from "@lucide/svelte";
+  import { EllipsisIcon } from "@lucide/svelte";
   import { hook } from "$lib/details/Hook.svelte";
   import { Memorized } from "$lib/config/Memorized.svelte";
   import { _ } from 'svelte-i18n';
+  import { menu } from "@tauri-apps/api";
 
   interface Props {
     account: WeixinClient,
@@ -38,31 +39,40 @@
       <option value={name}>{name}</option>
     {/each}
   </select>
-  <button onclick={() => {
-    popup?.open(div!.getBoundingClientRect());
-  }}>
-    <PencilIcon />
-  </button>
+
   <button onclick={async (e) => {
-    const name = await showInputPopup(e.currentTarget, $_('account.account-name'), {
-      validate: (name) => name !== '' && !WeixinClient.getNames().includes(name)
-    });
-    if (!name) return;
-    account = new WeixinClient(name);
-    onChange?.(account);
-    change++;
-    popup?.open({...div!.getBoundingClientRect()});
+    (await menu.Menu.new({ items: [
+      {
+        text: $_('weixin.proxy.add'),
+        action: async () => {
+          const name = await showInputPopup(div!, $_('account.account-name'), {
+            validate: (name) => name !== '' && !WeixinClient.getNames().includes(name)
+          });
+          if (!name) return;
+          account = new WeixinClient(name);
+          onChange?.(account);
+          change++;
+          popup?.open({...div!.getBoundingClientRect()});
+        }
+      }, {
+        text: $_('weixin.proxy.modify'),
+        action: () => popup?.open(div!.getBoundingClientRect())
+      }, {
+        item: 'Separator'
+      }, {
+        text: $_('weixin.proxy.delete'),
+        enabled: WeixinClient.getNames().length > 1,
+        action: async () => {
+          if (!await showConfirmationPopup(div!, $_('account.delete-account'))) return;
+          const newName = WeixinClient.getNames().find((x) => x != account.name) ?? 'default';
+          account.deleteAndSwitch(newName);
+          onChange?.(account);
+          change++;
+        }
+      }
+    ] })).popup();
   }}>
-    <UserPlusIcon />
-  </button>
-  <button onclick={async (e) => {
-    if (!await showConfirmationPopup(e.currentTarget, $_('account.delete-account'))) return;
-    const newName = WeixinClient.getNames().find((x) => x != account.name) ?? 'default';
-    account.deleteAndSwitch(newName);
-    onChange?.(account);
-    change++;
-  }} disabled={WeixinClient.getNames().length <= 1}>
-    <Trash2Icon />
+    <EllipsisIcon />
   </button>
 {/key}
 </div>
@@ -104,5 +114,9 @@
   }
   .invalid {
     background-color: pink;
+  }
+
+  hr {
+    margin-block: 5px 2px;
   }
 </style>

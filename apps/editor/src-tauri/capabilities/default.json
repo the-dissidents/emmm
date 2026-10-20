@@ -65,19 +65,11 @@
     {
       "identifier": "http:default",
       "allow": [
-        {
-          "url": "https://ipinfo.io/"
-        },
-        {
-          "url": "https://api.ipify.org/"
-        },
-        {
-          "url": "https://api.weixin.qq.com/"
-        },
-        {
-          "url": "https://raw.githubusercontent.com/"
-        }
-      ]
+            { "url": "http://*" },
+            { "url": "https://*" },
+            { "url": "http://*:*" },
+            { "url": "https://*:*" }
+        ]
     },
     "clipboard-manager:allow-write-html",
     "clipboard-manager:allow-write-text",

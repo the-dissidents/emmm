@@ -16,17 +16,27 @@
   import { Memorized } from "$lib/config/Memorized.svelte";
   import { _ } from 'svelte-i18n';
   import { DebouncedTask } from "$lib/details/DebouncedTask";
+  import { ReverseProxyClient } from "./ProxyClient.svelte";
 
-  let publicIP = $state('');
+  import ProxyManager from "./ProxyManager.svelte";
 
   let accountName = Memorized.$('weixin-account-name', z.string(), 'default');
-  let client = $state(new WeixinClient());
-  let token = $derived(client.stableToken);
+  let proxyName = Memorized.$('weixin-proxy-name', z.optional(z.string()), undefined);
 
+  let client = $state(new WeixinClient());
+  let proxy: ReverseProxyClient | undefined = $state();
+
+  let token = $derived(client.stableToken);
   let progress = Interface.progress;
   const backgroundImage = Interface.backgroundImage;
 
-  Memorized.onInitialize(() => client = new WeixinClient($accountName));
+  Memorized.onInitialize(() => {
+    client = new WeixinClient($accountName);
+    if ($proxyName) {
+      proxy = new ReverseProxyClient($proxyName);
+      client.proxy = proxy;
+    }
+  });
 
   type ImgStatus = 'uploaded' | 'external' | 'notUploaded' | 'invalid' | 'error' | 'pending';
   type Img = {
@@ -161,27 +171,38 @@
 <div class="vlayout vfill">
 
 <h5>{$_('weixin.credentials')}</h5>
-<AccountManager
-  bind:account={client}
-  onChange={(a) => $accountName = a.name}
-/>
 
-<table class="config"><tbody>
-  <tr>
-    <td>{$_('weixin.stable-token')}</td>
-    <td>
-      <input type="text" style="width: 100%" disabled value={$token} /><br/>
-      <button class="veryimportant" style="width: 100%"
-        onclick={async () => {
-          try {
-            await client.fetchToken();
-          } catch (x) {
-            await dialog.message(`${x}`, { kind: 'error' });
-          }
-        }}>{$_('weixin.retrieve-token')}</button>
-    </td>
-  </tr>
-</tbody></table>
+<ConfigTable>
+  <ConfigRow name={$_('weixin.account')}>
+    <AccountManager
+      bind:account={client}
+      onChange={(a) => {
+        $accountName = a.name;
+        a.proxy = proxy;
+      }}
+    />
+  </ConfigRow>
+  <ConfigRow name={$_('weixin.proxy-field')}>
+    <ProxyManager
+      bind:proxy={proxy}
+      onChange={(a) => {
+        $proxyName = a?.name;
+        client.proxy = proxy;
+      }}
+    />
+  </ConfigRow>
+  <ConfigRow name={$_('weixin.stable-token')}>
+    <input type="text" style="width: 100%" disabled value={$token} /><br/>
+    <button class="veryimportant" style="width: 100%"
+      onclick={async () => {
+        try {
+          await client.fetchToken();
+        } catch (x) {
+          await dialog.message(`${x}`, { kind: 'error' });
+        }
+      }}>{$_('weixin.retrieve-token')}</button>
+  </ConfigRow>
+</ConfigTable>
 
 <h5>{$_('weixin.publish')}</h5>
 

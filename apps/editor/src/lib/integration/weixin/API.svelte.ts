@@ -8,15 +8,16 @@ import { Memorized } from "$lib/config/Memorized.svelte";
 import { type FileHash } from "$lib/RustAPI";
 
 import * as z from "zod/v4-mini";
+import type { ReverseProxyClient } from "./ProxyClient.svelte";
 
-const accountDataDef = z.object({
+const AccountData = z.object({
     appid: z.string(),
     secret: z.string(),
     assetCache: z.array(z.tuple([z.string(), z.string()])),
 });
-type AccountData = z.infer<typeof accountDataDef>;
+type AccountData = z.infer<typeof AccountData>;
 
-const accounts = Memorized.$dict('weixinAccounts', z.string(), accountDataDef);
+const accounts = Memorized.$dict('weixinAccounts', z.string(), AccountData);
 const smallImageCache = Memorized.$dict('weixinSmallImageCacheV2', z.string(), z.string());
 
 export type WeixinAssetType = 'image' | 'video' | 'voice';
@@ -170,7 +171,9 @@ export class WeixinClient {
     #name: string;
     #expireTime = new Date(0);
     #assetCache = new Map<string, string>();
+
     autoFetchToken = false;
+    proxy?: ReverseProxyClient;
 
     static getNames() {
         return [...accounts.get().keys()];
@@ -212,12 +215,11 @@ export class WeixinClient {
 
     rename(to: string) {
         const map = accounts.get();
-        const old = this.#name;
         Debug.assert(!map.has(to));
         map.set(to, this.#data);
+        map.delete(this.#name);
         this.#name = to;
-        map.delete(old);
-        accounts.set(map);
+        accounts.markChanged();
     }
 
     deleteAndSwitch(to: string) {
@@ -246,23 +248,23 @@ export class WeixinClient {
         return get(this.#stableToken) !== '' && this.#expireTime.getTime() > Date.now();
     }
 
-    async #rawExec(path: string, body: object, check = true) {
+    async #rawExec(path: string, body: BodyInit, check = true) {
         if (check && !this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
             throw new WeixinInvalidTokenError();
         const t0 = performance.now();
-        const r = await fetch(
-            `https://api.weixin.qq.com/cgi-bin/${path}?`
-            + new URLSearchParams({access_token: get(this.#stableToken)}),
-        {
-            method: 'POST',
-            body: JSON.stringify(body)
-        });
+
+        const init: RequestInit = { method: 'POST', body };
+        const params = new URLSearchParams({access_token: get(this.#stableToken)});
+        const r = this.proxy
+            ? await this.proxy.fetch(`${path}?` + params, init)
+            : await fetch(`https://api.weixin.qq.com/cgi-bin/${path}?` + params, init);
+
         console.log(`${path}: ${r.status} in ${(performance.now() - t0).toFixed(0)}ms`);
         if (!r.ok) throw new RequestFailedError(r);
         return r;
     }
 
-    async #exec(path: string, body: object, check = true) {
+    async #exec(path: string, body: BodyInit, check = true) {
         const r = await this.#rawExec(path, body, check);
         const json = await r.json();
         if (json.errcode) throw new WeixinAPIError(json);
@@ -275,11 +277,11 @@ export class WeixinClient {
         if (!this.appid || !this.secret)
             throw new WeixinBadCredentialError();
 
-        const json = await this.#exec('stable_token', {
+        const json = await this.#exec('stable_token', JSON.stringify({
             "grant_type": "client_credential",
             "appid": this.appid,
             "secret": this.secret
-        }, false);
+        }), false);
         const token = json.access_token as string;
         this.#stableToken.set(token);
         this.#expireTime = new Date(Date.now() + (<number>json.expires_in - 10) * 1000);
@@ -287,11 +289,11 @@ export class WeixinClient {
     }
 
     async getAssets(type: WeixinAssetType, from: number, count = 20) {
-        const json = await this.#exec('material/batchget_material', {
+        const json = await this.#exec('material/batchget_material', JSON.stringify({
             "type": type as string,
             "offset": from,
             "count": count
-        });
+        }));
         const total = json.total_count as number;
         const assets: WeixinAsset[] = [...json.item].map((x) => ({
             type: type,
@@ -308,11 +310,11 @@ export class WeixinClient {
      * Read from the list of unpublished drafts.
      */
     async getDrafts(from: number, count = 20) {
-        const json = await this.#exec('draft/batchget', {
+        const json = await this.#exec('draft/batchget', JSON.stringify({
             "offset": from,
             "count": count,
             "no_content": 1
-        });
+        }));
         if (json.errcode) throw new WeixinAPIError(json);
         const total = json.total_count as number;
         const drafts: WeixinPublication[] = [...json.item].map((x) => ({
@@ -328,9 +330,9 @@ export class WeixinClient {
      * @returns ID of the created draft.
      */
     async createDraft(...articles: WeixinArticle[]) {
-        const json = await this.#exec('draft/add', {
+        const json = await this.#exec('draft/add', JSON.stringify({
             "articles": articles.map(makeArticle)
-        });
+        }));
         return json.media_id as string;
     }
 
@@ -341,12 +343,12 @@ export class WeixinClient {
      * @returns `true`.
      */
     async updateDraft(id: string, index: number, article: WeixinArticle) {
-        await this.#exec('draft/update', {
+        await this.#exec('draft/update', JSON.stringify({
             "media_id": id,
             "index": index,
             // despite the name, this should be a single object instead of an array
             "articles": makeArticle(article)
-        });
+        }));
         return true;
     }
 
@@ -354,11 +356,11 @@ export class WeixinClient {
      * Read from the list of publications.
      */
     async getPublications(from: number, count = 20) {
-        const json = await this.#exec('freepublish/batchget', {
+        const json = await this.#exec('freepublish/batchget', JSON.stringify({
             "offset": from,
             "count": count,
             "no_content": 1
-        });
+        }));
         const total = json.total_count as number;
         const items: WeixinPublication[] = [...json.item].map((x) => ({
             id: x.article_id as string,
@@ -375,7 +377,8 @@ export class WeixinClient {
             throw new WeixinInvalidTokenError();
 
         console.log('downloadAsset', id, name, force);
-        const r = await this.#rawExec('material/get_material', { "media_id": id });
+        const r = await this.#rawExec(
+            'material/get_material', JSON.stringify({ "media_id": id }));
         const filename = `${id}-${[...name].filter((x) => /[a-zA-Z0-9.]/.test(x)).join('')}`;
         await writeFile(filename,
             new Uint8Array(await r.arrayBuffer()), { baseDir: BaseDirectory.AppLocalData });
@@ -394,21 +397,12 @@ export class WeixinClient {
     async uploadSmallImage(blob: Blob, name: string, key: string, force = false) {
         if (!force && smallImageCache.get().has(key))
             return smallImageCache.getItem(key)!;
-
         if (!this.tokenOk && (!this.autoFetchToken || await this.fetchToken()))
             throw new WeixinInvalidTokenError();
+
         const form = new FormData();
         form.append('media', blob, name);
-        const r = await fetch(
-            'https://api.weixin.qq.com/cgi-bin/media/uploadimg?'
-            + new URLSearchParams({access_token: get(this.#stableToken)}),
-        {
-            method: 'POST',
-            body: form
-        });
-        if (!r.ok) throw new RequestFailedError(r);
-        let json = await r.json();
-        if (json.errcode) throw new WeixinAPIError(json);
+        const json = await this.#exec('media/uploadimg', form);
         const url = json.url as string;
         if (key !== null) smallImageCache.setItem(key, url);
         return url;
