@@ -86,7 +86,6 @@ const work = async (
     pfbPath: string,
     monthlyCats: Set<string>,
     pfbCats: Set<string>,
-    blacklist: Set<string>,
 ): Promise<[string, string[]]> => {
     const messages: string[] = [];
 
@@ -137,7 +136,6 @@ const work = async (
         for (const [key, value] of Object.entries(item)) {
             const score = str(value);
             if (!(score.startsWith('★') || ZEROES.includes(score))) continue;
-            if (blacklist.has(key)) continue;
             ratings.set(key, ZEROES.includes(score) ? 0 : score.length);
         }
 
@@ -247,7 +245,7 @@ const work = async (
 void (async () => {
     await emmui.init({
         id: 'pfb',
-        version: '000002',
+        version: '000003',
         names: {
             'zh-cn': '月度回顾评分表',
         },
@@ -261,11 +259,6 @@ void (async () => {
             input: 'textbox',
             key: 'pfb_category',
             names: { 'zh-cn': '评分表分类', },
-            defaultValue: ''
-        }, {
-            input: 'textbox',
-            key: 'blacklist',
-            names: { 'zh-cn': '从评分表中排除的编辑', },
             defaultValue: ''
         }, {
             input: 'file',
@@ -313,7 +306,6 @@ void (async () => {
             const monthlyPath = await emmui.get('monthly_path') as string;
             const assetPath = await emmui.get('asset_path') as string;
             const monthlyCats = await emmui.get('monthly_cats') as string;
-            const blacklist = await emmui.get('blacklist') as string;
 
             const [output, msgs] = await work(
                 assetPath,
@@ -321,7 +313,6 @@ void (async () => {
                 pfbPath,
                 new Set(monthlyCats.split('//').filter(Boolean)),
                 new Set(pfbCategory.split('//').filter(Boolean)),
-                new Set(blacklist.split('//').filter(Boolean)),
             );
 
             await emmui.set('messages', msgs.join('\n'));

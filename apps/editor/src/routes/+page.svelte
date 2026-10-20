@@ -4,11 +4,13 @@
   import { Memorized } from '$lib/config/Memorized.svelte';
   import { getVersion } from '@tauri-apps/api/app';
   import { arch, platform, version } from '@tauri-apps/plugin-os';
+  import * as dialog from '@tauri-apps/plugin-dialog';
   import { Banner } from '@the_dissidents/svelte-ui';
   import { onMount } from 'svelte';
   import { _ } from 'svelte-i18n';
 
   import * as z from "zod/v4-mini";
+  import { Workspace } from '$lib/workspace/Workspace.svelte';
 
   const currentWindow = getCurrentWindow();
 
@@ -19,14 +21,23 @@
     currentWindow.setSize(new LogicalSize($windowW, $windowH));
   });
 
-  currentWindow.onCloseRequested(async () => {
+  currentWindow.onCloseRequested(async (e) => {
     const factor = await currentWindow.scaleFactor();
     const size = (await currentWindow.innerSize()).toLogical(factor);
     $windowW = size.width;
     $windowH = size.height;
 
     await Memorized.save();
-    console.log('saved memorized');
+    await Workspace.config.save();
+
+    const dirty = Workspace.documents.filter((x) => x.dirty && x !== Workspace.config);
+    if (dirty.length == 0) return;
+    if (!await dialog.confirm(
+      `未保存以下文档：${dirty.map((x) => x.name).join('，')}\n\n是否确认退出？`)
+    ) {
+      e.preventDefault();
+      return;
+    }
   });
 
   let errorBanner = $state(false);

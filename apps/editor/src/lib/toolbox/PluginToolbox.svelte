@@ -140,6 +140,7 @@
           if (!path) return;
           const source = await fs.readTextFile(path);
           await Workspace.plugins.load(source, true);
+          Workspace.config.dirty = true;
         }
       }
     ]
