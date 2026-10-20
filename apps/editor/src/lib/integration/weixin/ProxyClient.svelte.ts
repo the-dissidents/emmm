@@ -23,7 +23,7 @@ type ReverseProxyData = z.infer<typeof ReverseProxyData>;
 const proxies = Memorized.$dict('weixin-reverse-proxies', z.string(), ReverseProxyData);
 
 export class ReverseProxyClient {
-    #data: ReverseProxyData;
+    readonly #data: ReverseProxyData;
     #name: string;
 
     static getNames() {
