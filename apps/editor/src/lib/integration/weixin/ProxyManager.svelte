@@ -46,7 +46,7 @@
       {
         text: $_('weixin.proxy.add'),
         action: async () => {
-          const name = await showInputPopup(div!, $_('account.proxy-name'), {
+          const name = await showInputPopup(div!, $_('weixin.proxy.name'), {
             validate: (name) => name !== '' && !ReverseProxyClient.getNames().includes(name)
           });
           if (!name) return;
@@ -65,7 +65,7 @@
         text: $_('weixin.proxy.delete'),
         enabled: !!proxy,
         action: async () => {
-          if (!await showConfirmationPopup(div!, $_('account.delete-proxy'))) return;
+          if (!await showConfirmationPopup(div!, $_('weixin.proxy.delete-confirmation'))) return;
           Debug.assert(!!proxy);
           ReverseProxyClient.delete(proxy.name);
           proxy = undefined;
@@ -101,11 +101,11 @@
       />
       <hr>
     </ConfigRow>
-    <ConfigRow name={$_('account.url')}>
+    <ConfigRow name={$_('weixin.proxy.url')}>
       <input type="text" class="flexgrow"
         bind:value={() => proxy!.url, (x) => proxy!.url = x} />
     </ConfigRow>
-    <ConfigRow name={$_('account.authentication')}>
+    <ConfigRow name={$_('weixin.proxy.authentication')}>
       <select bind:value={() => proxy!.credential.type, (x) => {
             Debug.assert(!!proxy);
             if (x == proxy.credential.type) return;

@@ -159,7 +159,11 @@
       "no-proxy": "不使用",
       "add": "添加",
       "modify": "修改",
-      "delete": "删除"
+      "delete": "删除",
+      "authentication": "认证方式",
+      "delete-confirmation": "删除代理配置？",
+      "name": "代理名称",
+      "url": "地址"
     },
     "proxy-field": "转发代理"
   },
@@ -168,11 +172,7 @@
     "delete-account": "删除账户？",
     "name": "名称",
     "appid": "appid",
-    "secret": "secret",
-    "proxy-name": "代理名称",
-    "delete-proxy": "删除代理配置？",
-    "url": "地址",
-    "authentication": "认证方式"
+    "secret": "secret"
   },
   "eggs": {
     "i-mean-it": "我是认真的！",
@@ -191,7 +191,9 @@
     "workspace": "工作空间",
     "settings": "工作空间设置",
     "save": "保存工作空间",
-    "open-new": "打开新的工作空间"
+    "open-new": "打开新的工作空间",
+    "editing-temporary-library-file": "您正在修改没有保存到工作空间中的临时库文件",
+    "editing-temporary-stylesheet": "您正在修改没有保存到工作空间中的临时样式表"
   },
   "wkspconfig": {
     "location": "位置",
@@ -199,6 +201,10 @@
     "asset-folder": "素材文件夹"
   },
   "plugin": {
-    "unknown": "未知名称"
+    "unknown": "未知名称",
+    "no-config": "此插件没有提供选项",
+    "no-other-plugins-installed": "没有更多可用的插件",
+    "install": "安装…",
+    "add": "添加插件"
   }
 }

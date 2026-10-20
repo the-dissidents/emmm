@@ -156,7 +156,7 @@ export abstract class FixedDocument extends EditableDocument {
     #path: string | null = $state(null);
     get path() { return this.#path; }
 
-    #temporary = true;
+    #temporary = $state(true);
     get temporary() { return this.#temporary; }
 
     constructor(
@@ -180,6 +180,12 @@ export abstract class FixedDocument extends EditableDocument {
             this.#temporary = true;
             this.dirty = true;
         }
+    }
+
+    override async save(): Promise<boolean> {
+        const result = await super.save();
+        if (result) this.#temporary = false;
+        return result;
     }
 }
 
@@ -262,6 +268,12 @@ export class ConfigDocument extends Document {
             }))
         } satisfies SerializedWorkspace));
         this.dirty = false;
+
+        if (this.wksp.library.temporary)
+            await this.wksp.library.save();
+        if (this.wksp.stylesheet.temporary)
+            await this.wksp.stylesheet.save();
+
         return true;
     }
 }

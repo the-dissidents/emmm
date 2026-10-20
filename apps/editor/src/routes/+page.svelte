@@ -28,16 +28,8 @@
     $windowH = size.height;
 
     await Memorized.save();
-    await Workspace.config.save();
-
-    const dirty = Workspace.documents.filter((x) => x.dirty && x !== Workspace.config);
-    if (dirty.length == 0) return;
-    if (!await dialog.confirm(
-      `未保存以下文档：${dirty.map((x) => x.name).join('，')}\n\n是否确认退出？`)
-    ) {
+    if (!await Workspace.askBeforeClose())
       e.preventDefault();
-      return;
-    }
   });
 
   let errorBanner = $state(false);

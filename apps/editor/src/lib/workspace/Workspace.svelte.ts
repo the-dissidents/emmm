@@ -7,6 +7,8 @@ import { Debug } from '$lib/Debug';
 import { EventHost } from '@the_dissidents/svelte-ui';
 import { join } from '@tauri-apps/api/path';
 import { PluginManager } from '$lib/plugin/Plugin.svelte';
+import { Memorized } from '$lib/config/Memorized.svelte';
+import { get } from 'svelte/store';
 
 function basename(p: string): string {
     return p.split(/[\\/]/).pop() ?? p;
@@ -25,6 +27,13 @@ export const SerializedWorkspace = z.object({
 export type SerializedWorkspace = z.infer<typeof SerializedWorkspace>;
 
 export type SerializedPluginConfig = SerializedWorkspace['plugins'][0];
+
+
+let defaultPath = Memorized.$('workspacePath', z.string(), "");
+Memorized.onInitialize(() => {
+    if (get(defaultPath))
+        void Workspace.open(get(defaultPath));
+});
 
 export class WorkspaceContext {
     #path = $state<string | null>(null);
@@ -46,9 +55,28 @@ export class WorkspaceContext {
     constructor() {}
 
     /**
+     * @returns `true` if the user chooses to continue
+     */
+    async askBeforeClose() {
+        await Workspace.config.save();
+
+        const dirty = Workspace.documents.filter((x) => x.dirty && x !== Workspace.config);
+        if (dirty.length == 0) return true;
+        if (!await dialog.confirm(
+            `未保存以下文档：${dirty.map((x) => x.name).join('，')}\n\n是否确认退出？`)
+        ) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Open a folder that may or may not contain a workspace. If it contains a workspace, the current one is overridden.
      */
     async open(path: string) {
+        if (!await this.askBeforeClose())
+            return false;
+
         this.#path = path;
         this.#name = basename(path);
         this.#assetPath = null;
@@ -82,7 +110,9 @@ export class WorkspaceContext {
         }
 
         console.log('opened workspace at', path);
+        defaultPath.set(path);
         this.onWorkspaceChanged.dispatch();
+        return true;
     }
 
     get path() { return this.#path; }

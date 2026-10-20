@@ -18,7 +18,8 @@
     "ast": "AST",
     "html": "HTML",
     "workspace": "Workspace",
-    "workspace-config": "workspace configuration"
+    "workspace-config": "workspace configuration",
+    "plugins": "Plugins"
   },
   "main": {
     "sync-scrolling": "Automatic synchronized scrolling",
@@ -148,6 +149,22 @@
       "prerendered-failed": "Prerendered {success} image[s], {failed} failed",
       "warning-not-uploaded": "warning: {count} local image[s] not uploaded",
       "copied-weixin": "successfully copied for Weixin"
+    },
+    "account": "account",
+    "proxy-field": "rerouter",
+    "proxy": {
+      "add": "add",
+      "authentication": "authentication",
+      "basic-auth": "basic",
+      "delete": "delete",
+      "delete-confirmation": "delete rerouter proxy preset?",
+      "modify": "modify",
+      "name": "preset name",
+      "no-auth": "none",
+      "no-proxy": "none",
+      "password": "password",
+      "url": "URL",
+      "username": "username"
     }
   },
   "account": {
@@ -171,11 +188,23 @@
     "no-workspace-opened": "no workspace opened",
     "open-folder": "open folder...",
     "untitled": "(untitled)",
-    "workspace": "workspace"
+    "workspace": "workspace",
+    "editing-temporary-library-file": "Editing temporary library file that has not been saved into the workspace",
+    "editing-temporary-stylesheet": "Editing temporary stylesheet that has not been saved into the workspace",
+    "open-new": "open new workspace",
+    "save": "save workspace",
+    "settings": "workspace settings"
   },
   "wkspconfig": {
     "asset-folder": "asset folder",
     "location": "location",
     "name": "name"
+  },
+  "plugin": {
+    "add": "Add plugin",
+    "install": "install...",
+    "no-config": "this plugin does not provide configuration",
+    "no-other-plugins-installed": "no other installed plugins available",
+    "unknown": "<unknown>"
   }
 }

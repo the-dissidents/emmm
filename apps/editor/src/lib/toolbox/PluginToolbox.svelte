@@ -104,7 +104,7 @@
       {/if}
     {:else}
       <ConfigRow name="">
-        <span class="note">此插件没有提供选项</span>
+        <span class="note">{$_('plugin.no-config')}</span>
       </ConfigRow>
     {/each}
   </ConfigTable>
@@ -124,7 +124,7 @@
         action: () => Workspace.plugins.loadInstalled(id)
       })) : [
         {
-          text: '没有更多可用的插件',
+          text: $_('plugin.no-other-plugins-installed'),
           enabled: false,
         }
       ]),
@@ -132,7 +132,7 @@
         item: 'Separator'
       },
       {
-        text: '安装…',
+        text: $_('plugin.install'),
         action: async () => {
           const path = await dialog.open({
             filters: [ { name: 'emmm plugin', extensions: ['js'] } ]
@@ -146,7 +146,7 @@
     ]
   })).popup();
 }} class='veryimportant'>
-  添加插件
+  {$_('plugin.add')}
 </button>
 
 <style lang="scss">

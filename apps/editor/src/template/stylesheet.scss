@@ -53,6 +53,7 @@ body {
   line-height: 1.4;
   letter-spacing: 0px;
   font-synthesis: none;
+  font-size: 15px;
 }
 
 section.article-container {
@@ -73,12 +74,12 @@ section.article-container {
 }
 
 section.article-body {
-  width: 92%;
+  width: 95%;
   position: static;
   box-sizing: border-box;
   text-align: justify;
-  font-size: 14px;
   line-height: 2;
+  font-size: 15px;
 }
 
 span.wide {
@@ -296,14 +297,14 @@ aside:is(.ttr, .the-end) {
 /* blocks */
 
 .detail {
-  font-size: 13px;
+  font-size: 0.95rem;
   text-align: right;
   line-height: 1.7;
   color: param(commentary-color);
 }
 
 .metadata {
-  font-size: 13px;
+  font-size: 0.9rem;
   line-height: 1.7;
 }
 
@@ -583,26 +584,19 @@ td {
 /* gallery (carousel) */
 
 ul.gallery {
-  display: flex;
-  gap: 4vw;
+  display: block;
+  list-style: none;
   padding: 0;
-  /* border: 1px solid; */
-  overflow-x: scroll;
-  scroll-snap-type: x mandatory;
 
   > li {
-    list-style-type: none;
-    max-width: 100%;
-    box-sizing: border-box;
-    flex: 0 0 100%;
-    /* border: 1px solid; */
-    scroll-snap-align: center;
-    overflow-y: scroll;
-    /* max-height: 60vh; */
+    max-height: none;
+    margin-bottom: 2em;
+    padding-bottom: 1em;
+    border-bottom: 2px dotted gray;
+    overflow: hidden;
 
-    > :first-child {
-      padding-top: 0;
-      margin-top: 0;
+    &:last-child {
+      border-bottom: none;
     }
   }
 }
@@ -618,6 +612,7 @@ ul.gallery {
   /* font-family: Arial, '黑体-简'; */
   margin-bottom: 1lh;
   font-weight: normal;
+  font-size: 14px;
 
   * {
     letter-spacing: 0 !important;
@@ -725,6 +720,8 @@ ul.gallery {
   width: 100%;
   overflow-x: scroll;
   margin-bottom: 1lh;
+
+  font-size: 12px;
 }
 
 .overall {

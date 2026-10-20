@@ -37,13 +37,6 @@
   if (Workspace.documents.length === 0)
     Workspace.newDocument();
 
-  let defaultPath = Memorized.$('workspacePath', z.string(), "");
-  Memorized.onInitialize(() => {
-    if ($defaultPath) {
-      Workspace.open($defaultPath);
-    }
-  });
-
   let left = $state<HTMLElement>(),
       middle = $state<HTMLElement>(),
       right = $state<HTMLElement>(),
@@ -173,7 +166,7 @@
                 updateCursorPosition(doc.editor);
               }}
               banner={doc instanceof LibDocument && doc.temporary
-                ? "您正在修改没有保存到工作空间中的临时库文件"
+                ? $_('workspace.editing-temporary-library-file')
                 : undefined}
               onChange={() => doc.dirty = true}
               onScroll={(_, view) => {
@@ -201,7 +194,7 @@
           ]}>
             <Editor bind:text={doc.source}
               bind:this={doc.editor}
-              banner={doc.temporary ? "您正在修改没有保存到工作空间中的临时样式表" : undefined}
+              banner={doc.temporary ? $_('workspace.editing-temporary-stylesheet') : undefined}
               onFocus={() => {
                 Workspace.setActiveDocument(doc.id);
                 updateCursorPosition(doc.editor);
