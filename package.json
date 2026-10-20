@@ -20,8 +20,5 @@
         "eslint": "^10.11.0",
         "prettier": "^3.9.9",
         "prettier-plugin-svelte": "^4.1.1"
-    },
-    "dependencies": {
-        "@the_dissidents/svelte-ui": "link:../svelte-ui"
     }
 }

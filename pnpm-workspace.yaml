@@ -13,6 +13,3 @@ minimumReleaseAge: 1440
 
 minimumReleaseAgeExclude:
   - '@the_dissidents/*'
-
-overrides:
-  '@the_dissidents/svelte-ui': link:../svelte-ui
