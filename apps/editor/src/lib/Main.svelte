@@ -6,11 +6,9 @@
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
   import { _ } from 'svelte-i18n';
   import * as dialog from '@tauri-apps/plugin-dialog';
-  import * as z from 'zod/v4-mini';
 
   import { Debug } from './Debug';
   import { Interface } from './Interface.svelte';
-  import { Memorized } from './config/Memorized.svelte';
   import { DebouncedTask } from './details/DebouncedTask';
 
   import Editor from './editor/Editor.svelte';

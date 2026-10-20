@@ -1,5 +1,5 @@
 import * as emmm from '@the_dissidents/libemmm';
-import * as sass from 'sass';
+import type * as sass from 'sass';
 import { CustomHTMLRenderer } from './emmm/Custom';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { getSassVariablesFromColors, type ArticleColors } from './ColorTheme';
@@ -24,7 +24,9 @@ async function transformAsset(url: string) {
 }
 
 export async function compileStyles(style: DocumentStyle): Promise<string | sass.Exception> {
-    const vars = getSassVariablesFromColors(style.colors);
+    const sass = await import('sass');
+
+    const vars = await getSassVariablesFromColors(style.colors);
     const backgroundImage = style.backgroundImage
         ? new sass.SassString(
             (await transformAsset(style.backgroundImage))?.transformed

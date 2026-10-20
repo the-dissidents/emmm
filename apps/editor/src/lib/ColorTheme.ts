@@ -1,6 +1,6 @@
 import * as Color from 'colorjs.io/fn';
 import * as z from "zod/v4-mini";
-import * as sass from "sass";
+import type * as sass from "sass";
 
 export const ZColor = z.codec(z.string(), z.custom<Color.PlainColorObject>(),
 {
@@ -25,9 +25,11 @@ export const ZArticleColors = z.object({
 
 export type ArticleColors = z.infer<typeof ZArticleColors>;
 
-export function getSassVariablesFromColors(
+export async function getSassVariablesFromColors(
     t: ArticleColors,
-): Map<string, sass.SassColor> {
+): Promise<Map<string, sass.SassColor>> {
+    const sass = await import('sass');
+
     function f(x: Color.PlainColorObject) {
         const { alpha, coords: [red, green, blue] } = Color.to(x, 'srgb', { inGamut: true });
         return new sass.SassColor({ space: 'srgb', red, green, blue, alpha });
