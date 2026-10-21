@@ -12,6 +12,7 @@ This is the monorepo for `emmm`, a better markup language for typesetting articl
 - `packages/minimal-jsx-runtime` - a private little wrapper for using JSX the above projects
 - `packages/dom-css-inliner` - a CSS inliner based on DOM and CSSOM APIs
 - `packages/emmui-plugin-sdk` - type definitions for `emmui` plugin development; auto-generated
+- `packages/weixin-dark-mode` - a custom port of WeChat's official [`mp-darkmode`](https://github.com/wechatjs/mp-darkmode) package, emulating the platform's dark mode transformation logic
 
 Plugins for the editor are structured as individual packages in `plugins/` (see more below).
 
