@@ -32,7 +32,8 @@
     "column-col": "列",
     "column-message": "信息",
     "cursor-position": "第 {l} 行，第 {c} 列",
-    "parsed-in": "用时 {ms}ms 完成解析"
+    "parsed-in": "用时 {ms}ms 完成解析",
+    "dark-mode-preview": "预览黑暗模式"
   },
   "file": {
     "new": "新建文档",

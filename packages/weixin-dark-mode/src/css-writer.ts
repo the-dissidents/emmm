@@ -5,6 +5,8 @@ export class CssWriter {
     private firstPageStyle = '';
     private otherPageStyle = '';
     private readonly watchers = new Map<string, () => void>();
+    private readonly styleElements: HTMLStyleElement[] = [];
+    private enabled = true;
 
     isFinish = false;
 
@@ -32,6 +34,17 @@ export class CssWriter {
         this[isFirstPageStyle ? 'firstPageStyle' : 'otherPageStyle'] += css;
     }
 
+    get hasStyles(): boolean {
+        return this.styleElements.length > 0;
+    }
+
+    setEnabled(enabled: boolean): void {
+        this.enabled = enabled;
+        this.styleElements.forEach((style) => {
+            style.media = enabled ? '' : 'not all';
+        });
+    }
+
     writeStyle(isFirstPageStyle = false): void {
         if (!isFirstPageStyle && this.isDarkmode()) {
             this.isFinish = true;
@@ -55,10 +68,14 @@ export class CssWriter {
         }
 
         if (style) {
-            this.document.head.insertAdjacentHTML(
-                'beforeend',
-                `<style type="text/css">${style}</style>`
-            );
+            const element = this.document.createElement('style');
+            element.setAttribute('type', 'text/css');
+            element.textContent = style;
+            if (!this.enabled) {
+                element.media = 'not all';
+            }
+            this.document.head.appendChild(element);
+            this.styleElements.push(element);
         }
     }
 

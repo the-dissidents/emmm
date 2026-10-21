@@ -154,6 +154,63 @@ describe('weixin dark mode', () => {
         expect(getStyles(window)).toBe('');
     });
 
+    test('manually switches between dark and light previews', () => {
+        const window = createWindow(
+            '<div style="color: rgb(0, 0, 0)">text</div>'
+        );
+        const darkMode = createDarkMode(window);
+
+        darkMode.run(findAll(window), {
+            mode: 'dark',
+            needJudgeFirstPage: false,
+        });
+
+        const style = window.document.head.querySelector(
+            'style'
+        ) as HTMLStyleElement;
+
+        expect(
+            window.document.documentElement.classList.contains(
+                'data_color_scheme_dark'
+            )
+        ).toBe(true);
+        expect(style.media).toBe('');
+
+        darkMode.setMode('light');
+        expect(
+            window.document.documentElement.classList.contains(
+                'data_color_scheme_dark'
+            )
+        ).toBe(false);
+        expect(style.media).toBe('not all');
+
+        darkMode.setMode('dark');
+        expect(style.media).toBe('');
+    });
+
+    test('can switch a light preview to dark', () => {
+        const window = createWindow(
+            '<div style="color: rgb(0, 0, 0)">text</div>'
+        );
+        const darkMode = createDarkMode(window);
+
+        darkMode.run(findAll(window), {
+            mode: 'light',
+            needJudgeFirstPage: false,
+        });
+
+        expect(getStyles(window)).toBe('');
+
+        darkMode.setMode('dark');
+
+        expect(getStyles(window)).toContain('.js_darkmode__0{');
+        expect(
+            window.document.documentElement.classList.contains(
+                'data_color_scheme_dark'
+            )
+        ).toBe(true);
+    });
+
     test('does not convert in light mode', () => {
         const window = createWindow(
             '<div id="target" style="color: rgb(0, 0, 0)">light</div>'

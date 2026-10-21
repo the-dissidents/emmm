@@ -77,8 +77,25 @@ The following options match `mp-darkmode`:
 
 ## Extensions
 
-These options are additions in this package. They are not part of the original
-`mp-darkmode` library.
+**These options and methods are additions in this package. They are not part of
+the original `mp-darkmode` library.**
+
+### `darkMode.setMode(mode)`
+
+Manually switches the active preview between `'dark'` and `'light'` without
+recreating the instance or the iframe:
+
+```typescript
+darkMode.setMode('light');
+darkMode.setMode('dark');
+```
+
+After an initial dark conversion, this toggles the generated dark styles on and
+off. If no dark styles have been generated yet, switching to dark triggers the
+conversion using the nodes from the last `run()` call.
+
+This method is an extension added for editor previews. It is not part of the
+original `mp-darkmode` API.
 
 ### `normalizeModernColors`
 
@@ -95,5 +112,5 @@ darkMode.run(frame.contentDocument!.body.querySelectorAll('*'), {
 });
 ```
 
-**This is a compatibility workaround added by this package, not behavior from the
-original library.** It is disabled by default.
+This is a compatibility workaround added by this package, not behavior from the
+original library. It is disabled by default.

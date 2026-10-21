@@ -1,10 +1,11 @@
 import { BackgroundNodeStack } from './background-stack.js';
 import {
     DarkModeConfig,
+    type ColorMode,
     type DarkModeOptions,
     type DarkModeWindow,
 } from './config.js';
-import { CLASS_PREFIX, MEDIA_QUERY } from './constants.js';
+import { CLASS_PREFIX, HTML_CLASS, MEDIA_QUERY } from './constants.js';
 import { Converter } from './converter.js';
 import { CssWriter } from './css-writer.js';
 import { DomUtils, type ElementCollection } from './dom-utils.js';
@@ -30,6 +31,7 @@ export class DarkMode {
     private readonly backgroundStack: BackgroundNodeStack;
     private readonly textQueue: TextNodeQueue;
     private readonly pageHeight: number;
+    private lastNodes: Element[] = [];
 
     private mql: MediaQueryList | null = null;
 
@@ -75,6 +77,7 @@ export class DarkMode {
 
     run(nodes: ElementCollection, options?: DarkModeOptions): void {
         this.init(options);
+        this.lastNodes = Array.from(nodes);
         this.domUtils.set(nodes);
         this.switchToDarkMode(this.mql, {
             force: true,
@@ -97,6 +100,23 @@ export class DarkMode {
             this.mql = this.window.matchMedia(MEDIA_QUERY);
             this.mql.addListener(this.handleMediaChange);
         }
+    }
+
+    setMode(mode: ColorMode): void {
+        const isDark = mode === 'dark';
+        this.config.mode = mode;
+        this.document.documentElement.classList.toggle(HTML_CLASS, isDark);
+        this.css.setEnabled(isDark);
+
+        if (!isDark || this.css.hasStyles || this.lastNodes.length === 0) {
+            return;
+        }
+
+        this.domUtils.set(this.lastNodes);
+        this.switchToDarkMode(this.mql, {
+            force: true,
+            type: 'dom',
+        });
     }
 
     convertBg(nodes: ElementCollection): void {

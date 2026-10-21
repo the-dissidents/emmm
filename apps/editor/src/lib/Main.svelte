@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as emmm from '@the_dissidents/libemmm';
-  import { TabView, TabPage, Resizer, ListView } from '@the_dissidents/svelte-ui';
+  import { TabView, TabPage, Resizer, ListView, ButtonStrip, StripCheckbox } from '@the_dissidents/svelte-ui';
   import { CircleXIcon, InfoIcon, TriangleAlertIcon } from '@lucide/svelte';
   import { sass as sassLang } from '@codemirror/lang-sass';
   import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
@@ -225,10 +225,17 @@
   <TabView>
     <TabPage id="Preview" header={$_('tab.preview')}>
       <div class="vlayout vfill">
-        <label style="margin-bottom: 5px;">
-          <input type='checkbox' class="button" bind:checked={$syncScrolling}>
-          {$_('main.sync-scrolling')}
-        </label>
+        <ButtonStrip style="margin-bottom: 5px;">
+          <StripCheckbox bind:value={$syncScrolling}>
+            {$_('main.sync-scrolling')}
+          </StripCheckbox>
+          <StripCheckbox bind:value={
+            () => Interface.previewIsDarkMode,
+            (v) => Interface.setPreviewDarkMode?.(v)
+          }>
+            {$_('main.dark-mode-preview')}
+          </StripCheckbox>
+        </ButtonStrip>
         <iframe bind:this={Interface.frame}
           class={{inverted: $inverted, flexgrow: true}} title="preview"
           sandbox="allow-same-origin allow-scripts">

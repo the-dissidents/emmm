@@ -94,9 +94,21 @@ const mojikitOpts: Options = {
     weightDecay: 0.5,
 };
 
+let isDark = $state(false);
+let previewIsDark = $state(false);
+let setPreviewDarkMode: ((dark: boolean) => void) | undefined;
+
+const mql = window
+  .matchMedia('(prefers-color-scheme: dark)');
+isDark = mql.matches;
+mql.addEventListener('change', event => isDark = event.matches);
+
 export const Interface = $state({
     get status() { return status; },
     get progress() { return progress; },
+
+    get previewIsDarkMode() { return previewIsDark; },
+    get setPreviewDarkMode() { return setPreviewDarkMode; },
 
     /** @deprecated */
     stylesheet: Memorized.$('stylesheet', z.string(), defaultStyles),
@@ -215,9 +227,15 @@ export const Interface = $state({
 
                 const dm = new DarkMode(window);
                 dm.run(doc.querySelectorAll('*'), {
-                    // mode: 'dark',
+                    mode: isDark ? 'dark' : 'light',
                     normalizeModernColors: true
                 });
+                previewIsDark = isDark;
+
+                setPreviewDarkMode = (dark) => {
+                    dm.setMode(dark ? 'dark' : 'light');
+                    previewIsDark = dark;
+                };
             }, { once: true });
 
         const doc = this.frame.contentDocument!;
