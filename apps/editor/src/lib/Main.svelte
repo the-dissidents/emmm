@@ -164,8 +164,13 @@
                 updateCursorPosition(doc.editor);
               }}
               banner={doc instanceof LibDocument && doc.temporary
-                ? $_('workspace.editing-temporary-library-file')
-                : undefined}
+                  ? $_('workspace.editing-temporary-library-file')
+                : doc.externallyModified == 'data'
+                  ? $_('workspace.externally-modified')
+                : doc.externallyModified == 'move'
+                  ? $_('workspace.externally-moved')
+                : undefined
+              }
               onChange={() => doc.dirty = true}
               onScroll={(_, view) => {
                 if (doc instanceof LibDocument) return;

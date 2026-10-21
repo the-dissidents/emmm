@@ -9,6 +9,11 @@
   import { CogIcon, FileImageIcon, FileTextIcon, FolderOpenIcon, LibraryBigIcon, PaletteIcon, SaveIcon } from "@lucide/svelte";
   import { Workspace } from "$lib/workspace/Workspace.svelte";
   import { _ } from 'svelte-i18n';
+  import { revealItemInDir } from "@tauri-apps/plugin-opener";
+  import { menu } from "@tauri-apps/api";
+  import { platform } from "@tauri-apps/plugin-os";
+  import { EditableDocument } from "$lib/workspace/Document.svelte";
+  import { Debug } from "$lib/Debug";
 
   let showHidden = Memorized.$('showHidden', z.boolean(), false);
   const assetExts = /\.(jpg|jpeg|png|gif|webp|svg|tiff)$/;
@@ -29,17 +34,40 @@
   const me = {};
   let unwatch: (() => void) | undefined;
   Workspace.onWorkspaceChanged.bind(me, async () => {
-    if (unwatch) unwatch();
+    unwatch?.();
     if (!Workspace.path) return;
 
-    unwatch = await fs.watch(Workspace.path, (e) => {
+    unwatch = await fs.watch(Workspace.path, async (e) => {
       if (typeof e.type !== 'object') return;
-      if ('create' in e.type || 'delete' in e.type) {
+
+      const docs = Workspace.documents.filter((x) => x instanceof EditableDocument
+          && x.path && e.paths.includes(x.path)) as EditableDocument[];
+      let modified = false;
+
+      if ('create' in e.type || 'remove' in e.type) {
         // update
         treeView?.reload();
-      } else if ('modify' in e.type && e.type.modify.kind == 'rename') {
-        // update
-        treeView?.reload();
+        if ('remove' in e.type)
+          modified = true;
+      } else if ('modify' in e.type) {
+        const kind = e.type.modify.kind;
+        if (kind == 'rename') {
+          // update
+          treeView?.reload();
+        }
+        if (kind == 'rename' || kind == 'data')
+          modified = true;
+      }
+      if (modified && docs.length > 0) {
+        for (const doc of docs) {
+          Debug.assert(!!doc.path);
+          if (
+            !await fs.exists(doc.path) || !(await fs.stat(doc.path)).isFile
+          ) doc.externallyModified = 'move';
+          else doc.externallyModified = 'data';
+          doc.dirty = true;
+        }
+        console.log(e);
       }
     }, { delayMs: 500, recursive: true });
   });
@@ -64,6 +92,39 @@
     });
     if (!value) return;
     await Workspace.open(value);
+  }
+
+  function editDocument(data: Leaf, key: string) {
+    switch (data.type) {
+      case 'document':
+        Workspace.openDocumentPath(key);
+        break;
+      case 'library':
+        Workspace.openDocument(Workspace.library);
+        break;
+      case 'stylesheet':
+        Workspace.openDocument(Workspace.stylesheet);
+        break;
+      case 'config':
+        Workspace.openDocument(Workspace.config);
+        break;
+    }
+  }
+
+  async function contextMenu(data: Leaf, key: string) {
+    (await menu.Menu.new({ items: [
+      {
+        text: $_('workspace.file.edit'),
+        action: () => editDocument(data, key)
+      }, {
+        item: 'Separator'
+      }, {
+        text: platform() == 'macos'
+          ? $_('workspace.file.reveal-in-finder')
+          : $_('workspace.file.reveal-in-explorer'),
+        action: () => revealItemInDir(key)
+      }
+    ] })).popup();
   }
 </script>
 
@@ -125,21 +186,12 @@
     bind:selected={selectedId}
   >
     {#snippet leaf({data, key})}
-      <TreeButtonItem onclick={() => {
-        switch (data.type) {
-          case 'document':
-            Workspace.openDocumentPath(key);
-            break;
-          case 'library':
-            Workspace.openDocument(Workspace.library);
-            break;
-          case 'stylesheet':
-            Workspace.openDocument(Workspace.stylesheet);
-            break;
-          case 'config':
-            Workspace.openDocument(Workspace.config);
-            break;
-        }
+      <TreeButtonItem onmouseup={(e) => {
+        if (e.button == 0)
+          editDocument(data, key);
+      }} oncontextmenu={(e) => {
+        e.preventDefault();
+        void contextMenu(data, key);
       }}>
         <span class="icon">
           {#if data.type == 'document'}

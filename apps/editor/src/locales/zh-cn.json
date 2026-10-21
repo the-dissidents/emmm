@@ -193,7 +193,14 @@
     "save": "保存工作空间",
     "open-new": "打开新的工作空间",
     "editing-temporary-library-file": "您正在修改没有保存到工作空间中的临时库文件",
-    "editing-temporary-stylesheet": "您正在修改没有保存到工作空间中的临时样式表"
+    "editing-temporary-stylesheet": "您正在修改没有保存到工作空间中的临时样式表",
+    "file": {
+      "edit": "编辑",
+      "reveal-in-finder": "在 Finder 中显示",
+      "reveal-in-explorer": "在文件管理器中显示"
+    },
+    "externally-modified": "文件被外部更改，如果现在保存则会取消这些更改",
+    "externally-moved": "文件在外部被重命名、移动或删除，如果现在保存则会重新创建原文件"
   },
   "wkspconfig": {
     "location": "位置",

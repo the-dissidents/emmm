@@ -7,7 +7,7 @@ import { get } from 'svelte/store';
 import { basename, join } from '@tauri-apps/api/path';
 import * as dialog from '@tauri-apps/plugin-dialog';
 import * as fs from '@tauri-apps/plugin-fs';
-import type { SerializedWorkspace, WorkspaceContext } from './Workspace.svelte';
+import { Workspace, type SerializedWorkspace, type WorkspaceContext } from './Workspace.svelte';
 import { defaultLibrary, defaultStyles } from '$lib/Templates';
 import { Debug } from '$lib/Debug';
 import { CustomConfig } from '$lib/emmm/Custom';
@@ -60,6 +60,7 @@ export abstract class EditableDocument extends Document {
     source = $state('');
     diagnostics = $state<EmmmDiagnostic[]>([]);
     editor = $state<Editor>();
+    externallyModified: false | 'data' | 'move' = $state(false);
 
     protected intervalId: ReturnType<typeof setInterval>;
 
@@ -103,6 +104,7 @@ export abstract class EditableDocument extends Document {
         if (!this.path) return false;
         await fs.writeTextFile(this.path, this.source);
         this.dirty = false;
+        this.externallyModified = false;
         return true;
     }
 }
@@ -122,22 +124,18 @@ export abstract class MovableDocument extends EditableDocument {
 
     override async save(): Promise<boolean> {
         if (!this.path) return this.saveAs();
-        await fs.writeTextFile(this.path, this.source);
-        this.dirty = false;
-        return true;
+        return await super.save();
     }
 
     async saveAs(): Promise<boolean> {
         const path = await dialog.save({
             filters: this.filter,
-            defaultPath: this.path ?? undefined
+            defaultPath: this.path ?? Workspace.path ?? undefined
         });
         if (!path) return false;
         this.path = path;
         this.name = await basename(path);
-        await fs.writeTextFile(path, this.source);
-        this.dirty = false;
-        return true;
+        return await this.save();
     }
 }
 
