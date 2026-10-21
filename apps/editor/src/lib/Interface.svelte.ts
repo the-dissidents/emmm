@@ -3,6 +3,7 @@ import { ZArticleColors } from "./ColorTheme";
 import * as Color from "colorjs.io/fn";
 
 import * as emmm from '@the_dissidents/libemmm';
+import { DarkMode } from '@the_dissidents/weixin-dark-mode';
 import { Memorized } from "./config/Memorized.svelte";
 
 import * as z from "zod/v4-mini";
@@ -15,6 +16,7 @@ import { Workspace } from "./workspace/Workspace.svelte";
 import { EventHost } from "@the_dissidents/svelte-ui";
 import { processDocument, type Options } from "@the_dissidents/mojikit";
 import { EmmmDocument } from "./workspace/Document.svelte";
+import { inlineCss } from "@the_dissidents/dom-css-inliner";
 
 let status = writable<string>('ok');
 let progress = writable<number | undefined>();
@@ -177,7 +179,9 @@ export const Interface = $state({
         }
     },
 
-    async render() {
+    async render(opt?: {
+        restoreScroll?: { x: number, y: number }
+    }) {
         if (!(Workspace.active instanceof EmmmDocument)) return;
         const pd = Workspace.active?.parseData?.data;
         if (!pd || !this.frame) return;
@@ -195,13 +199,25 @@ export const Interface = $state({
         this.renderedHTML = result.doc.documentElement.outerHTML;
         this.sourceMap = result.map;
 
-        const sx = this.frame.contentWindow!.scrollX;
-        const sy = this.frame.contentWindow!.scrollY;
+        const window = this.frame.contentWindow!;
+        const sx = opt?.restoreScroll?.x ?? window.scrollX;
+        const sy = opt?.restoreScroll?.y ?? window.scrollY;
         this.frame.srcdoc = this.renderedHTML;
+
         this.frame.addEventListener(
             'load', () => {
-                this.frame!.contentWindow!.scrollTo(sx, sy);
+                const doc = this.frame!.contentDocument!;
+                const window = this.frame!.contentWindow!;
+
+                window.scrollTo(sx, sy);
                 this.onFrameLoaded.dispatch();
+                inlineCss(doc, { removeStyleTags: true, removeClasses: true });
+
+                const dm = new DarkMode(window);
+                dm.run(doc.querySelectorAll('*'), {
+                    // mode: 'dark',
+                    normalizeModernColors: true
+                });
             }, { once: true });
 
         const doc = this.frame.contentDocument!;

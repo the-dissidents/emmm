@@ -114,8 +114,28 @@ export async function prerender(win: Window, doc: Document, progress?: ProgressR
 }
 
 export async function postprocess(
-    doc: Document, win: Window,
+    html: string
 ) {
+    const frame = Interface.frame;
+    Debug.assert(!!frame);
+
+    const restoreScroll = {
+        x: frame.contentWindow?.scrollX ?? 0,
+        y: frame.contentWindow?.scrollY ?? 0
+    };
+
+    frame.srcdoc = html;
+    const doc = frame.contentDocument!;
+    const win = frame.contentWindow!;
+
+    await new Promise<void>((r) => {
+        frame.addEventListener(
+            'load', () => {
+                r();
+            }, { once: true }
+        );
+    });
+
     let befores = new Map<string, string>();
     let afters = new Map<string, string>();
     // prepare ::before/::after data
@@ -125,7 +145,7 @@ export async function postprocess(
         getPseudo('::after', afters);
 
         function getPseudo(c: string, s: Map<string, string>) {
-            let content = win!
+            let content = win
                 .getComputedStyle(elem, c)
                 .getPropertyValue('content');
             if (content && content !== 'none' && content !== "normal") {
@@ -216,5 +236,11 @@ export async function postprocess(
             console.warn('unhandled element type:', elem.tagName);
         }
     });
-    return { result: copy.body.innerHTML, notCached };
+
+    const ret = { result: copy.body.innerHTML, notCached };
+
+    // restore frame
+    await Interface.render({ restoreScroll });
+
+    return ret;
 }

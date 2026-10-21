@@ -190,6 +190,9 @@ importers:
       '@the_dissidents/svelte-ui':
         specifier: ^0.0.28
         version: 0.0.28(colorjs.io@0.6.1)(svelte@5.57.1)
+      '@the_dissidents/weixin-dark-mode':
+        specifier: workspace:*
+        version: link:../../packages/weixin-dark-mode
       '@types/wcwidth':
         specifier: ^1.0.2
         version: 1.0.2
@@ -306,6 +309,40 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  packages/weixin-dark-mode:
+    dependencies:
+      color:
+        specifier: ^3.1.2
+        version: 3.2.1
+      color-blend:
+        specifier: ^4.0.0
+        version: 4.0.0
+      color-name:
+        specifier: ^1.1.4
+        version: 1.1.4
+      colorjs.io:
+        specifier: ^0.6.1
+        version: 0.6.1
+    devDependencies:
+      '@types/color':
+        specifier: ^4.2.1
+        version: 4.2.1
+      '@types/color-name':
+        specifier: ^2.0.0
+        version: 2.0.0
+      happy-dom:
+        specifier: ^20.14.5
+        version: 20.14.5
+      tsdown:
+        specifier: ^0.23.0
+        version: 0.23.1(typescript@5.9.3)(unrun@0.2.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^5.0.3
+        version: 5.0.3(@vitest/coverage-istanbul@5.0.3)(@vitest/ui@5.0.3)(happy-dom@20.14.5)(vite@8.3.1(esbuild@0.28.2)(jiti@2.6.1)(sass-embedded@1.105.1)(sass@1.105.1))
 
   plugins/get-ip:
     devDependencies:
@@ -1971,6 +2008,18 @@ packages:
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
+  '@types/color-convert@2.0.4':
+    resolution: {integrity: sha512-Ub1MmDdyZ7mX//g25uBAoH/mWGd9swVbt8BseymnaE18SU4po/PjmCrHxqIIRjBo3hV/vh1KGr0eMxUhp+t+dQ==}
+
+  '@types/color-name@1.1.5':
+    resolution: {integrity: sha512-j2K5UJqGTxeesj6oQuGpMgifpT5k9HprgQd8D1Y0lOFqKHl3PJu5GMeS4Y5EgjS55AE6OQxf8mPED9uaGbf4Cg==}
+
+  '@types/color-name@2.0.0':
+    resolution: {integrity: sha512-63mTjolMJv75upGaUbT6J3lRDWl6pETPQsaWni9w3dMArhNBpgtHkX8ISb9zLV3YYLPA/SMk8ZGALa3k9WY/aQ==}
+
+  '@types/color@4.2.1':
+    resolution: {integrity: sha512-ResWeDLy1vozIMbD6JLRKuNBbIcIlBkjTIxVHHd5Cqtm77T+ahH3BWE/PWv1OhFd1HAwcn8no4ig2uTaRXpYQQ==}
+
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
 
@@ -2300,6 +2349,25 @@ packages:
   codepage@1.15.0:
     resolution: {integrity: sha512-3g6NUTPd/YtuuGrhMnOMRjFc+LJw/bnMp3+0r/Wcz3IXUuCosKRJvMphm5+Q+bvTVGcJJuRvVLuYba+WojaFaA==}
     engines: {node: '>=0.8'}
+
+  color-blend@4.0.0:
+    resolution: {integrity: sha512-fYODTHhI/NG+B5GnzvuL3kiFrK/UnkUezWFTgEPBTY5V+kpyfAn95Vn9sJeeCX6omrCOdxnqCL3CvH+6sXtIbw==}
+    engines: {node: '>=10.0.0'}
+
+  color-convert@1.9.3:
+    resolution: {integrity: sha512-QfAUtd+vFdAtFQcC8CCyYt1fYWxSqAiK2cSD6zDB8N3cpsEBAvRxp9zOGg6G/SHHJYAT88/az/IuDGALsNVbGg==}
+
+  color-name@1.1.3:
+    resolution: {integrity: sha512-72fSenhMw2HZMTVHeCA9KCmpEIbzWiQsjN+BHcBbS9vr1mtt+vJjPdksIBNUmKAW8TFUDPJK5SUU3QhE9NEXDw==}
+
+  color-name@1.1.4:
+    resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
+
+  color-string@1.9.1:
+    resolution: {integrity: sha512-shrVawQFojnZv6xM40anx4CkoDP+fZsw/ZerEMsW/pyzsRbElpsL/DBVW7q3ExxwusdNXI3lXpuhEZkzs8p5Eg==}
+
+  color@3.2.1:
+    resolution: {integrity: sha512-aBl7dZI9ENN6fUGC7mWpMTPNHmWUSNan9tuWN6ahh5ZLNk9baLJOnSMlrQkHcrfFgz2/RigjUVAjdx36VcemKA==}
 
   colorjs.io@0.5.2:
     resolution: {integrity: sha512-twmVoizEW7ylZSN32OgKdXRmo1qg+wT5/6C3xu5b9QsWzSFAhHLn2xd8ro0diCsKfCj1RdaTP/nrcW+vAoQPIw==}
@@ -2889,6 +2957,9 @@ packages:
 
   iron-webcrypto@1.2.1:
     resolution: {integrity: sha512-feOM6FaSr6rEABp/eDfVseKyTMDt+KGpeB35SkVn9Tyn0CqvVsY3EwI0v5i8nMHyJnzCIQf7nsy3p41TPkJZhg==}
+
+  is-arrayish@0.3.4:
+    resolution: {integrity: sha512-m6UrgzFVUYawGBh1dUsWR5M2Clqic9RVXC/9f8ceNlv2IcO9j9J/z8UoCLPqtsPBFNzEpfR3xftohbfqDx8EQA==}
 
   is-docker@3.0.0:
     resolution: {integrity: sha512-eljcgEDlEns/7AXFosB5K/2nCM4P7FQPkGc/DWLy5rmFEWvZayGrik1d9/QIY5nJ4f9YsVvBkA6kJpHn9rISdQ==}
@@ -3676,6 +3747,9 @@ packages:
   shiki@4.4.3:
     resolution: {integrity: sha512-Mb/GvXPHBAXdgGIcnfU5L3ldpn1XcxrGkPHwqgRx17/I2XRfqlFKk2vGkHWINn1kdXvzJZeuO3is6I9KLPFm0g==}
     engines: {node: '>=20'}
+
+  simple-swizzle@0.2.4:
+    resolution: {integrity: sha512-nAu1WFPQSMNr2Zn9PGSZK9AGn4t/y97lEm+MXTtUDwfP0ksAIX4nO+6ruD9Jwut4C49SB1Ws+fbXsm/yScWOHw==}
 
   sirv@3.0.2:
     resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
@@ -5560,6 +5634,18 @@ snapshots:
       '@types/deep-eql': 4.0.2
       assertion-error: 2.0.1
 
+  '@types/color-convert@2.0.4':
+    dependencies:
+      '@types/color-name': 1.1.5
+
+  '@types/color-name@1.1.5': {}
+
+  '@types/color-name@2.0.0': {}
+
+  '@types/color@4.2.1':
+    dependencies:
+      '@types/color-convert': 2.0.4
+
   '@types/cookie@0.6.0': {}
 
   '@types/deep-eql@4.0.2': {}
@@ -5641,6 +5727,15 @@ snapshots:
       '@jridgewell/trace-mapping': 0.3.31
       '@vitest/istanbul-lib-coverage': 1.0.2
       obug: 2.2.1
+
+  '@vitest/mocker@5.0.3(vite@8.3.1(esbuild@0.28.2)(jiti@2.6.1)(sass-embedded@1.105.1)(sass@1.105.1))':
+    dependencies:
+      '@jridgewell/trace-mapping': 0.3.31
+      '@vitest/spy': 5.0.3
+      estree-walker: 3.0.3
+      magic-string: 1.3.1
+    optionalDependencies:
+      vite: 8.3.1(esbuild@0.28.2)(jiti@2.6.1)(sass-embedded@1.105.1)(sass@1.105.1)
 
   '@vitest/mocker@5.0.3(vite@8.3.1(esbuild@0.28.2)(jiti@2.6.1)(sass-embedded@1.99.0)(sass@1.102.0))':
     dependencies:
@@ -5926,6 +6021,26 @@ snapshots:
   clsx@2.1.1: {}
 
   codepage@1.15.0: {}
+
+  color-blend@4.0.0: {}
+
+  color-convert@1.9.3:
+    dependencies:
+      color-name: 1.1.3
+
+  color-name@1.1.3: {}
+
+  color-name@1.1.4: {}
+
+  color-string@1.9.1:
+    dependencies:
+      color-name: 1.1.4
+      simple-swizzle: 0.2.4
+
+  color@3.2.1:
+    dependencies:
+      color-convert: 1.9.3
+      color-string: 1.9.1
 
   colorjs.io@0.5.2:
     optional: true
@@ -6507,6 +6622,8 @@ snapshots:
       tslib: 2.8.1
 
   iron-webcrypto@1.2.1: {}
+
+  is-arrayish@0.3.4: {}
 
   is-docker@3.0.0: {}
 
@@ -7297,6 +7414,10 @@ snapshots:
       '@shikijs/vscode-textmate': 10.0.2
       '@types/hast': 3.0.5
 
+  simple-swizzle@0.2.4:
+    dependencies:
+      is-arrayish: 0.3.4
+
   sirv@3.0.2:
     dependencies:
       '@polka/url': 1.0.0-next.29
@@ -7645,6 +7766,20 @@ snapshots:
       sass: 1.105.1
       sass-embedded: 1.105.1
 
+  vite@8.3.1(esbuild@0.28.2)(jiti@2.6.1)(sass-embedded@1.105.1)(sass@1.105.1):
+    dependencies:
+      lightningcss: 1.33.0
+      picomatch: 4.0.7
+      postcss: 8.5.28
+      rolldown: 1.2.12
+      tinyglobby: 0.2.17
+    optionalDependencies:
+      esbuild: 0.28.2
+      fsevents: 2.3.3
+      jiti: 2.6.1
+      sass: 1.105.1
+      sass-embedded: 1.105.1
+
   vite@8.3.1(esbuild@0.28.2)(jiti@2.6.1)(sass-embedded@1.99.0)(sass@1.102.0):
     dependencies:
       lightningcss: 1.33.0
@@ -7662,6 +7797,29 @@ snapshots:
   vitefu@1.1.3(vite@8.3.1(@types/node@20.19.23)(esbuild@0.28.2)(jiti@2.6.1)(sass-embedded@1.105.1)(sass@1.105.1)):
     optionalDependencies:
       vite: 8.3.1(@types/node@20.19.23)(esbuild@0.28.2)(jiti@2.6.1)(sass-embedded@1.105.1)(sass@1.105.1)
+
+  vitest@5.0.3(@vitest/coverage-istanbul@5.0.3)(@vitest/ui@5.0.3)(happy-dom@20.14.5)(vite@8.3.1(esbuild@0.28.2)(jiti@2.6.1)(sass-embedded@1.105.1)(sass@1.105.1)):
+    dependencies:
+      '@types/chai': 5.2.3
+      '@vitest/mocker': 5.0.3(vite@8.3.1(esbuild@0.28.2)(jiti@2.6.1)(sass-embedded@1.105.1)(sass@1.105.1))
+      chai: 6.3.0
+      es-module-lexer: 2.3.2
+      expect-type: 1.4.0
+      magic-string: 1.3.1
+      obug: 2.2.1
+      picomatch: 4.0.7
+      std-env: 4.3.0
+      tinybench: 6.2.0
+      tinyexec: 1.3.1
+      tinyglobby: 0.2.17
+      vite: 8.3.1(esbuild@0.28.2)(jiti@2.6.1)(sass-embedded@1.105.1)(sass@1.105.1)
+      why-is-node-running: 3.2.1
+    optionalDependencies:
+      '@vitest/coverage-istanbul': 5.0.3(vitest@5.0.3)
+      '@vitest/ui': 5.0.3(vitest@5.0.3)
+      happy-dom: 20.14.5
+    transitivePeerDependencies:
+      - msw
 
   vitest@5.0.3(@vitest/coverage-istanbul@5.0.3)(@vitest/ui@5.0.3)(happy-dom@20.14.5)(vite@8.3.1(esbuild@0.28.2)(jiti@2.6.1)(sass-embedded@1.99.0)(sass@1.102.0)):
     dependencies:

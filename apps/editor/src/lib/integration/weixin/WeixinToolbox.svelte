@@ -144,10 +144,8 @@
   }
 
   async function copyResult(html = true) {
-    const doc = Interface.frame?.contentDocument;
-    const win = Interface.frame?.contentWindow;
-    if (!doc || !win) return;
-    const {result, notCached} = await postprocess(doc, win);
+    if (!Interface.renderedHTML) return;
+    const {result, notCached} = await postprocess(Interface.renderedHTML);
     await (html ? clipboard.writeHtml(result) : clipboard.writeText(result))
     if (notCached > 0) {
       Interface.status.set($_('weixin.msg.warning-not-uploaded', { values: { count: notCached } }));

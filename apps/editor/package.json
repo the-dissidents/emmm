@@ -33,6 +33,7 @@
     "@the_dissidents/dom-css-inliner": "workspace:*",
     "@the_dissidents/libemmm": "workspace:*",
     "@the_dissidents/minimal-jsx-runtime": "workspace:*",
+    "@the_dissidents/weixin-dark-mode": "workspace:*",
     "@the_dissidents/mojikit": "^0.0.6",
     "@the_dissidents/svelte-ui": "^0.0.28",
     "@types/wcwidth": "^1.0.2",
