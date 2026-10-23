@@ -1,7 +1,7 @@
 import { renderText } from "$lib/emmm/Custom";
 import { DOMUtil, type ProgressReporter } from "$lib/Util";
 
-import { inlineCss } from "@the_dissidents/dom-css-inliner";
+import { inlineBeforeAfter, inlineCss } from "@the_dissidents/dom-css-inliner";
 import { path } from "@tauri-apps/api";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import * as fs from "@tauri-apps/plugin-fs";
@@ -136,42 +136,11 @@ export async function postprocess(
         );
     });
 
-    let befores = new Map<string, string>();
-    let afters = new Map<string, string>();
-    // prepare ::before/::after data
-    doc.querySelectorAll('*').forEach((elem) => {
-        const path = DOMUtil.pathOf(elem);
-        getPseudo('::before', befores);
-        getPseudo('::after', afters);
-
-        function getPseudo(c: string, s: Map<string, string>) {
-            let content = win
-                .getComputedStyle(elem, c)
-                .getPropertyValue('content');
-            if (content && content !== 'none' && content !== "normal") {
-                s.set(path, DOMUtil.parseCssString(content));
-            }
-        }
-    });
+    inlineBeforeAfter(win);
 
     let copy = doc.cloneNode(true) as Document;
     let notCached = 0;
     for (const elem of [...copy.body.querySelectorAll('*')]) {
-        // inline all ::before and ::after
-        const path = DOMUtil.pathOf(elem);
-        let before = befores.get(path);
-        let after = afters.get(path);
-        if (before) {
-            let f = new DocumentFragment();
-            f.append(...renderText(before));
-            elem.insertBefore(f, elem.firstChild);
-        }
-        if (after) {
-            let f = new DocumentFragment();
-            f.append(...renderText(after));
-            elem.appendChild(f);
-        }
-
         // remove outlinks
         if (elem.tagName == 'A') {
             // console.log(elem);

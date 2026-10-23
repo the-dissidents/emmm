@@ -1,4 +1,5 @@
 import { calculateSpecificity, compareSpecificity, Specificity } from "./specificity.js";
+import { DOMUtil } from "./util.js";
 
 const DEFAULT_INHERITED_PROPERTIES = [
     'border-collapse', 'border-spacing', 'caption-side', 'color', 'cursor',
@@ -15,6 +16,37 @@ export type InlineCssOptions = {
     removeStyleTags?: boolean,
     removeClasses?: boolean,
     filter?: (el: HTMLElement) => boolean,
+};
+
+export function inlineBeforeAfter(win: Window) {
+    const doc = win.document;
+    const befores = new Map<string, string>();
+    const afters = new Map<string, string>();
+
+    // prepare ::before/::after data
+    doc.querySelectorAll('*').forEach((elem) => {
+        const path = DOMUtil.pathOf(elem);
+        getPseudo('::before', befores);
+        getPseudo('::after', afters);
+
+        function getPseudo(c: string, s: Map<string, string>) {
+            let content = win
+                .getComputedStyle(elem, c)
+                .getPropertyValue('content');
+            if (content && content !== 'none' && content !== "normal") {
+                s.set(path, DOMUtil.parseCssString(content));
+            }
+        }
+    });
+
+    for (const elem of [...doc.body.querySelectorAll('*')]) {
+        // inline all ::before and ::after
+        const path = DOMUtil.pathOf(elem);
+        const before = befores.get(path);
+        const after = afters.get(path);
+        if (before) elem.insertBefore(doc.createTextNode(before), elem.firstChild);
+        if (after) elem.appendChild(doc.createTextNode(after));
+    }
 }
 
 export function inlineCss(doc: Document, options: InlineCssOptions = {}) {

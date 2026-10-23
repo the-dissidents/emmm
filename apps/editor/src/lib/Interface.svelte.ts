@@ -16,7 +16,7 @@ import { Workspace } from "./workspace/Workspace.svelte";
 import { EventHost } from "@the_dissidents/svelte-ui";
 import { processDocument, type Options } from "@the_dissidents/mojikit";
 import { EmmmDocument } from "./workspace/Document.svelte";
-import { inlineCss } from "@the_dissidents/dom-css-inliner";
+import { inlineBeforeAfter, inlineCss } from "@the_dissidents/dom-css-inliner";
 
 let status = writable<string>('ok');
 let progress = writable<number | undefined>();
@@ -101,7 +101,10 @@ let setPreviewDarkMode: ((dark: boolean) => void) | undefined;
 const mql = window
   .matchMedia('(prefers-color-scheme: dark)');
 isDark = mql.matches;
-mql.addEventListener('change', event => isDark = event.matches);
+mql.addEventListener('change', event => {
+    isDark = event.matches;
+    previewIsDark = event.matches;
+});
 
 export const Interface = $state({
     get status() { return status; },
@@ -223,14 +226,17 @@ export const Interface = $state({
 
                 window.scrollTo(sx, sy);
                 this.onFrameLoaded.dispatch();
-                inlineCss(doc, { removeStyleTags: true, removeClasses: true });
+                inlineBeforeAfter(window);
+                inlineCss(doc, {
+                    removeStyleTags: true,
+                    removeClasses: true,
+                });
 
                 const dm = new DarkMode(window);
                 dm.run(doc.querySelectorAll('*'), {
-                    mode: isDark ? 'dark' : 'light',
+                    mode: previewIsDark ? 'dark' : 'light',
                     normalizeModernColors: true
                 });
-                previewIsDark = isDark;
 
                 setPreviewDarkMode = (dark) => {
                     dm.setMode(dark ? 'dark' : 'light');
