@@ -12,6 +12,20 @@ const DEFAULT_INHERITED_PROPERTIES = [
     'widows', 'word-break', 'word-spacing', 'word-wrap',
 ];
 
+const PRESERVED_WHITE_SPACE = new Set([
+    "pre",
+    "pre-wrap",
+    "pre-line",
+    "break-spaces",
+]);
+
+const PRESERVED_WHITE_SPACE_COLLAPSE = new Set([
+    "preserve",
+    "preserve-breaks",
+]);
+
+const NON_CONTENT_TAGS = "script, style, title, br";
+
 export type InlineCssOptions = {
     removeStyleTags?: boolean,
     removeClasses?: boolean,
@@ -49,6 +63,51 @@ export function inlineBeforeAfter(win: Window) {
     }
 }
 
+export function convertNewlines(win: Window, root?: Node) {
+    const doc = win.document;
+    root ??= doc.body;
+
+    const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const toProcess: Text[] = [];
+
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const text = node as Text;
+        const parent = text.parentElement;
+        if (!parent
+         || !/[\r\n]/.test(text.data)
+         || text.data.trim() === ""
+         || parent.closest(NON_CONTENT_TAGS)) continue;
+
+        const style = win.getComputedStyle(parent);
+        const whiteSpaceCollapse = style
+            .getPropertyValue("white-space-collapse").trim();
+
+        const preservesBreaks =
+               PRESERVED_WHITE_SPACE.has(style.whiteSpace)
+            || PRESERVED_WHITE_SPACE_COLLAPSE.has(whiteSpaceCollapse);
+
+        if (preservesBreaks)
+            toProcess.push(text);
+    }
+
+    console.log(toProcess);
+
+    for (const text of toProcess) {
+        const content: (Node | string)[] = [];
+        const parts = text.data.split(/\r\n?|\n/);
+
+        parts.forEach((part, index) => {
+            if (index > 0)
+                content.push(doc.createElement("br"));
+            if (part)
+                content.push(part);
+        });
+
+        text.replaceWith(...content);
+        console.log(content);
+    }
+}
+
 export function inlineCss(doc: Document, options: InlineCssOptions = {}) {
     type Rule = {
         rule: CSSStyleRule;
@@ -72,6 +131,8 @@ export function inlineCss(doc: Document, options: InlineCssOptions = {}) {
 
     const allElements = [doc.body, ...Array.from(doc.body.querySelectorAll<HTMLElement>('*'))];
     allElements.forEach(element => {
+        if (element.matches(NON_CONTENT_TAGS)) return;
+
         const matchingRules: Rule[] =
             allRules.filter(x => element.matches(x.rule.selectorText));
 

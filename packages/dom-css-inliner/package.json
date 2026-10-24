@@ -1,6 +1,6 @@
 {
   "name": "@the_dissidents/dom-css-inliner",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A CSS inliner using vanilla DOM and CSSOM APIs",
   "author": "the_dissidents",
   "license": "GPL-2.0-only",

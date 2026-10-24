@@ -1,7 +1,6 @@
-import { renderText } from "$lib/emmm/Custom";
 import { DOMUtil, type ProgressReporter } from "$lib/Util";
 
-import { inlineBeforeAfter, inlineCss } from "@the_dissidents/dom-css-inliner";
+import { convertNewlines, inlineBeforeAfter, inlineCss } from "@the_dissidents/dom-css-inliner";
 import { path } from "@tauri-apps/api";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import * as fs from "@tauri-apps/plugin-fs";
@@ -137,6 +136,7 @@ export async function postprocess(
     });
 
     inlineBeforeAfter(win);
+    convertNewlines(win);
 
     let copy = doc.cloneNode(true) as Document;
     let notCached = 0;

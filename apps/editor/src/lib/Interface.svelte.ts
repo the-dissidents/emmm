@@ -16,7 +16,7 @@ import { Workspace } from "./workspace/Workspace.svelte";
 import { EventHost } from "@the_dissidents/svelte-ui";
 import { processDocument, type Options } from "@the_dissidents/mojikit";
 import { EmmmDocument } from "./workspace/Document.svelte";
-import { inlineBeforeAfter, inlineCss } from "@the_dissidents/dom-css-inliner";
+import { convertNewlines, inlineBeforeAfter, inlineCss } from "@the_dissidents/dom-css-inliner";
 
 let status = writable<string>('ok');
 let progress = writable<number | undefined>();
@@ -227,6 +227,7 @@ export const Interface = $state({
                 window.scrollTo(sx, sy);
                 this.onFrameLoaded.dispatch();
                 inlineBeforeAfter(window);
+                convertNewlines(window);
                 inlineCss(doc, {
                     removeStyleTags: true,
                     removeClasses: true,
