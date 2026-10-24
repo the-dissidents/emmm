@@ -61,11 +61,18 @@
       if (modified && docs.length > 0) {
         for (const doc of docs) {
           Debug.assert(!!doc.path);
-          if (
-            !await fs.exists(doc.path) || !(await fs.stat(doc.path)).isFile
-          ) doc.externallyModified = 'move';
-          else doc.externallyModified = 'data';
-          doc.dirty = true;
+          doc.externallyModified = false;
+
+          if (!await fs.exists(doc.path) || !(await fs.stat(doc.path)).isFile)
+            doc.externallyModified = 'move';
+          else {
+            const content = await fs.readTextFile(doc.path);
+            if (content !== doc.source)
+              doc.externallyModified = 'data';
+          }
+
+          if (doc.externallyModified)
+            doc.dirty = true;
         }
         console.log(e);
       }
