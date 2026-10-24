@@ -62,10 +62,22 @@ export abstract class EditableDocument extends Document {
     editor = $state<Editor>();
     externallyModified: false | 'data' | 'move' = $state(false);
 
-    protected intervalId: ReturnType<typeof setInterval>;
+    protected intervalId?: ReturnType<typeof setInterval>;
 
     constructor() {
         super();
+        this.startAutosave();
+    }
+
+    close() {
+        if (!this.intervalId) return;
+        clearInterval(this.intervalId);
+        this.intervalId = undefined;
+    }
+
+    startAutosave() {
+        if (this.intervalId) return;
+
         let first = true;
         this.intervalId = setInterval(async () => {
             if (first) {
@@ -74,10 +86,6 @@ export abstract class EditableDocument extends Document {
             }
             await this.#doAutoSave();
         }, 3 * 1000 * 60);
-    }
-
-    close() {
-        clearInterval(this.intervalId);
     }
 
     async #doAutoSave() {

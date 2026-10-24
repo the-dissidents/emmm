@@ -91,13 +91,14 @@ export const RustAPI = {
         return await invoke('unarchive', { channel, path, output }) as string;
     },
 
-    async compressImage(url: URL, maxSize: number) {
+    async compressImage(url: URL, opt: { maxSize: number, maxWidth?: number }) {
         let filepath = await localPathOf(url);
 
         const buf = await invoke<ArrayBuffer>('compress_image', {
-            path: filepath, maxSize,
+            path: filepath,
             supportedTypes: ['image/jpeg', 'image/png'],
-            max_width: 1920
+            maxSize: opt.maxSize,
+            maxWidth: opt.maxWidth ?? 1920,
         });
 
         const reader = new BinaryReader(buf);

@@ -1,7 +1,7 @@
 import * as dialog from '@tauri-apps/plugin-dialog';
 import * as fs from '@tauri-apps/plugin-fs';
 import * as z from 'zod/v4-mini';
-import { ConfigDocument, Document, EmmmDocument, LibDocument, StyleDocument } from './Document.svelte';
+import { ConfigDocument, Document, EditableDocument, EmmmDocument, LibDocument, StyleDocument } from './Document.svelte';
 import { defaultSource } from '../Templates';
 import { Debug } from '$lib/Debug';
 import { EventHost } from '@the_dissidents/svelte-ui';
@@ -163,6 +163,8 @@ export class WorkspaceContext {
 
         this.#documents.push(doc);
         this.setActiveDocument(doc.id);
+        if (doc instanceof EditableDocument)
+            doc.startAutosave();
     }
 
     /** If already opened, focus on that document */
@@ -178,6 +180,9 @@ export class WorkspaceContext {
         const doc = new EmmmDocument(text, basename(path), path);
         this.#documents.push(doc);
         this.setActiveDocument(doc.id);
+        if (doc instanceof EditableDocument)
+            doc.startAutosave();
+
         return doc;
     }
 

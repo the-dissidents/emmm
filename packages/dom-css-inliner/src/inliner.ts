@@ -90,8 +90,6 @@ export function convertNewlines(win: Window, root?: Node) {
             toProcess.push(text);
     }
 
-    console.log(toProcess);
-
     for (const text of toProcess) {
         const content: (Node | string)[] = [];
         const parts = text.data.split(/\r\n?|\n/);

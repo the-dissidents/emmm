@@ -53,7 +53,10 @@
 
     await guardAsync(async () => {
       Debug.assert(!!img.hash);
-      const file = await RustAPI.compressImage(img.url, 1024 * 1024);
+      const file = await RustAPI.compressImage(img.url, {
+        maxSize: 1024 * 1024,
+        maxWidth: 1920
+      });
       const url = new URL(img.url);
       if (!url.href.toLowerCase().endsWith('.' + file.ext))
           url.href += '.' + file.ext;

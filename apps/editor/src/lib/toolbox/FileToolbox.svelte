@@ -90,10 +90,17 @@
     }
 
     $progress = 0;
+    let nOk = 0;
     if ($libraryUrl) {
       try {
-        Workspace.library.source = await (await fetch($libraryUrl)).text();
-        Workspace.library.dirty = true;
+        const response = await fetch($libraryUrl);
+        if (!response.ok) {
+          await dialog.message($_('sync.msg.error-updating-library', { values: { error: response.status } }), { kind: 'error' });
+        } else {
+          Workspace.library.source = await (await fetch($libraryUrl)).text();
+          Workspace.library.dirty = true;
+          await Workspace.library.save();
+        }
       } catch (e) {
         await dialog.message($_('sync.msg.error-updating-library', { values: { error: String(e) } }), { kind: 'error' });
       }
@@ -102,15 +109,21 @@
 
     if ($stylesUrl) {
       try {
-        Workspace.stylesheet.source = await (await fetch($stylesUrl)).text();
-        Workspace.stylesheet.dirty = true;
+        const response = await fetch($stylesUrl);
+        if (!response.ok) {
+          await dialog.message($_('sync.msg.error-updating-stylesheet', { values: { error: response.status } }), { kind: 'error' });
+        } else {
+          Workspace.stylesheet.source = await (await fetch($stylesUrl)).text();
+          Workspace.stylesheet.dirty = true;
+          await Workspace.stylesheet.save();
+        }
       } catch (e) {
         await dialog.message($_('sync.msg.error-updating-stylesheet', { values: { error: String(e) } }), { kind: 'error' });
       }
       $progress += 1 / total;
     }
 
-    Interface.status.set($_('sync.msg.updated'));
+    Interface.status.set(nOk == total ? $_('sync.msg.updated') : $_('sync.msg.error-updating'));
     $progress = undefined;
   }
 
