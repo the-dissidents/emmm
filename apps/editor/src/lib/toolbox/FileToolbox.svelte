@@ -139,7 +139,7 @@
 
     try {
       $progress = 0;
-      await RustAPI.archive(doc.source, path, (x) => $progress = x);
+      await RustAPI.archive(doc.source, path, Workspace.assetPath, (x) => $progress = x);
       Interface.status.set($_('sync.msg.archived', { values: { path } }));
     } catch (e) {
       Interface.status.set($_('sync.msg.error-archiving', { values: { error: String(e) } }));
@@ -155,18 +155,40 @@
     });
     if (path === null) return;
 
-    const assetFolder = await dialog.open({
-      directory: true,
-      title: $_('sync.extract-assets-to'),
-    });
-    if (assetFolder === null) return;
+    let assetOutput: string;
+    let isAssetPath: boolean;
+
+    if (Workspace.path) {
+      if (Workspace.assetPath) {
+        assetOutput = Workspace.assetPath;
+        isAssetPath = true;
+      } else {
+        const selected = await dialog.open({
+          directory: true,
+          title: $_('sync.select-asset-folder'),
+          defaultPath: Workspace.path,
+        });
+        if (selected === null) return;
+        assetOutput = selected;
+        Workspace.assetPath = selected;
+        isAssetPath = true;
+      }
+    } else {
+      const selected = await dialog.open({
+        directory: true,
+        title: $_('sync.extract-assets-to'),
+      });
+      if (selected === null) return;
+      assetOutput = selected;
+      isAssetPath = false;
+    }
 
     try {
       $progress = 0;
-      const source = await RustAPI.unarchive(path, assetFolder, (x) => $progress = x);
+      const source = await RustAPI.unarchive(path, assetOutput, isAssetPath, (x) => $progress = x);
       const doc = Workspace.newDocument(source);
       doc.dirty = true;
-      Interface.status.set($_('sync.msg.extracted', { values: { path: assetFolder } }));
+      Interface.status.set($_('sync.msg.extracted', { values: { path: assetOutput } }));
     } catch (e) {
       Interface.status.set($_('sync.msg.error-unarchiving', { values: { error: String(e) } }));
     } finally {

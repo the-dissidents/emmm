@@ -19,7 +19,8 @@ async function transformAsset(url: string) {
     if (url.startsWith('http:') || url.startsWith('https:') || !Workspace.assetPath)
         return undefined;
 
-    const joined = await join(Workspace.assetPath, url);
+    const id = url.startsWith('asset:') ? url.substring('asset:'.length) : url;
+    const joined = await join(Workspace.assetPath, id);
     return { transformed: convertFileSrc(joined), original: 'file:' + joined };
 }
 

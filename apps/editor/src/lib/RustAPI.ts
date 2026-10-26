@@ -79,16 +79,21 @@ export const RustAPI = {
         return fonts;
     },
 
-    async archive(source: string, path: string, onProgress?: (x: number) => void) {
+    async archive(source: string, path: string, assetPath: string | null, onProgress?: (x: number) => void) {
         const channel = new Channel<{ progress: number }>();
         channel.onmessage = ({ progress }) => onProgress?.(progress);
-        await invoke('archive', { channel, source, path });
+        await invoke('archive', { channel, source, path, assetPath });
     },
 
-    async unarchive(path: string, output: string, onProgress?: (x: number) => void) {
+    async unarchive(
+        path: string, assetOutputDir: string,
+        isWorkspaceAssetPath: boolean, onProgress?: (x: number) => void
+    ) {
         const channel = new Channel<{ progress: number }>();
         channel.onmessage = ({ progress }) => onProgress?.(progress);
-        return await invoke('unarchive', { channel, path, output }) as string;
+        return await invoke('unarchive', {
+            channel, path, assetOutputDir, isWorkspaceAssetPath
+        }) as string;
     },
 
     async compressImage(url: URL, opt: { maxSize: number, maxWidth?: number }) {

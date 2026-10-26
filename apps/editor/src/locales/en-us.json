@@ -66,6 +66,7 @@
     "save-path": "save path",
     "archive-path": "archive path",
     "extract-assets-to": "extract assets to",
+    "select-asset-folder": "select asset folder",
     "no-html": "No HTML found in the clipboard",
     "confirm-clear": "Are you sure to clear any current existing document?",
     "msg": {

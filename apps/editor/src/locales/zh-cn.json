@@ -67,6 +67,7 @@
     "save-path": "保存路径",
     "archive-path": "归档路径",
     "extract-assets-to": "将资源解压到",
+    "select-asset-folder": "选择素材文件夹",
     "no-html": "剪贴板中没有找到 HTML",
     "confirm-clear": "确定要清空当前文档吗？",
     "msg": {
