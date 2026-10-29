@@ -8,14 +8,14 @@
   }
 
   &.sqr {
-    margin-right: -0.4em;
+    margin-right: -0.3em;
   }
   &.sqr.q {
     margin-right: -0.2em;
   }
 
   &.sql {
-    margin-left: -0.4em;
+    margin-left: -0.3em;
   }
   &.sql.q {
     margin-left: -0.2em;
@@ -301,6 +301,7 @@ aside:is(.ttr, .the-end) {
   text-align: right;
   line-height: 1.7;
   color: param(commentary-color);
+  padding-left: 3rem;
 }
 
 .metadata {
@@ -584,11 +585,32 @@ td {
 /* gallery (carousel) */
 
 ul.gallery {
+  // display: flex;
+  // gap: 4vw;
+  // padding: 0;
+  // /* border: 1px solid; */
+  // overflow-x: scroll;
+  // scroll-snap-type: x mandatory;
+
   display: block;
   list-style: none;
   padding: 0;
 
   > li {
+    // list-style-type: none;
+    // max-width: 100%;
+    // box-sizing: border-box;
+    // flex: 0 0 100%;
+    // /* border: 1px solid; */
+    // scroll-snap-align: center;
+    // overflow-y: scroll;
+    // /* max-height: 60vh; */
+
+    // > :first-child {
+    //   padding-top: 0;
+    //   margin-top: 0;
+    // }
+
     max-height: none;
     margin-bottom: 2em;
     padding-bottom: 1em;

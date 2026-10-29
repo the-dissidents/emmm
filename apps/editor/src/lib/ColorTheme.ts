@@ -59,7 +59,7 @@ export function deriveColorsFrom(theme: Color.PlainColorObject): ArticleColors {
     if (themeHsl.coords[2] && themeHsl.coords[2] > 50) {
         const text = Color.clone(themeHsl);
         text.coords[1] = Math.pow((text.coords[1] ?? 0) / 100, 0.8) * 100;
-        text.coords[2] = 10;
+        text.coords[2] = 0;
 
         const commentary = Color.clone(themeHsl);
         commentary.coords[1] =
