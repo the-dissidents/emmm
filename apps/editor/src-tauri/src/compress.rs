@@ -32,7 +32,7 @@ fn prepare_image(img: &DynamicImage) -> (OutputFormat, DynamicImage) {
         return (OutputFormat::Jpeg, DynamicImage::ImageRgb8(img.to_rgb8()));
     }
     let rgba8 = img.to_rgba8();
-    let opaque = rgba8.as_raw().chunks_exact(4).all(|x| x[3] == 255);
+    let opaque = rgba8.as_raw().as_chunks::<4>().0.iter().all(|x| x[3] == 255);
     if opaque {
         (OutputFormat::Jpeg, DynamicImage::ImageRgb8(DynamicImage::ImageRgba8(rgba8).into_rgb8()))
     } else {
@@ -154,7 +154,7 @@ pub async fn compress_image(
         let passable_size = (max_size.to_f64().unwrap() * 0.9).to_usize().unwrap();
 
         for _ in 0..3 {
-            let guess = (l + r) * 0.5;
+            let guess = f64::midpoint(l, r);
             let result = try_compress_size(&img, guess, output_format)?;
             let size = result.len();
             if size < max_size {
