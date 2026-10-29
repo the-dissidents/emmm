@@ -1,5 +1,5 @@
-import defaultStyles from '../template/stylesheet.scss?raw';
-import defaultSource from '../template/testsource.txt?raw';
-import defaultLibrary from '../template/testlib.txt?raw';
+import defaultStyles from '../template/defaultStyles.scss?raw';
+import defaultSource from '../template/defaultSource.txt?raw';
+import defaultLibrary from '../template/defaultLibrary.txt?raw';
 
 export { defaultStyles, defaultSource, defaultLibrary };

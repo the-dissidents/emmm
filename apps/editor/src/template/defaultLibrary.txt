@@ -111,8 +111,6 @@
 
 [-inline-shorthand …]⋯
 
-[-inline-shorthand ——]⸺
-
 ;; inline formatting
 
 [-inline-shorthand _|()|_]
@@ -126,6 +124,9 @@
 
 [-inline-shorthand [\=|()|\]]
 [/commentary][[/slot]][;]
+
+[-inline-shorthand <\=|()|>]
+[/commentary][/slot][;]
 
 [-inline-shorthand|[\||title|\||year|\]]
 [/commentary][_[/$title]_, [/$year]][;]
@@ -229,5 +230,9 @@
 “[/slot]”
 
 [-inline-shorthand| '|()|' ]
-\ ‘[/slot]’
+\ ‘[/slot]’\
 >>>
+
+[-define-block speaker|id]
+[.style speaker-$(id)]
+[.slot]

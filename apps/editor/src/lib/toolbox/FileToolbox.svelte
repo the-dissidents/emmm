@@ -97,7 +97,7 @@
         if (!response.ok) {
           await dialog.message($_('sync.msg.error-updating-library', { values: { error: response.status } }), { kind: 'error' });
         } else {
-          Workspace.library.source = await (await fetch($libraryUrl)).text();
+          Workspace.library.source = await response.text();
           Workspace.library.dirty = true;
           await Workspace.library.save();
         }
@@ -113,7 +113,7 @@
         if (!response.ok) {
           await dialog.message($_('sync.msg.error-updating-stylesheet', { values: { error: response.status } }), { kind: 'error' });
         } else {
-          Workspace.stylesheet.source = await (await fetch($stylesUrl)).text();
+          Workspace.stylesheet.source = await response.text();
           Workspace.stylesheet.dirty = true;
           await Workspace.stylesheet.save();
         }
