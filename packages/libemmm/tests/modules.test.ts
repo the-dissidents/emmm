@@ -13,14 +13,14 @@ TestConfig.blockModifiers.add(
 
 function parse(src: string) {
     const config = Configuration.from(TestConfig, false);
-    let doc = new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
+    const doc = new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
     return doc;
 }
 debug.level = DebugLevel.Warning;
 
 describe('modules', () => {
     test('content scoping: shorthands', () => {
-        let doc = parse(`[.module test][-inline-shorthand p] 123\n\np\n[.use test] p\n\np`);
+        const doc = parse(`[.module test][-inline-shorthand p] 123\n\np\n[.use test] p\n\np`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'p' }] },
@@ -29,7 +29,7 @@ describe('modules', () => {
         ]);
     });
     test('content scoping: modifiers', () => {
-        let doc = parse(`[.module test]<<<\n[-define-inline p]123\n[-define-block q]456\n>>>\n[/p;]\n[.q;]\n[.use test]<<<\n[/p;]\n[.q;]\n>>>\n[/p;]\n[.q;]`);
+        const doc = parse(`[.module test]<<<\n[-define-inline p]123\n[-define-block q]456\n>>>\n[/p;]\n[.q;]\n[.use test]<<<\n[/p;]\n[.q;]\n>>>\n[/p;]\n[.q;]`);
         expect.soft(doc.messages).toMatchObject([
             { code: 2, what: 'p' },
             { code: 2, what: 'q' },
@@ -51,7 +51,7 @@ describe('modules', () => {
         ]);
     });
     test('preserves outer definitions', () => {
-        let doc = parse(`[-define-inline p]123\n[-define-block q]456\n[-inline-shorthand r]789\n[.module test][-inline-shorthand s] abc\n\n[/p;]\n[.q;]\nrs\n[.use test]<<<\n[/p;]\n[.q;]\nrs\n>>>\n[/p;]\n[.q;]\nrs`);
+        const doc = parse(`[-define-inline p]123\n[-define-block q]456\n[-inline-shorthand r]789\n[.module test][-inline-shorthand s] abc\n\n[/p;]\n[.q;]\nrs\n[.use test]<<<\n[/p;]\n[.q;]\nrs\n>>>\n[/p;]\n[.q;]\nrs`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
@@ -80,7 +80,7 @@ describe('modules', () => {
         ]);
     });
     test('definition merging', () => {
-        let doc = parse(`[.module a][-define-inline p]123\n[.use a][/p;]\n[.module a][-inline-shorthand q]456\n[.use a]q[/p;]`);
+        const doc = parse(`[.module a][-define-inline p]123\n[.use a][/p;]\n[.module a][-inline-shorthand q]456\n[.use a]q[/p;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
@@ -91,7 +91,7 @@ describe('modules', () => {
         ]);
     });
     test('global use', () => {
-        let doc = parse(`[.module a]\n<<<\n[-define-inline p]123\n[-inline-shorthand q]456\n>>>\n\n[-use a]\n[/p;]\n\nq[/p;]`);
+        const doc = parse(`[.module a]\n<<<\n[-define-inline p]123\n[-inline-shorthand q]456\n>>>\n\n[-use a]\n[/p;]\n\nq[/p;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] },
@@ -102,21 +102,21 @@ describe('modules', () => {
         ]);
     });
     test('error: nested modules', () => {
-        let doc = parse(`[.module a][.module b;]`);
+        const doc = parse(`[.module a][.module b;]`);
         expect.soft(doc.messages).toMatchObject([
             { code: 10, severity: MessageSeverity.Error }
         ]);
         expect.soft(doc.root.content).toMatchObject([]);
     });
     test('error: use self', () => {
-        let doc = parse(`[.module a]123\n[.module a][.use a]456`);
+        const doc = parse(`[.module a]123\n[.module a][.use a]456`);
         expect.soft(doc.messages).toMatchObject([
             { code: 11, severity: MessageSeverity.Error }
         ]);
         expect.soft(doc.root.content).toMatchObject([]);
     });
     test('warning: overwrite definitions', () => {
-        let doc = parse(`[.module a][-inline-shorthand p]123\n[-inline-shorthand p]456\n[.use a]p`);
+        const doc = parse(`[.module a][-inline-shorthand p]123\n[-inline-shorthand p]456\n[.use a]p`);
         expect.soft(doc.messages).toMatchObject([
             { code: 6, severity: MessageSeverity.Warning }
         ]);

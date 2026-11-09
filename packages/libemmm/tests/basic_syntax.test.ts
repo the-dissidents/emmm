@@ -36,7 +36,7 @@ describe('basic syntax', () => {
         ]);
     });
     test('escaping', () => {
-        let doc = parse(`a\\[.b]\\`);
+        const doc = parse(`a\\[.b]\\`);
         expect.soft(doc.messages).toHaveLength(0);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -351,7 +351,7 @@ describe('basic syntax', () => {
         } ]);
     });
     test('unknown modifiers', () => {
-        let doc = parse(`[.invalid]aaa[/invalid]bbb[;]ccc`);
+        const doc = parse(`[.invalid]aaa[/invalid]bbb[;]ccc`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Error, code: 2 },
             { severity: MessageSeverity.Error, code: 2 }
@@ -396,7 +396,7 @@ describe('basic syntax', () => {
         ]);
     });
     test('warnings - extra newlines: paragraphs', () => {
-        let doc = parse(`aaa\nbbb\n\n\nccc\n\nddd`);
+        const doc = parse(`aaa\nbbb\n\n\nccc\n\nddd`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 1 }
         ]);
@@ -430,7 +430,7 @@ describe('basic syntax', () => {
         ]);
     });
     test('warnings - should be newlines: block modifiers', () => {
-        let doc = parse(`haha [.normal] hoho`);
+        const doc = parse(`haha [.normal] hoho`);
         expect.soft(doc.messages).toMatchObject([
             { severity: MessageSeverity.Warning, code: 3 }
         ]);

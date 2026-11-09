@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Message, BlockModifierNode, BlockEntity, InlineModifierNode, InlineEntity, SystemModifierNode } from "./interface";
 import { ParseContext } from "./parser-config";
 
@@ -9,6 +11,7 @@ export enum ModifierSlotType {
     None
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type ModifierMetadata = {
     // TODO
 };
@@ -66,15 +69,15 @@ class ModifierBase<TNode, TEntity> {
     expand?: (node: TNode, cxt: ParseContext, immediate: boolean) => TEntity[] | undefined;
 }
 
-export class BlockModifierDefinition<TState>
+export class BlockModifierDefinition<TState = any>
     extends ModifierBase<BlockModifierNode<TState>, BlockEntity> {
 }
 
-export class InlineModifierDefinition<TState>
+export class InlineModifierDefinition<TState = any>
     extends ModifierBase<InlineModifierNode<TState>, InlineEntity> {
 }
 
-export class SystemModifierDefinition<TState>
+export class SystemModifierDefinition<TState = any>
     extends ModifierBase<SystemModifierNode<TState>, never> {
 }
 

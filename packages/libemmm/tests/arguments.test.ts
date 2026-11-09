@@ -13,13 +13,13 @@ TestConfig.blockModifiers.add(
 
 function parse(src: string) {
     const config = Configuration.from(TestConfig, false);
-    let doc = new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
+    const doc = new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
     return doc;
 }
 
 function parseWithoutStrip(src: string) {
     const config = Configuration.from(TestConfig, false);
-    let doc = new ParseContext(config).parse(new SimpleScanner(src));
+    const doc = new ParseContext(config).parse(new SimpleScanner(src));
     return doc;
 }
 
@@ -27,7 +27,7 @@ debug.level = DebugLevel.Warning;
 
 describe('positional arguments', () => {
     test('[/print]', () => {
-        let doc = parse(`[/print 123|456]`);
+        const doc = parse(`[/print 123|456]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -36,7 +36,7 @@ describe('positional arguments', () => {
         ]);
     });
     test('simple', () => {
-        let doc = parseWithoutStrip(`[.normal 123|456]`);
+        const doc = parseWithoutStrip(`[.normal 123|456]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.BlockModifier, mod: {name: 'normal'},
@@ -49,7 +49,7 @@ describe('positional arguments', () => {
         } ]);
     });
     test('multiple lines', () => {
-        let doc = parseWithoutStrip(`[.normal 123\n456\n\n\n78900|\nab\n\ncdef\n|zzzz]`);
+        const doc = parseWithoutStrip(`[.normal 123\n456\n\n\n78900|\nab\n\ncdef\n|zzzz]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.BlockModifier, mod: {name: 'normal'},
@@ -63,7 +63,7 @@ describe('positional arguments', () => {
         } ]);
     });
     test('escaped', () => {
-        let doc = parseWithoutStrip(String.raw`[/print \]]`);
+        const doc = parseWithoutStrip(String.raw`[/print \]]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.Paragraph,
@@ -80,7 +80,7 @@ describe('positional arguments', () => {
 
 describe('named arguments', () => {
     test('simple', () => {
-        let doc = parseWithoutStrip(`[.normal name1=value1|name2=value2]`);
+        const doc = parseWithoutStrip(`[.normal name1=value1|name2=value2]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.BlockModifier, mod: {name: 'normal'},
@@ -94,7 +94,7 @@ describe('named arguments', () => {
         } ]);
     });
     test('mixed', () => {
-        let doc = parseWithoutStrip(`[.normal pos0|name1=value1|pos1|name2=value2|pos2]`);
+        const doc = parseWithoutStrip(`[.normal pos0|name1=value1|pos1|name2=value2|pos2]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.BlockModifier, mod: {name: 'normal'},
@@ -112,7 +112,7 @@ describe('named arguments', () => {
         } ]);
     });
     test('not a name', () => {
-        let doc = parseWithoutStrip(String.raw`[.normal http://example.com?q=search]`);
+        const doc = parseWithoutStrip(String.raw`[.normal http://example.com?q=search]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([ {
             type: NodeType.BlockModifier, mod: {name: 'normal'},
@@ -125,7 +125,7 @@ describe('named arguments', () => {
         } ]);
     });
     test('error -- duplicate', () => {
-        let doc = parseWithoutStrip(`[.normal name=value1|name=value2]`);
+        const doc = parseWithoutStrip(`[.normal name=value1|name=value2]`);
         expect.soft(doc.messages).toMatchObject([
             {
                 code: 17,

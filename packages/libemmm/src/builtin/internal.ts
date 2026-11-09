@@ -1,6 +1,6 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
-import { BlockEntity, InlineEntity, Message, SystemModifierNode, ModifierNode, NodeType } from "../interface";
+import { BlockEntity, InlineEntity, Message, ModifierNode, NodeType } from "../interface";
 import { BlockModifierDefinition, InlineModifierDefinition, ModifierSlotType } from "../modifier";
 import { EntityNotAllowedMessage } from "../messages";
 import { bindArgs } from "../modifier-helper";
@@ -17,14 +17,14 @@ export type CustomModifierSignature = {
 
 export type BlockInstantiationData = {
     readonly slotName: string | undefined;
-    readonly mod: BlockModifierDefinition<any>;
+    readonly mod: BlockModifierDefinition;
     readonly slotContent: readonly BlockEntity[];
     readonly args: ReadonlyMap<string, string>;
 }
 
 export type InlineInstantiationData = {
     readonly slotName: string | undefined;
-    readonly mod: InlineModifierDefinition<any>;
+    readonly mod: InlineModifierDefinition;
     readonly slotContent: readonly InlineEntity[];
     readonly args: ReadonlyMap<string, string>;
 }
@@ -82,18 +82,18 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
 
     mod.delayContentExpansion = true;
     mod.prepareExpand = (node: ModifierNode<State>) => {
-        let { msgs, args } = bindArgs(node, signature.args, { named: signature.namedArgs });
+        const { msgs, args } = bindArgs(node, signature.args, { named: signature.namedArgs });
         if (msgs) return msgs;
         node.state = {
             ok: true,
-            args: new Map(Object.entries(args!))
+            args: new Map(Object.entries(args))
         } satisfies State;
         return [];
     };
     mod.expand = (node: ModifierNode<State>) => {
         if (!node.state?.ok) return [];
-        const contentClone = cloneNodes(content, {newLocation: node.location}) as any[];
-        return contentClone;
+        const contentClone = cloneNodes(content, {newLocation: node.location});
+        return contentClone as never[];
     };
     mod.beforeProcessExpansion = (node: ModifierNode<State>, cxt: ParseContext) => {
         if (!node.state?.ok) return [];
@@ -101,8 +101,8 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
         const data = isInline ? store.inlineInstantiationData : store.blockInstantiationData;
         data.push({
             slotName: signature.slotName,
-            mod: mod as any, args: node.state.args,
-            slotContent: node.content as any
+            mod: mod as never, args: node.state.args,
+            slotContent: node.content as never
         });
         debug.trace(`pushed ${NodeType[type]} slot data for`, name);
         debug.trace(`... slotName:`,
@@ -125,7 +125,7 @@ export function customModifier<T extends NodeType.InlineModifier | NodeType.Bloc
 
 export function makeInlineDefinition(content: BlockEntity[], msgs: Message[]) {
     let lastIsParagraph = false;
-    let concat: InlineEntity[] = [];
+    const concat: InlineEntity[] = [];
     for (const n of content) {
         switch (n.type) {
             case NodeType.Group:

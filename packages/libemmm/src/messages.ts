@@ -4,16 +4,16 @@ import { assert } from "./util";
 class AddThingMessage implements Message {
     constructor(
         public readonly code: number,
-        public readonly severity: MessageSeverity, 
-        public readonly location: LocationRange, 
+        public readonly severity: MessageSeverity,
+        public readonly location: LocationRange,
         public readonly info: string){}
     // get fixes(): readonly FixSuggestion[] {
     //     let [start, what, fixstr] = [this.location.start, this.what, this.fixstr];
     //     return [{
     //         get info() { return fixstr; },
     //         apply(src: string, cursor: number) {
-    //             let newCursor = (cursor < start) 
-    //                 ? cursor 
+    //             let newCursor = (cursor < start)
+    //                 ? cursor
     //                 : cursor + what.length;
     //             return [src.substring(0, start) + what + src.substring(start), newCursor];
     //         }
@@ -24,8 +24,8 @@ class AddThingMessage implements Message {
 class RemoveThingMessage implements Message {
     constructor(
         public readonly code: number,
-        public readonly severity: MessageSeverity, 
-        public readonly location: LocationRange, 
+        public readonly severity: MessageSeverity,
+        public readonly location: LocationRange,
         // private fixstr: string,
         public readonly info: string){}
     // get fixes(): readonly FixSuggestion[] {
@@ -33,8 +33,8 @@ class RemoveThingMessage implements Message {
     //     return [{
     //         get info() { return fixstr; },
     //         apply(src: string, cursor: number) {
-    //             let newCursor = (cursor < end && cursor >= start) 
-    //                 ? start 
+    //             let newCursor = (cursor < end && cursor >= start)
+    //                 ? start
     //                 : cursor; // Removing text, cursor shouldn't shift if it's outside the removed range
     //             return [src.substring(0, start) + src.substring(end), newCursor];
     //         }
@@ -44,7 +44,7 @@ class RemoveThingMessage implements Message {
 
 export class ExpectedMessage implements Message {
     constructor(
-        public readonly location: LocationRange, 
+        public readonly location: LocationRange,
         private what: string)
     {
         assert(location.end == location.start);
@@ -56,7 +56,7 @@ export class ExpectedMessage implements Message {
 
 export class UnknownModifierMessage implements Message {
     constructor(
-        public readonly location: LocationRange, 
+        public readonly location: LocationRange,
         private what: string) {}
     readonly code = 2;
     readonly severity =  MessageSeverity.Error;
@@ -66,8 +66,8 @@ export class UnknownModifierMessage implements Message {
     //     return [{
     //         get info() { return 'this is not a modifier -- escape it'; },
     //         apply(src: string, cursor: number) {
-    //             let newCursor = (cursor < start) 
-    //                 ? cursor 
+    //             let newCursor = (cursor < start)
+    //                 ? cursor
     //                 : cursor + 1;
     //             return [src.substring(0, start) + '\\' + src.substring(start), newCursor];
     //         }
@@ -77,7 +77,7 @@ export class UnknownModifierMessage implements Message {
 
 export class UnclosedInlineModifierMessage implements Message {
     constructor(
-        public readonly location: LocationRange, 
+        public readonly location: LocationRange,
         private what: string)
     {
         assert(location.end == location.start);
@@ -89,7 +89,7 @@ export class UnclosedInlineModifierMessage implements Message {
 
 export class ArgumentCountMismatchMessage implements Message {
     constructor(
-        public readonly location: LocationRange, 
+        public readonly location: LocationRange,
         min?: number, max?: number)
     {
         if (min !== undefined) {
@@ -108,7 +108,7 @@ export class ArgumentCountMismatchMessage implements Message {
 
 export class CannotExpandArgumentMessage implements Message {
     constructor(
-        public readonly location: LocationRange, 
+        public readonly location: LocationRange,
         private what?: string) {}
     readonly code = 5;
     readonly severity = MessageSeverity.Error;
@@ -117,7 +117,7 @@ export class CannotExpandArgumentMessage implements Message {
 
 export class InvalidArgumentMessage implements Message {
     constructor(
-        public readonly location: LocationRange, 
+        public readonly location: LocationRange,
         private what?: string) {}
     readonly code = 6;
     readonly severity = MessageSeverity.Error;
@@ -130,18 +130,18 @@ export class EntityNotAllowedMessage implements Message {
         private what?: string) {}
     readonly code = 7;
     readonly severity = MessageSeverity.Error;
-    get info(): string { return 'This entity is not allowed here' + 
+    get info(): string { return 'This entity is not allowed here' +
         (this.what ? `: ${this.what}` : '') }
 }
 
 export class ReachedRecursionLimitMessage implements Message {
     constructor(
-        public readonly location: LocationRange, 
+        public readonly location: LocationRange,
         private limit: number,
         private what: string) {}
     readonly code = 8;
     readonly severity = MessageSeverity.Error;
-    get info(): string { 
+    get info(): string {
         return `Reached recursion limit ${this.limit} when expanding ${this.what}`
     };
 }
@@ -205,6 +205,7 @@ export class ContentExpectedMessage implements Message {
 export class InternalErrorMessage implements Message {
     constructor(
         public readonly location: LocationRange,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         public readonly error: any) {}
     readonly code = 16;
     readonly severity = MessageSeverity.Error;
@@ -224,21 +225,21 @@ export class DuplicateNamedArgumentMessage implements Message {
 
 export class UnnecessaryNewlineMessage extends RemoveThingMessage {
     constructor(location: LocationRange) {
-        super(1, MessageSeverity.Warning, location, 
+        super(1, MessageSeverity.Warning, location,
             'more than one newlines have the same effect as one');
     }
 }
 
 export class NewBlockShouldBeOnNewlineMessage extends AddThingMessage {
     constructor(location: LocationRange) {
-        super(2, MessageSeverity.Warning, location, 
+        super(2, MessageSeverity.Warning, location,
             'a new block should begin in a new line to avoid confusion');
     }
 }
 
 export class ShouldBeOnNewlineMessage extends AddThingMessage {
     constructor(location: LocationRange) {
-        super(3, MessageSeverity.Warning, location, 
+        super(3, MessageSeverity.Warning, location,
             'the following should begin in a new line to avoid confusion');
     }
 }

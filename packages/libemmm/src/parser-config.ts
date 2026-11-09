@@ -5,8 +5,8 @@ import { Parser } from "./parser";
 import { Scanner } from "./scanner";
 import { assert, ReadonlyNameManager, NameManager } from "./util";
 import { cloneNode, stripNode } from "./node-util";
-import { debug } from "./debug";
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ParseContextStoreDefinitions { }
 export type ParseContextStoreKey = keyof ParseContextStoreDefinitions;
 type ParseContextStoreEntry<S extends ParseContextStoreKey> = ParseContextStoreDefinitions[S];
@@ -49,7 +49,7 @@ export class Document {
         public readonly messages: readonly Message[]) { };
 
     toStripped() {
-        let doc = new Document(
+        const doc = new Document(
             stripNode(cloneNode(this.root, {withState: true}))[0] as RootNode,
             this.context, this.messages);
         return doc;
@@ -62,16 +62,16 @@ export class Document {
         callback: (node: BlockEntity | InlineEntity | ArgumentEntity) =>
             'skip' | 'break' | 'continue'
     ) {
-        let nodes: (BlockEntity | InlineEntity | ArgumentEntity)[] = [...this.root.content];
+        const nodes: (BlockEntity | InlineEntity | ArgumentEntity)[] = [...this.root.content];
         let node;
-        while (node = nodes.shift()) {
+        while ((node = nodes.shift())) {
             const result = callback(node);
             if (result == 'break') break;
             if (result == 'skip') continue;
 
             if ('arguments' in node) {
                 nodes.push(...node.arguments.positional.flatMap((x) => x.content));
-                nodes.push(...[...node.arguments.named].flatMap(([_name, x]) => x.content));
+                nodes.push(...[...node.arguments.named].flatMap(([_, x]) => x.content));
             }
             if ('content' in node && Array.isArray(node.content))
                 nodes.push(...node.content);
@@ -103,8 +103,10 @@ type Shorthand<TMod> = {
     mod: TMod;
 };
 
-export type BlockShorthand<TState> = Shorthand<BlockModifierDefinition<TState>>;
-export type InlineShorthand<TState> = Shorthand<InlineModifierDefinition<TState>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type BlockShorthand<TState = any> = Shorthand<BlockModifierDefinition<TState>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type InlineShorthand<TState = any> = Shorthand<InlineModifierDefinition<TState>>;
 
 export type KernelConfiguration = {
     collapseWhitespaces: boolean;
@@ -115,20 +117,20 @@ export interface ReadonlyConfiguration {
     readonly store: Readonly<ConfigurationStoreDefinitions>;
     readonly initializers: readonly ((cxt: ParseContext) => void)[];
     readonly modules: ReadonlyMap<string, ModuleDefinition>;
-    readonly blockModifiers: ReadonlyNameManager<BlockModifierDefinition<any>>;
-    readonly inlineModifiers: ReadonlyNameManager<InlineModifierDefinition<any>>;
-    readonly systemModifiers: ReadonlyNameManager<SystemModifierDefinition<any>>;
+    readonly blockModifiers: ReadonlyNameManager<BlockModifierDefinition>;
+    readonly inlineModifiers: ReadonlyNameManager<InlineModifierDefinition>;
+    readonly systemModifiers: ReadonlyNameManager<SystemModifierDefinition>;
     readonly argumentInterpolators: ReadonlyNameManager<ArgumentInterpolatorDefinition>;
 
-    readonly blockShorthands: ReadonlyNameManager<BlockShorthand<any>>;
-    readonly inlineShorthands: ReadonlyNameManager<InlineShorthand<any>>;
+    readonly blockShorthands: ReadonlyNameManager<BlockShorthand>;
+    readonly inlineShorthands: ReadonlyNameManager<InlineShorthand>;
     readonly kernel: Readonly<KernelConfiguration>;
 }
 
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ConfigurationStoreDefinitions { }
 export type ConfigurationStoreKey = keyof ConfigurationStoreDefinitions;
-type ConfigurationStoreEntry<S extends ConfigurationStoreKey> = ConfigurationStoreDefinitions[S];
 
 export class Configuration implements ReadonlyConfiguration {
     store: ConfigurationStoreDefinitions = {};
@@ -136,13 +138,13 @@ export class Configuration implements ReadonlyConfiguration {
     initializers: ((cxt: ParseContext) => void)[] = [];
     modules = new Map<string, ModuleDefinition>();
 
-    blockModifiers = new NameManager<BlockModifierDefinition<any>>;
-    inlineModifiers = new NameManager<InlineModifierDefinition<any>>;
-    systemModifiers = new NameManager<SystemModifierDefinition<any>>;
+    blockModifiers = new NameManager<BlockModifierDefinition>;
+    inlineModifiers = new NameManager<InlineModifierDefinition>;
+    systemModifiers = new NameManager<SystemModifierDefinition>;
     argumentInterpolators = new NameManager<ArgumentInterpolatorDefinition>;
 
-    blockShorthands = new NameManager<BlockShorthand<any>>;
-    inlineShorthands = new NameManager<InlineShorthand<any>>;
+    blockShorthands = new NameManager<BlockShorthand>;
+    inlineShorthands = new NameManager<InlineShorthand>;
 
     kernel: KernelConfiguration = {
         collapseWhitespaces: false,
@@ -150,7 +152,7 @@ export class Configuration implements ReadonlyConfiguration {
     };
 
     static from(from: ReadonlyConfiguration, copyStore: boolean) {
-        let config = new Configuration();
+        const config = new Configuration();
         config.initializers = [...from.initializers];
         config.modules = new Map(
             [...from.modules.entries()]

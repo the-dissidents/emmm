@@ -11,7 +11,7 @@ import { builtins, CustomModifierSignature } from "./internal";
 
 function slotModifier
     <T extends NodeType.InlineModifier | NodeType.BlockModifier>
-    (name: string, type: T, preformatted: boolean, inject: boolean): _Def<T, any>
+    (name: string, type: T, preformatted: boolean, inject: boolean): _Def<T>
 {
     type TState = {
         ok: true;
@@ -53,7 +53,7 @@ function slotModifier
         const data = isInline ? store.inlineInstantiationData : store.blockInstantiationData;
         const stack = isInline ? store.inlineSlotDelayedStack : store.blockSlotDelayedStack;
 
-        let msgs = (() => {
+        const msgs = (() => {
             // check inside definition
             if (data.length == 0 && stack.length == 0) {
                 node.state = { ok: false };
@@ -63,17 +63,17 @@ function slotModifier
             // find default
             const id = check.args.id;
             if (!id) {
-                let signature = stack.at(-1);
+                const signature = stack.at(-1);
                 if (signature) return processSignature(signature); // delay
-                node.state = { ok: true, data: data.at(-1) as any, index: data.length - 1 };
+                node.state = { ok: true, data: data.at(-1) as never, index: data.length - 1 };
                 return;
             }
 
             // find id
-            let signature = stack.find((x) => x.slotName == id);
+            const signature = stack.find((x) => x.slotName == id);
             if (signature) return processSignature(signature); // delay
             for (let i = data.length - 1; i >= 0; i--) if (data[i].slotName === id) {
-                node.state = { ok: true, data: data[i] as any, index: i };
+                node.state = { ok: true, data: data[i] as never, index: i };
                 return;
             }
 
@@ -86,10 +86,8 @@ function slotModifier
         })();
 
         if (inject) {
-            // @ts-expect-error
             const modname = check.args.modname;
-            // @ts-expect-error
-            const modnameNode = check.nodes.modname;
+            const modnameNode = check.nodes.modname!;
             const mod = ((isInline
                 ? cxt.config.inlineModifiers
                 : cxt.config.blockModifiers) as NameManager<_Def<T>>).get(modname);
@@ -105,15 +103,15 @@ function slotModifier
         if (msgs !== undefined) return msgs;
         return [];
     };
-    mod.expand = (node: ModifierNode<TState>, cxt: ParseContext) => {
+    mod.expand = (node: ModifierNode<TState>) => {
         if (!node.state) return undefined;
         if (!node.state.ok) return [];
-        let cloned = cloneNodes(node.state.data.slotContent) as _Ent<T>[];
+        const cloned = cloneNodes(node.state.data.slotContent) as _Ent<T>[];
         if (inject) {
             assert(node.state.injectMod !== undefined);
-            const mod = node.state.injectMod as any;
             const modNode: ModifierNode = {
-                type, mod,
+                type,
+                mod: node.state.injectMod as never,
                 location: node.location,
                 head: node.head,
                 arguments: {
@@ -121,10 +119,10 @@ function slotModifier
                     named: new Map(),
                     location: node.location
                 }, // TODO: enable injecting args
-                content: cloned as any
+                content: cloned as never
             };
-            return [modNode];
-        } else return cloned as any;
+            return [modNode] as never;
+        } else return cloned as never;
     };
     mod.beforeProcessExpansion = (node: ModifierNode<TState>, cxt: ParseContext) => {
         // TODO: not sure if this works
@@ -141,7 +139,7 @@ function slotModifier
         const store = cxt.get(builtins)!;
         debug.trace('reinstated slot data for', node.state.data.mod.name);
         const data = isInline ? store.inlineInstantiationData : store.blockInstantiationData;
-        data.splice(node.state.index, 0, node.state.data as any);
+        data.splice(node.state.index, 0, node.state.data as never);
         return [];
     };
     return mod;

@@ -8,7 +8,7 @@ function parse(src: string) {
 }
 
 async function render(doc: Document) {
-    let renderConfig = createHTMLRenderConfiguration(window);
+    const renderConfig = createHTMLRenderConfiguration(window);
     return (await renderConfig.render(doc, new HTMLRenderState()))
         .querySelector('section.article-body')!
         .innerHTML;
@@ -18,12 +18,12 @@ debug.level = DebugLevel.Warning;
 
 describe('default/headings', () => {
     test('simple', async () => {
-        let doc = parse(`[.heading 1] Head\n\n[.implicit-heading 6]\n\nBody\n[.heading 6] Head\n\nBody\n\n[.implicit-heading 1]`);
+        const doc = parse(`[.heading 1] Head\n\n[.implicit-heading 6]\n\nBody\n[.heading 6] Head\n\nBody\n\n[.implicit-heading 1]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(await render(doc)).includes(`<h1>Head</h1><h6 class="implicit"></h6><p data-id="1">Body</p><h6>Head</h6><p data-id="2">Body</p><h1 class="implicit"></h1>`);
     });
     test('explicit: infer', async () => {
-        let doc = parse(`[.heading 1] aaa\n\n[.heading 2] bbb\n\n[.heading] ccc`);
+        const doc = parse(`[.heading 1] aaa\n\n[.heading 2] bbb\n\n[.heading] ccc`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(await render(doc)).includes(`<h1>aaa</h1><h2>bbb</h2><h2>ccc</h2>`);
     });
@@ -44,7 +44,7 @@ describe('default/headings', () => {
         expect.soft(await render(doc)).includes(`<h4>abc</h4><h4>def</h4>`);
     });
     test('implicit: infer', async () => {
-        let doc = parse(`[.heading 1] aaa\n\n[.heading 2] bbb\n\n[.implicit-heading]`);
+        const doc = parse(`[.heading 1] aaa\n\n[.heading 2] bbb\n\n[.implicit-heading]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(await render(doc)).includes(`<h1>aaa</h1><h2>bbb</h2><h3 class="implicit"></h3>`);
     });
@@ -57,14 +57,14 @@ describe('default/headings', () => {
         expect.soft(await render(doc)).includes(`<h4>abc</h4><h5 class="implicit"></h5>`);
     });
     test('error: empty heading', async () => {
-        let doc = parse(`[.heading 1]`);
+        const doc = parse(`[.heading 1]`);
         expect.soft(doc.messages).toMatchObject([{
             code: 15,
             severity: MessageSeverity.Error
         }]);
     });
     test('error: empty heading in definition', async () => {
-        let doc = parse(`[-define-block z][.heading 1][.slot]\n\n[.z]`);
+        const doc = parse(`[-define-block z][.heading 1][.slot]\n\n[.z]`);
         expect.soft(doc.messages).toMatchObject([{
             code: 15,
             severity: MessageSeverity.Error

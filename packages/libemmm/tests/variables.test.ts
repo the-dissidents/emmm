@@ -13,7 +13,7 @@ TestConfig.blockModifiers.add(
 
 function parse(src: string) {
     const config = Configuration.from(TestConfig, false);
-    let doc = new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
+    const doc = new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
     return doc;
 }
 
@@ -21,28 +21,28 @@ debug.level = DebugLevel.Warning;
 
 describe('modifiers', () => {
     test('[-var] and [/$] -- simple', () => {
-        let doc = parse(`[-var x=123][/$x]`);
+        const doc = parse(`[-var x=123][/$x]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
     });
     test('[-var] and [/$] -- alternative syntax', () => {
-        let doc = parse(`[-var x|123][/$x]`);
+        const doc = parse(`[-var x|123][/$x]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
         ]);
     });
     test('[-var] and [/$] -- interpolated id', () => {
-        let doc = parse(`[-var x|123][-var z-$(x)|456][/$z-123]`);
+        const doc = parse(`[-var x|123][-var z-$(x)|456][/$z-123]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] }
         ]);
     });
     test('[.ifdef], [.ifndef]', () => {
-        let doc = parse(`[.ifdef x]123\n\n[.ifndef x]456\n\n[-var x=zzz]\n\n[.ifdef x]789\n\n[.ifndef x]abc`);
+        const doc = parse(`[.ifdef x]123\n\n[.ifndef x]456\n\n[-var x=zzz]\n\n[.ifdef x]789\n\n[.ifndef x]abc`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '456' }] },
@@ -50,7 +50,7 @@ describe('modifiers', () => {
         ]);
     });
     test('warning - undefined [/$] reference', () => {
-        let doc = parse(`[/$x]`);
+        const doc = parse(`[/$x]`);
         expect.soft(doc.messages).toMatchObject([
             { code: 5, severity: MessageSeverity.Warning }
         ]);
@@ -92,7 +92,7 @@ describe('interpolation', () => {
         } ]);
     });
     test('incomplete', () => {
-        let doc = parse(`[.normal $(x`);
+        const doc = parse(`[.normal $(x`);
         expect.soft(doc.messages).toMatchObject([
             {
                 code: 1,
@@ -117,7 +117,7 @@ describe('interpolation', () => {
         } ]);
     });
     test('expansion', () => {
-        let doc = parse(`[-var x=123][/print $(x)]`);
+        const doc = parse(`[-var x=123][/print $(x)]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '123' }] }
@@ -136,7 +136,7 @@ describe('interpolation', () => {
         ]);
     });
     test('complex argument interpolation (modifier)', () => {
-        let doc = parse(`[-define-block a|x|y][-define-block $(y)|z][/$x][/$y][/$z]\n\n[.a b|c;]\n[.c 1;]`);
+        const doc = parse(`[-define-block a|x|y][-define-block $(y)|z][/$x][/$y][/$z]\n\n[.a b|c;]\n[.c 1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -147,7 +147,7 @@ describe('interpolation', () => {
         ]);
     });
     test('complex argument interpolation (interp)', () => {
-        let doc = parse(`[-define-block a|x|y][-define-block $(y)|z][/print $(x)$(y)$(z)]\n\n[.a b|c;]\n[.c 1;]`);
+        const doc = parse(`[-define-block a|x|y][-define-block $(y)|z][/print $(x)$(y)$(z)]\n\n[.a b|c;]\n[.c 1;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [

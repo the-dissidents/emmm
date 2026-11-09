@@ -17,33 +17,32 @@ function parseDefineArguments(
     node: SystemModifierNode<ModifierState>,
     stack: CustomModifierSignature[]
 ) {
-    let { msgs, args, nodes, rest } = bindArgs(node, ['name'], { rest: true, restNamed: true });
+    const { msgs, args, nodes, rest } = bindArgs(node, ['name'], { rest: true, restNamed: true });
     if (msgs) return msgs;
 
-    msgs = [];
-    const nameNode = nodes!.name;
-    const name = args!.name;
+    const nameNode = nodes.name;
+    const name = args.name;
     if (name === '' || name?.includes('\n')) return [
         new InvalidArgumentMessage(nameNode.location, name)];
 
     let slotName = '';
-    if (rest!.length > 0) {
-        const last = rest!.at(-1)!;
+    if (rest.length > 0) {
+        const last = rest.at(-1)!;
         const match = /^\((.*)\)$/.exec(last);
         if (match) {
             slotName = match[1];
-            rest!.pop();
+            rest.pop();
         } else
             slotName = '';
     }
 
-    let namedArgs = Object.fromEntries([...node.arguments.named]
+    const namedArgs = Object.fromEntries([...node.arguments.named]
         .map((x) => [x[0], x[1].expansion!]));
 
-    let signature: CustomModifierSignature = {
-        slotName, args: rest!, namedArgs, preformatted: undefined
+    const signature: CustomModifierSignature = {
+        slotName, args: rest, namedArgs, preformatted: undefined
     };
-    node.state = { name, nameNode, signature, msgs };
+    node.state = { name, nameNode, signature, msgs: [] };
     stack.push(signature);
     return undefined;
 }

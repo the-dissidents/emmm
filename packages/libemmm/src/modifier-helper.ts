@@ -14,13 +14,27 @@ type BindResult<P extends string[], Opt extends string[], N extends Record<strin
     restNodes: undefined
 } | {
     msgs: null,
-    args: {[key in P[number]]: string} & {[key in Opt[number]]?: string | undefined} & {[key in keyof N]: string},
-    nodes: {[key in P[number]]: ModifierArgument} & {[key in Opt[number]]: ModifierArgument | undefined} & {[key in keyof N]: ModifierArgument | undefined},
+    args: BoundArgs<P, Opt, N>,
+    nodes: BoundNodes<P, Opt, N>,
     rest: string[],
     restNodes: ModifierArgument[]
 };
 
-export function bindArgs<P extends string[], Opt extends string[] = [], N extends Record<string, string> = {}>(
+type BoundArgs<P extends string[], Opt extends string[], N extends Record<string, string>>
+    = {[key in P[number]]: string}
+    & {[key in Opt[number]]?: string | undefined}
+    & {[key in keyof N]: string};
+
+type BoundNodes<P extends string[], Opt extends string[], N extends Record<string, string>>
+    = {[key in P[number]]: ModifierArgument}
+    & {[key in Opt[number]]: ModifierArgument | undefined}
+    & {[key in keyof N]: ModifierArgument | undefined};
+
+export function bindArgs<
+    P extends string[],
+    Opt extends string[] = [],
+    N extends Record<string, string> = Record<string, string>
+>(
     node: ModifierNode, p: readonly [...P],
     opts?: {
         named?: N,
@@ -57,8 +71,8 @@ export function bindArgs<P extends string[], Opt extends string[] = [], N extend
         restNodes: undefined
     };
 
-    const args: any = {};
-    const nodes: any = {};
+    const args: Record<string, string> = {};
+    const nodes: Record<string, ModifierArgument | undefined> = {};
     const msgs: Message[] = [];
 
     p.forEach((name, i) => {
@@ -69,13 +83,13 @@ export function bindArgs<P extends string[], Opt extends string[] = [], N extend
 
     if (opts?.optional) opts.optional.forEach((name, i) => {
         nodes[name] = node.arguments.positional[p.length + i];
-        args[name] = nodes[name]?.expansion!;
+        args[name] = nodes[name].expansion!;
         if (opts?.trim && args[name]) args[name] = args[name].trim();
     });
 
     if (opts?.named) Object.entries(opts.named).forEach(([name, def]) => {
         nodes[name] = node.arguments.named.get(name);
-        args[name] = node.arguments.named.get(name)?.expansion! ?? def;
+        args[name] = node.arguments.named.get(name)?.expansion ?? def;
         if (opts?.trim && args[name]) args[name] = args[name].trim();
     });
     if (!opts?.restNamed) node.arguments.named.forEach((v, k) => {
@@ -96,7 +110,13 @@ export function bindArgs<P extends string[], Opt extends string[] = [], N extend
     const rest = restNodes
         .map((x) => opts?.trim ? x.expansion!.trim() : x.expansion!);
 
-    return { msgs: null, args, nodes, rest, restNodes };
+    return {
+        msgs: null,
+        args: args as BoundArgs<P, Opt, N>,
+        nodes: nodes as BoundNodes<P, Opt, N>,
+        rest,
+        restNodes
+    };
 }
 
 /**
@@ -104,7 +124,7 @@ export function bindArgs<P extends string[], Opt extends string[] = [], N extend
  * @returns The content as a string if OK, otherwise an array of error messages.
  */
 export function onlyPermitPlaintextParagraph(
-    node: BlockModifierNode<any> | SystemModifierNode<any>): Message[] | string
+    node: BlockModifierNode | SystemModifierNode): Message[] | string
 {
     function checkInline(ents: InlineEntity[]): Message[] | string {
         let result = '';
@@ -116,13 +136,14 @@ export function onlyPermitPlaintextParagraph(
                     break;
                 case NodeType.SystemModifier:
                     break;
-                case NodeType.InlineModifier:
+                case NodeType.InlineModifier: {
                     if (!ent.expansion) return [new EntityNotAllowedMessage(
                         ent.location, 'it does not expand to plain text')];
-                    let checkInner = checkInline(ent.expansion);
+                    const checkInner = checkInline(ent.expansion);
                     if (Array.isArray(checkInner)) return checkInner;
                     result += checkInner;
                     break;
+                }
                 default:
                     return debug.never(ent);
             }
@@ -133,7 +154,7 @@ export function onlyPermitPlaintextParagraph(
     function checkContent(ents: BlockEntity[]) {
         if (ents.length == 0) return '';
         else if (ents.length > 1) {
-            let last = ents.at(-1)!.location;
+            const last = ents.at(-1)!.location;
             return [new MultipleBlocksNotPermittedMessage({
                 source: last.source,
                 start: ents[1].location.start,
@@ -164,7 +185,7 @@ export function onlyPermitPlaintextParagraph(
  * @returns `null` if OK, otherwise an array of error messages.
  */
 export function onlyPermitSimpleParagraphs(
-    node: BlockModifierNode<any> | SystemModifierNode<any>): Message[] | null
+    node: BlockModifierNode | SystemModifierNode): Message[] | null
 {
     function check(nodes: BlockEntity[]): Message[] | null {
         for (const ent of nodes) {
@@ -188,7 +209,7 @@ export function onlyPermitSimpleParagraphs(
  * @returns `null` if OK, otherwise an array of error messages.
  */
 export function onlyPermitSingleBlock(
-    node: BlockModifierNode<any> | SystemModifierNode<any>,
+    node: BlockModifierNode | SystemModifierNode,
     opt?: { optional?: boolean }
 ): Message[] | null {
     function check(nodes: BlockEntity[]): Message[] | null {

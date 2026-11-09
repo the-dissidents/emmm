@@ -19,7 +19,7 @@ export * from './default/html-renderer';
 export { DebugLevel } from './debug';
 export { debugPrint } from './debug-print';
 
-export const emmmVersion = '0.0.6';
+export const emmmVersion = '0.0.16';
 
 export function setDebugLevel(level: DebugLevel) {
     debug.level = level;

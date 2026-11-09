@@ -322,7 +322,7 @@
 
 <div class="pane">
   <div class='hlayout status'>
-    <span class='flexgrow'>
+    <span class='flexgrow scroll'>
       {$status}
     </span>
     {#if $progress !== undefined}
@@ -396,35 +396,39 @@
       border: 1px solid rgb(118, 81, 147);
       background-color: rgb(66, 53, 79);
     }
-  }
 
-  .status span {
-    display: inline-block;
-    padding: 0 5px;
-  }
+    span {
+      display: inline-block;
+      padding: 0 5px;
 
-  .status button {
-    appearance: none;
-    font-size: 100%;
-    font-family: inherit;
-    display: inline-block;
-    background-color: transparent;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    margin: 0;
-
-    &:hover {
-      background-color: color-mix(in srgb, lightpink, white 40%);
+      &.scroll {
+        overflow-x: scroll;
+      }
     }
-  }
 
-  .status hr {
-    width: 0;
-    border-left: 1px solid white;
-    border-right: none;
-    border-top: none;
-    border-bottom: none;
-    margin: 0 5px;
+    button {
+      appearance: none;
+      font-size: 100%;
+      font-family: inherit;
+      display: inline-block;
+      background-color: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      margin: 0;
+
+      &:hover {
+        background-color: color-mix(in srgb, lightpink, white 40%);
+      }
+    }
+
+    hr {
+      width: 0;
+      border-left: 1px solid white;
+      border-right: none;
+      border-top: none;
+      border-bottom: none;
+      margin: 0 5px;
+    }
   }
 </style>

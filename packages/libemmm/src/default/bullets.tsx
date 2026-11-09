@@ -13,11 +13,11 @@ const orderedListItemBlock = new BlockModifierDefinition<number>(
     {
         roleHint: undefined,
         prepareExpand(node) {
-            let { msgs, args, nodes } = bindArgs(node, ['number']);
+            const { msgs, args, nodes } = bindArgs(node, ['number']);
             if (msgs) return msgs;
-            let num = Number.parseInt(args!.number);
+            const num = Number.parseInt(args.number);
             if (isNaN(num)) return [
-                new InvalidArgumentMessage(nodes!.number.location, 'should be a number')];
+                new InvalidArgumentMessage(nodes.number.location, 'should be a number')];
             node.state = num;
             return [];
         },

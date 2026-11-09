@@ -35,7 +35,7 @@ export class NameManager<T extends {name: string}> {
     }
 
     remove(name: string) {
-        let i = this.data.get(name);
+        const i = this.data.get(name);
         assert(i !== undefined);
         this.data.delete(name);
         this.array.splice(this.array.findIndex((x) => x.k == name), 1);
@@ -61,8 +61,9 @@ export class NameManager<T extends {name: string}> {
 export type ReadonlyNameManager<T extends {name: string}> = Omit<NameManager<T>, 'add' | 'remove'>;
 
 export function assert(x: boolean): asserts x {
+    // eslint-disable-next-line no-extra-boolean-cast
     if (!!!x) {
-        let error = new Error('assertion failed');
+        const error = new Error('assertion failed');
         console.log(error.stack);
         throw error;
     }

@@ -30,7 +30,7 @@ export class SimpleScanner implements Scanner {
     }
 
     inspectors(): Inspector[] {
-        let result: Inspector[] = [];
+        const result: Inspector[] = [];
         while (this.#inspectors.length > 0 && this.#inspectors[0].position <= this.#pos)
             result.push(this.#inspectors.shift()!);
         return result;
@@ -38,14 +38,14 @@ export class SimpleScanner implements Scanner {
 
     peek(str: string): boolean {
         assert(str !== '');
-        let next = this.#pos + str.length;
+        const next = this.#pos + str.length;
         if (next > this.src.length) return false;
         return this.src.slice(this.#pos, this.#pos + str.length) == str;
     }
 
     acceptChar(): string {
         if (this.isEOF()) throw new RangeError('EOF');
-        let char = this.src[this.#pos];
+        const char = this.src[this.#pos];
         this.#pos++;
         return char;
     }
@@ -58,7 +58,7 @@ export class SimpleScanner implements Scanner {
 
     acceptWhitespaceChar(): string | null {
         if (this.isEOF()) return null;
-        let char = this.src[this.#pos];
+        const char = this.src[this.#pos];
         if (!' \t'.includes(char)) return null;
         this.#pos++;
         return char;

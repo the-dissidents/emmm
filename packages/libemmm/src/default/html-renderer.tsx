@@ -1,7 +1,7 @@
 import { debug } from "../debug";
 import { debugPrint } from "../debug-print";
 import { BlockEntity, InlineEntity, NodeType } from "../interface";
-import { RenderContext, RenderConfiguration, ReadonlyRenderConfiguration } from "../renderer";
+import { RenderContext, RenderConfiguration } from "../renderer";
 import { BulletBlockRenderersHTML } from "./bullets";
 import { CodeBlockRendererHTML, CodeInlineRendererHTML } from "./code";
 import { HeadingBlockRenderersHTML } from "./headings";
@@ -116,9 +116,9 @@ export function createHTMLRenderConfiguration(window: Window) {
     },
     async (results, cxt) => {
         // TODO: seriously...
-        let styles = cxt.state.stylesheet.replaceAll(/var\(--(.*?)\)/g,
+        const styles = cxt.state.stylesheet.replaceAll(/var\(--(.*?)\)/g,
             (m, c) => cxt.state.cssVariables.get(c) ?? m);
-        let doc = window.document.implementation.createHTMLDocument(cxt.state.title);
+        const doc = window.document.implementation.createHTMLDocument(cxt.state.title);
         doc.head.append(
             <meta charset="UTF-8" />,
             <style>{styles}</style>,

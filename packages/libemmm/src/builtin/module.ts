@@ -18,29 +18,29 @@ export const ModuleMod =
         return []; // node.content;
     },
     beforeParseContent(node, cxt) {
-        let { msgs, args } = bindArgs(node, ['name']);
+        const { msgs, args } = bindArgs(node, ['name']);
         if (msgs) return msgs;
 
         const data = cxt.get(builtins)!;
-        const name = args!.name;
+        const name = args.name;
         const defs = ModuleDefinition.from(cxt);
 
         if (data.insideModule !== undefined)
             return [new NoNestedModuleMessage(node.head)];
 
-        msgs = [];
+        const ms = [];
         node.state = { name, defs };
         data.insideModule = name;
         if (cxt.config.modules.has(name)) {
             const [combined, msg] = ModuleDefinition.combine(defs, cxt.config.modules.get(name)!);
-            if (msg) msgs.push(
+            if (msg) ms.push(
                 new OverwriteDefinitionsMessage(node.head, msg));
             ModuleDefinition.apply(combined, cxt);
             debug.trace('entering defs for module', name, '(earlier data loaded)');
         } else {
             debug.trace('entering defs for module', name);
         }
-        return msgs;
+        return ms;
     },
     afterParseContent(node, cxt) {
         if (!node.state) return [];
@@ -57,17 +57,17 @@ export const ModuleMod =
 });
 
 function use(node: ModifierNode<ModuleDefinition>, cxt: ParseContext) {
-    let { msgs, args, nodes } = bindArgs(node, ['name']);
+    const { msgs, args, nodes } = bindArgs(node, ['name']);
     if (msgs) return msgs;
 
     const data = cxt.get(builtins)!;
-    if (!cxt.config.modules.has(args!.name))
-        return [new InvalidArgumentMessage(nodes!.name.location)];
-    if (data.insideModule === args!.name)
-        return [new CannotUseModuleInSelfMessage(nodes!.name.location)];
+    if (!cxt.config.modules.has(args.name))
+        return [new InvalidArgumentMessage(nodes.name.location)];
+    if (data.insideModule === args.name)
+        return [new CannotUseModuleInSelfMessage(nodes.name.location)];
 
     const old = ModuleDefinition.from(cxt);
-    const [combined, msg] = ModuleDefinition.combine(cxt.config.modules.get(args!.name)!, old);
+    const [combined, msg] = ModuleDefinition.combine(cxt.config.modules.get(args.name)!, old);
     ModuleDefinition.apply(combined, cxt)
     node.state = old;
 

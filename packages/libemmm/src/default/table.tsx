@@ -84,7 +84,7 @@ const tableSeparatorBlock = new BlockModifierDefinition(
 
         if      (t.status == 'header') t.status = 'body';
         else if (t.status == 'body')   t.status = 'footer';
-        else if (t.status == 'footer') {}; // do nothing
+        else if (t.status == 'footer') { /* do nothing */ };
 
         debug.trace('table status ->', t.status);
         return [];

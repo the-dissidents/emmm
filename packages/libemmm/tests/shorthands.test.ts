@@ -13,7 +13,7 @@ TestConfig.blockModifiers.add(
 
 function parse(src: string) {
     const config = Configuration.from(TestConfig, false);
-    let doc = new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
+    const doc = new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
     return doc;
 }
 debug.level = DebugLevel.Warning;
@@ -88,14 +88,14 @@ describe('inline shorthands', () => {
         ]);
     });
     test('arguments: reference (interp)', () => {
-        let doc = parse(`[-inline-shorthand p|x|p][/print $(x)]\n\np1p`);
+        const doc = parse(`[-inline-shorthand p|x|p][/print $(x)]\n\np1p`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
         ]);
     });
     test('arguments: reference (modifier)', () => {
-        let doc = parse(`[-inline-shorthand p|x|p][/$x]\n\np1p`);
+        const doc = parse(`[-inline-shorthand p|x|p][/$x]\n\np1p`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
@@ -105,7 +105,7 @@ describe('inline shorthands', () => {
 
 describe('block shorthands', () => {
     test('simple', () => {
-        let doc = parse(`[-block-shorthand >|()][.normal][.slot]\n\n> 123`);
+        const doc = parse(`[-block-shorthand >|()][.normal][.slot]\n\n> 123`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.BlockModifier, content: [{
@@ -128,7 +128,7 @@ describe('block shorthands', () => {
         ]);
     });
     test('no content', () => {
-        let doc = parse(`[-block-shorthand >|()][.normal][.slot]\n\n>`);
+        const doc = parse(`[-block-shorthand >|()][.normal][.slot]\n\n>`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.BlockModifier, content: [] }

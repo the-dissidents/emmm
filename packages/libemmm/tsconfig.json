@@ -4,7 +4,6 @@
     "jsx": "react-jsx",
     "jsxImportSource": "@the_dissidents/minimal-jsx-runtime",
     "module": "esnext",
-    // "moduleResolution": "bundler",
     "declaration": true,
     "sourceMap": true,
     "outDir": "dist",

@@ -1,6 +1,6 @@
 {
     "name": "@the_dissidents/libemmm",
-    "version": "0.0.15",
+    "version": "0.0.16",
     "description": "Parser and language server for the emmm markup language",
     "author": "the_dissidents",
     "license": "AGPL-3.0-only",
@@ -23,12 +23,18 @@
         "@the_dissidents/minimal-jsx-runtime": "workspace:0.0.3"
     },
     "devDependencies": {
+        "@eslint-react/eslint-plugin": "^5.28.8",
+        "@eslint/js": "^10.0.1",
         "@happy-dom/global-registrator": "^20.14.5",
         "@vitest/coverage-istanbul": "^5.0.3",
         "@vitest/ui": "^5.0.3",
+        "eslint": "^10.14.0",
+        "eslint-plugin-react": "^7.37.5",
+        "globals": "^17.14.0",
         "happy-dom": "^20.14.5",
         "tsdown": "^0.23.0",
         "typescript": "^5.9.3",
+        "typescript-eslint": "^8.72.1",
         "vitest": "^5.0.3"
     }
 }

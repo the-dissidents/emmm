@@ -67,12 +67,12 @@ const notePositionSystem = new SystemModifierDefinition(
     'note-position', ModifierSlotType.None,
 {
     prepareExpand(node, cxt) {
-        let { msgs, args, nodes } = bindArgs(node, ['type'], { optional: ['name'], trim: true });
+        const { msgs, args, nodes } = bindArgs(node, ['type'], { optional: ['name'], trim: true });
         if (msgs) return msgs;
-        if (args!.type != 'global' && args!.type != 'preserve')
-            return [new InvalidArgumentMessage(nodes!.type.location,
+        if (args.type != 'global' && args.type != 'preserve')
+            return [new InvalidArgumentMessage(nodes.type.location,
                 "should be `preserve` or `global`")];
-        getSystem(cxt, args!.name).position = args!.type;
+        getSystem(cxt, args.name).position = args.type;
         return [];
     },
 });
@@ -81,12 +81,12 @@ const noteRenumberingSystem = new SystemModifierDefinition(
     'note-renumbering', ModifierSlotType.None,
 {
     prepareExpand(node, cxt) {
-        let { msgs, args, nodes } = bindArgs(node, ['type'], { optional: ['name'], trim: true });
+        const { msgs, args, nodes } = bindArgs(node, ['type'], { optional: ['name'], trim: true });
         if (msgs) return msgs;
-        if (args!.type != 'on' && args!.type != 'off')
-            return [new InvalidArgumentMessage(nodes!.type.location,
+        if (args.type != 'on' && args.type != 'off')
+            return [new InvalidArgumentMessage(nodes.type.location,
                 "should be `preserve` or `global`")];
-        getSystem(cxt, args!.name).autonumber = args!.type == 'on';
+        getSystem(cxt, args.name).autonumber = args.type == 'on';
         return [];
     },
 });
@@ -96,7 +96,7 @@ const noteMarkerInline = new InlineModifierDefinition<string>(
 {
     roleHint: 'link',
     prepareExpand(node) {
-        let { msgs, args } = bindArgs(node, ['index']);
+        const { msgs, args } = bindArgs(node, ['index']);
         if (msgs) return msgs;
         node.state = args?.index;
         return [];
@@ -108,7 +108,7 @@ const noteInline = new InlineModifierDefinition<string>(
 {
     roleHint: 'quote',
     prepareExpand(node) {
-        let { msgs, args } = bindArgs(node, [], { optional: ['index'] });
+        const { msgs, args } = bindArgs(node, [], { optional: ['index'] });
         if (msgs) return msgs;
         node.state = args?.index ?? '';
         return [];
@@ -142,19 +142,19 @@ const noteBlock = new BlockModifierDefinition<NoteDefinition>(
 {
     roleHint: 'quote',
     prepareExpand(node, cxt) {
-        let { msgs, args } = bindArgs(node, ['name'], { optional: ['system'], trim: true });
+        const { msgs, args } = bindArgs(node, ['name'], { optional: ['system'], trim: true });
         if (msgs) return msgs;
 
         // TODO: check if this is sound in typing
         const content = stripNode(...node.content) as BlockEntity[];
-        debug.trace(`add note: system=<${''}> name=${args!.name} @${node.location.start}`);
+        debug.trace(`add note: system=<${''}> name=${args.name} @${node.location.start}`);
         debug.trace(`-->\n`, debugPrint.node(...content));
 
         const defs = cxt.get(notes)!;
         const entry: NoteDefinition = {
             id: defs.currentId,
-            system: args!.system ?? '',
-            name: args!.name,
+            system: args.system ?? '',
+            name: args.name,
             location: node.location,
             content: content
         };

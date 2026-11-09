@@ -1,5 +1,5 @@
 import { debug } from "./debug";
-import { LocationRange, ModifierArgument, NodeType, DocumentNode } from "./interface";
+import { LocationRange, ModifierArgument, NodeType, DocumentNode, BlockEntity, InlineEntity } from "./interface";
 
 export type CloneNodeOptions = {
     newLocation?: LocationRange;
@@ -26,7 +26,7 @@ const cloneArgument = (arg: ModifierArgument, options: CloneNodeOptions): Modifi
     })
 });
 function cloneLocation(pos: LocationRange, options: CloneNodeOptions): LocationRange {
-    let base = options.newLocation ?? pos;
+    const base = options.newLocation ?? pos;
     return {
         start: base.start,
         end: base.end,
@@ -98,8 +98,8 @@ export function cloneNodes<T extends readonly DocumentNode[]>(
 ): T {
     return nodes.map((x) => cloneNode(x, options)) as unknown as T;
 }
-/** Warning: modifies the original nodes */
 
+/** Warning: modifies the original nodes */
 export function stripNode(...nodes: DocumentNode[]): DocumentNode[] {
     return nodes.flatMap((node) => {
         switch (node.type) {
@@ -114,10 +114,11 @@ export function stripNode(...nodes: DocumentNode[]): DocumentNode[] {
             // else fallthrough!
             case NodeType.Root:
             case NodeType.Group:
-            case NodeType.Paragraph:
+            case NodeType.Paragraph: {
                 const newNode = cloneNode(node, { withState: true });
-                newNode.content = newNode.content.flatMap((x) => stripNode(x)) as any;
+                newNode.content = newNode.content.flatMap((x) => stripNode(x)) as BlockEntity[] | InlineEntity[];
                 return [newNode];
+            }
             case NodeType.SystemModifier:
                 return [];
             default:

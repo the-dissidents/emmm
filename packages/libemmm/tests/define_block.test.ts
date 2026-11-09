@@ -14,7 +14,7 @@ TestConfig.blockModifiers.add(
 
 function parse(src: string) {
     const config = Configuration.from(TestConfig, false);
-    let doc = new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
+    const doc = new ParseContext(config).parse(new SimpleScanner(src)).toStripped();
     return doc;
 }
 debug.level = DebugLevel.Warning;
@@ -31,7 +31,7 @@ describe('[-define-block]', () => {
         expect.soft(doc.root.content).toMatchObject([]);
     });
     test('slots: normal', () => {
-        let doc = parse(`[-define-block p][.slot]\n[.p]abc\n[.p][.normal]def`);
+        const doc = parse(`[-define-block p][.slot]\n[.p]abc\n[.p][.normal]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: 'abc' }] },
@@ -42,14 +42,14 @@ describe('[-define-block]', () => {
         ]);
     });
     test('slots: preformatted', () => {
-        let doc = parse(`[-define-block p][.pre-slot]\n[.p]abc\n[.p][.normal]def`);
+        const doc = parse(`[-define-block p][.pre-slot]\n[.p]abc\n[.p][.normal]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Preformatted, content: { text: 'abc\n[.p][.normal]def' } },
         ]);
     });
     test('slots: injection', () => {
-        let doc = parse(`[-define-block p][.inject-pre-slot pre]\n[.p]abc\n[.p][.normal]def`);
+        const doc = parse(`[-define-block p][.inject-pre-slot pre]\n[.p]abc\n[.p][.normal]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.BlockModifier, content: [
@@ -58,7 +58,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('slots: multiple instantiations', () => {
-        let doc = parse(`[-define-block p]\n<<<\n[-var x=0][.slot]\n[-var x=1][.slot]\n>>>\n[.p][/$x]`);
+        const doc = parse(`[-define-block p]\n<<<\n[-var x=0][.slot]\n[-var x=1][.slot]\n>>>\n[.p][/$x]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             {
@@ -71,7 +71,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('slots: reference in separate scopes', () => {
-        let doc = parse(`[-define-block p]\n<<<\na\n[.slot]\n>>>\n[-define-block q][.p]\n<<<\nb\n[.slot]\n>>>\n[.q]c`);
+        const doc = parse(`[-define-block p]\n<<<\na\n[.slot]\n>>>\n[-define-block q][.p]\n<<<\nb\n[.slot]\n>>>\n[.q]c`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             {
@@ -90,7 +90,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('slots: unnamed reference in nested scopes', () => {
-        let doc = parse(`[-define-block p]\n<<<\n[.slot]\n[-define-block q]\n[.slot]\n>>>\n[.p]abc\n[.q]def`);
+        const doc = parse(`[-define-block p]\n<<<\n[.slot]\n[-define-block q]\n[.slot]\n>>>\n[.p]abc\n[.q]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             {
@@ -103,7 +103,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('slots: named reference in nested scopes', () => {
-        let doc = parse(`[-define-block p|(0)]\n[-define-block q|(1)]\n<<<\n[.slot 0]\n[.slot 1]\n>>>\n[.p]abc\n[.q]def`);
+        const doc = parse(`[-define-block p|(0)]\n[-define-block q|(1)]\n<<<\n[.slot 0]\n[.slot 1]\n>>>\n[.p]abc\n[.q]def`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             {
@@ -116,7 +116,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('arguments: simple', () => {
-        let doc = parse(`[-define-block p|arg1|arg2][/$arg1][/$arg2]\n\n[.p|abc|def;]`);
+        const doc = parse(`[-define-block p|arg1|arg2][/$arg1][/$arg2]\n\n[.p|abc|def;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [
@@ -126,7 +126,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('arguments: named', () => {
-        let doc = parse(`[-define-block p|foo=mm][/$foo]\n\n[.p foo=1;]\n\n[.p;]`);
+        const doc = parse(`[-define-block p|foo=mm][/$foo]\n\n[.p foo=1;]\n\n[.p;]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] },
@@ -154,7 +154,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('arguments: no reference in user scope', () => {
-        let doc = parse(`[-define-block p|x]\n<<<\n[.slot]\n[/$x]\n>>>\n[.p|1][/$x]`);
+        const doc = parse(`[-define-block p|x]\n<<<\n[.slot]\n[/$x]\n>>>\n[.p|1][/$x]`);
         expect.soft(doc.messages).toMatchObject([
             { code: 5, severity: MessageSeverity.Warning }
         ]);
@@ -169,7 +169,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('arguments: expansion in separate scopes', () => {
-        let doc = parse(`[-define-block p|x][/$x]\n\n[-define-block q|x]\n<<<\n[.p 0;]\n[/$x]\n>>>\n[.q|1]`);
+        const doc = parse(`[-define-block p|x][/$x]\n\n[-define-block q|x]\n<<<\n[.p 0;]\n[/$x]\n>>>\n[.q|1]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             {
@@ -182,7 +182,7 @@ describe('[-define-block]', () => {
         ]);
     });
     test('arguments: expansion in nested scopes', () => {
-        let doc = parse(`[-define-block p|x][-define-block q|x][/$x]\n\n[.p|0;]\n[.q|1]`);
+        const doc = parse(`[-define-block p|x][-define-block q|x][/$x]\n\n[.p|0;]\n[.q|1]`);
         expect.soft(doc.messages).toMatchObject([]);
         expect.soft(doc.root.content).toMatchObject([
             { type: NodeType.Paragraph, content: [{ type: NodeType.Text, content: '1' }] }
@@ -216,7 +216,7 @@ describe('[-define-block]', () => {
         expect.soft(doc.root.content).toMatchObject([]);
     });
     test('warning - redefiniton', () => {
-        let doc = parse(`[-define-block p]abc\n[-define-block p]def\n[.p]`);
+        const doc = parse(`[-define-block p]abc\n[-define-block p]def\n[.p]`);
         expect.soft(doc.messages).toMatchObject([
             {severity: MessageSeverity.Warning, code: 4}
         ]);

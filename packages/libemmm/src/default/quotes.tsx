@@ -60,7 +60,7 @@ export const QuoteBlockRenderersHTML = [
     [attributionBlock, async (node, cxt) => {
         if (!node.state)
             return cxt.state.invalidBlock(node, 'bad format', cxt);
-        let para = node.content[0] as ParagraphNode;
+        const para = node.content[0] as ParagraphNode;
         return <p class='attribution' data-id={cxt.state.addSourceMap(para.location)}>
             {await cxt.state.render(para.content, cxt)}
         </p>;

@@ -1,5 +1,5 @@
 import { debug } from "../debug";
-import { BlockEntity, InlineEntity, ModifierArgument, NodeType, ParagraphNode } from "../interface";
+import { BlockEntity, ModifierArgument, NodeType, ParagraphNode } from "../interface";
 import { BlockModifierDefinition, ModifierSlotType } from "../modifier";
 import { bindArgs, onlyPermitSimpleParagraphs } from "../modifier-helper";
 
@@ -15,10 +15,11 @@ export const ConcatBlockMod = new BlockModifierDefinition<ModifierArgument>
     ('concat', ModifierSlotType.Normal,
 {
     prepareExpand(node) {
-        let { msgs, nodes } = bindArgs(node, [], { named: { sep: '' } });
+        const { msgs, nodes } = bindArgs(node, [], { named: { sep: '' } });
         if (msgs) return msgs;
-        msgs = onlyPermitSimpleParagraphs(node);
-        if (msgs) return msgs;
+
+        const ms = onlyPermitSimpleParagraphs(node);
+        if (ms) return ms;
 
         node.state = nodes?.sep;
         return [];
@@ -34,7 +35,7 @@ export const ConcatBlockMod = new BlockModifierDefinition<ModifierArgument>
                 result.content.push({
                     type: NodeType.Text,
                     location: node.state.location,
-                    content: node.state.expansion!
+                    content: node.state.expansion
                 });
         }
         function work(nodes: BlockEntity[]) {

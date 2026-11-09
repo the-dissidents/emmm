@@ -1,4 +1,3 @@
-import { assert } from '$lib/Debug';
 import * as emmm from '@the_dissidents/libemmm';
 
 export const CATEGORIES = [
@@ -9,6 +8,7 @@ export const CATEGORIES = [
   'essay',
   'roundtable',
   'editorial',
+  'list'
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];

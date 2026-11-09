@@ -54,9 +54,9 @@ export namespace ModuleDefinition {
     function add<T extends {name: string}>(
         snew: ReadonlySet<T>, sold: ReadonlySet<T>, transform: (x: T) => string
     ): [Set<T>, string] {
-        let newNames = new Set<string>([...snew].map((x) => x.name));
-        let out = new Set<T>(snew);
-        let overlap: T[] = [];
+        const newNames = new Set<string>([...snew].map((x) => x.name));
+        const out = new Set<T>(snew);
+        const overlap: T[] = [];
         for (const x of sold) {
             if (newNames.has(x.name))
                 overlap.push(x);
@@ -69,13 +69,13 @@ export namespace ModuleDefinition {
     export function combine(
         cnew: ModuleDefinition, cold: ModuleDefinition
     ): [ModuleDefinition, string] {
-        let [blocks, s1] =
+        const [blocks, s1] =
             add(cnew.blocks, cold.blocks, debugPrint.blockModifier);
-        let [inlines, s2] =
+        const [inlines, s2] =
             add(cnew.inlines, cold.inlines, debugPrint.inlineModifier);
-        let [inlineShorthands, s3] =
+        const [inlineShorthands, s3] =
             add(cnew.inlineShorthands, cold.inlineShorthands, debugPrint.inlineShorthand);
-        let [blockShorthands, s4] =
+        const [blockShorthands, s4] =
             add(cnew.blockShorthands, cold.blockShorthands, debugPrint.blockShorthand);
         return [
             {

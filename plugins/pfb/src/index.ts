@@ -7,7 +7,7 @@ type PfbTable = Map<string, Row[]>;
 const str = (value: unknown): string =>
     value === undefined || value === null ? '' : String(value);
 
-const emmmescape = (text: string): string =>
+const escapeEmmmArgument = (text: string): string =>
     text
         .replaceAll(']', '\\]')
         .replaceAll(';', '\\;')
@@ -77,7 +77,7 @@ const toStars = (n: number) => n == 0 ? '×' : '★'.repeat(n);
 type PfbEntry = {
     ratings: Map<string, number>,
     director: string,
-    title: string
+    title: string,
 };
 
 const work = async (
@@ -106,7 +106,7 @@ const work = async (
         pfb = filtered;
     }
 
-    const readEntry = (title: string, n?: number): PfbEntry | null => {
+    function readEntry(title: string, n?: number): PfbEntry | null {
         const selection = pfb.get(title);
         if (!selection) {
             messages.push(`评分表未发现「${title}」`);
@@ -145,12 +145,12 @@ const work = async (
         return { title, ratings, director };
     }
 
-    const printRatings = (entry: PfbEntry, data = false): string => {
+    function printRatings(entry: PfbEntry, category: string, data = false): string {
         let ratings = '';
         for (const [key, score] of entry.ratings) {
             ratings += `|${key}|${score}`;
         }
-        return `[.ratings${data ? '-data' : ''} ${entry.title}|dir=${entry.director}\n${ratings}]`;
+        return `[.ratings${data ? '-data' : ''} ${escapeEmmmArgument(entry.title)}|dir=${escapeEmmmArgument(entry.director)}|g=${escapeEmmmArgument(category)}\n${ratings}]`;
     };
 
     const entries: [string, string][] = [];
@@ -169,7 +169,7 @@ const work = async (
 
         if (!row['编辑']) {
             messages.push(`回顾表中「${titleKey}」没有任何短评，只加入总表`);
-            dataOnly.push(pfbEntry ? printRatings(pfbEntry, true) : '???');
+            dataOnly.push(pfbEntry ? printRatings(pfbEntry, category, true) : '???');
             continue;
         }
 
@@ -177,7 +177,7 @@ const work = async (
 
         if (row['配图']) {
             const filename = fixFeishuFilename(str(row['配图']));
-            entry += `[.image file:${emmmescape(joinPath(imgfolder, filename))};]\n\n`;
+            entry += `[.image file:${escapeEmmmArgument(joinPath(imgfolder, filename))};]\n\n`;
         } else {
             messages.push(`回顾表中「${titleKey}」没有配图`);
             entry += '?? Missing Image\n\n';
@@ -221,7 +221,7 @@ const work = async (
         makeReview('');
         if (row['编辑2']) makeReview('2');
 
-        entry += (pfbEntry ? printRatings(pfbEntry) : '???') + '\n>>>';
+        entry += (pfbEntry ? printRatings(pfbEntry, category) : '???') + '\n>>>';
         entries.push([category, entry]);
     }
 
@@ -229,23 +229,29 @@ const work = async (
 
     let text = '';
     for (let i = 0; i < entries.length;) {
-        const cat = entries[i][0];
+        const category = entries[i][0];
         const group: string[] = [];
-        while (i < entries.length && entries[i][0] == cat) {
+        while (i < entries.length && entries[i][0] == category) {
             group.push(entries[i][1]);
             i++;
         }
-        text += '# ' + cat + '\n\n[.gallery]\n<<<\n\n'
+        text += '# ' + category + '\n\n[.gallery]\n<<<\n\n'
             + group.join('\n\n') + '\n\n>>>\n\n';
     }
 
-    return [dataOnly.join('\n') + '\n' + text, messages];
+    const mod = (n: number, d: number) => ((n % d) + d) % d;
+    const date = new Date();
+    const month = mod(date.getMonth() - 1, 12) + 1;
+    const year = date.getFullYear() - (month == 12 ? 1 : 0);
+
+    const result = `[.overall-ratings TheDissidents ${year}.${month};]\n${dataOnly.join('\n')}\n${text}`;
+    return [result, messages];
 };
 
 void (async () => {
     await emmui.init({
         id: 'pfb',
-        version: '000003',
+        version: '000004',
         names: {
             'zh-cn': '月度回顾评分表',
         },
@@ -329,7 +335,7 @@ void (async () => {
 
     emmui.onAction('help', () => void (async () => {
         await emmui.call('messagebox', {
-            msg: '1. 去飞书里打开月度回顾表格，导出Excel文件，注意选择只下载月度回顾这一个页面。记得勾选下载附件，下载了之后解压成一个文件夹。\n\n2. 去腾讯文档将评分表导出为Excel文件，这里不需要下载附件\n\n3. 点击按钮填入以上得到的两个表格和一个文件夹，输入相应信息。多个分类用双斜杠（//）分开\n\n4. 点击生成',
+            msg: '1. 去飞书里打开月度回顾表格，导出Excel文件，注意选择只下载月度回顾这一个页面。记得勾选下载附件，下载了之后解压成一个文件夹。\n\n2. 去腾讯文档将评分表导出为Excel文件，这里不需要下载附件\n\n3. 点击按钮填入以上得到的两个表格和一个文件夹，输入相应信息。多个分类用双斜杠（//）分开\n\n注意：默认仅将「阅读回顾分类」中的第一个分类计入评分表\n\n4. 点击生成',
             kind: 'info',
             title: '「月度回顾评分表」插件使用说明'
         });

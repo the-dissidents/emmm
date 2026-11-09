@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { debug } from "./debug";
 import { BlockEntity, InlineEntity, NodeType, ParagraphNode, TextNode, PreNode, EscapedNode, BlockModifierNode, InlineModifierNode } from "./interface";
 import { BlockModifierDefinition, InlineModifierDefinition } from "./modifier";
@@ -39,18 +41,18 @@ export class RenderContext<Type extends AnyRendererType> {
                 if (!this.config.textRenderer) return [];
                 return this.config.textRenderer(node, this);
 
-            case NodeType.InlineModifier:
-                let ir = this.config.inlineRenderers.get(node.mod);
+            case NodeType.InlineModifier: {
+                const ir = this.config.inlineRenderers.get(node.mod);
                 if (ir) return ir(node, this);
                 if (!this.config.undefinedInlineRenderer) return [];
                 return this.config.undefinedInlineRenderer(node, this);
-
-            case NodeType.BlockModifier:
-                let br = this.config.blockRenderers.get(node.mod);
+            }
+            case NodeType.BlockModifier: {
+                const br = this.config.blockRenderers.get(node.mod);
                 if (br) return br(node, this);
                 if (!this.config.undefinedBlockRenderer) return [];
                 return this.config.undefinedBlockRenderer(node, this);
-
+            }
             case NodeType.SystemModifier:
                 return [];
 
@@ -111,9 +113,9 @@ export class RenderConfiguration<Type extends AnyRendererType>
     ) { }
 
     render(doc: Document, state: getState<Type>): getDocument<Type> {
-        let cxt = new RenderContext(this, doc, state);
-        let stripped = doc.toStripped();
-        let results = stripped
+        const cxt = new RenderContext(this, doc, state);
+        const stripped = doc.toStripped();
+        const results = stripped
             .root.content
             .flatMap((x) => cxt.renderEntity(x));
         const r = this.postprocessor(results, cxt);
@@ -129,7 +131,7 @@ export class RenderConfiguration<Type extends AnyRendererType>
     }
 
     static from<Type extends AnyRendererType>(from: ReadonlyRenderConfiguration<Type>) {
-        let config = new RenderConfiguration(from.options, from.postprocessor);
+        const config = new RenderConfiguration(from.options, from.postprocessor);
         config.paragraphRenderer = from.paragraphRenderer;
         config.textRenderer = from.textRenderer;
         config.undefinedBlockRenderer = from.undefinedBlockRenderer;

@@ -1,4 +1,4 @@
-import { ParagraphNode } from "../interface";
+import { Message, ParagraphNode } from "../interface";
 import { BlockModifierDefinition, ModifierSlotType } from "../modifier";
 import { InvalidArgumentMessage } from "../messages";
 import { bindArgs, onlyPermitSimpleParagraphs, onlyPermitSingleBlock } from "../modifier-helper";
@@ -49,27 +49,27 @@ const headingBlock = new BlockModifierDefinition<HeadingData>(
     {
         roleHint: 'heading',
         prepareExpand(node, cxt) {
-            let { msgs, args, nodes } = bindArgs(node, [], { optional: ['n'] });
+            const { msgs, args, nodes } = bindArgs(node, [], { optional: ['n'] });
             if (msgs) return msgs;
 
-            msgs = onlyPermitSingleBlock(node);
-            if (msgs) return msgs;
-            msgs = onlyPermitSimpleParagraphs(node);
-            if (msgs) return msgs;
+            let ms = onlyPermitSingleBlock(node);
+            if (ms) return ms;
+            ms = onlyPermitSimpleParagraphs(node);
+            if (ms) return ms;
 
             node.state = {
                 name: undefined,
                 level: currentHeadingLevel(cxt) ?? 1
             };
-            if (args!.n !== undefined) {
-                const level = Number.parseInt(args!.n);
+            if (args.n !== undefined) {
+                const level = Number.parseInt(args.n);
                 if (isNaN(level) || level < 1 || level > 6)
-                    msgs = [new InvalidArgumentMessage(
-                        nodes!.n!.location, 'should be a number between 1 and 6')];
+                    ms = [new InvalidArgumentMessage(
+                        nodes.n!.location, 'should be a number between 1 and 6')];
                 else node.state.level = level;
             }
             setHeading(cxt, node.state);
-            return msgs ?? [];
+            return ms ?? [];
         },
     });
 
@@ -78,22 +78,23 @@ const implicitHeadingBlock = new BlockModifierDefinition<HeadingData>(
     {
         roleHint: 'heading',
         prepareExpand(node, cxt) {
-            let { msgs, args, nodes } = bindArgs(node, [], { optional: ['n'] });
+            const { msgs, args, nodes } = bindArgs(node, [], { optional: ['n'] });
             if (msgs) return msgs;
 
+            let ms: Message[] = [];
             node.state = {
                 name: undefined, implicit: true,
                 level: (currentExplicitHeadingLevel(cxt) ?? 0) + 1
             };
-            if (args!.n !== undefined) {
-                const level = Number.parseInt(args!.n);
+            if (args.n !== undefined) {
+                const level = Number.parseInt(args.n);
                 if (isNaN(level) || level < 1 || level > 6)
-                    msgs = [new InvalidArgumentMessage(
-                        nodes!.n!.location, 'should be a number between 1 and 6')];
+                    ms = [new InvalidArgumentMessage(
+                        nodes.n!.location, 'should be a number between 1 and 6')];
                 else node.state.level = level;
             }
             setHeading(cxt, node.state);
-            return msgs ?? [];
+            return ms ?? [];
         },
     });
 
@@ -102,21 +103,22 @@ const numberedHeadingBlock = new BlockModifierDefinition<HeadingData>(
     {
         roleHint: 'heading',
         prepareExpand(node, cxt) {
-            let { msgs, args, nodes } = bindArgs(node, ['number']);
-            if (msgs) return msgs;
-            msgs = onlyPermitSingleBlock(node, {optional: true});
-            if (msgs) return msgs;
-            msgs = onlyPermitSimpleParagraphs(node);
+            const { msgs, args, nodes } = bindArgs(node, ['number']);
             if (msgs) return msgs;
 
+            let ms = onlyPermitSingleBlock(node, {optional: true});
+            if (ms) return ms;
+            ms = onlyPermitSimpleParagraphs(node);
+            if (ms) return ms;
+
             node.state = { name: undefined, level: currentHeadingLevel(cxt) ?? 1 };
-            const split = args!.number.trim().split('.').filter((x) => x.length > 0);
+            const split = args.number.trim().split('.').filter((x) => x.length > 0);
             if (split.length == 0 || split.length > 6)
-                msgs = [new InvalidArgumentMessage(
-                    nodes!.number.location, 'heading level should be between 1 and 6')];
+                ms = [new InvalidArgumentMessage(
+                    nodes.number.location, 'heading level should be between 1 and 6')];
             else node.state = { name: split.join('.'), level: split.length };
             setHeading(cxt, node.state);
-            return msgs ?? [];
+            return ms ?? [];
         },
     });
 

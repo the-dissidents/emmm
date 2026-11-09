@@ -7,7 +7,7 @@ import { ModuleMod, UseBlockMod, UseSystemMod } from "./module";
 import { InjectPreSlotBlockMod, InjectPreSlotInlineMod, PreSlotBlockMod, PreSlotInlineMod, SlotBlockMod, SlotInlineMod } from "./slot";
 import { VarMod, GetVarInlineMod, GetVarInterpolator, PrintInlineMod, IfdefBlockMod, IfdefInlineMod, IfndefBlockMod, IfndefInlineMod } from "./var";
 
-let builtin = new Configuration();
+const builtin = new Configuration();
 builtin.initializers = [initParseContext];
 builtin.systemModifiers.add(
     DefineBlockMod, DefineInlineMod,

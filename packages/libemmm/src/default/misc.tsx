@@ -9,9 +9,9 @@ const rubyInline = new InlineModifierDefinition<string>(
     {
         roleHint: undefined,
         prepareExpand(node) {
-            let { msgs, args } = bindArgs(node, ['text']);
+            const { msgs, args } = bindArgs(node, ['text']);
             if (msgs) return msgs;
-            node.state = args!.text;
+            node.state = args.text;
             return [];
         },
     });
@@ -21,9 +21,9 @@ const linkInline = new InlineModifierDefinition<string>(
     {
         roleHint: 'link',
         prepareExpand(node) {
-            let { msgs, args } = bindArgs(node, ['url']);
+            const { msgs, args } = bindArgs(node, ['url']);
             if (msgs) return msgs;
-            node.state = args!.url;
+            node.state = args.url;
             return [];
         },
     });
@@ -35,9 +35,9 @@ const styleBlock = new BlockModifierDefinition<string>(
     'style', ModifierSlotType.Normal,
     {
         prepareExpand(node) {
-            let { msgs, args } = bindArgs(node, ['style']);
+            const { msgs, args } = bindArgs(node, ['style']);
             if (msgs) return msgs;
-            node.state = args!.style;
+            node.state = args.style;
             return [];
         },
     });
@@ -50,9 +50,9 @@ const linkBlock = new BlockModifierDefinition<string>(
     {
         roleHint: 'link',
         prepareExpand(node) {
-            let { msgs, args } = bindArgs(node, ['url']);
+            const { msgs, args } = bindArgs(node, ['url']);
             if (msgs) return msgs;
-            node.state = args!.url;
+            node.state = args.url;
             return [];
         },
     });

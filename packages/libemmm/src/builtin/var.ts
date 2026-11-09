@@ -32,25 +32,25 @@ function resolveId(id: string, cxt: ParseContext): string | undefined {
     return value;
 }
 
-let ifdefBody = (x: boolean) => ({
+const ifdefBody = (x: boolean) => ({
     prepareExpand(node: ModifierNode, cxt: ParseContext) {
-        let { msgs, args, nodes } = bindArgs(node, ['id']);
+        const { msgs, args, nodes } = bindArgs(node, ['id']);
         if (msgs) return msgs;
-        if (args!.id == '') return [new InvalidArgumentMessage(nodes!.id.location)];
-        const value = resolveId(args!.id, cxt);
+        if (args.id == '') return [new InvalidArgumentMessage(nodes.id.location)];
+        const value = resolveId(args.id, cxt);
         node.state = value !== undefined;
         return [];
     },
-    expand(node: any) {
-        return (node.state == x) ? node.content : [];
+    expand(node: ModifierNode) {
+        return (node.state == x) ? node.content as never : [];
     }
 });
 
-let ifdefBlock = (name: string, x: boolean) =>
+const ifdefBlock = (name: string, x: boolean) =>
     new BlockModifierDefinition<boolean>
     (name, ModifierSlotType.Normal, ifdefBody(x));
 
-let ifdefInline = (name: string, x: boolean) =>
+const ifdefInline = (name: string, x: boolean) =>
     new InlineModifierDefinition<boolean>
     (name, ModifierSlotType.Normal, ifdefBody(x));
 
@@ -65,16 +65,16 @@ export const GetVarInlineMod =
     alwaysTryExpand: true,
     // .$:id
     prepareExpand(node, cxt, immediate) {
-        let { msgs, args, nodes } = bindArgs(node, ['id']);
+        const { msgs, args, nodes } = bindArgs(node, ['id']);
         if (msgs) return immediate ? msgs : [];
 
-        const id = args!.id;
+        const id = args.id;
         if (id == '')
-            return immediate ? [new InvalidArgumentMessage(nodes!.id.location)] : [];
+            return immediate ? [new InvalidArgumentMessage(nodes.id.location)] : [];
 
         const value = resolveId(id, cxt);
         if (value === undefined)
-            return immediate ? [new UndefinedVariableMessage(nodes!.id.location, id)] : [];
+            return immediate ? [new UndefinedVariableMessage(nodes.id.location, id)] : [];
         node.state = { value };
         return [];
     },
@@ -89,9 +89,9 @@ export const PrintInlineMod =
 {
     // .print:args...
     prepareExpand(node) {
-        let { msgs, rest } = bindArgs(node, [], { rest: true });
+        const { msgs, rest } = bindArgs(node, [], { rest: true });
         if (msgs) return msgs;
-        node.state = { value: rest!.join('') };
+        node.state = { value: rest.join('') };
         return [];
     },
     expand(node) {
@@ -125,15 +125,15 @@ export const VarMod = new SystemModifierDefinition<{
             return [];
         }
 
-        let { msgs, args, nodes } = bindArgs(node, ['id', 'value']);
+        const { msgs, args, nodes } = bindArgs(node, ['id', 'value']);
         if (msgs) return msgs;
 
-        if (!args!.id)
-            return [new InvalidArgumentMessage(nodes!.id.location)];
+        if (!args.id)
+            return [new InvalidArgumentMessage(nodes.id.location)];
 
         node.state = {
-            id: args!.id,
-            value: args!.value
+            id: args.id,
+            value: args.value
         };
         return [];
     },

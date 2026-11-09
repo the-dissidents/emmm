@@ -22,65 +22,65 @@ function parseDefineArguments(
     node: SystemModifierNode<ShorthandState>,
     stack: CustomModifierSignature[]
 ) {
-    let { msgs, args, nodes, rest, restNodes } = bindArgs(node, ['name'], { rest: true });
+    const { msgs, args, nodes, rest, restNodes } = bindArgs(node, ['name'], { rest: true });
     if (msgs) return msgs;
 
-    msgs = [];
-    const nameNode = nodes!.name;
-    const name = args!.name;
+    const ms = [];
+    const nameNode = nodes.name;
+    const name = args.name;
     if (name === '' || name?.includes('\n')) return [
         new InvalidArgumentMessage(nameNode.location, name)];
 
     let slotName: string | undefined = undefined;
-    let parts: [string, string][] = [];
+    const parts: [string, string][] = [];
     let postfix: string | undefined = undefined;
     let i = 0;
-    while (i < rest!.length) {
-        const arg = restNodes![i];
+    while (i < rest.length) {
+        const arg = restNodes[i];
         const match = /^\((.*)\)$/.exec(arg.expansion!);
         if (match) {
             slotName = match[1];
             i++;
             if (type == NodeType.InlineModifier) {
-                if (i < rest!.length) {
-                    if (rest![i] === '') {
-                        msgs.push(new InvalidArgumentMessage(
-                            restNodes![i].location, 'postfix'));
+                if (i < rest.length) {
+                    if (rest[i] === '') {
+                        ms.push(new InvalidArgumentMessage(
+                            restNodes[i].location, 'postfix'));
                     } else {
-                        postfix = rest![i];
+                        postfix = rest[i];
                         i++;
                     }
-                } else msgs.push(
+                } else ms.push(
                     new ArgumentCountMismatchMessage(node.head));
             }
             break;
         }
 
         i++;
-        if (i < rest!.length) {
+        if (i < rest.length) {
             const id = arg.expansion!;
             if (id === '')
                 return [new InvalidArgumentMessage(arg.location, 'id')];
-            const part = rest![i];
+            const part = rest[i];
             if (part === '')
-                return [new InvalidArgumentMessage(restNodes![i].location, 'part')];
+                return [new InvalidArgumentMessage(restNodes[i].location, 'part')];
             parts.push([id, part]);
             i++;
         } else {
-            msgs.push(new ArgumentCountMismatchMessage(node.head));
+            ms.push(new ArgumentCountMismatchMessage(node.head));
             break;
         }
     }
 
-    if (i == rest!.length - 1) {
-        if (rest![i] !== '') msgs.push(
-            new InvalidArgumentMessage(restNodes![i].location, '(must be empty)'));
-    } else if (i < rest!.length - 1)
-        msgs.push(new ArgumentCountMismatchMessage(node.head));
+    if (i == rest.length - 1) {
+        if (rest[i] !== '') ms.push(
+            new InvalidArgumentMessage(restNodes[i].location, '(must be empty)'));
+    } else if (i < rest.length - 1)
+        ms.push(new ArgumentCountMismatchMessage(node.head));
 
-    let signature: CustomModifierSignature =
+    const signature: CustomModifierSignature =
         { slotName, args: parts.map((x) => x[0]), namedArgs: {}, preformatted: undefined };
-    node.state = { name, nameNode, signature, parts, postfix, msgs };
+    node.state = { name, nameNode, signature, parts, postfix, msgs: ms };
     stack.push(signature);
     return [];
 }
@@ -126,7 +126,7 @@ export const DefineBlockShorthandMod = new SystemModifierDefinition
         const parts = node.state.parts.map((x) => x[1]);
         const mod = customModifier(NodeType.BlockModifier,
             name, node.state.signature, node.content);
-        const shorthand: BlockShorthand<any> = {
+        const shorthand: BlockShorthand = {
             name: node.state.name,
             postfix: node.state.postfix,
             mod, parts
@@ -181,7 +181,7 @@ export const DefineInlineShorthandMod = new SystemModifierDefinition
         const parts = node.state.parts.map((x) => x[1]);
         const mod = customModifier(NodeType.InlineModifier,
             name, node.state.signature, node.state.definition!);
-        const shorthand: InlineShorthand<any> = {
+        const shorthand: InlineShorthand = {
             name: node.state.name,
             postfix: node.state.postfix,
             mod, parts

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Source } from "./source";
 import { SystemModifierDefinition, BlockModifierDefinition, InlineModifierDefinition, ArgumentInterpolatorDefinition } from "./modifier";
 
@@ -83,28 +85,28 @@ export type ModifierArguments = {
     location: LocationRange,
 }
 
-type ModifierNodeBase<TState> = {
+type ModifierNodeBase<TState = any> = {
     location: LocationRange,
     state?: TState,
     head: LocationRange,
     arguments: ModifierArguments
 }
 
-export type SystemModifierNode<TState> = ModifierNodeBase<TState> & {
+export type SystemModifierNode<TState = any> = ModifierNodeBase<TState> & {
     type: NodeType.SystemModifier,
     mod: SystemModifierDefinition<TState>,
     content: BlockEntity[],
     expansion?: never[],
 };
 
-export type BlockModifierNode<TState> = ModifierNodeBase<TState> & {
+export type BlockModifierNode<TState = any> = ModifierNodeBase<TState> & {
     type: NodeType.BlockModifier,
     mod: BlockModifierDefinition<TState>,
     content: BlockEntity[],
     expansion?: BlockEntity[]
 };
 
-export type InlineModifierNode<TState> = ModifierNodeBase<TState> & {
+export type InlineModifierNode<TState = any> = ModifierNodeBase<TState> & {
     type: NodeType.InlineModifier,
     mod: InlineModifierDefinition<TState>,
     content: InlineEntity[],

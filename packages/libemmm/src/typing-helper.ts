@@ -3,13 +3,15 @@ import { InlineModifierNode, BlockModifierNode, InlineEntity, BlockEntity, Syste
 import { InlineShorthand, BlockShorthand } from "./parser-config";
 import { InlineModifierDefinition, BlockModifierDefinition, SystemModifierDefinition } from "./modifier";
 
-export type _Node<T extends NodeType.InlineModifier | NodeType.BlockModifier | NodeType.SystemModifier, TState = unknown> =
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type _Node<T extends NodeType.InlineModifier | NodeType.BlockModifier | NodeType.SystemModifier, TState = any> =
     T extends NodeType.InlineModifier ? InlineModifierNode<TState> :
     T extends NodeType.BlockModifier ? BlockModifierNode<TState> :
     T extends NodeType.SystemModifier ? SystemModifierNode<TState> :
     never;
 
-export type _Def<T extends NodeType.InlineModifier | NodeType.BlockModifier | NodeType.SystemModifier, TState = unknown> =
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type _Def<T extends NodeType.InlineModifier | NodeType.BlockModifier | NodeType.SystemModifier, TState = any> =
     T extends NodeType.InlineModifier ? InlineModifierDefinition<TState> :
     T extends NodeType.BlockModifier ? BlockModifierDefinition<TState> :
     T extends NodeType.SystemModifier ? SystemModifierDefinition<TState> :

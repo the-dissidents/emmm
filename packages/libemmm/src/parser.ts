@@ -43,7 +43,7 @@ class EmitEnvironment {
     }
 
     message(...m: Message[]) {
-        for (let msg of m) {
+        for (const msg of m) {
             this.messages.push(msg);
             debug.trace('issued msg', msg.code, msg.info);
         }
@@ -132,10 +132,13 @@ export class Parser {
     /* istanbul ignore next -- @preserve */
     #defs<
         Type extends NodeType.BlockModifier | NodeType.SystemModifier | NodeType.InlineModifier
-    >(type: Type): NameManager<_Def<Type, any>> {
+    >(type: Type): NameManager<_Def<Type>> {
         switch (type) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             case NodeType.SystemModifier: return this.cxt.config.systemModifiers as any;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             case NodeType.InlineModifier: return this.cxt.config.inlineModifiers as any;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             case NodeType.BlockModifier: return this.cxt.config.blockModifiers as any;
             default: return debug.never(type);
         }
@@ -208,7 +211,7 @@ export class Parser {
             this.#expandArgument(arg);
     }
 
-    #tryAndMessage<Params extends any[]>(
+    #tryAndMessage<Params extends unknown[]>(
         node: ModifierNode,
         fn: ((...p: Params) => Message[]) | undefined, ...p: Params
     ) {
@@ -221,7 +224,7 @@ export class Parser {
         }
     }
 
-    #try<Params extends any[], R>(
+    #try<Params extends unknown[], R>(
         node: ModifierNode,
         fn: ((...p: Params) => R) | undefined, ...p: Params
     ) {
@@ -282,7 +285,7 @@ export class Parser {
         const expansion = node.expansion;
         if (!expansion || expansion.length == 0) return true;
         debug.trace('reparsing expansion of:', node.mod.name);
-        let ok = this.#reparse(expansion, depth);
+        const ok = this.#reparse(expansion, depth);
         debug.trace('done reparsing expansion of:', node.mod.name);
 
         this.#tryAndMessage(node, node.mod.afterProcessExpansion, node as never, this.cxt, immediate);
@@ -301,12 +304,12 @@ export class Parser {
     }
 
     private WHITESPACES() {
-        while (this.scanner.acceptWhitespaceChar() !== null) {}
+        while (this.scanner.acceptWhitespaceChar() !== null);
     }
 
     private WHITESPACES_OR_NEWLINES() {
         while (this.scanner.acceptWhitespaceChar() !== null
-            || this.scanner.accept('\n')) {}
+            || this.scanner.accept('\n'));
     }
 
     private SHOULD_BE_A_NEWLINE() {
@@ -405,6 +408,7 @@ export class Parser {
 
         const headEnd = this.scanner.position();
         const node: ModifierNode = {
+            // eslint-disable-next-line  @typescript-eslint/no-explicit-any
             type, mod: mod as any,
             head: this.#locFrom(posStart, headEnd),
             location: this.#locFrom(posStart, headEnd),
@@ -510,8 +514,8 @@ export class Parser {
 
     #trimNode(node: ParagraphNode | ModifierNode) {
         if (node.content.length == 0) return;
-        let first = node.content[0];
-        let last = node.content.at(-1)!;
+        const first = node.content[0];
+        const last = node.content.at(-1)!;
         if (first.type == NodeType.Text)
             first.content = first.content.trimStart();
         if (last.type == NodeType.Text)
@@ -527,7 +531,7 @@ export class Parser {
         };
         // debug.trace('PARSE para');
         this.emit.startInline(node);
-        while (!this.scanner.isEOF() && this.INLINE_ENTITY()) {}
+        while (!this.scanner.isEOF() && this.INLINE_ENTITY());
         this.emit.endInline();
         const last = node.content.at(-1);
         node.location.actualEnd = last?.location.actualEnd ?? last?.location.end;
@@ -541,9 +545,9 @@ export class Parser {
         (type: Type, d: _Shorthand<Type>): boolean
     {
         const posStart = this.scanner.position();
-        let args: ModifierArgument[] = [];
+        const args: ModifierArgument[] = [];
         for (const part of d.parts) {
-            let [arg, ok] = this.ARGUMENT_CONTENT(part, ['\n\n']);
+            const [arg, ok] = this.ARGUMENT_CONTENT(part, ['\n\n']);
             if (!ok) {
                 this.emit.message(new ExpectedMessage(this.#loc(), part));
                 return false;
@@ -553,6 +557,7 @@ export class Parser {
 
         const headEnd = this.scanner.position();
         const node: ModifierNode = {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             type, mod: d.mod as any,
             head: this.#locFrom(posStart - d.name.length, headEnd),
             location: this.#locFrom(posStart - d.name.length, headEnd),
@@ -576,7 +581,7 @@ export class Parser {
         this.#expandArguments(node);
         const immediate = this.delayDepth == 0;
         if (node.mod.beforeParseContent)
-            this.emit.message(...node.mod.beforeParseContent(node as any, this.cxt, immediate));
+            this.emit.message(...node.mod.beforeParseContent(node as never, this.cxt, immediate));
         if (node.mod.delayContentExpansion) this.delayDepth++;
 
         let ok = true;
@@ -608,7 +613,7 @@ export class Parser {
                 this.#trimNode(node)
             }
         } else /* block or system */ {
-            this.emit.startBlock(node as any);
+            this.emit.startBlock(node as never);
             this.WARN_IF_MORE_NEWLINES_THAN(1);
             if (!this.scanner.isEOF()) {
                 if (node.mod.slotType == ModifierSlotType.Preformatted)
@@ -623,7 +628,7 @@ export class Parser {
         node.location.actualEnd = last?.location.actualEnd ?? last?.location.end;
         if (node.mod.delayContentExpansion) this.delayDepth--;
         if (node.mod.afterParseContent)
-            this.emit.message(...node.mod.afterParseContent(node as any, this.cxt, immediate));
+            this.emit.message(...node.mod.afterParseContent(node as never, this.cxt, immediate));
         this.#expand(node);
         return ok;
     }
@@ -860,7 +865,7 @@ export class Parser {
                         continue; // consume '='
                     }
 
-                    if (/[:/\[\s]/.test(char))
+                    if (/[:/[\s]/.test(char))
                         name = undefined;
                     else
                         name.value += char;
