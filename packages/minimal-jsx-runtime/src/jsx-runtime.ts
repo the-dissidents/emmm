@@ -34,19 +34,14 @@ export const Fragment = (props: { children?: any }): DocumentFragment => {
 };
 
 export function jsx(
-    type: string | ((props: any) => JSX.Element),
+    tag: string | ((props: any) => JSX.Element),
     props: { [key: string]: any },
-    key?: string
 ): JSX.Element {
-    if (key) {
-        // TODO: what's this for?
-    }
-
-    if (typeof type === 'function')
-        return type(props);
+    if (typeof tag === 'function')
+        return tag(props);
 
     assert(D !== undefined);
-    const element = D.createElement(type);
+    const element = D.createElement(tag);
     const { children, ...restProps } = props;
     for (const key in restProps) {
         const value = restProps[key];
@@ -56,10 +51,8 @@ export function jsx(
             element.setAttribute(key, value.toString());
         }
     }
-    // Append children
-    if (children)
-        appendChildren(element, [children]);
 
+    if (children) appendChildren(element, [children]);
     return element;
 };
 
@@ -72,8 +65,10 @@ function isNode(n: any): n is Node {
 
 function appendChildren(parent: HTMLElement | DocumentFragment, children: any[]) {
     children.flat(Infinity).forEach(child => {
-        if (child === undefined)
-            return;
+        // Skip any falsy item.
+        // This allows for Astro-like syntaxes e.g. `{visible && <p>Show me!</p>}`
+        if (!child) return;
+
         if (isNode(child)) {
             parent.appendChild(child);
         } else if (typeof child != 'function'
@@ -82,8 +77,7 @@ function appendChildren(parent: HTMLElement | DocumentFragment, children: any[])
             assert(D !== undefined);
             parent.appendChild(D.createTextNode(String(child)));
         } else {
-            // throw new InvalidJSXError(`invalid children in JSX`, child);
-            console.error(`invalid children in JSX`, child);
+            throw new InvalidJSXError(`invalid children in JSX`, child);
         }
     });
 }

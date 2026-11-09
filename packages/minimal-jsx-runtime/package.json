@@ -1,6 +1,6 @@
 {
   "name": "@the_dissidents/minimal-jsx-runtime",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A private little wrapper for using JSX the above projects",
   "author": "the_dissidents",
   "license": "GPL-2.0-only",
@@ -9,9 +9,7 @@
     "dev": "tsdown --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "files": [
-    "dist"
-  ],
+  "files": [ "dist" ],
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
