@@ -1,0 +1,53 @@
+name: Build Windows EXE
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag or branch to build (e.g. v0.2.5)'
+        required: true
+        default: 'v0.2.5'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || 'v0.2.5' }}
+
+      - name: Install pnpm v10
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './apps/editor/src-tauri -> target'
+
+      - name: Install dependencies
+        run: pnpm i
+
+      - name: Build workspace packages & Tauri Windows executable
+        run: pnpm run build-win
+
+      - name: Upload Windows EXE & Installers as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: emmui-windows-${{ github.event.inputs.ref || 'v0.2.5' }}
+          path: |
+            apps/editor/src-tauri/target/release/kfgui.exe
+            apps/editor/src-tauri/target/release/bundle/nsis/*.exe
+            apps/editor/src-tauri/target/release/bundle/msi/*.msi
