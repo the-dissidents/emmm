@@ -2,56 +2,108 @@ name: Build Windows EXE
 
 on:
   push:
+    branches:
+      - 'Louis37Z-patch-*'
+      - 'main'
+    tags:
+      - 'v*'
+  schedule:
+    - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Tag or branch to build (e.g. v0.2.5)'
-        required: true
-        default: 'v0.2.5'
+        description: 'Tag or branch to build (leave empty to build current branch)'
+        required: false
+        default: ''
 
 jobs:
   build-windows:
     runs-on: windows-latest
     steps:
+      - name: Determine target ref to build
+        id: target
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_REF: ${{ github.event.inputs.ref }}
+        run: |
+          if [ -n "$INPUT_REF" ]; then
+            TARGET_REF="$INPUT_REF"
+          elif [ "${{ github.event_name }}" == "schedule" ]; then
+            LATEST_TAG=$(gh api repos/${{ github.repository }}/tags --jq '.[0].name' 2>/dev/null || echo "")
+            TARGET_REF="${LATEST_TAG:-${{ github.ref_name }}}"
+          else
+            TARGET_REF="${{ github.ref_name }}"
+          fi
+          TARGET_SHA=$(gh api "repos/${{ github.repository }}/commits/${TARGET_REF}" --jq '.sha' 2>/dev/null || echo "${{ github.sha }}")
+          SAFE_REF=$(echo "$TARGET_REF" | tr '/:' '--')
+          ARTIFACT_NAME="emmui-windows-${SAFE_REF}-${TARGET_SHA:0:7}"
+          echo "ref=${TARGET_REF}" >> "$GITHUB_OUTPUT"
+          echo "sha=${TARGET_SHA}" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=${ARTIFACT_NAME}" >> "$GITHUB_OUTPUT"
+
+          EXISTING=$(gh api "repos/${{ github.repository }}/actions/artifacts?name=${ARTIFACT_NAME}" --jq '.artifacts | map(select(.expired == false)) | length' 2>/dev/null || echo "0")
+          if [ "$EXISTING" != "0" ] && [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Artifact ${ARTIFACT_NAME} already exists. Skipping duplicate build."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout repository
+        if: steps.target.outputs.skip != 'true'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.ref || 'v0.2.5' }}
+          ref: ${{ steps.target.outputs.ref }}
 
       - name: Install pnpm v10
+        if: steps.target.outputs.skip != 'true'
         uses: pnpm/action-setup@v4
         with:
           version: 10
 
       - name: Setup Node.js
+        if: steps.target.outputs.skip != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'pnpm'
 
-      - name: Setup Rust stable
+      - name: Setup Rust stable (supports edition 2024)
+        if: steps.target.outputs.skip != 'true'
         uses: dtolnay/rust-toolchain@stable
 
       - name: Rust cache
+        if: steps.target.outputs.skip != 'true'
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './apps/editor/src-tauri -> target'
-      - name: Align Tauri NPM versions & fix Windows pnpm filter quotes
+
+      - name: Dynamically align Tauri NPM versions with Cargo.lock & fix Windows filter quotes
+        if: steps.target.outputs.skip != 'true'
         shell: bash
         run: |
           node -e '
             const fs = require("fs");
-            const overrides = {
-              "@tauri-apps/api": "~2.10.0",
-              "@tauri-apps/cli": "~2.10.0",
-              "@tauri-apps/plugin-fs": "~2.5.0",
-              "@tauri-apps/plugin-os": "~2.3.0",
-              "@tauri-apps/plugin-dialog": "~2.7.0",
-              "@tauri-apps/plugin-shell": "~2.3.0",
-              "@tauri-apps/plugin-http": "~2.5.0",
-              "@tauri-apps/plugin-clipboard-manager": "~2.3.0",
-              "@tauri-apps/plugin-opener": "~2.5.0"
-            };
+            const lockPath = "apps/editor/src-tauri/Cargo.lock";
+            const overrides = {};
+            if (fs.existsSync(lockPath)) {
+              const blocks = fs.readFileSync(lockPath, "utf8").split("[[package]]").slice(1);
+              for (const b of blocks) {
+                const nameMatch = b.match(/^name\s*=\s*"([^"]+)"/m);
+                const verMatch = b.match(/^version\s*=\s*"(\d+)\.(\d+)\.\d+[^"]*"/m);
+                if (!nameMatch || !verMatch) continue;
+                const [, name] = nameMatch;
+                const [, major, minor] = verMatch;
+                const range = `~${major}.${minor}.0`;
+                if (name === "tauri") {
+                  overrides["@tauri-apps/api"] = range;
+                  overrides["@tauri-apps/cli"] = range;
+                } else if (name.startsWith("tauri-plugin-")) {
+                  overrides[`@tauri-apps/plugin-${name.slice("tauri-plugin-".length)}`] = range;
+                }
+              }
+            }
             const rootPkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
             rootPkg.pnpm = rootPkg.pnpm || {};
             rootPkg.pnpm.overrides = { ...(rootPkg.pnpm.overrides || {}), ...overrides };
@@ -60,17 +112,20 @@ jobs:
             }
             fs.writeFileSync("package.json", JSON.stringify(rootPkg, null, 2));
           '
-      
+
       - name: Install dependencies
+        if: steps.target.outputs.skip != 'true'
         run: pnpm i --no-frozen-lockfile
 
       - name: Build workspace packages & Tauri Windows executable
+        if: steps.target.outputs.skip != 'true'
         run: pnpm run build-win
 
-      - name: Upload Windows EXE & Installers as Artifact
+      - name: Upload Windows EXE & Installers as Artifact (local download only)
+        if: steps.target.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: emmui-windows-${{ github.event.inputs.ref || 'v0.2.5' }}
+          name: ${{ steps.target.outputs.artifact_name }}
           path: |
             apps/editor/src-tauri/target/release/kfgui.exe
             apps/editor/src-tauri/target/release/bundle/nsis/*.exe
