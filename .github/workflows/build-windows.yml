@@ -36,9 +36,30 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './apps/editor/src-tauri -> target'
-
+      - name: Align Tauri NPM package versions with Cargo.lock
+        shell: bash
+        run: |
+          node -e '
+            const fs = require("fs");
+            const overrides = {
+              "@tauri-apps/api": "~2.10.0",
+              "@tauri-apps/cli": "~2.10.0",
+              "@tauri-apps/plugin-fs": "~2.5.0",
+              "@tauri-apps/plugin-os": "~2.3.0",
+              "@tauri-apps/plugin-dialog": "~2.7.0",
+              "@tauri-apps/plugin-shell": "~2.3.0",
+              "@tauri-apps/plugin-http": "~2.5.0",
+              "@tauri-apps/plugin-clipboard-manager": "~2.3.0",
+              "@tauri-apps/plugin-opener": "~2.5.0"
+            };
+            const rootPkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            rootPkg.pnpm = rootPkg.pnpm || {};
+            rootPkg.pnpm.overrides = { ...(rootPkg.pnpm.overrides || {}), ...overrides };
+            fs.writeFileSync("package.json", JSON.stringify(rootPkg, null, 2));
+          '
+      
       - name: Install dependencies
-        run: pnpm i
+        run: pnpm i --no-frozen-lockfile
 
       - name: Build workspace packages & Tauri Windows executable
         run: pnpm run build-win
