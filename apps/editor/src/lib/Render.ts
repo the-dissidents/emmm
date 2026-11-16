@@ -2,6 +2,8 @@ import * as emmm from '@the_dissidents/libemmm';
 import type * as sass from 'sass';
 import { CustomHTMLRenderer } from './emmm/Custom';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { readFile } from '@tauri-apps/plugin-fs';
+import mime from 'mime';
 import { getSassVariablesFromColors, type ArticleColors } from './ColorTheme';
 import { join } from '@tauri-apps/api/path';
 import { Workspace } from './workspace/Workspace.svelte';
@@ -12,16 +14,47 @@ type DocumentStyle = {
     backgroundImage: string,
 }
 
-async function transformAsset(url: string) {
-    if (url.startsWith('file:'))
-        return { transformed: convertFileSrc(url.substring('file:'.length)), original: url};
+function uint8ToBase64(bytes: Uint8Array): string {
+    let binary = '';
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+}
 
-    if (url.startsWith('http:') || url.startsWith('https:') || !Workspace.assetPath)
+function normalizeFileUrlPath(raw: string): string {
+    return raw.replace(/^\/+([A-Za-z]:)/, '$1');
+}
+
+async function toPreviewUrl(localPath: string): Promise<string> {
+    try {
+        const bytes = await readFile(localPath);
+        const mimeType = mime.getType(localPath) || 'application/octet-stream';
+        return `data:${mimeType};base64,${uint8ToBase64(bytes)}`;
+    } catch {
+        return convertFileSrc(localPath.replace(/\\/g, '/'));
+    }
+}
+
+async function transformAsset(url: string) {
+    if (url.startsWith('file:')) {
+        const localPath = normalizeFileUrlPath(url.substring('file:'.length));
+        return { transformed: await toPreviewUrl(localPath), original: url };
+    }
+
+    if (
+        url.startsWith('http:') ||
+        url.startsWith('https:') ||
+        url.startsWith('data:') ||
+        url.startsWith('blob:') ||
+        !Workspace.assetPath
+    )
         return undefined;
 
     const id = url.startsWith('asset:') ? url.substring('asset:'.length) : url;
     const joined = await join(Workspace.assetPath, id);
-    return { transformed: convertFileSrc(joined), original: 'file:' + joined };
+    return { transformed: await toPreviewUrl(joined), original: 'file:' + joined };
 }
 
 export async function compileStyles(style: DocumentStyle): Promise<string | sass.Exception> {
