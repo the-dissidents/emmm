@@ -77,13 +77,13 @@ export function bindArgs<
 
     p.forEach((name, i) => {
         nodes[name] = node.arguments.positional[i];
-        args[name] = nodes[name].expansion!;
+        args[name] = nodes[name]?.expansion!;
         if (opts?.trim) args[name] = args[name].trim();
     });
 
     if (opts?.optional) opts.optional.forEach((name, i) => {
         nodes[name] = node.arguments.positional[p.length + i];
-        args[name] = nodes[name].expansion!;
+        args[name] = nodes[name]?.expansion!;
         if (opts?.trim && args[name]) args[name] = args[name].trim();
     });
 
