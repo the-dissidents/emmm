@@ -36,7 +36,7 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './apps/editor/src-tauri -> target'
-      - name: Align Tauri NPM package versions with Cargo.lock
+      - name: Align Tauri NPM versions & fix Windows pnpm filter quotes
         shell: bash
         run: |
           node -e '
@@ -55,6 +55,9 @@ jobs:
             const rootPkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
             rootPkg.pnpm = rootPkg.pnpm || {};
             rootPkg.pnpm.overrides = { ...(rootPkg.pnpm.overrides || {}), ...overrides };
+            if (rootPkg.scripts && rootPkg.scripts["build:pkgs"]) {
+              rootPkg.scripts["build:pkgs"] = rootPkg.scripts["build:pkgs"].replace(/\x27/g, "");
+            }
             fs.writeFileSync("package.json", JSON.stringify(rootPkg, null, 2));
           '
       
