@@ -36,23 +36,50 @@ export class SimpleScanner implements Scanner {
         return result;
     }
 
+    private matchLength(str: string): number {
+        if (!str.includes('\n')) {
+            return this.src.startsWith(str, this.#pos) ? str.length : -1;
+        }
+        let sPos = this.#pos;
+        for (let i = 0; i < str.length; i++) {
+            if (sPos >= this.src.length) return -1;
+            const target = str[i];
+            if (target === '\n') {
+                if (this.src[sPos] === '\r' && this.src[sPos + 1] === '\n') {
+                    sPos += 2;
+                } else if (this.src[sPos] === '\n') {
+                    sPos += 1;
+                } else {
+                    return -1;
+                }
+            } else {
+                if (this.src[sPos] !== target) return -1;
+                sPos += 1;
+            }
+        }
+        return sPos - this.#pos;
+    }
+
     peek(str: string): boolean {
         assert(str !== '');
-        const next = this.#pos + str.length;
-        if (next > this.src.length) return false;
-        return this.src.slice(this.#pos, this.#pos + str.length) == str;
+        return this.matchLength(str) !== -1;
     }
 
     acceptChar(): string {
         if (this.isEOF()) throw new RangeError('EOF');
         const char = this.src[this.#pos];
+        if (char === '\r' && this.src[this.#pos + 1] === '\n') {
+            this.#pos += 2;
+            return '\n';
+        }
         this.#pos++;
         return char;
     }
 
     accept(str: string): boolean {
-        if (!this.peek(str)) return false;
-        this.#pos += str.length;
+        const len = this.matchLength(str);
+        if (len === -1) return false;
+        this.#pos += len;
         return true;
     }
 
