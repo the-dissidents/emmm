@@ -1,86 +1,40 @@
 name: Build Windows EXE
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - 'Louis37Z-patch-*'
-      - 'main'
-    tags:
-      - 'v*'
-  schedule:
-    - cron: '0 */6 * * *'
-  workflow_dispatch:
-    inputs:
-      ref:
-        description: 'Tag or branch to build (leave empty to build current branch)'
-        required: false
-        default: ''
+      - 'Louis37Z-patch-1'
 
 jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - name: Determine target ref to build
-        id: target
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          INPUT_REF: ${{ github.event.inputs.ref }}
-        run: |
-          if [ -n "$INPUT_REF" ]; then
-            TARGET_REF="$INPUT_REF"
-          elif [ "${{ github.event_name }}" == "schedule" ]; then
-            LATEST_TAG=$(gh api repos/${{ github.repository }}/tags --jq '.[0].name' 2>/dev/null || echo "")
-            TARGET_REF="${LATEST_TAG:-${{ github.ref_name }}}"
-          else
-            TARGET_REF="${{ github.ref_name }}"
-          fi
-          TARGET_SHA=$(gh api "repos/${{ github.repository }}/commits/${TARGET_REF}" --jq '.sha' 2>/dev/null || echo "${{ github.sha }}")
-          SAFE_REF=$(echo "$TARGET_REF" | tr '/:' '--')
-          ARTIFACT_NAME="emmui-windows-${SAFE_REF}-${TARGET_SHA:0:7}"
-          echo "ref=${TARGET_REF}" >> "$GITHUB_OUTPUT"
-          echo "sha=${TARGET_SHA}" >> "$GITHUB_OUTPUT"
-          echo "artifact_name=${ARTIFACT_NAME}" >> "$GITHUB_OUTPUT"
-
-          EXISTING=$(gh api "repos/${{ github.repository }}/actions/artifacts?name=${ARTIFACT_NAME}" --jq '.artifacts | map(select(.expired == false)) | length' 2>/dev/null || echo "0")
-          if [ "$EXISTING" != "0" ] && [ "${{ github.event_name }}" == "schedule" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "Artifact ${ARTIFACT_NAME} already exists. Skipping duplicate build."
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Checkout repository
-        if: steps.target.outputs.skip != 'true'
+      - name: Checkout pure main
         uses: actions/checkout@v4
         with:
-          ref: ${{ steps.target.outputs.ref }}
+          ref: main
 
       - name: Install pnpm v10
-        if: steps.target.outputs.skip != 'true'
         uses: pnpm/action-setup@v4
         with:
           version: 10
 
       - name: Setup Node.js
-        if: steps.target.outputs.skip != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'pnpm'
 
-      - name: Setup Rust stable (supports edition 2024)
-        if: steps.target.outputs.skip != 'true'
+      - name: Setup Rust stable
         uses: dtolnay/rust-toolchain@stable
 
       - name: Rust cache
-        if: steps.target.outputs.skip != 'true'
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './apps/editor/src-tauri -> target'
 
-      - name: Dynamically align Tauri NPM versions with Cargo.lock & fix Windows filter quotes
-        if: steps.target.outputs.skip != 'true'
+      - name: Align Tauri NPM versions with Cargo.lock & fix Windows pnpm filter quotes
         shell: bash
         run: |
           node -e '
@@ -114,18 +68,15 @@ jobs:
           '
 
       - name: Install dependencies
-        if: steps.target.outputs.skip != 'true'
         run: pnpm i --no-frozen-lockfile
 
-      - name: Build workspace packages & Tauri Windows executable
-        if: steps.target.outputs.skip != 'true'
+      - name: Build Windows executable
         run: pnpm run build-win
 
-      - name: Upload Windows EXE & Installers as Artifact (local download only)
-        if: steps.target.outputs.skip != 'true'
+      - name: Upload Windows EXE & Installers
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.target.outputs.artifact_name }}
+          name: emmui-windows-main
           path: |
             apps/editor/src-tauri/target/release/kfgui.exe
             apps/editor/src-tauri/target/release/bundle/nsis/*.exe
